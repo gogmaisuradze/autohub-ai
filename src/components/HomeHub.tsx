@@ -14,7 +14,8 @@ import {
   Sparkles,
   Thermometer,
   BellRing,
-  ParkingSquare
+  ParkingSquare,
+  Calendar
 } from 'lucide-react';
 
 interface Props {
@@ -23,6 +24,7 @@ interface Props {
   fines: FineItem[];
   services: ServiceItem[];
   onSelectDepartment: (tab: TabType) => void;
+  onOpenBookingModal?: () => void;
 }
 
 export const HomeHub: React.FC<Props> = ({
@@ -30,7 +32,8 @@ export const HomeHub: React.FC<Props> = ({
   dtcCodes,
   fines,
   services,
-  onSelectDepartment
+  onSelectDepartment,
+  onOpenBookingModal
 }) => {
   const pendingFines = fines.filter(f => f.status === 'pending');
   const totalFineDiscounted = pendingFines.reduce((acc, f) => acc + f.discounted_amount_gel, 0);
@@ -118,8 +121,22 @@ export const HomeHub: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Georgian License Plate Mockup */}
+        {/* Georgian License Plate Mockup & Quick Booking Action */}
         <div className="flex items-center gap-2">
+          {onOpenBookingModal && (
+            <button
+              onClick={() => {
+                sounds.playClick();
+                onOpenBookingModal();
+              }}
+              className="px-3.5 py-2 rounded-2xl bg-gold hover:bg-amber-400 text-navy font-black text-xs shadow-gold-soft flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+              title="ჩაწერა ავტო-ექიმთან ან სერვისში"
+            >
+              <Calendar size={13} />
+              <span>📅 ჩაწერა / ჯავშანი</span>
+            </button>
+          )}
+
           <div className="px-4 py-2 rounded-2xl bg-white text-navy font-black font-mono shadow-sm border border-slate-200 flex items-center gap-3 tracking-widest text-sm">
             <div className="flex flex-col items-center justify-center pr-2 border-r border-slate-200 text-[10px] font-bold text-blue-700">
               <span>🇬🇪</span>

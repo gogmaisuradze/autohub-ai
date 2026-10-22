@@ -14,7 +14,9 @@ import { ClearDtcModal } from './components/Modals/ClearDtcModal';
 import { PwaInstallBanner } from './components/Modals/PwaInstallBanner';
 import { AddVehicleWizardModal } from './components/Modals/AddVehicleWizardModal';
 import { ContextualFieldPromptModal, PromptFieldType } from './components/Modals/ContextualFieldPromptModal';
-import { DtcCode, FineItem, ServiceItem, TelemetryData, VehicleProfile } from './types';
+import { ServiceBookingModal } from './components/Booking/ServiceBookingModal';
+import { DtcCode, FineItem, ServiceBookingItem, ServiceItem, TelemetryData, VehicleProfile } from './types';
+import { n8nService } from './services/n8nService';
 import { sounds } from './services/soundEffects';
 import { ArrowLeft } from 'lucide-react';
 
@@ -433,6 +435,22 @@ export const App: React.FC = () => {
     value: ''
   });
 
+  // Service Bookings State (Calendar Appointments & Digital Passes)
+  const [bookings, setBookings] = useState<ServiceBookingItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('autohub_service_bookings');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [activeBookingForAi, setActiveBookingForAi] = useState<ServiceBookingItem | null>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingModalPrefill, setBookingModalPrefill] = useState<{
+    serviceType?: ServiceBookingItem['service_type'];
+    title?: string;
+  }>({});
+
   const handleSaveNewVehicle = (newV: VehicleProfile) => {
     const updatedList = [newV, ...allVehicles.filter(v => v.id !== newV.id)];
     setAllVehicles(updatedList);
@@ -527,6 +545,52 @@ export const App: React.FC = () => {
     localStorage.setItem('autohub_services', JSON.stringify(services));
   }, [services]);
 
+  useEffect(() => {
+    localStorage.setItem('autohub_service_bookings', JSON.stringify(bookings));
+  }, [bookings]);
+
+  // Automatic Fines Synchronization: whenever vehicle details (plate, tech passport) or personal driver details change anywhere, sync fines automatically!
+  useEffect(() => {
+    if (vehicle.plate_number && vehicle.tech_passport) {
+      n8nService.checkFines(vehicle.plate_number, vehicle.tech_passport)
+        .then(res => {
+          if (res && res.fines && res.fines.length > 0) {
+            setFines(res.fines);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [vehicle.plate_number, vehicle.tech_passport, vehicle.driver_personal_number]);
+
+  const handleOpenBookingModal = (serviceType?: ServiceBookingItem['service_type'], title?: string) => {
+    sounds.playClick();
+    setBookingModalPrefill({ serviceType, title });
+    setIsBookingModalOpen(true);
+  };
+
+  const handleSubmitBooking = (newBooking: ServiceBookingItem) => {
+    const updated = [newBooking, ...bookings.filter(b => b.id !== newBooking.id)];
+    setBookings(updated);
+    try {
+      localStorage.setItem('autohub_service_bookings', JSON.stringify(updated));
+    } catch {}
+
+    setActiveBookingForAi(newBooking);
+    // Switch to AI tab immediately so the AI bot clarifies the booking with all accumulated data!
+    handleTabChange('ai');
+  };
+
+  const handleUpdateBooking = (updatedBooking: ServiceBookingItem) => {
+    const updated = bookings.map(b => b.id === updatedBooking.id ? updatedBooking : b);
+    setBookings(updated);
+    try {
+      localStorage.setItem('autohub_service_bookings', JSON.stringify(updated));
+    } catch {}
+    if (activeBookingForAi?.id === updatedBooking.id) {
+      setActiveBookingForAi(updatedBooking);
+    }
+  };
+
   const handleAskAiAboutCode = (code: DtcCode) => {
     setAiInitialPrompt(
       `გამარჯობა, მაქვს შეცდომის კოდი ${code.code} (${code.title_ge}). გთხოვთ ამიხსნათ დეტალურად: რა ნაწილის გაუმართაობაა, რა ჯდება თბილისში შეცვლა და შეიძლება თუ არა მოძრაობის გაგრძელება?`
@@ -589,6 +653,7 @@ export const App: React.FC = () => {
             fines={fines}
             services={services}
             onSelectDepartment={(tab) => handleTabChange(tab)}
+            onOpenBookingModal={() => handleOpenBookingModal()}
           />
         )}
 
@@ -634,6 +699,12 @@ export const App: React.FC = () => {
             dtcCodes={dtcCodes}
             initialPrompt={aiInitialPrompt}
             onClearInitialPrompt={() => setAiInitialPrompt(undefined)}
+            activeBooking={activeBookingForAi}
+            onUpdateBooking={handleUpdateBooking}
+            allBookings={bookings}
+            onOpenBookingModal={() => handleOpenBookingModal()}
+            services={services}
+            fines={fines}
           />
         )}
 
@@ -641,6 +712,12 @@ export const App: React.FC = () => {
           <ServiceLogModule
             vehicle={vehicle}
             services={services}
+            bookings={bookings}
+            onOpenBookingModal={handleOpenBookingModal}
+            onNavigateToAiClarification={(booking) => {
+              setActiveBookingForAi(booking);
+              handleTabChange('ai');
+            }}
             onAddService={(newItem) => {
               const updated = [newItem, ...services];
               setServices(updated);
@@ -708,6 +785,19 @@ export const App: React.FC = () => {
         fieldType={fieldPrompt.fieldType}
         currentValue={fieldPrompt.value}
         onSaveField={handleSaveField}
+      />
+
+      {/* Calendar & Auto-Doctor Service Booking Modal */}
+      <ServiceBookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        vehicle={vehicle}
+        dtcCodes={dtcCodes}
+        services={services}
+        fines={fines}
+        onSubmitBooking={handleSubmitBooking}
+        preselectedServiceType={bookingModalPrefill.serviceType}
+        preselectedTitle={bookingModalPrefill.title}
       />
 
       <PwaInstallBanner />

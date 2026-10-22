@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ServiceItem, VehicleProfile, ServiceCategory, ServiceVariantKey } from '../../types';
+import { ServiceItem, VehicleProfile, ServiceCategory, ServiceVariantKey, ServiceBookingItem } from '../../types';
 import { sounds } from '../../services/soundEffects';
 import ThematicServiceModal from './ThematicServiceModal';
 import {
@@ -32,7 +32,8 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
-  Calculator
+  Calculator,
+  Bot
 } from 'lucide-react';
 
 interface Props {
@@ -42,6 +43,9 @@ interface Props {
   onUpdateService: (updated: ServiceItem) => void;
   onDeleteService?: (id: string) => void;
   onOpenFieldPrompt?: (field: 'mileage_km') => void;
+  bookings?: ServiceBookingItem[];
+  onOpenBookingModal?: (serviceType?: ServiceBookingItem['service_type'], title?: string) => void;
+  onNavigateToAiClarification?: (booking: ServiceBookingItem) => void;
 }
 
 export const ServiceLogModule: React.FC<Props> = ({
@@ -50,7 +54,10 @@ export const ServiceLogModule: React.FC<Props> = ({
   onAddService,
   onUpdateService,
   onDeleteService,
-  onOpenFieldPrompt
+  onOpenFieldPrompt,
+  bookings = [],
+  onOpenBookingModal,
+  onNavigateToAiClarification
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
@@ -188,6 +195,20 @@ export const ServiceLogModule: React.FC<Props> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {onOpenBookingModal && (
+            <button
+              onClick={() => {
+                sounds.playClick();
+                onOpenBookingModal();
+              }}
+              className="px-4 py-2.5 rounded-2xl text-xs font-black bg-navy text-gold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-sm"
+              title="კალენდარში ჩაწერა ავტო-ექიმთან"
+            >
+              <Calendar className="w-4 h-4 text-gold" />
+              <span>📅 ჩაწერა / ჯავშანი</span>
+            </button>
+          )}
+
           <button
             onClick={() => {
               sounds.playClick();
@@ -298,12 +319,113 @@ export const ServiceLogModule: React.FC<Props> = ({
             </div>
           </div>
 
-          <button
-            onClick={() => handleOpenEditModal(ptiService)}
-            className="px-3.5 py-1.5 rounded-xl bg-navy text-gold font-bold text-xs shrink-0 hover:bg-slate-800 transition-colors"
-          >
-            მონაცემების განახლება
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {onOpenBookingModal && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenBookingModal('pti_inspection', 'Greenway Georgia ტექ-დათვალიერება PTI');
+                }}
+                className="px-3 py-1.5 rounded-xl bg-gold text-navy font-black text-xs hover:bg-amber-400 transition-all flex items-center gap-1 shadow-gold-soft"
+              >
+                <Calendar size={13} />
+                <span>PTI-ზე ჩაწერა</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => handleOpenEditModal(ptiService)}
+              className="px-3 py-1.5 rounded-xl bg-navy text-gold font-bold text-xs hover:bg-slate-800 transition-colors"
+            >
+              მონაცემები
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Active Bookings & Smart Service Passes */}
+      {bookings && bookings.length > 0 && (
+        <div className="p-5 rounded-3xl neu-card shadow-neu-card border border-white space-y-3 animate-fade-in">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-navy text-gold flex items-center justify-center shadow-xs">
+                <Calendar size={16} />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-extrabold text-navy">
+                  ჩაწერილი ვიზიტები & ციფრული საგზურები (Smart Service Passes)
+                </h3>
+                <p className="text-[10px] text-slate-400">
+                  ავტო-ექიმთან და სერვისცენტრებში დაჯავშნილი ვიზიტები
+                </p>
+              </div>
+            </div>
+
+            {onOpenBookingModal && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenBookingModal();
+                }}
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-navy flex items-center gap-1 shadow-xs"
+              >
+                <Plus size={13} className="text-gold" />
+                <span>ახალი ჯავშანი</span>
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {bookings.map(bk => (
+              <div
+                key={bk.id}
+                className="p-3.5 rounded-2xl bg-white border border-slate-200/80 hover:border-gold/60 transition-all flex items-center justify-between gap-3 shadow-xs"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                      bk.status === 'confirmed'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                        : 'bg-amber-50 text-amber-800 border border-amber-300'
+                    }`}>
+                      {bk.status === 'confirmed' ? '✓ დადასტურებული საგზური' : '⏳ AI დაზუსტებაში'}
+                    </span>
+                    {bk.voucher_code && (
+                      <span className="font-mono text-[10px] font-bold text-slate-500">
+                        #{bk.voucher_code}
+                      </span>
+                    )}
+                  </div>
+
+                  <h4 className="text-xs font-extrabold text-navy mt-1 truncate">
+                    {bk.provider_name}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                    <Clock size={12} className="text-slate-400" />
+                    <span className="font-mono font-bold text-navy">{bk.booking_date} {bk.booking_time}</span>
+                    <span>•</span>
+                    <span className="truncate">{bk.title_ge}</span>
+                  </p>
+                </div>
+
+                <div className="shrink-0 flex items-center gap-1.5">
+                  {onNavigateToAiClarification && (
+                    <button
+                      onClick={() => {
+                        sounds.playClick();
+                        onNavigateToAiClarification(bk);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-navy text-gold hover:bg-slate-800 text-[11px] font-black transition-all flex items-center gap-1 shadow-xs"
+                      title="AI ოსტატთან დაზუსტება"
+                    >
+                      <Bot size={13} />
+                      <span>AI დაზუსტება</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -265,6 +265,33 @@ export interface VehicleProfile {
   driver_license_points?: number; // 100-point Georgian license system (default 85/100)
   driver_personal_number?: string; // პირადი ნომერი
   driver_name?: string; // მძღოლის სახელი და გვარი
+  driver_phone?: string; // მძღოლის საკონტაქტო ნომერი
+}
+
+export interface ServiceBookingItem {
+  id: string;
+  service_type: 'doctor_mechanic' | 'oil_fluids' | 'brakes_chassis' | 'pti_inspection' | 'obd_diagnostics' | 'ac_climate' | 'custom';
+  title_ge: string;
+  provider_name: string; // e.g. "თეგეტა მოტორსი (დიღომი)", "Greenway PTI"
+  booking_date: string; // YYYY-MM-DD
+  booking_time: string; // HH:mm
+  vehicle_id: string;
+  plate_number: string;
+  driver_name: string;
+  driver_phone: string;
+  status: 'pending' | 'clarified_by_ai' | 'confirmed' | 'completed' | 'cancelled';
+  complaint_or_goal?: string;
+  related_dtc_codes?: string[];
+  estimated_cost_gel?: number;
+  ai_clarification_notes?: string;
+  voucher_code?: string;
+  accumulated_snapshot?: {
+    mileage_km: number;
+    active_dtc_count: number;
+    oil_health_pct?: number;
+    pending_fines_count?: number;
+  };
+  created_at: string;
 }
 
 export interface N8nConfig {

@@ -73,38 +73,77 @@ export const FinesModule: React.FC<Props> = ({
   // Official Receipt Modal State
   const [receiptFine, setReceiptFine] = useState<FineItem | null>(null);
 
-  const handleRefreshFines = async () => {
-    sounds.playClick();
+  // Auto-sync status and last updated time
+  const [lastAutoSyncedTime, setLastAutoSyncedTime] = useState<string>(() => {
+    return new Date().toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' });
+  });
+  const [autoSyncNotice, setAutoSyncNotice] = useState<string | null>(null);
+
+  const runAutoFinesSync = async (plate: string, tech: string, personalId?: string, playSound = false) => {
+    if (!plate || !tech) return;
     setIsRefreshing(true);
+    setAutoSyncNotice('მონაცემები შეიცვალა — ჯარიმები ავტომატურად მოწმდება police.ge-ზე...');
     try {
-      const res = await n8nService.checkFines(vehicle.plate_number, vehicle.tech_passport);
+      const res = await n8nService.checkFines(plate, tech);
       if (res && res.fines) {
         onUpdateFines(res.fines);
-        sounds.playSuccess();
+        if (playSound) sounds.playSuccess();
+        const nowTime = new Date().toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' });
+        setLastAutoSyncedTime(nowTime);
+        setAutoSyncNotice(`ჯარიმები ავტომატურად განახლდა (${nowTime})`);
+        setTimeout(() => setAutoSyncNotice(null), 4000);
       }
     } catch {
-      sounds.playAlert();
+      setAutoSyncNotice(null);
     } finally {
       setIsRefreshing(false);
     }
   };
 
-  const handleSaveDocs = () => {
+  // Auto-sync when vehicle document details change
+  React.useEffect(() => {
+    if (vehicle.plate_number && vehicle.tech_passport) {
+      setPlateInput(vehicle.plate_number);
+      setTechPassportInput(vehicle.tech_passport);
+      runAutoFinesSync(vehicle.plate_number, vehicle.tech_passport, vehicle.driver_personal_number, false);
+    }
+  }, [vehicle.plate_number, vehicle.tech_passport]);
+
+  // Auto-sync when personal driver info changes
+  React.useEffect(() => {
+    if (vehicle.driver_personal_number) {
+      setPersonalNumberInput(vehicle.driver_personal_number);
+      if (vehicle.driver_name) setDriverNameInput(vehicle.driver_name);
+    }
+  }, [vehicle.driver_personal_number, vehicle.driver_name]);
+
+  const handleRefreshFines = async () => {
     sounds.playClick();
-    onUpdateVehicle({
-      plate_number: plateInput.toUpperCase(),
-      tech_passport: techPassportInput.toUpperCase()
-    });
-    setIsEditingDocs(false);
+    await runAutoFinesSync(vehicle.plate_number, vehicle.tech_passport, vehicle.driver_personal_number, true);
   };
 
-  const handleSaveDriverInfo = () => {
+  const handleSaveDocs = async () => {
+    sounds.playClick();
+    const upPlate = plateInput.toUpperCase();
+    const upTech = techPassportInput.toUpperCase();
+    onUpdateVehicle({
+      plate_number: upPlate,
+      tech_passport: upTech
+    });
+    setIsEditingDocs(false);
+    // Automatically query and update fines immediately
+    await runAutoFinesSync(upPlate, upTech, vehicle.driver_personal_number, true);
+  };
+
+  const handleSaveDriverInfo = async () => {
     sounds.playClick();
     onUpdateVehicle({
       driver_personal_number: personalNumberInput,
       driver_name: driverNameInput
     });
     setIsEditingDriverInfo(false);
+    // Automatically query and update fines immediately
+    await runAutoFinesSync(vehicle.plate_number, vehicle.tech_passport, personalNumberInput, true);
   };
 
   // Open Checkout for specific fine
@@ -277,6 +316,13 @@ export const FinesModule: React.FC<Props> = ({
                 {isEditingDocs ? 'გაუქმება' : 'მონაცემების რედაქტირება'}
               </button>
             </p>
+
+            <div className="flex items-center gap-2 mt-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>ავტო-სინქრონიზაცია: მონაცემების შეყვანისას ჯარიმები განახლდება ავტომატურად (ბოლო: {lastAutoSyncedTime})</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -300,6 +346,17 @@ export const FinesModule: React.FC<Props> = ({
           </button>
         </div>
       </div>
+
+      {/* Live Auto-sync Toast Notice */}
+      {autoSyncNotice && (
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-blue-500/15 border border-emerald-300 text-xs font-bold text-navy flex items-center justify-between animate-fade-in shadow-sm">
+          <div className="flex items-center gap-2">
+            <RefreshCw className={`w-4 h-4 text-emerald-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{autoSyncNotice}</span>
+          </div>
+          <span className="text-[10px] font-mono text-emerald-700 font-black">police.ge Live Sync</span>
+        </div>
+      )}
 
       {/* Edit Form */}
       {isEditingDocs && (
