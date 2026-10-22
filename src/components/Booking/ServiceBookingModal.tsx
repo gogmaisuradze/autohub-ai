@@ -411,7 +411,7 @@ export const ServiceBookingModal: React.FC<Props> = ({
                 <span className="text-[10px] text-slate-400 font-normal">თავისუფალი საათები</span>
               </label>
 
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-3 min-[450px]:grid-cols-4 gap-1.5">
                 {TIME_SLOTS.map(t => (
                   <button
                     key={t}
@@ -420,7 +420,7 @@ export const ServiceBookingModal: React.FC<Props> = ({
                       sounds.playClick();
                       setBookingTime(t);
                     }}
-                    className={`py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1 ${
+                    className={`py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1 active:scale-95 ${
                       bookingTime === t
                         ? 'bg-gold text-navy font-black border-gold shadow-xs'
                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
@@ -502,8 +502,8 @@ export const ServiceBookingModal: React.FC<Props> = ({
         </form>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-5 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs text-slate-500">
+        <div className="p-3.5 sm:p-5 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="text-xs text-slate-500 text-center sm:text-left">
             სავარაუდო ხარჯი: <strong className="text-navy font-bold font-mono">~{dtcCodes.length > 0 ? '320' : '180'} ₾</strong>
           </div>
 
@@ -514,7 +514,7 @@ export const ServiceBookingModal: React.FC<Props> = ({
                 sounds.playClick();
                 onClose();
               }}
-              className="px-4 py-2.5 rounded-2xl neu-btn text-xs font-bold text-slate-600 hover:text-navy transition-all"
+              className="px-4 py-2.5 rounded-2xl neu-btn text-xs font-bold text-slate-600 hover:text-navy transition-all shrink-0"
             >
               გაუქმება
             </button>
@@ -522,10 +522,10 @@ export const ServiceBookingModal: React.FC<Props> = ({
             <button
               type="button"
               onClick={handleSubmit}
-              className="px-5 py-2.5 rounded-2xl bg-gold hover:bg-amber-400 text-navy font-black text-xs shadow-gold-soft hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+              className="flex-1 sm:flex-none justify-center px-4 sm:px-5 py-2.5 rounded-2xl bg-gold hover:bg-amber-400 text-navy font-black text-xs shadow-gold-soft hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
             >
               <Bot size={15} />
-              <span>ჯავშნის გაფორმება & AI ოსტატთან დაზუსტება →</span>
+              <span>ჯავშანი & AI დაზუსტება →</span>
             </button>
           </div>
         </div>

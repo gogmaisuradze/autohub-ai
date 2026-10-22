@@ -393,42 +393,42 @@ export const ParkingModule: React.FC<Props> = ({
     <div className="space-y-6 max-w-5xl mx-auto">
       
       {/* 1. Header Banner & Plate Overview */}
-      <div className="p-6 rounded-3xl neu-card shadow-neu-card flex flex-wrap items-center justify-between gap-6 border border-white">
-        <div className="flex items-center gap-4">
+      <div className="p-4 sm:p-6 rounded-3xl neu-card shadow-neu-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 border border-white">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full md:w-auto">
           {/* Georgia Car License Plate */}
-          <div className="px-5 py-3 rounded-2xl bg-white text-navy font-black font-mono border-2 border-slate-200 shadow-sm flex items-center gap-3.5 tracking-widest text-lg sm:text-xl shrink-0">
-            <div className="flex flex-col items-center justify-center pr-2.5 border-r border-slate-200 text-xs font-bold text-blue-700">
+          <div className="px-4 sm:px-5 py-2 sm:py-3 rounded-2xl bg-white text-navy font-black font-mono border-2 border-slate-200 shadow-sm flex items-center gap-3 tracking-widest text-base sm:text-xl shrink-0">
+            <div className="flex flex-col items-center justify-center pr-2 border-r border-slate-200 text-[10px] sm:text-xs font-bold text-blue-700">
               <span>🇬🇪</span>
-              <span className="text-[10px]">GE</span>
+              <span className="text-[9px] sm:text-[10px]">GE</span>
             </div>
             <span>{vehicle.plate_number || 'GE-777-AA'}</span>
           </div>
 
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-extrabold text-navy flex items-center gap-2">
-                <ParkingSquare className="w-5 h-5 text-gold" />
-                საპარკინგე სერვისები (საქართველო)
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-sm sm:text-base font-extrabold text-navy flex items-center gap-2">
+                <ParkingSquare className="w-4 h-4 sm:w-5 sm:h-5 text-gold shrink-0" />
+                <span>საპარკინგე სერვისები (საქართველო)</span>
               </h2>
               {activeSession.isActive && (
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 animate-pulse">
+                <span className="px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 animate-pulse">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                   LIVE პარკინგი
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
-              <span>თბილისის ზონალური პარკირება (A/B/C)</span>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span>ზონალური პარკირება (A/B/C)</span>
               <span>•</span>
               <span>ბათუმი & ქუთაისი</span>
               <span>•</span>
-              <span>აბონემენტები & საურავები</span>
+              <span>აბონემენტები</span>
             </p>
           </div>
         </div>
 
         {/* Fines Summary */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
           <div className="text-right">
             <span className="text-xs text-slate-400 block font-medium">საპარკინგე ჯარიმები:</span>
             <span className={`text-2xl font-black font-mono ${totalPendingParking > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>

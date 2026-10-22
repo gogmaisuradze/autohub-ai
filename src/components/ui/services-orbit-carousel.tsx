@@ -119,18 +119,21 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
-      if (w < 420) {
+      if (w < 380) {
+        setRadius(122);
+        setNodeSize(56);
+      } else if (w < 480) {
+        setRadius(142);
+        setNodeSize(66);
+      } else if (w < 640) {
         setRadius(175);
-        setNodeSize(75);
-      } else if (w < 540) {
-        setRadius(215);
-        setNodeSize(88);
+        setNodeSize(78);
       } else if (w < 768) {
-        setRadius(255);
-        setNodeSize(98);
+        setRadius(220);
+        setNodeSize(90);
       } else if (w < 1024) {
-        setRadius(285);
-        setNodeSize(106);
+        setRadius(260);
+        setNodeSize(100);
       } else {
         setRadius(315);
         setNodeSize(115);
@@ -142,7 +145,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const containerSize = radius * 2 + nodeSize + 40;
+  const containerSize = radius * 2 + nodeSize + 28;
 
   const getRotation = useCallback(
     (index: number): number => (index - activeIndex) * (360 / hubServices.length),
@@ -186,56 +189,56 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.88, y: -15 }}
             transition={{ type: "spring", stiffness: 320, damping: 26 }}
-            className="z-10 neu-card rounded-3xl p-5 sm:p-6 w-72 sm:w-80 md:w-[340px] text-center shadow-neu-card border border-white"
+            className="z-10 neu-card rounded-3xl p-4 sm:p-6 w-[230px] min-[400px]:w-[260px] sm:w-80 md:w-[340px] text-center shadow-neu-card border border-white"
           >
             {/* Top Badge */}
-            <div className="flex items-center justify-center mb-2">
-              <span className={`px-3 py-0.5 rounded-full text-xs font-black shadow-sm ${activeService.badgeColor}`}>
+            <div className="flex items-center justify-center mb-1.5 sm:mb-2">
+              <span className={`px-2.5 sm:px-3 py-0.5 rounded-full text-[10px] sm:text-xs font-black shadow-sm ${activeService.badgeColor}`}>
                 {activeService.badgeText}
               </span>
             </div>
 
             {/* Icon Avatar */}
-            <div className="w-14 h-14 rounded-full neu-circle mx-auto my-2 flex items-center justify-center shadow-md">
-              <ActiveIcon className="w-7 h-7 text-navy" />
+            <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full neu-circle mx-auto my-1 sm:my-2 flex items-center justify-center shadow-md">
+              <ActiveIcon className="w-5 h-5 sm:w-7 sm:h-7 text-navy" />
             </div>
 
-            <h3 className="text-base sm:text-lg font-black text-navy mt-1.5 tracking-tight">
+            <h3 className="text-sm sm:text-lg font-black text-navy mt-1 tracking-tight">
               {activeService.name_ge}
             </h3>
 
-            <p className="text-xs text-slate-500 font-bold mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 font-bold mt-0.5">
               {activeService.role}
             </p>
 
-            <p className="text-xs text-slate-600 mt-2 line-clamp-3 leading-relaxed px-1">
+            <p className="text-[11px] sm:text-xs text-slate-600 mt-1.5 sm:mt-2 line-clamp-2 sm:line-clamp-3 leading-relaxed px-1">
               {activeService.desc}
             </p>
 
             {/* Navigation & Action Buttons */}
-            <div className="flex items-center justify-center gap-2.5 mt-4 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-center gap-2 sm:gap-2.5 mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-slate-100">
               <button
                 onClick={prev}
-                className="w-9 h-9 rounded-full neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
                 title="წინა"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={15} />
               </button>
 
               <button
                 onClick={() => onSelectDepartment(activeService.tab)}
-                className="px-5 py-2 rounded-2xl text-xs sm:text-sm font-extrabold bg-gold hover:bg-amber-400 text-navy shadow-gold-soft flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                className="px-4 sm:px-5 py-1.5 sm:py-2 rounded-2xl text-xs sm:text-sm font-extrabold bg-gold hover:bg-amber-400 text-navy shadow-gold-soft flex items-center gap-1.5 sm:gap-2 transition-all hover:scale-105 active:scale-95"
               >
                 <span>გადასვლა</span>
-                <ArrowRight size={14} />
+                <ArrowRight size={13} />
               </button>
 
               <button
                 onClick={next}
-                className="w-9 h-9 rounded-full neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
                 title="შემდეგი"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={15} />
               </button>
             </div>
           </motion.div>
@@ -290,11 +293,11 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
                   title={service.name_ge}
                 >
                   <NodeIcon
-                    size={nodeSize >= 105 ? 38 : nodeSize >= 90 ? 32 : nodeSize >= 75 ? 28 : 24}
+                    size={nodeSize >= 105 ? 38 : nodeSize >= 85 ? 30 : nodeSize >= 65 ? 24 : 18}
                     className={`transition-colors duration-200 ${isActive ? "text-gold" : "text-navy"}`}
                   />
-                  <span className={`font-black tracking-tight truncate max-w-[88%] mt-1.5 text-center transition-colors duration-200 ${
-                    nodeSize >= 105 ? "text-xs sm:text-sm" : nodeSize >= 90 ? "text-xs" : "text-[11px]"
+                  <span className={`font-black tracking-tight truncate max-w-[88%] mt-1 text-center transition-colors duration-200 ${
+                    nodeSize >= 105 ? "text-xs sm:text-sm" : nodeSize >= 85 ? "text-xs" : nodeSize >= 65 ? "text-[10px]" : "text-[8.5px]"
                   } ${isActive ? "text-navy" : "text-slate-700"}`}>
                     {service.title}
                   </span>

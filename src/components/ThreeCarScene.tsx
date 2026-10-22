@@ -744,28 +744,28 @@ export const ThreeCarScene: React.FC<Props> = ({
   const selectedFault = selectedCompData ? getFaultForComponent(selectedCompData) : undefined;
 
   return (
-    <div className="relative w-full h-[420px] sm:h-[480px] md:h-[530px] rounded-3xl overflow-hidden neu-surface border border-white shadow-neu-card bg-gradient-to-b from-[#FAFBFD] via-[#EEF3F8] to-[#E3EBF4] select-none">
+    <div className="relative w-full h-[320px] sm:h-[450px] md:h-[530px] rounded-3xl overflow-hidden neu-surface border border-white shadow-neu-card bg-gradient-to-b from-[#FAFBFD] via-[#EEF3F8] to-[#E3EBF4] select-none touch-pan-y">
       
       {/* 1. TOP FLOATING CONTROL HUD BAR */}
-      <div className="absolute top-4 left-4 right-4 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+      <div className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pointer-events-none">
         
         {/* Left: Window Status Badge & Active Vehicle Plate */}
-        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 pointer-events-auto shadow-sm">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-          <span className="text-xs font-black text-navy font-mono tracking-tight flex items-center gap-1.5">
-            <Cpu size={13} className="text-gold" />
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 pointer-events-auto shadow-sm">
+          <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+          <span className="text-[11px] sm:text-xs font-black text-navy font-mono tracking-tight flex items-center gap-1 sm:gap-1.5">
+            <Cpu size={12} className="text-gold" />
             <span>{vehicle ? `${vehicle.brand} ${vehicle.model}` : 'DIGITAL TWIN X-RAY'}</span>
           </span>
           {vehicle?.plate_number && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white text-navy font-mono text-[11px] font-black border border-slate-300 shadow-xs ml-1">
-              <span className="text-blue-700 text-[10px] font-bold">🇬🇪 GE</span>
+            <div className="hidden min-[400px]:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-md bg-white text-navy font-mono text-[10px] sm:text-[11px] font-black border border-slate-300 shadow-xs ml-0.5">
+              <span className="text-blue-700 text-[9px] sm:text-[10px] font-bold">🇬🇪 GE</span>
               <span>{vehicle.plate_number}</span>
             </div>
           )}
         </div>
 
         {/* Right HUD Controls: Ghost / Solid Toggle, Exploded View Slider & Reset */}
-        <div className="flex items-center gap-2 pointer-events-auto flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
           
           {/* Ghost Glass / Solid Body Toggle */}
           <button
@@ -820,11 +820,11 @@ export const ThreeCarScene: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 2. EXPLODED VIEW SCRUB SLIDER (Floating Bottom-Left) */}
-      <div className="absolute top-16 left-4 z-20 pointer-events-auto bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2.5">
-        <Sliders size={13} className="text-gold" />
-        <span className="text-[11px] font-bold text-navy whitespace-nowrap">
-          დაშლა: {Math.round(explodeFactor * 100)}%
+      {/* 2. EXPLODED VIEW SCRUB SLIDER (Floating Top-Left) */}
+      <div className="absolute top-12 sm:top-16 left-2.5 sm:left-4 z-20 pointer-events-auto bg-white/90 backdrop-blur-md px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
+        <Sliders size={12} className="text-gold" />
+        <span className="text-[10px] sm:text-[11px] font-bold text-navy whitespace-nowrap">
+          {Math.round(explodeFactor * 100)}%
         </span>
         <input
           type="range"
@@ -833,16 +833,16 @@ export const ThreeCarScene: React.FC<Props> = ({
           step="0.01"
           value={explodeFactor}
           onChange={(e) => setExplodeFactor(parseFloat(e.target.value))}
-          className="w-24 sm:w-32 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-gold"
+          className="w-16 min-[400px]:w-20 sm:w-32 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-gold"
         />
       </div>
 
       {/* 3. 3D WEBGL CANVAS MOUNT */}
-      <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+      <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-pan-y" />
 
       {/* 4. INTERACTIVE GLASSMORPHISM DETAIL CARD (Opens when component is selected) */}
       {infoCardOpen && selectedCompData && (
-        <div className="absolute top-16 right-4 z-30 w-72 sm:w-80 rounded-3xl p-4 bg-white/95 backdrop-blur-xl border border-white/80 shadow-2xl transition-all animate-in fade-in zoom-in-95">
+        <div className="absolute top-12 sm:top-16 left-2.5 right-2.5 sm:left-auto sm:right-4 z-30 w-auto sm:w-80 max-w-sm rounded-3xl p-3.5 sm:p-4 bg-white/95 backdrop-blur-xl border border-white/80 shadow-2xl transition-all animate-in fade-in zoom-in-95">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <span

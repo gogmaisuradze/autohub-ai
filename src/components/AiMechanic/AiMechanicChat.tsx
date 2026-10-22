@@ -503,27 +503,26 @@ export const AiMechanicChat: React.FC<Props> = ({
       )}
 
       {/* 2. Main Chat Container */}
-      <div className="h-[620px] flex flex-col rounded-3xl neu-card shadow-neu-card overflow-hidden relative border border-white">
+      <div className="h-[500px] sm:h-[620px] flex flex-col rounded-3xl neu-card shadow-neu-card overflow-hidden relative border border-white">
         
         {/* Header Bar */}
-        <div className="p-4 bg-white border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full neu-circle flex items-center justify-center font-bold text-navy shadow-sm">
-              <Bot className="w-6 h-6 text-gold" />
+        <div className="p-3 sm:p-4 bg-white border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full neu-circle flex items-center justify-center font-bold text-navy shadow-sm shrink-0">
+              <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-gold" />
             </div>
 
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-extrabold text-navy tracking-wide">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold text-navy tracking-wide">
                   AutoHub AI მექანიკოსი
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-gold" />
-                  GPT-4o Engine
+                <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 shrink-0">
+                  <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gold" />
+                  GPT-4o
                 </span>
               </div>
-              <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
-                <Car className="w-3.5 h-3.5 text-slate-400" />
+              <p className="text-[11px] sm:text-xs text-slate-500 flex flex-wrap items-center gap-1 mt-0.5">
                 <span>{vehicle.brand} {vehicle.model}</span>
                 <span>•</span>
                 <span className="text-gold font-bold font-mono">{dtcCodes.length} DTC ხარვეზი</span>

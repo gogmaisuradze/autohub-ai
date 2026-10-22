@@ -194,18 +194,18 @@ export const ServiceLogModule: React.FC<Props> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {onOpenBookingModal && (
             <button
               onClick={() => {
                 sounds.playClick();
                 onOpenBookingModal();
               }}
-              className="px-4 py-2.5 rounded-2xl text-xs font-black bg-navy text-gold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-sm"
+              className="flex-1 sm:flex-none justify-center px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs font-black bg-navy text-gold hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-sm active:scale-95 whitespace-nowrap"
               title="კალენდარში ჩაწერა ავტო-ექიმთან"
             >
-              <Calendar className="w-4 h-4 text-gold" />
-              <span>📅 ჩაწერა / ჯავშანი</span>
+              <Calendar className="w-4 h-4 text-gold shrink-0" />
+              <span>📅 ჩაწერა</span>
             </button>
           )}
 
@@ -214,18 +214,18 @@ export const ServiceLogModule: React.FC<Props> = ({
               sounds.playClick();
               setIsCatalogOpen(!isCatalogOpen);
             }}
-            className="px-4 py-2.5 rounded-2xl text-xs font-bold bg-white hover:bg-slate-50 text-navy border border-slate-200 transition-all flex items-center gap-2 shadow-sm"
+            className="flex-1 sm:flex-none justify-center px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs font-bold bg-white hover:bg-slate-50 text-navy border border-slate-200 transition-all flex items-center gap-1.5 shadow-sm active:scale-95 whitespace-nowrap"
           >
-            <Layers className="w-4 h-4 text-gold" />
-            <span>კატალოგი (23+ ვარიანტი)</span>
-            {isCatalogOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <Layers className="w-4 h-4 text-gold shrink-0" />
+            <span>კატალოგი (23+)</span>
+            {isCatalogOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
 
           <button
             onClick={() => handleOpenAddModal()}
-            className="px-5 py-2.5 rounded-2xl text-xs font-black bg-gold hover:bg-amber-400 text-navy shadow-gold-soft hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            className="w-full sm:w-auto justify-center px-4 sm:px-5 py-2.5 rounded-2xl text-xs font-black bg-gold hover:bg-amber-400 text-navy shadow-gold-soft hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 shrink-0" />
             <span>+ სერვისის შექმნა</span>
           </button>
         </div>
