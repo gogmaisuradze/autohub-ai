@@ -397,10 +397,12 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     const gltfLoader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('/draco/');
+    const base = import.meta.env.BASE_URL || '/';
+    const cleanBase = base.endsWith('/') ? base : `${base}/`;
+    dracoLoader.setDecoderPath(`${cleanBase}draco/`);
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    gltfLoader.load('/models/ghost_car.glb?v=13', (gltf) => {
+    gltfLoader.load(`${cleanBase}models/ghost_car.glb?v=14`, (gltf) => {
       const root = gltf.scene;
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
       carMasterGroup.add(root);
@@ -452,7 +454,9 @@ export const ThreeCarScene: React.FC<Props> = ({
         wg.position.set(pos.x, 0.33, pos.z);
         carMasterGroup.add(wg);
         groupsRef.current[`wheel_${pos.id}`] = wg;
-        meshesOf(wheelNodeFor[pos.id]).forEach(m => { m.castShadow = true; wg.attach(m); });
+        const suf = pos.id.toUpperCase();
+        meshesOf('Wheel_' + suf).forEach(m => { m.castShadow = true; wg.attach(m); });
+        meshesOf('Tire_' + suf).forEach(m => { m.castShadow = true; wg.attach(m); });
       });
 
       // --- მუხრუჭები: ინთება და ბორბლებთან ერთად მოძრაობენ ---
