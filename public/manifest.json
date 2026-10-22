@@ -1,0 +1,28 @@
+{
+  "short_name": "V1 AutoHub",
+  "name": "V1 AutoHub AI - ჭკვიანი ავტო-ჰაბი და AI დიაგნოსტიკა",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#EDF1F7",
+  "theme_color": "#14213D",
+  "display": "standalone",
+  "orientation": "portrait",
+  "description": "All-in-One ჭკვიანი ავტო-ჰაბი, OBD-II რეალურ დროში დიაგნოსტიკა, საპატრულო ჯარიმები და ქართველი AI მექანიკოსი."
+}

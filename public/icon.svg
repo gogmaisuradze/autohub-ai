@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="v1Bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F8FAFC" />
+    </linearGradient>
+    <filter id="neuShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#14213D" flood-opacity="0.14" />
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#14213D" flood-opacity="0.08" />
+    </filter>
+  </defs>
+
+  <!-- Neumorphic White Squircle -->
+  <rect x="28" y="28" width="456" height="456" rx="124" fill="url(#v1Bg)" stroke="#E2E8F0" stroke-width="12" filter="url(#neuShadow)" />
+
+  <!-- V1 Monospace Hero Typography -->
+  <text x="256" y="328" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Menlo', 'Courier New', ui-monospace, monospace, sans-serif" font-size="250" font-weight="900" fill="#FCA311" text-anchor="middle" letter-spacing="-6">V1</text>
+</svg>

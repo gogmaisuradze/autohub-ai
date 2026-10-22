@@ -1,0 +1,99 @@
+{
+  "name": "AutoHub AI - Car Diagnostics & Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "obd-scan",
+        "options": {}
+      },
+      "name": "OBD Scan Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst raw = body.raw_data || '43 01 33 00 00';\n// Simulated OBD Code parsing\nreturn {\n  parsed_codes: [\n    {\n      code: 'P0133',\n      title_ge: 'ჟანგბადის სენსორის დაგვიანებული პასუხი (Bank 1 Sensor 1)',\n      severity: 'medium',\n      safe_to_drive: true,\n      advice: 'შეამოწმეთ გამონაბოლქვის სისტემა და ჰაერ-საწვავის ნარევი',\n      estimated_cost_gel: 140\n    },\n    {\n      code: 'P0171',\n      title_ge: 'სისტემა ძალიან ღარიბია (Bank 1 System Too Lean)',\n      severity: 'medium',\n      safe_to_drive: true,\n      advice: 'შესაძლოა ჰაერის გაპარვა შემშვებ კოლექტორში ან ჭუჭყიანი MAF სენსორი',\n      estimated_cost_gel: 90\n    }\n  ],\n  timestamp: new Date().toISOString()\n};"
+      },
+      "name": "Parse DTC Codes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [460, 200]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clear-codes",
+        "options": {}
+      },
+      "name": "Clear DTC Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  status: 'success',\n  message: 'შეცდომები წარმატებით წაიშალა (Mode 04 executed)',\n  cleared_at: new Date().toISOString()\n};"
+      },
+      "name": "Confirm Clear Codes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [460, 380]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-mechanic-chat",
+        "options": {}
+      },
+      "name": "AI Mechanic Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 560]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst question = body.message || '';\nconst car = body.car_context || {};\n\nlet reply = 'მოგესალმებით! როგორც თქვენი AI მექანიკოსი, გირჩევთ: ';\nif (question.includes('ჯდება') || question.includes('ფასი') || question.includes('ღირებულება')) {\n  reply += 'თბილისის ბაზარზე ამ დეტალის შეცვლა სამუშაოს ჩათვლით ჯდება დაახლოებით 80-160 ლარი. რეკომენდირებულია ორიგინალი Bosch ან Denso სენსორი.';\n} else if (question.includes('გზა') || question.includes('შეიძლება')) {\n  reply += 'დიახ, თუ ჩეკი არ ციმციმებს და ძრავი თანაბრად მუშაობს, დაბალი სიჩქარით სერვისამდე მისვლა უსაფრთხოა.';\n} else {\n  reply += 'ეს სიმპტომი საჭიროებს MAF სენსორის გაწმენდას და ვაკუუმის სისტემის შემოწმებას კვამლის გენერატორით.';\n}\n\nreturn { reply, car_model: car.model || 'BMW 330i', timestamp: new Date().toISOString() };"
+      },
+      "name": "AI Mechanic Brain",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [460, 560]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fines-check",
+        "options": {}
+      },
+      "name": "Fines Check Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 740]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst plate = body.plate_number || 'GE-777-AA';\n\nreturn {\n  fines: [\n    {\n      id: 'FIN-2026-8941',\n      amount_gel: 50,\n      discounted_amount_gel: 40,\n      discount_expires_days: 9,\n      date: '2026-10-18 14:22',\n      location: 'თბილისი, აღმაშენებლის ხეივანი კმ 12 (ვიდეოკამერა #4)',\n      violation_type: 'სიჩქარის გადაჭარბება (+19 კმ/სთ)',\n      plate_number: plate,\n      status: 'pending'\n    }\n  ],\n  checked_at: new Date().toISOString()\n};"
+      },
+      "name": "Fetch Fines Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [460, 740]
+    }
+  ],
+  "connections": {
+    "OBD Scan Webhook": {
+      "main": [[{ "node": "Parse DTC Codes", "type": "main", "index": 0 }]]
+    },
+    "Clear DTC Webhook": {
+      "main": [[{ "node": "Confirm Clear Codes", "type": "main", "index": 0 }]]
+    },
+    "AI Mechanic Webhook": {
+      "main": [[{ "node": "AI Mechanic Brain", "type": "main", "index": 0 }]]
+    },
+    "Fines Check Webhook": {
+      "main": [[{ "node": "Fetch Fines Data", "type": "main", "index": 0 }]]
+    }
+  }
+}

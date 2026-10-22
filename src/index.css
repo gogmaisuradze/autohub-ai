@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: "FiraGO", system-ui, -apple-system, sans-serif;
+    background-color: #EDF1F7;
+    color: #14213D;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Neumorphic Soft UI (Strictly from user reference images) */
+.neu-surface {
+  background-color: #FFFFFF;
+  box-shadow: 8px 8px 24px rgba(163, 177, 198, 0.35), -8px -8px 24px rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.neu-card {
+  background-color: #FFFFFF;
+  box-shadow: 6px 6px 18px rgba(163, 177, 198, 0.3), -6px -6px 18px rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.neu-btn {
+  background-color: #FFFFFF;
+  box-shadow: 5px 5px 12px rgba(163, 177, 198, 0.35), -5px -5px 12px rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neu-btn:hover {
+  box-shadow: 7px 7px 16px rgba(163, 177, 198, 0.45), -7px -7px 16px rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+}
+
+.neu-btn:active, .neu-btn-active {
+  box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.45), inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+  transform: translateY(0);
+}
+
+.neu-circle {
+  border-radius: 9999px;
+  background-color: #FFFFFF;
+  box-shadow: 5px 5px 14px rgba(163, 177, 198, 0.35), -5px -5px 14px rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  transition: all 0.2s ease;
+}
+
+.neu-circle:hover {
+  transform: scale(1.04);
+}
+
+.neu-circle:active {
+  box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.45), inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+}
+
+.neu-inset {
+  background-color: #E2E8F0;
+  box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.4), inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #EDF1F7;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FCA311;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Leaflet Dark Neon Map Customizations */
+.custom-leaflet-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.user-car-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.dark-neon-popup .leaflet-popup-content-wrapper {
+  background: rgba(15, 23, 42, 0.96) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.7), 0 0 20px rgba(252, 163, 17, 0.25) !important;
+  padding: 6px !important;
+  color: #F8FAFC !important;
+}
+
+.dark-neon-popup .leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.96) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: none !important;
+}
+
+.dark-neon-popup .leaflet-popup-close-button {
+  color: #94A3B8 !important;
+  top: 10px !important;
+  right: 12px !important;
+  font-size: 16px !important;
+  padding: 4px !important;
+  transition: all 0.2s ease;
+}
+
+.dark-neon-popup .leaflet-popup-close-button:hover {
+  color: #FCA311 !important;
+  transform: scale(1.15);
+}
+
+.leaflet-container {
+  font-family: inherit !important;
+  background-color: #0b0f19 !important;
+}
+

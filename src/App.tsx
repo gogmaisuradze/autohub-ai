@@ -1,0 +1,718 @@
+import React, { useState, useEffect } from 'react';
+import { Header } from './components/Header';
+import { VEHICLE_PRESETS } from './constants/vehicles';
+import { Navigation, TabType } from './components/Navigation';
+import { HomeHub } from './components/HomeHub';
+import { ObdModule } from './components/Diagnostics/ObdModule';
+import { AiMechanicChat } from './components/AiMechanic/AiMechanicChat';
+import { FinesModule } from './components/Fines/FinesModule';
+import { ParkingModule } from './components/Parking/ParkingModule';
+import { ServiceLogModule } from './components/ServiceLog/ServiceLogModule';
+import { GarageModule } from './components/Garage/GarageModule';
+import { SettingsModule } from './components/Settings/SettingsModule';
+import { ClearDtcModal } from './components/Modals/ClearDtcModal';
+import { PwaInstallBanner } from './components/Modals/PwaInstallBanner';
+import { AddVehicleWizardModal } from './components/Modals/AddVehicleWizardModal';
+import { ContextualFieldPromptModal, PromptFieldType } from './components/Modals/ContextualFieldPromptModal';
+import { DtcCode, FineItem, ServiceItem, TelemetryData, VehicleProfile } from './types';
+import { sounds } from './services/soundEffects';
+import { ArrowLeft } from 'lucide-react';
+
+const INITIAL_VEHICLE: VehicleProfile = {
+  id: 'CAR_01',
+  brand: 'BMW',
+  model: '330i M-Sport',
+  year: 2023,
+  engine: '2.0L B48 TwinPower Turbo (255 HP)',
+  vin: 'WBA5R1C50NFP12345',
+  plate_number: 'GE-777-AA',
+  tech_passport: 'AA9876543',
+  mileage_km: 48200,
+  fuel_type: 'petrol',
+  obd_ip: '192.168.0.10',
+  obd_port: 35000,
+  driver_license_points: 85,
+  driver_personal_number: '01024085432',
+  driver_name: 'გიორგი ბერიძე'
+};
+
+const INITIAL_DTC_CODES: DtcCode[] = [
+  {
+    code: 'P0133',
+    title_ge: 'ჟანგბადის სენსორის დაგვიანებული რეაგირება (Bank 1, Sensor 1)',
+    severity: 'medium',
+    safe_to_drive: true,
+    advice: 'გამონაბოლქვში საწვავის ნარევი არაზუსტად იზომება. რეკომენდირებულია სენსორის შემოწმება ან შეცვლა 300-500 კმ-ის ფარგლებში.',
+    estimated_cost_gel: 140,
+    category: 'emissions',
+    timestamp: '2026-10-21'
+  },
+  {
+    code: 'P0171',
+    title_ge: 'სისტემა ძალიან ღარიბია საწვავით (System Too Lean Bank 1)',
+    severity: 'medium',
+    safe_to_drive: true,
+    advice: 'ძრავში შემოდის ზედმეტი ჰაერი (ვაკუუმის გაპარვა) ან ნაკლები საწვავი მიეწოდება. შეამოწმეთ შემშვები კოლექტორის მილები.',
+    estimated_cost_gel: 80,
+    category: 'engine',
+    timestamp: '2026-10-21'
+  },
+  {
+    code: 'P0300',
+    title_ge: 'შემთხვევითი/მრავლობითი ცილინდრების აფეთქების გამოტოვება (Random Misfire)',
+    severity: 'high',
+    safe_to_drive: false,
+    advice: 'სანთლების (სვეჩების) ან ბაბინების დეფექტი. ძრავის ძლიერი რყევისას მოძრაობის გაგრძელება არარეკომენდირებულია კატალიზატორის დასაცავად!',
+    estimated_cost_gel: 180,
+    category: 'engine',
+    timestamp: '2026-10-21'
+  }
+];
+
+const INITIAL_FINES: FineItem[] = [
+  {
+    id: 'FIN-GEO-2026-9081',
+    ticket_number: 'ოქმი #PT-2026-908124',
+    amount_gel: 50,
+    discounted_amount_gel: 40,
+    discount_expires_days: 11,
+    date: '2026-10-17 16:40',
+    location: 'თბილისი, მტკვრის მარჯვენა სანაპირო (კამერა #18)',
+    violation_type: 'სიჩქარის გადაჭარბება (+17 კმ/სთ)',
+    plate_number: 'GE-777-AA',
+    status: 'pending',
+    points_deducted: 10,
+    points_status: 'deducted',
+    article_law_ge: 'ასკ მუხლი 125, ნაწილი 1',
+    points_explanation_ge: 'სიჩქარის გადაჭარბება 15-დან 40 კმ/სთ-მდე ითვალისწინებს 10 ქულის დაკლებას მართვის მოწმობაზე.'
+  },
+  {
+    id: 'FIN-GEO-2026-8422',
+    ticket_number: 'ოქმი #PT-2026-842219',
+    amount_gel: 100,
+    discounted_amount_gel: 80,
+    discount_expires_days: 4,
+    date: '2026-10-11 11:15',
+    location: 'თბილისი, ჭავჭავაძის გამზირი #37 (ავტობუსის ზოლი)',
+    violation_type: 'საზოგადოებრივი ტრანსპორტის ზოლში (Bus Lane) მოძრაობა',
+    plate_number: 'GE-777-AA',
+    status: 'pending',
+    points_deducted: 0,
+    points_status: 'video_exempt',
+    article_law_ge: 'ასკ მუხლი 125, ნაწილი 8',
+    points_explanation_ge: 'ჭკვიანი ვიდეოკამერის ფიქსაცია: ქულა არ აკლდება ავტომატურად (0 ქულა), სანამ მძღოლის იდენტიფიცირება არ მოხდება.'
+  }
+];
+
+const INITIAL_SERVICES: ServiceItem[] = [
+  // 1. Fluids (ზეთები და სითხეები)
+  {
+    id: 'srv_1',
+    title_ge: 'ძრავის ზეთი (Motul 5W-30) & ზეთის ფილტრი',
+    category: 'fluids',
+    variant_key: 'engine_oil',
+    variant_name_ge: 'ძრავის ზეთი',
+    current_km: 48200,
+    interval_km: 8000,
+    remaining_km: 2400,
+    remaining_days: 42,
+    last_service_date: '2026-06-12',
+    last_service_km: 45800,
+    health_percentage: 30,
+    cost_gel: 240,
+    notes: 'Motul 8100 X-clean+ სინთეტიკური ზეთი',
+    oil_viscosity: '5W-30',
+    oil_brand: 'Motul',
+    oil_liters: 5.2,
+    oil_filter_replaced: true
+  },
+  {
+    id: 'srv_atf',
+    title_ge: 'გადაცემათა კოლოფის ზეთი (ZF 8HP ATF & ფილტრი)',
+    category: 'fluids',
+    variant_key: 'transmission_fluid',
+    variant_name_ge: 'კოლოფის ზეთი ATF',
+    current_km: 48200,
+    interval_km: 60000,
+    remaining_km: 35000,
+    remaining_days: 520,
+    last_service_date: '2025-09-15',
+    last_service_km: 23200,
+    health_percentage: 58,
+    cost_gel: 680,
+    notes: 'ZF Lifeguard 8 სრული აპარატული შეცვლა + ახალი ორიგინალი პადდონი',
+    transmission_fluid_type: 'full',
+    transmission_type: 'zf8hp',
+    transmission_filter_replaced: true,
+    transmission_fluid_brand: 'ZF Lifeguard 8'
+  },
+  {
+    id: 'srv_coolant',
+    title_ge: 'გამაგრილებელი სითხე - ანტიფრიზი (HEPU G12+ -35°C)',
+    category: 'fluids',
+    variant_key: 'coolant',
+    variant_name_ge: 'ანტიფრიზი',
+    current_km: 48200,
+    interval_km: 60000,
+    remaining_km: 42000,
+    remaining_days: 600,
+    last_service_date: '2026-01-10',
+    last_service_km: 42000,
+    health_percentage: 70,
+    cost_gel: 130,
+    notes: 'სრული ჩარეცხვა და ახალი HEPU G12+ კონცენტრატი',
+    coolant_freezing_point_c: -35,
+    coolant_spec: 'G12+ (წითელი)'
+  },
+
+  // 2. Chassis & Wheels (სავალი ნაწილი და ბორბლები)
+  {
+    id: 'srv_2',
+    title_ge: 'წინა სამუხრუჭე ხუნდები (Brembo Ceramic)',
+    category: 'chassis',
+    variant_key: 'brake_pads',
+    variant_name_ge: 'სამუხრუჭე ხუნდები',
+    current_km: 48200,
+    interval_km: 25000,
+    remaining_km: 17500,
+    remaining_days: 280,
+    last_service_date: '2026-02-18',
+    last_service_km: 40700,
+    health_percentage: 70,
+    cost_gel: 310,
+    notes: 'დისკები იდეალურ მდგომარეობაშია (სისქე 28.0 მმ)',
+    brake_position: 'front',
+    brake_brand: 'Brembo',
+    brake_wear_pct: 30,
+    brake_disc_status: 'good',
+    brake_fluid_checked: true
+  },
+  {
+    id: 'srv_5',
+    title_ge: 'საბურავები (Michelin Pilot Sport 5)',
+    category: 'chassis',
+    variant_key: 'tires',
+    variant_name_ge: 'საბურავები',
+    current_km: 48200,
+    interval_km: 40000,
+    remaining_km: 28000,
+    remaining_days: 380,
+    last_service_date: '2026-03-20',
+    last_service_km: 36200,
+    health_percentage: 70,
+    cost_gel: 920,
+    notes: 'წინა და უკანა ბალანსირება გაკეთებულია, წნევა 2.3 Bar',
+    tire_size: '225/45 R18',
+    tire_season: 'summer',
+    tire_brand: 'Michelin Pilot Sport 5',
+    tread_depth_mm: 6.8,
+    tire_pressure_bar: 2.3
+  },
+  {
+    id: 'srv_align',
+    title_ge: 'თვლების გეომეტრია (3D რაზვალი & ბალანსირება)',
+    category: 'chassis',
+    variant_key: 'wheel_alignment',
+    variant_name_ge: 'თვლების გეომეტრია',
+    current_km: 48200,
+    interval_km: 15000,
+    remaining_km: 11000,
+    remaining_days: 210,
+    last_service_date: '2026-04-10',
+    last_service_km: 44200,
+    health_percentage: 73,
+    cost_gel: 70,
+    notes: 'Hunter 3D ლაზერულ სტენდზე 4-ვე თვლის გასწორება',
+    alignment_type: 'both',
+    alignment_axle: 'both'
+  },
+
+  // 3. Filters (ფილტრები და ჰაერის მიწოდება)
+  {
+    id: 'srv_3',
+    title_ge: 'ჰაერისა და სალონის მიკროფილტრი',
+    category: 'filters',
+    variant_key: 'cabin_filter',
+    variant_name_ge: 'სალონის ფილტრი',
+    current_km: 48200,
+    interval_km: 15000,
+    remaining_km: 3100,
+    remaining_days: 55,
+    last_service_date: '2026-04-05',
+    last_service_km: 36300,
+    health_percentage: 20,
+    cost_gel: 110,
+    notes: 'MANN-Filter FreciousPlus ნახშირის ანტიალერგიული ფილტრი',
+    filter_air: true,
+    filter_cabin: true,
+    filter_fuel: false,
+    filter_cabin_type: 'carbon',
+    filter_brand: 'MANN-Filter'
+  },
+
+  // 4. Engine & Ignition (ძრავი და აალების სისტემა)
+  {
+    id: 'srv_plugs',
+    title_ge: 'აალების სანთლები - სვეჩები (NGK Laser Iridium)',
+    category: 'engine',
+    variant_key: 'spark_plugs',
+    variant_name_ge: 'აალების სანთლები',
+    current_km: 48200,
+    interval_km: 60000,
+    remaining_km: 45000,
+    remaining_days: 640,
+    last_service_date: '2026-01-20',
+    last_service_km: 41200,
+    health_percentage: 75,
+    cost_gel: 280,
+    notes: 'NGK Laser Iridium 4 ცალი, კოჭები შემოწმებულია (0 Misfire)',
+    spark_plug_type: 'iridium',
+    spark_plug_count: 4,
+    spark_plug_brand: 'NGK Laser Iridium'
+  },
+
+  // 5. Electrical & AC (ელექტროობა და კლიმატი)
+  {
+    id: 'srv_batt',
+    title_ge: 'აკუმულატორი (Varta Silver Dynamic AGM 80Ah)',
+    category: 'electrical',
+    variant_key: 'battery',
+    variant_name_ge: 'აკუმულატორი',
+    current_km: 48200,
+    interval_km: 60000,
+    remaining_km: 52000,
+    remaining_days: 850,
+    last_service_date: '2025-11-05',
+    last_service_km: 40200,
+    health_percentage: 86,
+    cost_gel: 360,
+    notes: '12.6V მოსვენებისას, 14.2V დატენვისას, 3-წლიანი გარანტიით',
+    battery_capacity_ah: 80,
+    battery_voltage: 12.6,
+    battery_mfg_date: '2025/11',
+    battery_brand: 'Varta Silver Dynamic AGM'
+  },
+
+  // 6. Legal & PTI (იურიდიული და სადაზღვევო ვადები)
+  {
+    id: 'srv_4',
+    title_ge: 'პერიოდული ტექ-დათვალიერება (PTI Georgia)',
+    category: 'legal',
+    variant_key: 'pti',
+    variant_name_ge: 'ტექ-დათვალიერება PTI',
+    current_km: 48200,
+    interval_km: 30000,
+    remaining_km: 8400,
+    remaining_days: 50,
+    last_service_date: '2025-12-10',
+    last_service_km: 39800,
+    health_percentage: 85,
+    cost_gel: 60,
+    notes: 'გამონაბოლქვი და სამუხრუჭე სტენდი ჩაბარებულია',
+    pti_expiry_date: '2026-12-10',
+    pti_reminder_enabled: true,
+    pti_reminder_days: 30,
+    pti_center: 'თბილისი, Greenway დიღომი',
+    pti_cert_number: 'PTI-GE-98432',
+    pti_status: 'passed'
+  },
+  {
+    id: 'srv_insur',
+    title_ge: 'ავტომობილის კასკო დაზღვევა (ალდაგი)',
+    category: 'legal',
+    variant_key: 'insurance',
+    variant_name_ge: 'ავტოდაზღვევა',
+    current_km: 48200,
+    interval_km: 25000,
+    remaining_km: 18000,
+    remaining_days: 260,
+    last_service_date: '2026-03-01',
+    last_service_km: 42000,
+    health_percentage: 72,
+    cost_gel: 1250,
+    notes: 'სრული კასკო 0% ფრანშიზით, მესამე პირის პასუხისმგებლობა და ევაკუატორის სერვისი',
+    insurance_company: 'ალდაგი (Aldagi)',
+    insurance_type: 'casco',
+    insurance_policy_number: 'POL-2026-9812',
+    insurance_expiry_date: '2027-03-01'
+  }
+];
+
+export const App: React.FC = () => {
+  // Persist active tab in localStorage and URL hash so browser refreshes stay on the same screen
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    try {
+      const hash = window.location.hash.replace('#', '') as TabType;
+      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'garage', 'settings'].includes(hash)) {
+        return hash;
+      }
+      const saved = localStorage.getItem('autohub_active_tab') as TabType;
+      if (saved && ['home', 'obd', 'fines', 'parking', 'ai', 'service', 'garage', 'settings'].includes(saved)) {
+        return saved;
+      }
+      return 'obd'; // Default to OBD/3D Testing screen so user immediately sees the 3D car!
+    } catch {
+      return 'obd';
+    }
+  });
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    try {
+      localStorage.setItem('autohub_active_tab', tab);
+      window.location.hash = tab;
+    } catch {}
+  };
+
+  const [vehicle, setVehicle] = useState<VehicleProfile>(() => {
+    try {
+      const saved = localStorage.getItem('autohub_vehicle_profile');
+      return saved ? JSON.parse(saved) : INITIAL_VEHICLE;
+    } catch {
+      return INITIAL_VEHICLE;
+    }
+  });
+
+  const [dtcCodes, setDtcCodes] = useState<DtcCode[]>(() => {
+    try {
+      const saved = localStorage.getItem('autohub_dtc_codes');
+      return saved ? JSON.parse(saved) : INITIAL_DTC_CODES;
+    } catch {
+      return INITIAL_DTC_CODES;
+    }
+  });
+
+  const [fines, setFines] = useState<FineItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('autohub_fines');
+      return saved ? JSON.parse(saved) : INITIAL_FINES;
+    } catch {
+      return INITIAL_FINES;
+    }
+  });
+
+  const [services, setServices] = useState<ServiceItem[]>(() => {
+    try {
+      const version = localStorage.getItem('autohub_services_version_v3');
+      if (!version) {
+        localStorage.setItem('autohub_services_version_v3', 'true');
+        localStorage.setItem('autohub_services', JSON.stringify(INITIAL_SERVICES));
+        return INITIAL_SERVICES;
+      }
+      const saved = localStorage.getItem('autohub_services');
+      return saved ? JSON.parse(saved) : INITIAL_SERVICES;
+    } catch {
+      return INITIAL_SERVICES;
+    }
+  });
+
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const [aiInitialPrompt, setAiInitialPrompt] = useState<string | undefined>(undefined);
+
+  // All Saved Vehicles in Garage
+  const [allVehicles, setAllVehicles] = useState<VehicleProfile[]>(() => {
+    try {
+      const saved = localStorage.getItem('autohub_garage_vehicles');
+      return saved ? JSON.parse(saved) : VEHICLE_PRESETS;
+    } catch {
+      return VEHICLE_PRESETS;
+    }
+  });
+
+  // Modal States
+  const [isAddVehicleModalOpen, setIsAddVehicleModalOpen] = useState(false);
+  const [wizardInitialData, setWizardInitialData] = useState<Partial<VehicleProfile> | undefined>(undefined);
+  const [fieldPrompt, setFieldPrompt] = useState<{
+    isOpen: boolean;
+    fieldType: PromptFieldType;
+    value: any;
+  }>({
+    isOpen: false,
+    fieldType: 'plate_number',
+    value: ''
+  });
+
+  const handleSaveNewVehicle = (newV: VehicleProfile) => {
+    const updatedList = [newV, ...allVehicles.filter(v => v.id !== newV.id)];
+    setAllVehicles(updatedList);
+    setVehicle(newV);
+    try {
+      localStorage.setItem('autohub_garage_vehicles', JSON.stringify(updatedList));
+      localStorage.setItem('autohub_vehicle_profile', JSON.stringify(newV));
+    } catch {}
+  };
+
+  const handleDeleteVehicle = (vehicleId: string) => {
+    if (allVehicles.length <= 1) {
+      alert('გარაჟში მინიმუმ 1 ავტომობილი უნდა დარჩეს.');
+      return;
+    }
+    const updatedList = allVehicles.filter(v => v.id !== vehicleId);
+    setAllVehicles(updatedList);
+    try {
+      localStorage.setItem('autohub_garage_vehicles', JSON.stringify(updatedList));
+    } catch {}
+
+    if (vehicle.id === vehicleId) {
+      const nextVehicle = updatedList[0];
+      setVehicle(nextVehicle);
+      try {
+        localStorage.setItem('autohub_vehicle_profile', JSON.stringify(nextVehicle));
+      } catch {}
+    }
+    sounds.playClearChime();
+  };
+
+  const handleOpenFieldPrompt = (field: PromptFieldType) => {
+    sounds.playClick();
+    setFieldPrompt({
+      isOpen: true,
+      fieldType: field,
+      value: (vehicle as any)[field] || ''
+    });
+  };
+
+  const handleSaveField = (field: PromptFieldType, value: any) => {
+    const updatedVehicle = { ...vehicle, [field]: value };
+    setVehicle(updatedVehicle);
+    const updatedList = allVehicles.map(v => v.id === vehicle.id ? updatedVehicle : v);
+    setAllVehicles(updatedList);
+    try {
+      localStorage.setItem('autohub_vehicle_profile', JSON.stringify(updatedVehicle));
+      localStorage.setItem('autohub_garage_vehicles', JSON.stringify(updatedList));
+    } catch {}
+  };
+
+  // Live Telemetry Simulation
+  const [telemetry, setTelemetry] = useState<TelemetryData>({
+    rpm: 780,
+    speed: 0,
+    coolant_temp: 92,
+    battery_voltage: 14.2,
+    fuel_trim_st: 3.2,
+    fuel_trim_lt: 8.5,
+    throttle_position: 12.4,
+    intake_air_temp: 24,
+    oil_pressure_psi: 38
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTelemetry(prev => {
+        const rpmNoise = (Math.random() - 0.5) * 45;
+        const baseRpm = prev.speed > 0 ? 1800 + prev.speed * 25 : 780;
+        return {
+          ...prev,
+          rpm: Math.max(680, Math.min(baseRpm + rpmNoise, 6800)),
+          battery_voltage: +(14.1 + Math.random() * 0.2).toFixed(1),
+          coolant_temp: Math.round(Math.min(Math.max(prev.coolant_temp + (Math.random() - 0.5) * 0.4, 88), 96)),
+          fuel_trim_st: +(prev.fuel_trim_st + (Math.random() - 0.5) * 0.8).toFixed(1)
+        };
+      });
+    }, 600);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('autohub_dtc_codes', JSON.stringify(dtcCodes));
+  }, [dtcCodes]);
+
+  useEffect(() => {
+    localStorage.setItem('autohub_fines', JSON.stringify(fines));
+  }, [fines]);
+
+  useEffect(() => {
+    localStorage.setItem('autohub_services', JSON.stringify(services));
+  }, [services]);
+
+  const handleAskAiAboutCode = (code: DtcCode) => {
+    setAiInitialPrompt(
+      `გამარჯობა, მაქვს შეცდომის კოდი ${code.code} (${code.title_ge}). გთხოვთ ამიხსნათ დეტალურად: რა ნაწილის გაუმართაობაა, რა ჯდება თბილისში შეცვლა და შეიძლება თუ არა მოძრაობის გაგრძელება?`
+    );
+    setActiveTab('ai');
+  };
+
+  const handleClearSuccess = () => {
+    setDtcCodes([]);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#EDF1F7] text-navy antialiased">
+      {/* 1. Header (Matching Image 2: V1 Logo & Clean Georgian Title) */}
+      <Header
+        vehicle={vehicle}
+        allVehicles={allVehicles}
+        onChangeVehicle={(newVehicle) => {
+          setVehicle(newVehicle);
+          localStorage.setItem('autohub_vehicle_profile', JSON.stringify(newVehicle));
+        }}
+        onDeleteVehicle={handleDeleteVehicle}
+        isSoundEnabled={isSoundEnabled}
+        onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
+        onNavigateHome={() => handleTabChange('home')}
+        onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
+      />
+
+      {/* 2. Neumorphic Navigation Tabs (Matching Image 1 Pill Tabs) */}
+      <Navigation
+        activeTab={activeTab}
+        onSelectTab={handleTabChange}
+        dtcCount={dtcCodes.length}
+        finesCount={fines.filter(f => f.status === 'pending').length}
+      />
+
+      {/* 3. Main Content Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
+        {/* Back to Home Hub Button (Matching Image 1 Neumorphic Circular Back Button) */}
+        {activeTab !== 'home' && (
+          <div className="mb-4 flex items-center gap-3">
+            <button
+              onClick={() => {
+                sounds.playClick();
+                handleTabChange('home');
+              }}
+              className="px-4 py-2 rounded-2xl neu-btn text-navy font-bold text-xs flex items-center gap-2 hover:text-gold"
+            >
+              <ArrowLeft className="w-4 h-4 text-gold" />
+              <span>← მთავარ მენიუში დაბრუნება</span>
+            </button>
+          </div>
+        )}
+
+        {/* Home Hub View (Department Buttons on Screen) */}
+        {activeTab === 'home' && (
+          <HomeHub
+            vehicle={vehicle}
+            dtcCodes={dtcCodes}
+            fines={fines}
+            services={services}
+            onSelectDepartment={(tab) => handleTabChange(tab)}
+          />
+        )}
+
+        {/* Sub-department Views */}
+        {activeTab === 'obd' && (
+          <ObdModule
+            vehicle={vehicle}
+            telemetry={telemetry}
+            dtcCodes={dtcCodes}
+            onUpdateDtcCodes={setDtcCodes}
+            onOpenClearModal={() => setIsClearModalOpen(true)}
+            onAskAiAboutCode={handleAskAiAboutCode}
+            onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
+            onOpenAddVehicleWithData={(data) => {
+              setWizardInitialData(data);
+              setIsAddVehicleModalOpen(true);
+            }}
+            onAutoRegisterVehicle={handleSaveNewVehicle}
+          />
+        )}
+
+        {activeTab === 'fines' && (
+          <FinesModule
+            vehicle={vehicle}
+            fines={fines}
+            onUpdateFines={setFines}
+            onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
+            onNavigateToParking={() => handleTabChange('parking')}
+          />
+        )}
+
+        {activeTab === 'parking' && (
+          <ParkingModule
+            vehicle={vehicle}
+            onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
+            onOpenFieldPrompt={handleOpenFieldPrompt}
+          />
+        )}
+
+        {activeTab === 'ai' && (
+          <AiMechanicChat
+            vehicle={vehicle}
+            dtcCodes={dtcCodes}
+            initialPrompt={aiInitialPrompt}
+            onClearInitialPrompt={() => setAiInitialPrompt(undefined)}
+          />
+        )}
+
+        {activeTab === 'service' && (
+          <ServiceLogModule
+            vehicle={vehicle}
+            services={services}
+            onAddService={(newItem) => {
+              const updated = [newItem, ...services];
+              setServices(updated);
+              try {
+                localStorage.setItem('autohub_services', JSON.stringify(updated));
+              } catch {}
+            }}
+            onUpdateService={(updatedItem) => {
+              const updated = services.map(s => s.id === updatedItem.id ? updatedItem : s);
+              setServices(updated);
+              try {
+                localStorage.setItem('autohub_services', JSON.stringify(updated));
+              } catch {}
+            }}
+            onDeleteService={(id) => {
+              const updated = services.filter(s => s.id !== id);
+              setServices(updated);
+              try {
+                localStorage.setItem('autohub_services', JSON.stringify(updated));
+              } catch {}
+            }}
+            onOpenFieldPrompt={handleOpenFieldPrompt}
+          />
+        )}
+
+        {(activeTab === 'garage' || activeTab === 'settings') && (
+          <GarageModule
+            vehicle={vehicle}
+            onUpdateVehicle={setVehicle}
+            onOpenAddModal={() => setIsAddVehicleModalOpen(true)}
+            onDeleteVehicle={handleDeleteVehicle}
+            onOpenFieldPrompt={handleOpenFieldPrompt}
+            allVehicles={allVehicles}
+            onSelectVehicle={(v) => {
+              setVehicle(v);
+              localStorage.setItem('autohub_vehicle_profile', JSON.stringify(v));
+            }}
+          />
+        )}
+      </main>
+
+      {/* Modals & Floating Banners */}
+      <ClearDtcModal
+        isOpen={isClearModalOpen}
+        onClose={() => setIsClearModalOpen(false)}
+        onSuccessClear={handleClearSuccess}
+        vehicleId={vehicle.id}
+      />
+
+      {/* Smart 4-Step Add Vehicle Wizard Modal */}
+      <AddVehicleWizardModal
+        isOpen={isAddVehicleModalOpen}
+        onClose={() => {
+          setIsAddVehicleModalOpen(false);
+          setWizardInitialData(undefined);
+        }}
+        onSaveVehicle={handleSaveNewVehicle}
+        initialData={wizardInitialData || { brand: vehicle.brand || 'BMW' }}
+      />
+
+      {/* Contextual Just-In-Time Micro Field Prompt Modal */}
+      <ContextualFieldPromptModal
+        isOpen={fieldPrompt.isOpen}
+        onClose={() => setFieldPrompt(p => ({ ...p, isOpen: false }))}
+        fieldType={fieldPrompt.fieldType}
+        currentValue={fieldPrompt.value}
+        onSaveField={handleSaveField}
+      />
+
+      <PwaInstallBanner />
+    </div>
+  );
+};
+
+export default App;
