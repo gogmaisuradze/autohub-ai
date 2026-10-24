@@ -376,14 +376,8 @@
   background-color: #1a2232 !important;
 }
 
-/* Modern Soft Slate Dark Styling for OpenStreetMap (Pleasantly brighter, crisp roads & text) */
-.dark-map-tiles .leaflet-tile,
-.dark-tiles-filter,
-.dark-tiles-filter .leaflet-tile {
-  filter: invert(92%) hue-rotate(190deg) brightness(112%) contrast(94%) saturate(1.15) !important;
-}
-
-.leaflet-tile {
-  transition: filter 0.25s ease;
+/* Modern Soft Slate Dark Styling for OpenStreetMap (Applied to the entire tile-pane: Instant & Zero Lag) */
+.dark-map-tiles .leaflet-tile-pane {
+  filter: invert(92%) hue-rotate(190deg) brightness(112%) contrast(94%) saturate(1.15);
 }
 

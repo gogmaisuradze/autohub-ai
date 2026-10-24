@@ -32,7 +32,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const mapInstanceRef = useRef<any>(null);
   const markersLayerRef = useRef<any>(null);
   const userMarkerRef = useRef<any>(null);
-  const tileLayerRef = useRef<any>(null);
+  const osmLayerRef = useRef<any>(null);
+  const satLayerRef = useRef<any>(null);
 
   const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>('dark');
   const [reports, setReports] = useState<MapReport[]>([]);
@@ -109,16 +110,38 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       attributionControl: false
     });
 
-    // 100% Free, Reliable OpenStreetMap (Zero watermarks, zero API key)
-    const initialTileUrl = mapTheme === 'satellite'
-      ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-
-    const tileLayer = L.tileLayer(initialTileUrl, {
+    // Pre-create and cache both tile layers for instant, lag-free switching
+    const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: mapTheme === 'satellite' ? 'Tiles &copy; Esri' : '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-    tileLayerRef.current = tileLayer;
+      attribution: '&copy; OpenStreetMap contributors'
+    });
+    osmLayerRef.current = osmLayer;
+
+    const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri'
+    });
+    satLayerRef.current = satLayer;
+
+    // Attach initial layer
+    if (mapTheme === 'satellite') {
+      satLayer.addTo(map);
+      if (mapContainerRef.current) {
+        mapContainerRef.current.classList.remove('dark-map-tiles');
+        mapContainerRef.current.style.backgroundColor = '#000000';
+      }
+    } else {
+      osmLayer.addTo(map);
+      if (mapContainerRef.current) {
+        if (mapTheme === 'dark') {
+          mapContainerRef.current.classList.add('dark-map-tiles');
+          mapContainerRef.current.style.backgroundColor = '#1a2232';
+        } else {
+          mapContainerRef.current.classList.remove('dark-map-tiles');
+          mapContainerRef.current.style.backgroundColor = '#f8fafc';
+        }
+      }
+    }
 
     // Zoom control on top-right
     L.control.zoom({ position: 'topright' }).addTo(map);
@@ -151,49 +174,37 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     };
   }, [isLeafletReady]);
 
-  // Update map tile layer dynamically when theme changes (Dark, Street, Satellite)
+  // Instant, lag-free theme switching (toggles cached layer & CSS filter without re-downloading)
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
-    const L = (window as any).L;
-    if (!L) return;
+    const map = mapInstanceRef.current;
+    if (!map) return;
 
-    if (tileLayerRef.current) {
-      try {
-        mapInstanceRef.current.removeLayer(tileLayerRef.current);
-      } catch (e) {
-        console.warn(e);
-      }
-    }
-
-    let url = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-    let maxZoom = 19;
-    let attribution = '&copy; OpenStreetMap contributors';
-    let className = mapTheme === 'dark' ? 'dark-tiles-filter' : '';
+    const osm = osmLayerRef.current;
+    const sat = satLayerRef.current;
+    if (!osm || !sat) return;
 
     if (mapTheme === 'satellite') {
-      url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-      maxZoom = 19;
-      attribution = 'Tiles &copy; Esri';
-      className = '';
-    }
-
-    const newLayer = L.tileLayer(url, { maxZoom, attribution, className });
-    newLayer.addTo(mapInstanceRef.current);
-    tileLayerRef.current = newLayer;
-
-    // Direct DOM manipulation on map container for guaranteed styling
-    if (mapContainerRef.current) {
-      if (mapTheme === 'dark') {
-        mapContainerRef.current.classList.add('dark-map-tiles');
-        mapContainerRef.current.style.backgroundColor = '#1a2232';
-      } else {
+      if (map.hasLayer(osm)) map.removeLayer(osm);
+      if (!map.hasLayer(sat)) sat.addTo(map);
+      if (mapContainerRef.current) {
         mapContainerRef.current.classList.remove('dark-map-tiles');
-        mapContainerRef.current.style.backgroundColor = mapTheme === 'satellite' ? '#000000' : '#f8fafc';
+        mapContainerRef.current.style.backgroundColor = '#000000';
       }
-    }
+    } else {
+      // Both 'dark' and 'street' use cached OpenStreetMap
+      if (map.hasLayer(sat)) map.removeLayer(sat);
+      if (!map.hasLayer(osm)) osm.addTo(map);
 
-    if (markersLayerRef.current) {
-      markersLayerRef.current.bringToFront?.();
+      // Instant CSS filter toggle — zero network request, zero lag!
+      if (mapContainerRef.current) {
+        if (mapTheme === 'dark') {
+          mapContainerRef.current.classList.add('dark-map-tiles');
+          mapContainerRef.current.style.backgroundColor = '#1a2232';
+        } else {
+          mapContainerRef.current.classList.remove('dark-map-tiles');
+          mapContainerRef.current.style.backgroundColor = '#f8fafc';
+        }
+      }
     }
   }, [mapTheme]);
 
