@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ServiceItem, ServiceCategory, ServiceVariantKey } from '../../types';
+import { ServiceItem, ServiceCategory, ServiceVariantKey, VehicleProfile } from '../../types';
 import { sounds } from '../../services/soundEffects';
 import {
   SERVICE_CATEGORIES,
@@ -32,7 +32,13 @@ import {
   TrendingUp,
   RotateCcw,
   Activity,
-  CheckCircle2
+  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  Edit3,
+  Layers,
+  Cpu,
+  RefreshCw
 } from 'lucide-react';
 
 interface Props {
@@ -43,6 +49,7 @@ interface Props {
   currentVehicleMileage: number;
   initialCategory?: ServiceCategory;
   initialVariantKey?: ServiceVariantKey;
+  vehicle?: VehicleProfile;
 }
 
 export const ThematicServiceModal: React.FC<Props> = ({
@@ -52,9 +59,15 @@ export const ThematicServiceModal: React.FC<Props> = ({
   serviceToEdit,
   currentVehicleMileage,
   initialCategory,
-  initialVariantKey
+  initialVariantKey,
+  vehicle
 }) => {
   const isEditing = Boolean(serviceToEdit);
+
+  // Modal Mode: 'view' for unified passport view of filled services, 'wizard' for step-by-step wizard
+  const [modalMode, setModalMode] = useState<'view' | 'wizard'>('wizard');
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [obdSyncedNotice, setObdSyncedNotice] = useState<string | null>(null);
 
   // Allow closing via Escape key
   React.useEffect(() => {
@@ -210,6 +223,8 @@ export const ThematicServiceModal: React.FC<Props> = ({
   // Synchronize state when modal opens or serviceToEdit changes
   useEffect(() => {
     if (serviceToEdit) {
+      setModalMode('view'); // Show unified passport view for filled services!
+      setCurrentStep(1);
       const normCat = normalizeCategory(serviceToEdit.category);
       setCategory(normCat);
       
@@ -320,7 +335,9 @@ export const ThematicServiceModal: React.FC<Props> = ({
       if (serviceToEdit.license_expiry_date) setLicenseExpiryDate(serviceToEdit.license_expiry_date);
 
     } else {
-      // New item initialization
+      // New item initialization (Wizard Mode)
+      setModalMode('wizard');
+      setCurrentStep(1);
       const catToSet = initialCategory || 'fluids';
       setCategory(catToSet);
       
@@ -330,15 +347,16 @@ export const ThematicServiceModal: React.FC<Props> = ({
       
       const today = new Date().toISOString().split('T')[0];
       setLastServiceDate(today);
-      setLastServiceKm(currentVehicleMileage);
+      const effectiveKm = vehicle?.mileage_km || currentVehicleMileage;
+      setLastServiceKm(effectiveKm);
       setPtiExpiryDate(calculateDefaultExpiry(today, 1));
       setInsuranceExpiryDate(calculateDefaultExpiry(today, 1));
       setParkingPermitExpiry(calculateDefaultExpiry(today, 1));
       setLicenseExpiryDate(calculateDefaultExpiry(today, 10));
     }
-  }, [serviceToEdit, isOpen, currentVehicleMileage, initialCategory, initialVariantKey]);
+  }, [serviceToEdit, isOpen, currentVehicleMileage, initialCategory, initialVariantKey, vehicle]);
 
-  // Apply a variant's preset defaults
+  // Apply a variant's preset defaults (with OBD integration)
   const applyVariantPreset = (vKey: ServiceVariantKey, catId?: ServiceCategory) => {
     sounds.playClick();
     setSelectedVariant(vKey);
@@ -376,6 +394,216 @@ export const ThematicServiceModal: React.FC<Props> = ({
       if (v.brake_fluid_dot) setBrakeFluidDot(v.brake_fluid_dot);
       if (v.insurance_company) setInsuranceCompany(v.insurance_company);
     }
+
+    // Auto-integrate vehicle OBD specs if vehicle profile exists
+    if (vehicle) {
+      if (vehicle.mileage_km) {
+        setLastServiceKm(vehicle.mileage_km);
+      }
+      if (vKey === 'engine_oil') {
+        const brandL = (vehicle.brand || '').toLowerCase();
+        const modelL = (vehicle.model || '').toLowerCase();
+        if (brandL.includes('mercedes') || modelL.includes('gla') || modelL.includes('c-class')) {
+          setOilViscosity('5W-30');
+          setOilBrand('Motul');
+          setOilLiters(5.2);
+          setCustomBrand('Motul 8100 X-clean EFE (MB 229.52)');
+          setCustomPartNumber('OEM-A0009897902');
+        } else if (brandL.includes('bmw')) {
+          setOilViscosity('5W-30');
+          setOilBrand('Castrol');
+          setOilLiters(5.0);
+          setCustomBrand('Castrol Edge LL-04');
+        } else if (brandL.includes('toyota') || brandL.includes('lexus')) {
+          setOilViscosity('0W-20');
+          setOilBrand('Toyota OEM');
+          setOilLiters(4.2);
+        }
+      } else if (vKey === 'pti' && vehicle.pti_expiry_date) {
+        setPtiExpiryDate(vehicle.pti_expiry_date);
+        if (vehicle.tech_passport) setPtiCertNumber(`PTI-${vehicle.tech_passport}`);
+      } else if (vKey === 'fuel_filter') {
+        setFilterFuelEngine(vehicle.fuel_type === 'diesel' ? 'diesel' : 'petrol');
+      }
+    }
+  };
+
+  // OBD-II Data Auto-fill action
+  const applyObdAutoFill = (forceVehicleSpecs = true) => {
+    sounds.playClick();
+    if (!vehicle) {
+      setObdSyncedNotice('ავტომობილის OBD პროფილი მიუწვდომელია');
+      setTimeout(() => setObdSyncedNotice(null), 3000);
+      return;
+    }
+
+    const syncedItems: string[] = [];
+
+    // 1. Mileage sync
+    if (vehicle.mileage_km) {
+      setLastServiceKm(vehicle.mileage_km);
+      syncedItems.push(`გარბენი (${vehicle.mileage_km.toLocaleString()} კმ)`);
+    }
+
+    // 2. Fluids / Engine Oil
+    if (category === 'fluids' && selectedVariant === 'engine_oil') {
+      const b = (vehicle.brand || '').toLowerCase();
+      const m = (vehicle.model || '').toLowerCase();
+      if (b.includes('mercedes') || m.includes('gla') || m.includes('cla') || m.includes('c-class')) {
+        setOilViscosity('5W-30');
+        setOilBrand('Motul');
+        setOilLiters(5.2);
+        setCustomBrand('Motul 8100 X-clean EFE (MB 229.52)');
+        setCustomPartNumber('OEM-A0009897902');
+        syncedItems.push('MB 229.52 5W-30, 5.2ლ');
+      } else if (b.includes('bmw')) {
+        setOilViscosity('5W-30');
+        setOilBrand('Castrol Edge LL-04');
+        setOilLiters(5.0);
+        setCustomPartNumber('OEM-83212365934');
+        syncedItems.push('BMW LL-04 5W-30, 5.0ლ');
+      } else if (b.includes('toyota') || b.includes('lexus')) {
+        setOilViscosity('0W-20');
+        setOilBrand('Toyota OEM Hybrid');
+        setOilLiters(4.2);
+        setCustomPartNumber('OEM-08880-80845');
+        syncedItems.push('Toyota 0W-20, 4.2ლ');
+      } else {
+        setOilViscosity('5W-30');
+        setOilLiters(5.0);
+        syncedItems.push('5W-30 სინთეტიკა, 5.0ლ');
+      }
+      setOilFilterReplaced(true);
+    }
+
+    // 3. Transmission Fluid
+    if (category === 'fluids' && selectedVariant === 'transmission_fluid') {
+      setTransmissionType('zf8hp');
+      setTransmissionFluidType('full');
+      setTransmissionFluidBrand('ZF Lifeguard 8');
+      setTransmissionFilterReplaced(true);
+      syncedItems.push('ZF Lifeguard 8');
+    }
+
+    // 4. Coolant / Antifreeze
+    if (category === 'fluids' && selectedVariant === 'coolant') {
+      setCoolantFreezingPointC(-35);
+      setCoolantSpec('G12+ (Mercedes MB 325.0)');
+      syncedItems.push('G12+ (-35°C)');
+    }
+
+    // 5. Brake fluid
+    if (category === 'fluids' && selectedVariant === 'brake_fluid') {
+      setBrakeFluidDot('DOT 4');
+      setBrakeFluidMoisturePct(0.5);
+      syncedItems.push('DOT 4 (0.5% ტენიანობა)');
+    }
+
+    // 6. Tires
+    if (category === 'chassis' && selectedVariant === 'tires') {
+      setTirePressureBar(2.3);
+      setTreadDepthMm(7.2);
+      syncedItems.push('2.3 bar, 7.2 მმ');
+    }
+
+    // 7. Brakes
+    if (category === 'chassis' && (selectedVariant === 'brake_pads' || selectedVariant === 'brake_discs')) {
+      setBrakeWearPct(25);
+      setBrakeDiscThicknessMm(28.0);
+      setBrakeDiscStatus('good');
+      setBrakeFluidChecked(true);
+      syncedItems.push('ხუნდები: 25%, დისკი: 28 მმ');
+    }
+
+    // 8. Filters
+    if (category === 'filters') {
+      setFilterAir(true);
+      setFilterCabin(true);
+      setFilterCabinType('carbon');
+      setFilterBrand('MANN-Filter');
+      if (vehicle.fuel_type === 'diesel') {
+        setFilterFuelEngine('diesel');
+        setFilterFuel(true);
+      } else {
+        setFilterFuelEngine('petrol');
+      }
+      syncedItems.push(`MANN-Filter (${vehicle.fuel_type === 'diesel' ? 'დიზელის' : 'სალონის & ჰაერის'})`);
+    }
+
+    // 9. Spark plugs
+    if (category === 'engine' && selectedVariant === 'spark_plugs') {
+      setSparkPlugType('iridium');
+      setSparkPlugCount(4);
+      setSparkPlugBrand('NGK Laser Iridium');
+      syncedItems.push('NGK Iridium (4 ცალი)');
+    }
+
+    // 10. Electrical / Battery
+    if (category === 'electrical' && selectedVariant === 'battery') {
+      setBatteryVoltage(12.6);
+      setAlternatorVoltageOutput(14.2);
+      setBatteryCapacityAh(80);
+      setBatteryBrand('Varta Silver Dynamic AGM');
+      syncedItems.push('Varta AGM 80Ah (12.6V / 14.2V)');
+    }
+
+    // 11. AC System
+    if (category === 'electrical' && selectedVariant === 'ac_system') {
+      setAcFreonGrams(550);
+      setAcFreonType('R134a');
+      setAcCompressorOilChecked(true);
+      syncedItems.push('R134a (550 გრამი)');
+    }
+
+    // 12. Legal / PTI / Insurance
+    if (category === 'legal') {
+      if (vehicle.pti_expiry_date) {
+        setPtiExpiryDate(vehicle.pti_expiry_date);
+        syncedItems.push(`PTI ვადა: ${vehicle.pti_expiry_date}`);
+      }
+      if (vehicle.tech_passport) {
+        setPtiCertNumber(`PTI-${vehicle.tech_passport}`);
+      }
+      if (vehicle.driver_personal_number) {
+        setLicenseNumber(`DL-GE-${vehicle.driver_personal_number.slice(0, 6)}`);
+      }
+    }
+
+    setObdSyncedNotice(`⚡ OBD მონაცემები წარმატებით შევსებულია: ${syncedItems.join(' • ')}`);
+    setTimeout(() => setObdSyncedNotice(null), 5000);
+  };
+
+  // Quick Renew Today action in Unified View
+  const handleQuickRenewToday = () => {
+    sounds.playSuccess();
+    const today = new Date().toISOString().split('T')[0];
+    const currentKm = vehicle?.mileage_km || currentVehicleMileage;
+
+    const renewedService: ServiceItem = {
+      ...(serviceToEdit || {}),
+      id: serviceToEdit ? serviceToEdit.id : `srv_${Date.now()}`,
+      title_ge: title.trim() || 'ავტო სერვისი',
+      category,
+      variant_key: selectedVariant,
+      variant_name_ge: getVariantDefinition(selectedVariant)?.variant_name_ge || title,
+      current_km: currentKm,
+      last_service_date: today,
+      last_service_km: currentKm,
+      interval_km: intervalKm,
+      remaining_km: intervalKm,
+      remaining_days: Math.round(intervalKm / 35),
+      health_percentage: 100,
+      cost_gel: costGel,
+      part_cost_gel: partCostGel,
+      labor_cost_gel: laborCostGel,
+      custom_brand: customBrand || undefined,
+      custom_part_number: customPartNumber || undefined,
+      is_custom_built: true,
+      notes: notes ? `${notes} (განახლდა დღეს: ${today})` : `განახლდა დღეს (${today}) 100% რესურსით`
+    };
+
+    onSave(renewedService);
+    onClose();
   };
 
   const handleCategoryChange = (cat: ServiceCategory) => {
@@ -599,111 +827,693 @@ export const ThematicServiceModal: React.FC<Props> = ({
         className="relative w-full max-w-3xl neu-card rounded-3xl shadow-neu-modal border border-white max-h-[92vh] flex flex-col overflow-hidden cursor-default my-auto"
       >
         
-        {/* Sticky Header with Permanent Close Button */}
-        <div className="flex items-center justify-between p-5 sm:p-6 bg-white border-b border-slate-200 z-20 shrink-0">
+        {/* Sticky Header with Permanent Close Button & Mode Switch */}
+        <div className="flex items-center justify-between p-4 sm:p-5 bg-white border-b border-slate-200 z-20 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl neu-circle flex items-center justify-center text-gold shadow-sm shrink-0">
+            <div className="w-10 h-10 rounded-2xl neu-circle flex items-center justify-center text-gold shadow-sm shrink-0">
               <Wrench className="w-5 h-5 text-navy" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-navy">
-                {isEditing ? 'სერვისის რედაქტირება & კალკულატორი' : 'ინდივიდუალური სერვისის შექმნა & კალკულატორი'}
-              </h3>
-              <p className="text-xs text-slate-500 font-mono">
-                სერვისის ინდივიდუალური აწყობა, რესურსის ცოცხალი კალკულაცია და დამახსოვრება
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-extrabold text-navy">
+                  {modalMode === 'view'
+                    ? 'ერთიანი სერვისის პასპორტი'
+                    : isEditing
+                      ? 'სერვისის ეტაპობრივი რედაქტირება'
+                      : 'ახალი სერვისის შექმნა (3 ეტაპი)'}
+                </h3>
+                {vehicle && (
+                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200 items-center gap-1">
+                    <Cpu size={11} className="text-blue-600" />
+                    <span>{vehicle.brand} {vehicle.model}</span>
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 font-mono">
+                {modalMode === 'view'
+                  ? 'ტექნიკური დოსიე, რესურსის ცოცხალი მდგომარეობა და ხარჯთაღრიცხვა'
+                  : currentStep === 1
+                    ? 'ნაბიჯი 1/3: სერვისის კატეგორია, კომპონენტი და დასახელება'
+                    : currentStep === 2
+                      ? 'ნაბიჯი 2/3: ტექნიკური პარამეტრები & OBD ავტო-შევსება'
+                      : 'ნაბიჯი 3/3: გარბენი, შეცვლის ინტერვალი & რესურსის კალკულატორი'}
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              onClose();
-            }}
-            className="w-9 h-9 rounded-full neu-circle flex items-center justify-center text-slate-400 hover:text-navy hover:scale-105 transition-all shadow-sm shrink-0"
-            title="ფანჯრის დახურვა (Esc)"
-          >
-            <X size={18} />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {isEditing && modalMode === 'wizard' && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setModalMode('view');
+                }}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy text-xs font-bold transition-all"
+                title="ერთიან ხედზე დაბრუნება"
+              >
+                <Layers size={13} className="text-gold" />
+                <span>ერთიანი ხედი</span>
+              </button>
+            )}
+
+            {modalMode === 'view' && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setModalMode('wizard');
+                  setCurrentStep(1);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-navy text-gold text-xs font-bold hover:bg-navy/90 shadow-sm transition-all"
+                title="ეტაპობრივი რედაქტირების დაწყება"
+              >
+                <Edit3 size={13} />
+                <span>✎ რედაქტირება</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                onClose();
+              }}
+              className="w-9 h-9 rounded-full neu-circle flex items-center justify-center text-slate-400 hover:text-navy hover:scale-105 transition-all shadow-sm shrink-0"
+              title="ფანჯრის დახურვა (Esc)"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
-        <form id="thematic-service-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5">
-          
-          {/* 1. Six Primary Categories */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold text-navy uppercase tracking-wider">
-                1. აირჩიეთ სერვისის კატეგორია (6 კატეგორია)
-              </label>
-              <span className="text-[11px] font-mono text-slate-400">
-                სრული ჩამონათვალი
-              </span>
+        {/* Stepper Navigation Bar (Only in Wizard Mode) */}
+        {modalMode === 'wizard' && (
+          <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-slate-50 border-b border-slate-200 z-10 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 text-xs w-full sm:w-auto overflow-x-auto py-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setCurrentStep(1);
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all text-xs whitespace-nowrap ${
+                  currentStep === 1
+                    ? 'bg-navy text-gold shadow-sm scale-105'
+                    : 'bg-white text-slate-600 hover:text-navy border border-slate-200'
+                }`}
+              >
+                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-mono ${
+                  currentStep === 1 ? 'bg-gold text-navy font-black' : 'bg-slate-100 text-slate-700'
+                }`}>1</span>
+                <span>ტიპი & კატეგორია</span>
+              </button>
+
+              <span className="text-slate-300 font-bold hidden sm:inline">➔</span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setCurrentStep(2);
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all text-xs whitespace-nowrap ${
+                  currentStep === 2
+                    ? 'bg-navy text-gold shadow-sm scale-105'
+                    : 'bg-white text-slate-600 hover:text-navy border border-slate-200'
+                }`}
+              >
+                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-mono ${
+                  currentStep === 2 ? 'bg-gold text-navy font-black' : 'bg-slate-100 text-slate-700'
+                }`}>2</span>
+                <span>ტექნიკური & OBD</span>
+              </button>
+
+              <span className="text-slate-300 font-bold hidden sm:inline">➔</span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setCurrentStep(3);
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all text-xs whitespace-nowrap ${
+                  currentStep === 3
+                    ? 'bg-navy text-gold shadow-sm scale-105'
+                    : 'bg-white text-slate-600 hover:text-navy border border-slate-200'
+                }`}
+              >
+                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-mono ${
+                  currentStep === 3 ? 'bg-gold text-navy font-black' : 'bg-slate-100 text-slate-700'
+                }`}>3</span>
+                <span>რესურსი & შემოწმება</span>
+              </button>
             </div>
+
+            <span className="hidden md:inline text-[11px] font-mono text-slate-400">
+              ეტაპი {currentStep} / 3
+            </span>
+          </div>
+        )}
+
+        {/* Unified Passport View (When Already Filled / Completed) */}
+        {modalMode === 'view' ? (
+          <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5">
+            {/* 1. Master Passport Hero Card */}
+            <div className="p-5 rounded-3xl bg-linear-to-br from-navy via-slate-900 to-indigo-950 text-white shadow-xl relative overflow-hidden border border-slate-700/50">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-gold border border-white/15 shadow-inner shrink-0">
+                    {renderVariantIcon(selectedVariant, 26)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-gold/20 text-gold border border-gold/30">
+                        {SERVICE_CATEGORIES.find(c => c.id === category)?.name_ge}
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        OBD პროფილი
+                      </span>
+                    </div>
+                    <h2 className="text-lg font-black text-white mt-1 leading-tight">
+                      {title || getVariantDefinition(selectedVariant)?.title_ge}
+                    </h2>
+                    <p className="text-xs text-slate-300 font-mono mt-0.5">
+                      {vehicle?.brand} {vehicle?.model} • {getVariantDefinition(selectedVariant)?.variant_name_ge || selectedVariant}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right sm:self-center shrink-0">
+                  {(() => {
+                    const driven = Math.max(0, currentVehicleMileage - lastServiceKm);
+                    const remaining = Math.max(0, intervalKm - driven);
+                    const health = intervalKm > 0 ? Math.max(0, Math.min(100, Math.round((remaining / intervalKm) * 100))) : 100;
+                    const isCrit = health <= 20;
+                    const isWarn = health <= 50 && !isCrit;
+                    return (
+                      <div className={`px-4 py-2 rounded-2xl font-black text-sm border flex items-center gap-2 ${
+                        isCrit ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
+                        isWarn ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
+                        'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      }`}>
+                        <Activity size={16} />
+                        <span>{health}% რესურსი ({isCrit ? 'შეცვლა!' : isWarn ? 'ყურადღება' : 'ნორმა'})</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Health progress bar & 4 stats */}
+              {(() => {
+                const driven = Math.max(0, currentVehicleMileage - lastServiceKm);
+                const remaining = Math.max(0, intervalKm - driven);
+                const health = intervalKm > 0 ? Math.max(0, Math.min(100, Math.round((remaining / intervalKm) * 100))) : 100;
+                const wear = 100 - health;
+                const days = Math.round(remaining / 35);
+                const isCrit = health <= 20;
+                const isWarn = health <= 50 && !isCrit;
+
+                return (
+                  <div className="pt-4 space-y-3">
+                    <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden p-0.5 shadow-inner">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          isCrit ? 'bg-rose-500' : isWarn ? 'bg-gold' : 'bg-emerald-400'
+                        }`}
+                        style={{ width: `${Math.max(5, health)}%` }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-xs">
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                        <span className="text-[10px] text-slate-400 block font-sans">ბოლო სერვისი</span>
+                        <span className="font-bold text-white">{lastServiceKm.toLocaleString()} კმ</span>
+                        <span className="text-[10px] text-slate-400 block font-sans mt-0.5">{lastServiceDate}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                        <span className="text-[10px] text-slate-400 block font-sans">ინტერვალი</span>
+                        <span className="font-bold text-gold">{intervalKm.toLocaleString()} კმ</span>
+                        <span className="text-[10px] text-slate-400 block font-sans mt-0.5">გეგმიური</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                        <span className="text-[10px] text-slate-400 block font-sans">დარჩა რესურსი</span>
+                        <span className={`font-black ${isCrit ? 'text-rose-400' : 'text-emerald-300'}`}>
+                          ~{remaining.toLocaleString()} კმ
+                        </span>
+                        <span className="text-[10px] text-slate-400 block font-sans mt-0.5">ცვეთა: {wear}%</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                        <span className="text-[10px] text-slate-400 block font-sans">სავარაუდო ვადა</span>
+                        <span className="font-bold text-white">~{days} დღე</span>
+                        <span className="text-[10px] text-slate-400 block font-sans mt-0.5">35 კმ/დღე</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* 2. Unified Technical Parameters Section */}
+            <div className="p-5 rounded-3xl neu-surface border border-white space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-gold/20 text-gold flex items-center justify-center">
+                    <Sliders size={18} className="text-navy" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-navy uppercase tracking-wider">
+                      შევსებული ტექნიკური პარამეტრები & სპეციფიკაციები
+                    </h4>
+                    <p className="text-[10px] text-slate-500">
+                      სერვისის სრული დოსიე და მწარმოებლის მონაცემები
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setModalMode('wizard');
+                    setCurrentStep(2);
+                  }}
+                  className="text-[11px] font-bold text-navy hover:text-amber-600 flex items-center gap-1"
+                >
+                  <Edit3 size={13} />
+                  <span>შეცვლა</span>
+                </button>
+              </div>
+
+              {/* Render populated spec tiles */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                {category === 'fluids' && selectedVariant === 'engine_oil' && (
+                  <>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">ზეთის სიბლანტე</span>
+                      <span className="font-extrabold text-navy font-mono">{oilViscosity}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">მოცულობა</span>
+                      <span className="font-extrabold text-navy font-mono">{oilLiters} ლიტრი</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">ზეთის ბრენდი</span>
+                      <span className="font-extrabold text-navy">{oilBrand}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">ზეთის ფილტრი</span>
+                      <span className="font-extrabold text-emerald-600">{oilFilterReplaced ? '✓ შეცვლილია' : 'ძველი'}</span>
+                    </div>
+                  </>
+                )}
+
+                {category === 'fluids' && selectedVariant === 'transmission_fluid' && (
+                  <>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">გადაცემათა კოლოფი</span>
+                      <span className="font-extrabold text-navy font-mono uppercase">{transmissionType}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">შეცვლის ტიპი</span>
+                      <span className="font-extrabold text-navy">{transmissionFluidType === 'full' ? 'სრული' : 'ნაწილობრივი'}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">სითხის ბრენდი</span>
+                      <span className="font-extrabold text-navy">{transmissionFluidBrand}</span>
+                    </div>
+                  </>
+                )}
+
+                {category === 'fluids' && selectedVariant === 'coolant' && (
+                  <>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">გაყინვის წერტილი</span>
+                      <span className="font-extrabold text-blue-600 font-mono">{coolantFreezingPointC} °C</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200 col-span-2">
+                      <span className="text-[10px] text-slate-400 block">ანტიფრიზის სპეციფიკაცია</span>
+                      <span className="font-extrabold text-navy">{coolantSpec}</span>
+                    </div>
+                  </>
+                )}
+
+                {category === 'fluids' && selectedVariant === 'brake_fluid' && (
+                  <>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">სითხის ტიპი</span>
+                      <span className="font-extrabold text-navy font-mono">{brakeFluidDot}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">ტენიანობის დონე</span>
+                      <span className="font-extrabold text-emerald-600 font-mono">{brakeFluidMoisturePct} %</span>
+                    </div>
+                  </>
+                )}
+
+                {category === 'chassis' && selectedVariant === 'tires' && (
+                  <>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">საბურავის ზომა</span>
+                      <span className="font-extrabold text-navy font-mono">{tireSize}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">სეზონი</span>
+                      <span className="font-extrabold text-navy capitalize">{tireSeason}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">პროტექტორის სიღრმე</span>
+                      <span className="font-extrabold text-navy font-mono">{treadDepthMm} მმ</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">წნევა</span>
+                      <span className="font-extrabold text-navy font-mono">{tirePressureBar} bar</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200 col-span-2">
+                      <span className="text-[10px] text-slate-400 block">ბრენდი</span>
+                      <span className="font-extrabold text-navy">{tireBrand}</span>
+                    </div>
+                  </>
+                )}
+
+                {category === 'chassis' && (selectedVariant === 'brake_pads' || selectedVariant === 'brake_discs') && (
+                  <>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">პოზიცია</span>
+                      <span className="font-extrabold text-navy capitalize">{brakePosition}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">ხუნდის ცვეთა</span>
+                      <span className="font-extrabold text-navy font-mono">{brakeWearPct} %</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">დისკის სისქე</span>
+                      <span className="font-extrabold text-navy font-mono">{brakeDiscThicknessMm} მმ</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">დისკის სტატუსი</span>
+                      <span className="font-extrabold text-navy capitalize">{brakeDiscStatus}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200 col-span-2">
+                      <span className="text-[10px] text-slate-400 block">ბრენდი</span>
+                      <span className="font-extrabold text-navy">{brakeBrand}</span>
+                    </div>
+                  </>
+                )}
+
+                {category === 'filters' && (
+                  <>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">ჰაერის ფილტრი</span>
+                      <span className="font-extrabold text-navy">{filterAir ? '✓ შეცვლილია' : 'არა'}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">სალონის ფილტრი</span>
+                      <span className="font-extrabold text-navy">{filterCabin ? `✓ ${filterCabinType}` : 'არა'}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">საწვავის ფილტრი</span>
+                      <span className="font-extrabold text-navy">{filterFuel ? `✓ ${filterFuelEngine}` : 'არა'}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200 col-span-3">
+                      <span className="text-[10px] text-slate-400 block">მწარმოებელი / ბრენდი</span>
+                      <span className="font-extrabold text-navy">{filterBrand}</span>
+                    </div>
+                  </>
+                )}
+
+                {category === 'electrical' && selectedVariant === 'battery' && (
+                  <>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">ტევადობა</span>
+                      <span className="font-extrabold text-navy font-mono">{batteryCapacityAh} Ah</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">ძაბვა (Resting)</span>
+                      <span className="font-extrabold text-navy font-mono">{batteryVoltage} V</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">გენერატორის ძაბვა</span>
+                      <span className="font-extrabold text-navy font-mono">{alternatorVoltageOutput} V</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200 col-span-2">
+                      <span className="text-[10px] text-slate-400 block">აკუმულატორის ბრენდი</span>
+                      <span className="font-extrabold text-navy">{batteryBrand}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block">გამოშვების თარიღი</span>
+                      <span className="font-extrabold text-navy font-mono">{batteryMfgDate}</span>
+                    </div>
+                  </>
+                )}
+
+                {category === 'legal' && (
+                  <>
+                    {ptiExpiryDate && (
+                      <div className="p-3 rounded-xl bg-white border border-slate-200 col-span-2">
+                        <span className="text-[10px] text-slate-400 block">ტექდათვალიერების ვადა</span>
+                        <span className="font-extrabold text-navy font-mono">{ptiExpiryDate} ({ptiCenter})</span>
+                      </div>
+                    )}
+                    {insuranceCompany && (
+                      <div className="p-3 rounded-xl bg-white border border-slate-200 col-span-2">
+                        <span className="text-[10px] text-slate-400 block">დაზღვევა</span>
+                        <span className="font-extrabold text-navy">{insuranceCompany} ({insuranceType?.toUpperCase()})</span>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {customPartNumber && (
+                  <div className="p-3 rounded-xl bg-white border border-slate-200">
+                    <span className="text-[10px] text-slate-400 block">ნაწილის კოდი (OEM)</span>
+                    <span className="font-extrabold text-navy font-mono">{customPartNumber}</span>
+                  </div>
+                )}
+
+                {customBrand && (
+                  <div className="p-3 rounded-xl bg-white border border-slate-200">
+                    <span className="text-[10px] text-slate-400 block">არჩეული ბრენდი</span>
+                    <span className="font-extrabold text-navy">{customBrand}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 3. Financial Breakdown Card */}
+            <div className="p-5 rounded-3xl neu-surface border border-white space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                <span className="text-xs font-black text-navy uppercase tracking-wider flex items-center gap-1.5">
+                  <TrendingUp size={15} className="text-gold" />
+                  <span>ფინანსური ხარჯთაღრიცხვა</span>
+                </span>
+                <span className="text-xs font-mono font-bold text-slate-500">
+                  ჯამური ღირებულება
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-3 rounded-2xl bg-white border border-slate-200">
+                  <span className="text-[11px] text-slate-500 block font-sans">ნაწილები / მასალები</span>
+                  <span className="font-black text-navy text-sm font-mono">{partCostGel} ₾</span>
+                </div>
+                <div className="p-3 rounded-2xl bg-white border border-slate-200">
+                  <span className="text-[11px] text-slate-500 block font-sans">ხელობა / სერვისი</span>
+                  <span className="font-black text-navy text-sm font-mono">{laborCostGel} ₾</span>
+                </div>
+                <div className="p-3 rounded-2xl bg-gold/15 border-2 border-gold/40">
+                  <span className="text-[11px] text-slate-700 block font-sans font-bold">სულ ჯამი</span>
+                  <span className="font-black text-navy text-base font-mono">{costGel} ₾</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
+                <span>1,000 კმ-ის ექსპლუატაციის ხარჯი:</span>
+                <span className="font-mono font-bold text-navy">
+                  ~{intervalKm > 0 ? Math.round(((costGel || 0) / intervalKm) * 1000) : 0} ₾ / 1,000 კმ
+                </span>
+              </div>
+            </div>
+
+            {/* 4. Notes & Warranty Card if present */}
+            {notes && (
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 text-xs space-y-1">
+                <span className="font-bold text-slate-400 block text-[10px] uppercase tracking-wider">
+                  🛡️ შენიშვნა & საგარანტიო პირობა
+                </span>
+                <p className="text-navy font-medium">{notes}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ================= 3-STEP WIZARD FORM ================= */
+          <form id="thematic-service-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5">
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {SERVICE_CATEGORIES.map(c => {
-                const isSelected = category === c.id;
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => handleCategoryChange(c.id)}
-                    className={`p-2.5 rounded-2xl text-left border transition-all flex items-center gap-2.5 ${
-                      isSelected
-                        ? 'bg-navy text-white border-navy shadow-sm scale-[1.02]'
-                        : 'bg-white hover:bg-slate-50 text-navy border-slate-200'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                      isSelected ? 'bg-gold text-navy' : c.badgeBg + ' ' + c.color
-                    }`}>
-                      {renderVariantIcon(c.id === 'chassis' ? 'tires' : c.id === 'fluids' ? 'engine_oil' : c.id === 'filters' ? 'cabin_filter' : c.id === 'engine' ? 'timing_belt_chain' : c.id === 'electrical' ? 'battery' : 'pti', 16)}
+            {/* ================= STEP 1: CATEGORY, VARIANT & TITLE ================= */}
+            {currentStep === 1 && (
+              <div className="space-y-5 animate-fade-in">
+                {/* 1. Six Primary Categories */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-bold text-navy uppercase tracking-wider">
+                      1. აირჩიეთ სერვისის კატეგორია (6 ძირითადი კატეგორია)
+                    </label>
+                    <span className="text-[11px] font-mono text-slate-400">
+                      სრული ჩამონათვალი
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {SERVICE_CATEGORIES.map(c => {
+                      const isSelected = category === c.id;
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => handleCategoryChange(c.id)}
+                          className={`p-2.5 rounded-2xl text-left border transition-all flex items-center gap-2.5 ${
+                            isSelected
+                              ? 'bg-navy text-white border-navy shadow-sm scale-[1.02]'
+                              : 'bg-white hover:bg-slate-50 text-navy border-slate-200'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                            isSelected ? 'bg-gold text-navy' : c.badgeBg + ' ' + c.color
+                          }`}>
+                            {renderVariantIcon(c.id === 'chassis' ? 'tires' : c.id === 'fluids' ? 'engine_oil' : c.id === 'filters' ? 'cabin_filter' : c.id === 'engine' ? 'timing_belt_chain' : c.id === 'electrical' ? 'battery' : 'pti', 16)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-extrabold text-xs truncate leading-tight">{c.name_ge}</div>
+                            <div className="text-[10px] opacity-70 font-mono truncate">{c.name_en}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Components & Service Variants Selection */}
+                <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-navy uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-gold" />
+                      <span>2. კომპონენტის / სერვისის ვარიანტი:</span>
+                    </label>
+                    <span className="text-[11px] font-mono text-slate-500">
+                      დააკლიკეთ სწრაფი შევსებისთვის
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {currentCategoryVariants.map(v => {
+                      const isSelected = selectedVariant === v.key;
+                      return (
+                        <button
+                          key={v.key}
+                          type="button"
+                          onClick={() => applyVariantPreset(v.key)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                            isSelected
+                              ? 'bg-navy text-gold shadow-sm scale-105 border border-navy'
+                              : 'bg-white text-navy border border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                          }`}
+                        >
+                          {renderVariantIcon(v.key, 13)}
+                          <span>{v.title_ge}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 3. Service Title & Recommended Names */}
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-3">
+                  <label className="block text-xs font-bold text-navy uppercase tracking-wider">
+                    3. სერვისის დასახელება (სათაური) *
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="მაგ: ძრავის ზეთი (Motul 5W-30) & ზეთის ფილტრი"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-navy focus:outline-none focus:ring-2 focus:ring-gold"
+                    required
+                  />
+
+                  {/* Preset Suggestions */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[10px] text-slate-400 font-bold mr-1">რეკომენდებული:</span>
+                    {currentCategoryVariants.slice(0, 3).map(v => (
+                      <button
+                        key={v.key}
+                        type="button"
+                        onClick={() => {
+                          sounds.playClick();
+                          setTitle(v.title_ge);
+                        }}
+                        className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-medium text-slate-700 transition-all"
+                      >
+                        {v.title_ge}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ================= STEP 2: TECHNICAL SPECIFICATIONS & OBD AUTO-FILL ================= */}
+            {currentStep === 2 && (
+              <div className="space-y-5 animate-fade-in">
+                {/* OBD Auto-fill Banner & Status */}
+                <div className="p-3.5 rounded-2xl bg-linear-to-r from-blue-900 via-navy to-indigo-950 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md border border-blue-400/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gold/20 text-gold flex items-center justify-center shrink-0 shadow-inner">
+                      <Cpu className="w-5 h-5 animate-pulse text-gold" />
                     </div>
-                    <div className="min-w-0">
-                      <div className="font-extrabold text-xs truncate leading-tight">{c.name_ge}</div>
-                      <div className="text-[10px] opacity-70 font-mono truncate">{c.name_en}</div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black tracking-wide text-white uppercase">
+                          OBD-II ცოცხალი მონაცემები & სპეციფიკაციები
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                          ● დაკავშირებულია
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 font-mono">
+                        {vehicle ? (
+                          <>
+                            <span className="text-gold font-bold">{vehicle.brand} {vehicle.model}</span> ({vehicle.year}) • 
+                            გარბენი: <span className="text-white font-bold">{vehicle.mileage_km.toLocaleString()} კმ</span> • 
+                            ძრავი: <span className="text-slate-200">{vehicle.engine}</span>
+                          </>
+                        ) : (
+                          'ავტომობილის OBD პროფილი აქტიურია'
+                        )}
+                      </p>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                  </div>
 
-          {/* 2. Components & Service Variants Selection */}
-          <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-navy uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles size={14} className="text-gold" />
-                <span>2. კომპონენტის / სერვისის ვარიანტი:</span>
-              </label>
-              <span className="text-[11px] font-mono text-slate-500">
-                დააკლიკეთ სწრაფი შევსებისთვის
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              {currentCategoryVariants.map(v => {
-                const isSelected = selectedVariant === v.key;
-                return (
                   <button
-                    key={v.key}
                     type="button"
-                    onClick={() => applyVariantPreset(v.key)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      isSelected
-                        ? 'bg-navy text-gold shadow-sm scale-105 border border-navy'
-                        : 'bg-white text-navy border border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                    }`}
+                    onClick={() => applyObdAutoFill(true)}
+                    className="px-3.5 py-2 rounded-xl bg-gold hover:bg-amber-400 text-navy text-xs font-black flex items-center gap-1.5 transition-all active:scale-95 shadow-sm whitespace-nowrap self-end sm:self-auto"
                   >
-                    {renderVariantIcon(v.key, 13)}
-                    <span>{v.title_ge}</span>
+                    <Zap size={14} className="fill-navy" />
+                    <span>⚡ OBD ავტო-შევსება</span>
                   </button>
-                );
-              })}
-            </div>
-          </div>
+                </div>
 
-          {/* 3. DEDICATED THEMATIC CONFIGURATION PANEL */}
+                {obdSyncedNotice && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fade-in">
+                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    <span>{obdSyncedNotice}</span>
+                  </div>
+                )}
+
+                {/* 3. DEDICATED THEMATIC CONFIGURATION PANEL */}
 
           {/* ================= CATEGORY 1: CHASSIS & WHEELS ================= */}
           {category === 'chassis' && (
@@ -2075,43 +2885,17 @@ export const ThematicServiceModal: React.FC<Props> = ({
             </div>
           )}
 
-          {/* 4. ინდივიდუალური აწყობა & ცოცხალი კალკულატორი */}
-          <div className="p-5 rounded-3xl neu-surface border border-white space-y-5">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gold/20 text-gold flex items-center justify-center">
-                  <Calculator size={18} className="text-navy" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black text-navy uppercase tracking-wider">
-                    4. ინდივიდუალური აწყობა & ცოცხალი კალკულატორი
-                  </h4>
-                  <p className="text-[10px] text-slate-500">
-                    რესურსის, ცვეთის %, დარჩენილი კმ-ებისა და ხარჯების ავტომატური კალკულაცია
-                  </p>
-                </div>
-              </div>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-navy text-gold">
-                LIVE CALCULATOR
+          {/* OEM Part Number & Brand Selection (Step 2) */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+              <span className="text-xs font-bold text-navy flex items-center gap-1.5">
+                <Wrench size={13} className="text-gold" />
+                <span>მწარმოებელი, ბრენდი & ნაწილის კოდი</span>
               </span>
+              <span className="text-[10px] font-mono text-slate-400">არასავალდებულო</span>
             </div>
 
-            {/* A. სერვისის სათაური და კომპონენტის ბრენდი / კოდი */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2">
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                  სერვისის დასახელება (სათაური) *
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="მაგ: ძრავის ზეთი (Motul 5W-30) & ზეთის ფილტრი"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-navy focus:outline-none focus:ring-2 focus:ring-gold"
-                  required
-                />
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">
                   ნაწილის კოდი / არტიკული (OEM #)
@@ -2121,283 +2905,422 @@ export const ThematicServiceModal: React.FC<Props> = ({
                   value={customPartNumber}
                   onChange={(e) => setCustomPartNumber(e.target.value)}
                   placeholder="OEM-11427566327"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-mono font-bold text-navy focus:outline-none"
+                  className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono font-bold text-xs text-navy focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  არჩეული ბრენდი / მომწოდებელი
+                </label>
+                <input
+                  type="text"
+                  value={customBrand}
+                  onChange={(e) => setCustomBrand(e.target.value)}
+                  placeholder="Motul, Brembo, OEM..."
+                  className="w-full px-3.5 py-2 rounded-xl neu-inset font-bold text-xs text-navy focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Quick Brand selection */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-[11px] font-bold text-slate-600">
-                  მწარმოებელი / ბრენდი:
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] text-slate-400 font-bold mr-1">სწრაფი ბრენდი:</span>
+              {['Motul', 'Brembo', 'Bosch', 'Bilstein', 'NGK', 'MANN-Filter', 'Liqui Moly', 'Varta', 'OEM'].map(b => (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setCustomBrand(b);
+                    if (!title.includes(b)) {
+                      setTitle(prev => prev ? `${prev} (${b})` : b);
+                    }
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                    customBrand === b
+                      ? 'bg-navy text-gold shadow-xs'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  {b}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Financial Calculator (Part + Labor = Total) (Step 2) */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-navy flex items-center gap-1.5">
+                <TrendingUp size={14} className="text-gold" />
+                <span>ფინანსური კალკულატორი (ხარჯთაღრიცხვა)</span>
+              </span>
+              <span className="text-[10px] font-mono text-slate-400">
+                ავტომატური ჯამური კალკულაცია
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  ნაწილის / მასალის ფასი (₾)
                 </label>
-                <span className="text-[10px] text-slate-400">სწრაფი არჩევა</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {['Motul', 'Brembo', 'Bosch', 'Bilstein', 'NGK', 'MANN-Filter', 'Liqui Moly', 'Varta', 'OEM'].map(b => (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setCustomBrand(b);
-                      if (!title.includes(b)) {
-                        setTitle(prev => prev ? `${prev} (${b})` : b);
-                      }
-                    }}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                      customBrand === b
-                        ? 'bg-navy text-gold shadow-xs'
-                        : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-                    }`}
-                  >
-                    {b}
-                  </button>
-                ))}
                 <input
-                  type="text"
-                  value={customBrand}
-                  onChange={(e) => setCustomBrand(e.target.value)}
-                  placeholder="სხვა ბრენდი..."
-                  className="w-28 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold text-navy focus:outline-none"
+                  type="number"
+                  value={partCostGel}
+                  onChange={(e) => {
+                    const p = Number(e.target.value) || 0;
+                    setPartCostGel(p);
+                    setCostGel(p + (Number(laborCostGel) || 0));
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono font-bold text-xs text-navy focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  ხელობის / სერვისის ფასი (₾)
+                </label>
+                <input
+                  type="number"
+                  value={laborCostGel}
+                  onChange={(e) => {
+                    const l = Number(e.target.value) || 0;
+                    setLaborCostGel(l);
+                    setCostGel((Number(partCostGel) || 0) + l);
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono font-bold text-xs text-navy focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  სულ ჯამი (₾ GEL)
+                </label>
+                <input
+                  type="number"
+                  value={costGel}
+                  onChange={(e) => {
+                    const total = Number(e.target.value) || 0;
+                    setCostGel(total);
+                    setPartCostGel(Math.round(total * 0.75));
+                    setLaborCostGel(Math.round(total * 0.25));
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl bg-gold/15 border-2 border-gold/40 font-mono font-black text-sm text-navy focus:outline-none"
                 />
               </div>
             </div>
 
-            {/* B. ფინანსური კალკულატორი (ნაწილი + ხელობა = სულ) */}
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-navy flex items-center gap-1.5">
-                  <TrendingUp size={14} className="text-gold" />
-                  <span>ფინანსური კალკულატორი (ხარჯთაღრიცხვა)</span>
-                </span>
-                <span className="text-[10px] font-mono text-slate-400">
-                  ავტომატური ჯამური კალკულაცია
-                </span>
-              </div>
+            <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 text-slate-500">
+              <span>1,000 კმ-ის თვითღირებულება:</span>
+              <span className="font-mono font-bold text-navy">
+                ~{intervalKm > 0 ? Math.round(((costGel || 0) / intervalKm) * 1000) : 0} ₾ / 1,000 კმ
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                    ნაწილის / მასალის ფასი (₾)
-                  </label>
-                  <input
-                    type="number"
-                    value={partCostGel}
-                    onChange={(e) => {
-                      const p = Number(e.target.value) || 0;
-                      setPartCostGel(p);
-                      setCostGel(p + (Number(laborCostGel) || 0));
-                    }}
-                    className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono font-bold text-xs text-navy focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                    ხელობის / სერვისის ფასი (₾)
-                  </label>
-                  <input
-                    type="number"
-                    value={laborCostGel}
-                    onChange={(e) => {
-                      const l = Number(e.target.value) || 0;
-                      setLaborCostGel(l);
-                      setCostGel((Number(partCostGel) || 0) + l);
-                    }}
-                    className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono font-bold text-xs text-navy focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                    სულ ჯამი (₾ GEL)
-                  </label>
-                  <input
-                    type="number"
-                    value={costGel}
-                    onChange={(e) => {
-                      const total = Number(e.target.value) || 0;
-                      setCostGel(total);
-                      setPartCostGel(Math.round(total * 0.75));
-                      setLaborCostGel(Math.round(total * 0.25));
-                    }}
-                    className="w-full px-3.5 py-2 rounded-xl bg-gold/15 border-2 border-gold/40 font-mono font-black text-sm text-navy focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 text-slate-500">
-                <span>1,000 კმ-ის თვითღირებულება:</span>
-                <span className="font-mono font-bold text-navy">
-                  ~{intervalKm > 0 ? Math.round(((costGel || 0) / intervalKm) * 1000) : 0} ₾ / 1,000 კმ
-                </span>
-              </div>
+      {/* ================= STEP 3: MILEAGE, INTERVAL, WEAR & REVIEW ================= */}
+      {currentStep === 3 && (
+        <div className="space-y-5 animate-fade-in">
+          {/* C. ცოცხალი გარბენისა და რესურსის კალკულატორი */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-navy flex items-center gap-1.5">
+                <Activity size={14} className="text-emerald-600" />
+                <span>გარბენისა და რესურსის ცოცხალი კალკულატორი</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-slate-100 text-slate-600">
+                ავტომობილის გარბენი: {currentVehicleMileage.toLocaleString()} კმ
+              </span>
             </div>
 
-            {/* C. ცოცხალი გარბენისა და რესურსის კალკულატორი */}
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-navy flex items-center gap-1.5">
-                  <Activity size={14} className="text-emerald-600" />
-                  <span>გარბენისა და რესურსის ცოცხალი კალკულატორი</span>
-                </span>
-                <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-slate-100 text-slate-600">
-                  მანქანის გარბენი: {currentVehicleMileage.toLocaleString()} კმ
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      ბოლო სერვისის გარბენი (კმ)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sounds.playClick();
-                        setLastServiceKm(currentVehicleMileage);
-                      }}
-                      className="text-[10px] text-gold hover:text-amber-600 font-bold underline"
-                    >
-                      დღევანდელი გარბენი ({currentVehicleMileage.toLocaleString()})
-                    </button>
-                  </div>
-                  <input
-                    type="number"
-                    value={lastServiceKm}
-                    onChange={(e) => setLastServiceKm(Number(e.target.value) || 0)}
-                    className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono font-bold text-xs text-navy focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                    შეცვლის ინტერვალი (კმ)
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-bold text-slate-600">
+                    ბოლო სერვისის გარბენი (კმ)
                   </label>
-                  <input
-                    type="number"
-                    value={intervalKm}
-                    onChange={(e) => setIntervalKm(Number(e.target.value) || 1000)}
-                    className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono font-bold text-xs text-navy focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Quick interval chips */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                <span className="text-[10px] text-slate-400 font-bold mr-1">სწრაფი ინტერვალი:</span>
-                {[5000, 8000, 10000, 15000, 30000, 60000, 100000].map(km => (
                   <button
-                    key={km}
                     type="button"
                     onClick={() => {
                       sounds.playClick();
-                      setIntervalKm(km);
+                      setLastServiceKm(vehicle?.mileage_km || currentVehicleMileage);
                     }}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-all ${
-                      intervalKm === km
-                        ? 'bg-navy text-gold shadow-xs'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    }`}
+                    className="text-[10px] text-gold hover:text-amber-600 font-bold underline"
                   >
-                    {km.toLocaleString()} კმ
+                    დღევანდელი OBD გარბენი ({(vehicle?.mileage_km || currentVehicleMileage).toLocaleString()})
                   </button>
-                ))}
+                </div>
+                <input
+                  type="number"
+                  value={lastServiceKm}
+                  onChange={(e) => setLastServiceKm(Number(e.target.value) || 0)}
+                  className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono font-bold text-xs text-navy focus:outline-none"
+                />
               </div>
 
-              {/* LIVE MATHEMATICAL CALCULATION PREVIEW BOX */}
-              {(() => {
-                const drivenKm = Math.max(0, currentVehicleMileage - lastServiceKm);
-                const remainingKm = Math.max(0, intervalKm - drivenKm);
-                const healthPct = intervalKm > 0 ? Math.max(0, Math.min(100, Math.round((remainingKm / intervalKm) * 100))) : 100;
-                const wearPct = 100 - healthPct;
-                const daysLeft = Math.round(remainingKm / 35);
-                const isCrit = healthPct <= 20;
-                const isWarn = healthPct <= 50 && !isCrit;
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  შეცვლის ინტერვალი (კმ)
+                </label>
+                <input
+                  type="number"
+                  value={intervalKm}
+                  onChange={(e) => setIntervalKm(Number(e.target.value) || 1000)}
+                  className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono font-bold text-xs text-navy focus:outline-none"
+                />
+              </div>
+            </div>
 
-                return (
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-navy">
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 size={14} className={isCrit ? 'text-rose-500' : isWarn ? 'text-amber-500' : 'text-emerald-500'} />
-                        <span>გამოთვლილი რესურსის სტატუსი:</span>
-                      </span>
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-black ${
-                        isCrit ? 'bg-rose-100 text-rose-700' : isWarn ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'
-                      }`}>
-                        {healthPct}% რესურსი (ცვეთა: {wearPct}%)
+            {/* Quick interval chips */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="text-[10px] text-slate-400 font-bold mr-1">სწრაფი ინტერვალი:</span>
+              {[5000, 8000, 10000, 15000, 30000, 60000, 100000].map(km => (
+                <button
+                  key={km}
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setIntervalKm(km);
+                  }}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-all ${
+                    intervalKm === km
+                      ? 'bg-navy text-gold shadow-xs'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {km.toLocaleString()} კმ
+                </button>
+              ))}
+            </div>
+
+            {/* LIVE MATHEMATICAL CALCULATION PREVIEW BOX */}
+            {(() => {
+              const drivenKm = Math.max(0, currentVehicleMileage - lastServiceKm);
+              const remainingKm = Math.max(0, intervalKm - drivenKm);
+              const healthPct = intervalKm > 0 ? Math.max(0, Math.min(100, Math.round((remainingKm / intervalKm) * 100))) : 100;
+              const wearPct = 100 - healthPct;
+              const daysLeft = Math.round(remainingKm / 35);
+              const isCrit = healthPct <= 20;
+              const isWarn = healthPct <= 50 && !isCrit;
+
+              return (
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-navy">
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 size={14} className={isCrit ? 'text-rose-500' : isWarn ? 'text-amber-500' : 'text-emerald-500'} />
+                      <span>გამოთვლილი რესურსის სტატუსი:</span>
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-black ${
+                      isCrit ? 'bg-rose-100 text-rose-700' : isWarn ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {healthPct}% რესურსი (ცვეთა: {wearPct}%)
+                    </span>
+                  </div>
+
+                  {/* Animated Progress Bar */}
+                  <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden p-0.5 shadow-inner">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        isCrit ? 'bg-rose-500' : isWarn ? 'bg-gold' : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${Math.max(5, healthPct)}%` }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center font-mono text-[11px]">
+                    <div className="p-2 rounded-xl bg-white border border-slate-200/70">
+                      <span className="text-[10px] text-slate-400 block font-sans">გავლილია</span>
+                      <span className="font-bold text-navy">{drivenKm.toLocaleString()} კმ</span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-white border border-slate-200/70">
+                      <span className="text-[10px] text-slate-400 block font-sans">დარჩა რესურსი</span>
+                      <span className={`font-black ${isCrit ? 'text-rose-600' : 'text-navy'}`}>
+                        {remainingKm.toLocaleString()} კმ
                       </span>
                     </div>
-
-                    {/* Animated Progress Bar */}
-                    <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden p-0.5 shadow-inner">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          isCrit ? 'bg-rose-500' : isWarn ? 'bg-gold' : 'bg-emerald-500'
-                        }`}
-                        style={{ width: `${Math.max(5, healthPct)}%` }}
-                      />
+                    <div className="p-2 rounded-xl bg-white border border-slate-200/70">
+                      <span className="text-[10px] text-slate-400 block font-sans">პროგნოზი</span>
+                      <span className="font-bold text-navy">~{daysLeft} დღე</span>
                     </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center font-mono text-[11px]">
-                      <div className="p-2 rounded-xl bg-white border border-slate-200/70">
-                        <span className="text-[10px] text-slate-400 block font-sans">გავლილია</span>
-                        <span className="font-bold text-navy">{drivenKm.toLocaleString()} კმ</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white border border-slate-200/70">
-                        <span className="text-[10px] text-slate-400 block font-sans">დარჩა რესურსი</span>
-                        <span className={`font-black ${isCrit ? 'text-rose-600' : 'text-navy'}`}>
-                          {remainingKm.toLocaleString()} კმ
-                        </span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white border border-slate-200/70">
-                        <span className="text-[10px] text-slate-400 block font-sans">პროგნოზი</span>
-                        <span className="font-bold text-navy">~{daysLeft} დღე</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white border border-slate-200/70">
-                        <span className="text-[10px] text-slate-400 block font-sans">სტატუსი</span>
-                        <span className={`font-bold ${isCrit ? 'text-rose-600' : isWarn ? 'text-amber-600' : 'text-emerald-600'}`}>
-                          {isCrit ? 'შეცვლა!' : isWarn ? 'ყურადღება' : 'ნორმა'}
-                        </span>
-                      </div>
+                    <div className="p-2 rounded-xl bg-white border border-slate-200/70">
+                      <span className="text-[10px] text-slate-400 block font-sans">სტატუსი</span>
+                      <span className={`font-bold ${isCrit ? 'text-rose-600' : isWarn ? 'text-amber-600' : 'text-emerald-600'}`}>
+                        {isCrit ? 'შეცვლა!' : isWarn ? 'ყურადღება' : 'ნორმა'}
+                      </span>
                     </div>
                   </div>
-                );
-              })()}
-            </div>
-
-            {/* D. შენიშვნა / საგარანტიო პირობა */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                შენიშვნა, სერვის-ცენტრი & გარანტია
-              </label>
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="მაგ: შეცვლილია თეგეტა მოტორსში, გაცემულია 1-წლიანი გარანტია..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-navy focus:outline-none focus:ring-1 focus:ring-gold"
-              />
-            </div>
+                </div>
+              );
+            })()}
           </div>
 
-        </form>
+          {/* D. შენიშვნა / საგარანტიო პირობა */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-2">
+            <label className="block text-[11px] font-bold text-slate-600">
+              შენიშვნა, სერვის-ცენტრი & გარანტია
+            </label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="მაგ: შეცვლილია თეგეტა მოტორსში, გაცემულია 1-წლიანი გარანტია..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-navy focus:outline-none focus:ring-1 focus:ring-gold"
+            />
+          </div>
 
-        {/* Sticky Footer Actions Bar */}
-        <div className="p-4 sm:p-5 bg-white border-t border-slate-200 flex items-center justify-end gap-3 z-20 shrink-0">
+          {/* Step 3 Final Review Card */}
+          <div className="p-4 rounded-2xl bg-linear-to-br from-slate-900 to-navy text-white shadow-lg border border-slate-700/60 space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gold/20 text-gold flex items-center justify-center">
+                  <CheckCircle2 size={16} />
+                </div>
+                <div>
+                  <span className="text-xs font-black uppercase text-gold">სერვისის შეჯამება შენახვამდე</span>
+                  <div className="text-[11px] text-slate-300 font-bold">{title || 'ავტო სერვისი'}</div>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-black text-gold bg-gold/10 px-2.5 py-1 rounded-lg border border-gold/20">
+                სულ: {costGel} ₾
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-slate-400 block font-sans">კატეგორია</span>
+                <span className="font-bold text-white truncate block">{SERVICE_CATEGORIES.find(c => c.id === category)?.name_ge}</span>
+              </div>
+              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-slate-400 block font-sans">ბრენდი / კოდი</span>
+                <span className="font-bold text-white truncate block">{customBrand || 'სტანდარტული'}</span>
+              </div>
+              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-slate-400 block font-sans">ბოლო შეცვლა</span>
+                <span className="font-bold text-white">{lastServiceKm.toLocaleString()} კმ</span>
+              </div>
+              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-slate-400 block font-sans">შემდეგი შეცვლა</span>
+                <span className="font-bold text-gold">{(lastServiceKm + intervalKm).toLocaleString()} კმ</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </form>
+  )}
+
+  {/* Sticky Footer Actions Bar */}
+  {modalMode === 'view' ? (
+    <div className="p-4 sm:p-5 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 z-20 shrink-0">
+      <button
+        type="button"
+        onClick={() => {
+          sounds.playClick();
+          onClose();
+        }}
+        className="px-5 py-2.5 rounded-2xl neu-btn text-xs font-bold text-slate-600 hover:text-navy active:scale-95 transition-all"
+      >
+        დახურვა
+      </button>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => applyObdAutoFill(true)}
+          className="px-4 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+          title="OBD მონაცემების ხელახალი სინქრონიზაცია"
+        >
+          <Cpu size={14} className="text-blue-600" />
+          <span>OBD განახლება</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleQuickRenewToday}
+          className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+          title="დღეს შეცვლილად მონიშვნა (100% რესურსი)"
+        >
+          <CheckCircle2 size={14} />
+          <span>✔ დღეს განახლება (100%)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            sounds.playClick();
+            setModalMode('wizard');
+            setCurrentStep(1);
+          }}
+          className="px-5 py-2.5 rounded-2xl bg-gold hover:bg-amber-400 text-navy font-black text-xs shadow-gold-soft flex items-center gap-1.5 transition-all active:scale-95"
+        >
+          <Edit3 size={14} />
+          <span>✎ ეტაპობრივი რედაქტირება</span>
+        </button>
+      </div>
+    </div>
+  ) : (
+    <div className="p-4 sm:p-5 bg-white border-t border-slate-200 flex items-center justify-between gap-3 z-20 shrink-0">
+      <div>
+        {currentStep === 1 ? (
           <button
             type="button"
             onClick={() => {
               sounds.playClick();
-              onClose();
+              if (isEditing) {
+                setModalMode('view');
+              } else {
+                onClose();
+              }
             }}
             className="px-5 py-2.5 rounded-2xl neu-btn text-xs font-bold text-slate-600 hover:text-navy active:scale-95 transition-all"
           >
-            გაუქმება / დახურვა
+            {isEditing ? 'ერთიანი ხედი' : 'გაუქმება'}
           </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              setCurrentStep((prev) => (prev > 1 ? ((prev - 1) as 1 | 2 | 3) : 1));
+            }}
+            className="px-5 py-2.5 rounded-2xl neu-btn text-xs font-bold text-slate-700 hover:text-navy active:scale-95 transition-all flex items-center gap-1.5"
+          >
+            <ArrowLeft size={14} />
+            <span>უკან</span>
+          </button>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        {currentStep === 2 && (
+          <button
+            type="button"
+            onClick={() => applyObdAutoFill(true)}
+            className="px-3.5 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+          >
+            <Zap size={14} className="text-amber-500 fill-amber-500" />
+            <span>⚡ OBD შევსება</span>
+          </button>
+        )}
+
+        {currentStep < 3 ? (
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              setCurrentStep((prev) => ((prev + 1) as 1 | 2 | 3));
+            }}
+            className="px-6 py-2.5 rounded-2xl bg-navy hover:bg-navy/90 text-gold font-bold text-xs shadow-md flex items-center gap-1.5 transition-all active:scale-95"
+          >
+            <span>შემდეგი ეტაპი</span>
+            <ArrowRight size={14} />
+          </button>
+        ) : (
           <button
             type="submit"
             form="thematic-service-form"
@@ -2406,7 +3329,10 @@ export const ThematicServiceModal: React.FC<Props> = ({
             <Check size={16} />
             <span>{isEditing ? '💾 სერვისის განახლება' : '💾 სერვისის დამახსოვრება & შენახვა'}</span>
           </button>
-        </div>
+        )}
+      </div>
+    </div>
+  )}
 
       </div>
     </div>

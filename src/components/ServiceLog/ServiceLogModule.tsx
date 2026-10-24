@@ -929,6 +929,7 @@ export const ServiceLogModule: React.FC<Props> = ({
         currentVehicleMileage={vehicle.mileage_km}
         initialCategory={modalCategory}
         initialVariantKey={modalVariantKey}
+        vehicle={vehicle}
       />
 
     </div>
