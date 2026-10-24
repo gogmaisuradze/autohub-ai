@@ -22,6 +22,19 @@ export const ClearDtcModal: React.FC<Props> = ({
 
   if (!isOpen) return null;
 
+  // Allow closing via Escape key
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isClearing) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, isClearing]);
+
   const handleConfirmClear = async () => {
     if (!confirmationChecked) return;
     setIsClearing(true);
@@ -49,8 +62,18 @@ export const ClearDtcModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-md rounded-3xl neu-card p-6 shadow-2xl space-y-4">
+    <div 
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isClearing) {
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-md animate-fade-in cursor-pointer"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-3xl neu-card p-6 shadow-2xl space-y-4 cursor-default"
+      >
         {/* Warning Icon & Header */}
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full neu-circle flex items-center justify-center text-rose-500 shrink-0">

@@ -75,6 +75,21 @@ export const FinesModule: React.FC<Props> = ({
   // Official Receipt Modal State
   const [receiptFine, setReceiptFine] = useState<FineItem | null>(null);
 
+  // Allow closing payment / receipt modals with Escape key
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (selectedFineForPayment && !isProcessingPayment) {
+          setSelectedFineForPayment(null);
+        } else if (receiptFine) {
+          setReceiptFine(null);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedFineForPayment, isProcessingPayment, receiptFine]);
+
   // Auto-sync status and last updated time
   const [lastAutoSyncedTime, setLastAutoSyncedTime] = useState<string>(() => {
     return new Date().toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' });
@@ -948,8 +963,18 @@ export const FinesModule: React.FC<Props> = ({
       {/* 5. TICKET PAYMENT MODAL (ქვითრის ონლაინ გადახდა)          */}
       {/* ======================================================== */}
       {selectedFineForPayment && (
-        <div className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
-          <div className="bg-[#EDF1F7] rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border border-white space-y-5 my-8">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isProcessingPayment) {
+              setSelectedFineForPayment(null);
+            }
+          }}
+          className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#EDF1F7] rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border border-white space-y-5 my-8 cursor-default"
+          >
             
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
@@ -1165,8 +1190,18 @@ export const FinesModule: React.FC<Props> = ({
       {/* 6. OFFICIAL PAYMENT RECEIPT MODAL (ოფიციალური ჩეკი)       */}
       {/* ======================================================== */}
       {receiptFine && (
-        <div className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-2 border-emerald-500/30 space-y-5 my-8">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setReceiptFine(null);
+            }
+          }}
+          className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-2 border-emerald-500/30 space-y-5 my-8 cursor-default"
+          >
             
             {/* Header / Seal */}
             <div className="text-center space-y-2">

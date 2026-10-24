@@ -47,6 +47,19 @@ export const AddVehicleWizardModal: React.FC<Props> = ({
 }) => {
   const [step, setStep] = useState<number>(initialStep);
 
+  // Allow closing via Escape key
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   // Form State
   const [formData, setFormData] = useState<VehicleProfile>({
     id: initialData?.id || `CAR_${Date.now().toString().slice(-4)}`,
@@ -124,8 +137,18 @@ export const AddVehicleWizardModal: React.FC<Props> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-2xl neu-surface rounded-3xl p-6 sm:p-8 shadow-2xl border border-white max-h-[90vh] overflow-y-auto">
+    <div 
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-md animate-fade-in cursor-pointer overflow-y-auto"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-2xl neu-surface rounded-3xl p-6 sm:p-8 shadow-2xl border border-white max-h-[90vh] overflow-y-auto cursor-default my-auto"
+      >
         
         {/* Top Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-200">

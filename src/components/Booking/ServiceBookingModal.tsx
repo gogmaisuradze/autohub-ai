@@ -89,6 +89,20 @@ export const ServiceBookingModal: React.FC<Props> = ({
 }) => {
   if (!isOpen) return null;
 
+  // Allow closing via Escape key
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        sounds.playClick();
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   // Tomorrow as default date
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -191,8 +205,19 @@ export const ServiceBookingModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="bg-[#EDF1F7] rounded-3xl shadow-2xl border border-white max-w-2xl w-full my-6 overflow-hidden flex flex-col max-h-[92vh]">
+    <div 
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          sounds.playClick();
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy/60 backdrop-blur-sm animate-fade-in overflow-y-auto cursor-pointer"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="bg-[#EDF1F7] rounded-3xl shadow-2xl border border-white max-w-2xl w-full my-6 overflow-hidden flex flex-col max-h-[92vh] cursor-default"
+      >
         
         {/* Header */}
         <div className="p-5 sm:p-6 bg-white border-b border-slate-200 flex items-center justify-between">

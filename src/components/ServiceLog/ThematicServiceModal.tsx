@@ -56,6 +56,20 @@ export const ThematicServiceModal: React.FC<Props> = ({
 }) => {
   const isEditing = Boolean(serviceToEdit);
 
+  // Allow closing via Escape key
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        sounds.playClick();
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   // 1. Primary Category & Variant Selection
   const [category, setCategory] = useState<ServiceCategory>('fluids');
   const [selectedVariant, setSelectedVariant] = useState<ServiceVariantKey>('engine_oil');
@@ -571,13 +585,24 @@ export const ThematicServiceModal: React.FC<Props> = ({
   const currentCategoryVariants = getVariantsByCategory(category);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-3xl neu-card rounded-3xl shadow-neu-modal p-5 sm:p-7 border border-white max-h-[92vh] overflow-y-auto">
+    <div 
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          sounds.playClick();
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy/60 backdrop-blur-sm animate-fade-in cursor-pointer overflow-y-auto"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-3xl neu-card rounded-3xl shadow-neu-modal border border-white max-h-[92vh] flex flex-col overflow-hidden cursor-default my-auto"
+      >
         
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+        {/* Sticky Header with Permanent Close Button */}
+        <div className="flex items-center justify-between p-5 sm:p-6 bg-white border-b border-slate-200 z-20 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl neu-circle flex items-center justify-center text-gold shadow-sm">
+            <div className="w-11 h-11 rounded-2xl neu-circle flex items-center justify-center text-gold shadow-sm shrink-0">
               <Wrench className="w-5 h-5 text-navy" />
             </div>
             <div>
@@ -590,17 +615,19 @@ export const ThematicServiceModal: React.FC<Props> = ({
             </div>
           </div>
           <button
+            type="button"
             onClick={() => {
               sounds.playClick();
               onClose();
             }}
-            className="w-8 h-8 rounded-full neu-circle flex items-center justify-center text-slate-400 hover:text-navy transition-colors"
+            className="w-9 h-9 rounded-full neu-circle flex items-center justify-center text-slate-400 hover:text-navy hover:scale-105 transition-all shadow-sm shrink-0"
+            title="ფანჯრის დახურვა (Esc)"
           >
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+        <form id="thematic-service-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5">
           
           {/* 1. Six Primary Categories */}
           <div>
@@ -2357,28 +2384,29 @@ export const ThematicServiceModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Action buttons (დამახსოვრება & გაუქმება) */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                onClose();
-              }}
-              className="px-5 py-2.5 rounded-2xl neu-btn text-xs font-bold text-slate-600 hover:text-navy"
-            >
-              გაუქმება
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-2xl bg-gold hover:bg-amber-400 text-navy font-black text-xs shadow-gold-soft flex items-center gap-2 transition-all active:scale-95"
-            >
-              <Check size={16} />
-              <span>{isEditing ? '💾 სერვისის განახლება' : '💾 სერვისის დამახსოვრება & შენახვა'}</span>
-            </button>
-          </div>
-
         </form>
+
+        {/* Sticky Footer Actions Bar */}
+        <div className="p-4 sm:p-5 bg-white border-t border-slate-200 flex items-center justify-end gap-3 z-20 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              onClose();
+            }}
+            className="px-5 py-2.5 rounded-2xl neu-btn text-xs font-bold text-slate-600 hover:text-navy active:scale-95 transition-all"
+          >
+            გაუქმება / დახურვა
+          </button>
+          <button
+            type="submit"
+            form="thematic-service-form"
+            className="px-6 py-2.5 rounded-2xl bg-gold hover:bg-amber-400 text-navy font-black text-xs shadow-gold-soft flex items-center gap-2 transition-all active:scale-95"
+          >
+            <Check size={16} />
+            <span>{isEditing ? '💾 სერვისის განახლება' : '💾 სერვისის დამახსოვრება & შენახვა'}</span>
+          </button>
+        </div>
 
       </div>
     </div>

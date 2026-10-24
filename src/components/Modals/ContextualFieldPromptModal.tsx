@@ -52,6 +52,19 @@ export const ContextualFieldPromptModal: React.FC<Props> = ({
 
   if (!isOpen || !config) return null;
 
+  // Allow closing via Escape key
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!val.trim()) return;
@@ -62,8 +75,18 @@ export const ContextualFieldPromptModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md neu-surface rounded-3xl p-6 shadow-2xl border border-white animate-in zoom-in-95">
+    <div 
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-md animate-fade-in cursor-pointer"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md neu-surface rounded-3xl p-6 shadow-2xl border border-white animate-in zoom-in-95 cursor-default"
+      >
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl neu-circle flex items-center justify-center text-gold">
