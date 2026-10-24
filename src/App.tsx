@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { VEHICLE_PRESETS } from './constants/vehicles';
 import { Navigation, TabType } from './components/Navigation';
@@ -21,6 +21,7 @@ import { FloatingMechanicWidget } from './components/AiMechanic/FloatingMechanic
 import { DtcCode, FineItem, ServiceBookingItem, ServiceItem, TelemetryData, VehicleProfile } from './types';
 import { n8nService } from './services/n8nService';
 import { sounds } from './services/soundEffects';
+import { generateServicesForVehicle } from './services/vinServiceEngine';
 import { ArrowLeft } from 'lucide-react';
 
 const INITIAL_VEHICLE: VehicleProfile = {
@@ -418,18 +419,49 @@ export const App: React.FC = () => {
     }
   });
 
+  const getServicesForVehicle = useCallback((v: VehicleProfile): ServiceItem[] => {
+    try {
+      const storageKey = `autohub_services_${v.vin || v.id}`;
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+
+    const generated = generateServicesForVehicle(v);
+    try {
+      localStorage.setItem(`autohub_services_${v.vin || v.id}`, JSON.stringify(generated));
+    } catch {}
+    return generated;
+  }, []);
+
   const [services, setServices] = useState<ServiceItem[]>(() => {
     try {
-      const saved = localStorage.getItem('autohub_services');
+      const initialVeh = (() => {
+        const saved = localStorage.getItem('autohub_vehicle_profile');
+        if (saved) return JSON.parse(saved);
+        return INITIAL_VEHICLE;
+      })();
+      const storageKey = `autohub_services_${initialVeh.vin || initialVeh.id}`;
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-      return INITIAL_SERVICES;
+      return generateServicesForVehicle(initialVeh);
     } catch {
-      return INITIAL_SERVICES;
+      return generateServicesForVehicle(INITIAL_VEHICLE);
     }
   });
+
+  // Automatically keep services aligned to active vehicle's VIN
+  useEffect(() => {
+    const vehServices = getServicesForVehicle(vehicle);
+    setServices(vehServices);
+  }, [vehicle.id, vehicle.vin, getServicesForVehicle]);
 
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
@@ -528,7 +560,12 @@ export const App: React.FC = () => {
     const updatedList = [newV, ...allVehicles.filter(v => v.id !== newV.id)];
     setAllVehicles(updatedList);
     setVehicle(newV);
+
+    const freshServices = generateServicesForVehicle(newV);
+    setServices(freshServices);
     try {
+      localStorage.setItem(`autohub_services_${newV.vin || newV.id}`, JSON.stringify(freshServices));
+      localStorage.setItem('autohub_services', JSON.stringify(freshServices));
       localStorage.setItem('autohub_garage_vehicles', JSON.stringify(updatedList));
       localStorage.setItem('autohub_vehicle_profile', JSON.stringify(newV));
     } catch {}
@@ -842,6 +879,7 @@ export const App: React.FC = () => {
               const updated = [newItem, ...services];
               setServices(updated);
               try {
+                localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(updated));
                 localStorage.setItem('autohub_services', JSON.stringify(updated));
               } catch {}
             }}
@@ -849,6 +887,7 @@ export const App: React.FC = () => {
               const updated = services.map(s => s.id === updatedItem.id ? updatedItem : s);
               setServices(updated);
               try {
+                localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(updated));
                 localStorage.setItem('autohub_services', JSON.stringify(updated));
               } catch {}
             }}
@@ -856,10 +895,19 @@ export const App: React.FC = () => {
               const updated = services.filter(s => s.id !== id);
               setServices(updated);
               try {
+                localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(updated));
                 localStorage.setItem('autohub_services', JSON.stringify(updated));
               } catch {}
             }}
             onOpenFieldPrompt={handleOpenFieldPrompt}
+            onResetToVinSpecs={() => {
+              const fresh = generateServicesForVehicle(vehicle);
+              setServices(fresh);
+              try {
+                localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(fresh));
+                localStorage.setItem('autohub_services', JSON.stringify(fresh));
+              } catch {}
+            }}
           />
         )}
 
