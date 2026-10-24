@@ -305,7 +305,7 @@ export interface N8nConfig {
   useLiveWebhook: boolean;
 }
 
-export type MapPointType = 'radar' | 'patrol' | 'hazard' | 'fuel' | 'showroom';
+export type MapPointType = 'radar' | 'patrol' | 'hazard' | 'fuel' | 'showroom' | 'parking';
 
 export interface FuelPrices {
   super_98?: number;

@@ -25,6 +25,8 @@ import {
   ShieldAlert,
   ArrowRight
 } from 'lucide-react';
+import { ParkingZonesMap } from './ParkingZonesMap';
+import { DelineatedParkingZone, DELINEATED_PARKING_ZONES } from '../../constants/parkingZones';
 
 interface Props {
   vehicle: VehicleProfile;
@@ -287,23 +289,22 @@ const CITY_ZONES: Record<CityType, CityZoneConfig[]> = {
 
 const CITY_QUICK_LOCATIONS: Record<CityType, string[]> = {
   tbilisi: [
-    'ი. ჭავჭავაძის #34 (ვაკე)',
-    'ალ. ყაზბეგის #14 (საბურთალო)',
-    'შ. რუსთაველის #2',
-    'დ. აღმაშენებლის #72',
-    'პეკინის #5'
+    '#05 ი. ჭავჭავაძის #34 (ვაკე)',
+    '#07 პეკინის #5 (საბურთალო)',
+    '#08 ალ. ყაზბეგის #14',
+    '#03 შ. რუსთაველის #2',
+    '#01 კოტე აფხაზის ქ. (სოლოლაკი)',
+    '#10 დ. აღმაშენებლის #72',
+    '#12 აკ. წერეთლის #118'
   ],
   batumi: [
-    'შ. რუსთაველის გამზ. #10 (ბულვარი)',
-    'მ. აბაშიძის #24 (ძველი ბათუმი)',
-    'ზ. გორგილაძის #88',
-    'ევროპის მოედანი #3'
+    '#101 შ. რუსთაველის გამზ. (ბულვარი)',
+    '#102 მ. აბაშიძის #24 (ძველი ბათუმი)',
+    '#103 ზ. გორგილაძის #88'
   ],
   kutaisi: [
-    'დავით აღმაშენებლის მოედანი #1',
-    'ა. წერეთლის #5',
-    'თეთრი ხიდის მიმდებარე ტერიტორია',
-    'შ. რუსთაველის #12'
+    '#201 დავით აღმაშენებლის მოედანი',
+    '#202 თეთრი ხიდის მიმდებარე ტერიტორია'
   ]
 };
 
@@ -636,7 +637,43 @@ export const ParkingModule: React.FC<Props> = ({
     setTimeout(() => setTicketSearchSuccess(null), 4000);
   };
 
-  // Handlers for Live Zone Parking
+  // Handlers for Live Zone Parking & Delineated Map Selection
+  const handleSelectDelineatedZone = (zone: DelineatedParkingZone) => {
+    sounds.playClick();
+    setSelectedCity(zone.city);
+    const catId = zone.category === 'A' ? 'zone_a' : zone.category === 'B' ? 'zone_b' : 'zone_c';
+    setSelectedZone(catId);
+    setParkingLocationInput(`ზონა #${zone.zoneNumber} — ${zone.street_name_ge}`);
+  };
+
+  const handleStartParkingFromMap = (zone: DelineatedParkingZone) => {
+    sounds.playScanSweep();
+    setSelectedCity(zone.city);
+    const catId = zone.category === 'A' ? 'zone_a' : zone.category === 'B' ? 'zone_b' : 'zone_c';
+    setSelectedZone(catId);
+    const locName = `ზონა #${zone.zoneNumber} — ${zone.street_name_ge}`;
+    setParkingLocationInput(locName);
+
+    const newSession: ActiveParkingSession = {
+      isActive: true,
+      city: zone.city,
+      zone: catId as any,
+      zoneName_ge: `ზონა #${zone.zoneNumber} (${zone.categoryName_ge}) — ${zone.street_name_ge}`,
+      hourlyRateGel: zone.hourly_rate_gel,
+      startTime: Date.now(),
+      elapsedSeconds: 0,
+      accumulatedCostGel: 0,
+      isFree15MinActive: true,
+      freeMinRemaining: 15,
+      plateNumber: vehicle.plate_number || 'FR-282-EE'
+    };
+
+    setActiveSession(newSession);
+    try {
+      localStorage.setItem('autohub_active_parking_session', JSON.stringify(newSession));
+    } catch {}
+  };
+
   const handleStartParking = () => {
     sounds.playScanSweep();
     const cityZones = CITY_ZONES[selectedCity] || CITY_ZONES.tbilisi;
@@ -1331,10 +1368,29 @@ export const ParkingModule: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* 3. QUICK LOCATION CHIPS FOR SELECTED CITY */}
+              {/* 3. INTERACTIVE NUMBERED & DELINEATED PARKING ZONES MAP */}
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-black text-navy uppercase tracking-wider flex items-center gap-2">
+                    <MapPin size={14} className="text-gold" />
+                    <span>3. დახაზული და დანომრილი ზონების რუკა (აირჩიეთ პირდაპირ რუკაზე):</span>
+                  </label>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    {CITIES.find(c => c.id === selectedCity)?.name_ge}
+                  </span>
+                </div>
+                <ParkingZonesMap
+                  city={selectedCity}
+                  selectedZoneId={selectedZone}
+                  onSelectZone={handleSelectDelineatedZone}
+                  onStartParkingWithZone={handleStartParkingFromMap}
+                />
+              </div>
+
+              {/* 4. QUICK LOCATION CHIPS FOR SELECTED CITY */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1.5">
-                  პარკირების ლოკაცია / ქუჩა ({CITIES.find(c => c.id === selectedCity)?.name_ge}):
+                  4. პარკირების ლოკაცია / ზონის ნომერი ({CITIES.find(c => c.id === selectedCity)?.name_ge}):
                 </label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {CITY_QUICK_LOCATIONS[selectedCity].map(loc => (

@@ -20,8 +20,10 @@ import {
   Phone,
   Layers,
   MapPin,
-  Car
+  Car,
+  ParkingSquare
 } from 'lucide-react';
+import { DELINEATED_PARKING_ZONES } from '../../constants/parkingZones';
 
 interface Props {
   vehicle?: VehicleProfile;
@@ -387,6 +389,82 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
       marker.addTo(layer);
     });
+
+    // Render Delineated & Numbered Parking Zones if 'all' or 'parking' is active
+    if (filterType === 'all' || filterType === 'parking') {
+      DELINEATED_PARKING_ZONES.forEach(zone => {
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const matches = zone.zoneNumber.includes(q.replace('#', '')) ||
+            zone.title_ge.toLowerCase().includes(q) ||
+            zone.street_name_ge.toLowerCase().includes(q);
+          if (!matches) return;
+        }
+
+        // Draw delineated street polygon on map
+        const polygon = L.polygon(zone.polygon, {
+          color: zone.color,
+          fillColor: zone.fillColor,
+          fillOpacity: 0.35,
+          weight: 2.5,
+          dashArray: '4 3'
+        });
+
+        const freeSpots = Math.max(0, zone.total_spots - zone.occupied_spots);
+        const popupContent = `
+          <div class="w-64 font-sans text-slate-100 p-1">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-cyan-300 border border-blue-500/30 font-mono">
+                🅿️ დახაზული ზონა #${zone.zoneNumber}
+              </span>
+              <span class="text-xs font-mono font-black text-amber-400">${zone.hourly_rate_gel.toFixed(2)} ₾/სთ</span>
+            </div>
+            <h4 class="font-extrabold text-sm text-white mt-2 leading-tight">${zone.title_ge}</h4>
+            <p class="text-xs text-slate-300 mt-1 leading-snug font-mono">${zone.bounds_description_ge}</p>
+            <div class="mt-2 text-[11px] font-mono text-emerald-400">
+              ● ${freeSpots} / ${zone.total_spots} ადგილი თავისუფალია
+            </div>
+            <div class="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
+              <span class="text-amber-300 font-bold">15 წთ უფასო</span>
+              <a href="#parking" class="px-2.5 py-1 rounded-lg bg-gold text-navy font-bold flex items-center gap-1 transition-colors hover:bg-amber-400">
+                ტაიმერი ➔
+              </a>
+            </div>
+          </div>
+        `;
+
+        polygon.bindPopup(popupContent, {
+          className: 'dark-neon-popup',
+          maxWidth: 280
+        });
+
+        polygon.addTo(layer);
+
+        // Circular Zone Number Marker Badge
+        const zoneBadgeHtml = `
+          <div class="relative flex items-center justify-center cursor-pointer group">
+            <div class="w-8 h-8 rounded-xl bg-navy/95 border-2 border-gold text-gold font-mono font-black text-xs flex items-center justify-center shadow-[0_0_12px_rgba(255,200,0,0.6)] group-hover:scale-115 transition-transform">
+              #${zone.zoneNumber}
+            </div>
+          </div>
+        `;
+
+        const badgeIcon = L.divIcon({
+          className: 'custom-traffic-parking-badge',
+          html: zoneBadgeHtml,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        const badgeMarker = L.marker(zone.center, { icon: badgeIcon });
+        badgeMarker.bindPopup(popupContent, {
+          className: 'dark-neon-popup',
+          maxWidth: 280
+        });
+
+        badgeMarker.addTo(layer);
+      });
+    }
   }, [reports, filterType, searchQuery]);
 
   // 5. User Geolocation Handler
@@ -472,6 +550,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   // Filters definition
   const filterOptions = [
     { key: 'all' as const, label: 'ყველა', icon: Layers },
+    { key: 'parking' as const, label: '🅿️ პარკინგი (#ზონები)', icon: ParkingSquare, color: 'text-cyan-400' },
     { key: 'patrol' as const, label: 'პატრული', icon: Shield, color: 'text-blue-500' },
     { key: 'radar' as const, label: 'რადარები', icon: Camera, color: 'text-amber-500' },
     { key: 'hazard' as const, label: 'საფრთხე', icon: AlertTriangle, color: 'text-rose-500' },
