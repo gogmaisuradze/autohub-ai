@@ -6,10 +6,11 @@ import {
   ShieldAlert,
   Wrench,
   ParkingSquare,
-  MoreHorizontal
+  MoreHorizontal,
+  Navigation as NavigationIcon
 } from 'lucide-react';
 
-export type TabType = 'home' | 'obd' | 'fines' | 'parking' | 'ai' | 'service' | 'garage' | 'settings';
+export type TabType = 'home' | 'obd' | 'fines' | 'parking' | 'ai' | 'service' | 'map' | 'garage' | 'settings';
 
 interface Props {
   activeTab: TabType;
@@ -65,6 +66,13 @@ export const Navigation: React.FC<Props> = ({
       badgeColor: ''
     },
     {
+      id: 'map' as TabType,
+      label: isGe ? 'რუკა' : 'Live Map',
+      icon: NavigationIcon,
+      badge: 'LIVE',
+      badgeColor: 'bg-cyan-500 text-white font-black'
+    },
+    {
       id: 'garage' as TabType,
       label: isGe ? 'მეტი' : 'More',
       icon: MoreHorizontal,
@@ -79,6 +87,7 @@ export const Navigation: React.FC<Props> = ({
     { id: 'obd' as TabType, label: 'OBD', icon: Activity, badge: dtcCount > 0 ? dtcCount : null },
     { id: 'fines' as TabType, label: isGe ? 'ჯარიმები' : 'Fines', icon: ShieldAlert, badge: finesCount > 0 ? finesCount : null },
     { id: 'parking' as TabType, label: isGe ? 'პარკინგი' : 'Parking', icon: ParkingSquare, badge: null },
+    { id: 'map' as TabType, label: isGe ? 'რუკა' : 'Map', icon: NavigationIcon, badge: null },
     { id: 'service' as TabType, label: isGe ? 'სერვისი' : 'Service', icon: Wrench, badge: null },
     { id: 'garage' as TabType, label: isGe ? 'მეტი' : 'More', icon: MoreHorizontal, badge: null }
   ];

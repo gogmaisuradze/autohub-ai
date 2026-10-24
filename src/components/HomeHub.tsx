@@ -15,7 +15,8 @@ import {
   Thermometer,
   BellRing,
   ParkingSquare,
-  Calendar
+  Calendar,
+  Navigation as NavigationIcon
 } from 'lucide-react';
 
 interface Props {
@@ -82,9 +83,19 @@ export const HomeHub: React.FC<Props> = ({
       tag: 'რესურსის კონტროლი'
     },
     {
+      id: 'map' as TabType,
+      title: 'Waze ცოცხალი საგზაო რუკა & რადარები',
+      subtitle: 'საპატრულო ეკიპაჟები, სიჩქარის რადარები, საწვავის ფასები & ავტოსალონები',
+      icon: NavigationIcon,
+      badgeText: 'LIVE',
+      badgeColor: 'bg-cyan-500 text-white font-black shadow-sm',
+      badgeSubtext: 'Waze რეჟიმი',
+      tag: 'საპატრულო რადარი'
+    },
+    {
       id: 'garage' as TabType,
-      title: 'მეტი — გარაჟი, მოწმობა & რუკა',
-      subtitle: 'მართვის მოწმობის კონსპექტი, Waze რუკა, რადარები და ბენზინის ფასები',
+      title: 'მეტი — გარაჟი, მოწმობა & პარამეტრები',
+      subtitle: 'მართვის მოწმობის კონსპექტი, OBD ადაპტერი და n8n ვებჰუკები',
       icon: Car,
       badgeText: '90 ქულა',
       badgeColor: 'bg-emerald-500 text-white font-bold shadow-sm',

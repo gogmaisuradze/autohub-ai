@@ -9,6 +9,7 @@ import { FinesModule } from './components/Fines/FinesModule';
 import { ParkingModule } from './components/Parking/ParkingModule';
 import { ServiceLogModule } from './components/ServiceLog/ServiceLogModule';
 import { GarageModule } from './components/Garage/GarageModule';
+import LiveTrafficMap from './components/Map/LiveTrafficMap';
 import { SettingsModule } from './components/Settings/SettingsModule';
 import { ClearDtcModal } from './components/Modals/ClearDtcModal';
 import { ObdAdapterConnectModal, ObdAdapterType } from './components/Modals/ObdAdapterConnectModal';
@@ -853,6 +854,12 @@ export const App: React.FC = () => {
             }}
             onOpenFieldPrompt={handleOpenFieldPrompt}
           />
+        )}
+
+        {activeTab === 'map' && (
+          <div className="animate-fade-in">
+            <LiveTrafficMap vehicle={vehicle} />
+          </div>
         )}
 
         {(activeTab === 'garage' || activeTab === 'settings') && (

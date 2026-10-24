@@ -285,37 +285,24 @@ class N8nService {
   public async getReports(): Promise<MapReport[]> {
     const endpoint = `${this.config.baseUrl}${this.config.reportsEndpoint}`;
 
+    let liveReports: MapReport[] = [];
     if (this.config.useLiveWebhook) {
       try {
         const res = await fetch(endpoint, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const reports = Array.isArray(data) ? data : (data.reports || []);
-        this.addLog(endpoint, 'GET', {}, reports, 'success');
-        return reports;
+        if (res.ok) {
+          const data = await res.json();
+          liveReports = Array.isArray(data) ? data : (data.reports || []);
+          this.addLog(endpoint, 'GET', {}, liveReports, 'success');
+        }
       } catch (err: any) {
         console.warn('n8n get-reports webhook failed, falling back to cached/mock data:', err.message);
       }
     }
 
-    // Check localStorage cache
-    try {
-      const cached = localStorage.getItem('autohub_map_reports');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          this.addLog(endpoint, 'GET', {}, parsed, 'simulated');
-          return parsed;
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    // Default Tbilisi Mock Reports
+    // Default Tbilisi Verified POIs (radars, fuel stations, showrooms, patrols)
     const initialReports: MapReport[] = [
       // Patrol Alerts
       {
@@ -598,14 +585,41 @@ class N8nService {
       }
     ];
 
+    // Combine live reports from n8n + local user additions + verified base POIs
+    let localAdditions: MapReport[] = [];
     try {
-      localStorage.setItem('autohub_map_reports', JSON.stringify(initialReports));
+      const cached = localStorage.getItem('autohub_map_reports');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) localAdditions = parsed;
+      }
     } catch (e) {
       // ignore
     }
 
-    this.addLog(endpoint, 'GET', {}, initialReports, 'simulated');
-    return initialReports;
+    const mergedMap = new Map<string, MapReport>();
+    // 1. Live reports from n8n first
+    for (const r of liveReports) {
+      if (r && r.id) mergedMap.set(r.id, r);
+    }
+    // 2. Local user additions
+    for (const r of localAdditions) {
+      if (r && r.id && !mergedMap.has(r.id)) mergedMap.set(r.id, r);
+    }
+    // 3. Base verified POIs (radars, fuel stations, showrooms)
+    for (const r of initialReports) {
+      if (r && r.id && !mergedMap.has(r.id)) mergedMap.set(r.id, r);
+    }
+
+    const finalResult = Array.from(mergedMap.values());
+    try {
+      localStorage.setItem('autohub_map_reports', JSON.stringify(finalResult));
+    } catch (e) {
+      // ignore
+    }
+
+    this.addLog(endpoint, 'GET', {}, finalResult, liveReports.length > 0 ? 'success' : 'simulated');
+    return finalResult;
   }
 
   // 6. Add Live Map Report (POST /webhook/add-report)

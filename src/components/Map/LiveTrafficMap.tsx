@@ -108,10 +108,20 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     });
 
     // Dark Matter CartoDB Tiles (Perfect for dark neon aesthetic)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
       subdomains: 'abcd'
     }).addTo(map);
+
+    // Fallback to OSM tiles if CartoDB experiences rate limits
+    tileLayer.on('tileerror', () => {
+      if (!(map as any)._osmFallback) {
+        (map as any)._osmFallback = true;
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19
+        }).addTo(map);
+      }
+    });
 
     // Zoom control on top-right
     L.control.zoom({ position: 'topright' }).addTo(map);
@@ -126,12 +136,19 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       setClickedCoords({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
 
-    // Invalidate size after short render delay
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
+    // Invalidate size after render to prevent grey/empty tile glitch
+    const t1 = setTimeout(() => map.invalidateSize(), 100);
+    const t2 = setTimeout(() => map.invalidateSize(), 350);
+    const t3 = setTimeout(() => map.invalidateSize(), 700);
+
+    const handleResize = () => map.invalidateSize();
+    window.addEventListener('resize', handleResize);
 
     return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       map.remove();
       mapInstanceRef.current = null;
     };
