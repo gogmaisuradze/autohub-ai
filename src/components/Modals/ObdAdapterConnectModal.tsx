@@ -17,7 +17,16 @@ import {
   Car,
   Activity,
   ArrowRight,
-  CheckCircle2
+  ArrowLeft,
+  CheckCircle2,
+  ShoppingBag,
+  Truck,
+  CreditCard,
+  Banknote,
+  MapPin,
+  Phone,
+  User,
+  Package
 } from 'lucide-react';
 
 export type ObdAdapterType = 'wifi' | 'bluetooth' | 'cloud_4g';
@@ -32,6 +41,30 @@ interface Props {
   vehicleBrand?: string;
   vehicleModel?: string;
 }
+
+const ADAPTER_PRICING: Record<ObdAdapterType, { name: string; modelCode: string; price: number; badge: string; desc: string }> = {
+  wifi: {
+    name: 'AutoHub Wi-Fi ELM327 Pro (vLinker)',
+    modelCode: 'vLinker FD+ Wi-Fi',
+    price: 49,
+    badge: 'რეკომენდებული • სწრაფი',
+    desc: 'iOS & Android თავსებადი, 50 PID/წმ, შეცდომების ჩაქრობა და ცოცხალი სენსორები'
+  },
+  bluetooth: {
+    name: 'AutoHub Bluetooth 5.0 BLE (vLinker MC+)',
+    modelCode: 'BLE 5.0 Low Energy',
+    price: 69,
+    badge: 'ულტრა-დაბალი ენერგომოხმარება',
+    desc: 'მუდმივად ჩასმული მანქანაში, BatterySaver™ ძილის რეჟიმი, არ სვამს აკუმულატორს'
+  },
+  cloud_4g: {
+    name: 'AutoHub 4G LTE Cloud + GPS Tracker',
+    modelCode: '4G LTE GPS Telematics',
+    price: 119,
+    badge: 'დისტანციური 24/7',
+    desc: 'დისტანციური მონიტორინგი ნებისმიერი წერტილიდან, SIM ბარათით და GPS ლოკაციით'
+  }
+};
 
 export const ObdAdapterConnectModal: React.FC<Props> = ({
   isOpen,
@@ -53,10 +86,20 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
     return initialType;
   });
 
-  // Phases: 'idle' (selection) -> 'connecting' (animation) -> 'connected' (ready to test)
-  const [connectionPhase, setConnectionPhase] = useState<'idle' | 'connecting' | 'connected'>('idle');
+  // Phases: 'idle' (selection) -> 'connecting' (animation) -> 'connected' (ready to test) -> 'ordering' (order form) -> 'order_success'
+  const [connectionPhase, setConnectionPhase] = useState<'idle' | 'connecting' | 'connected' | 'ordering' | 'order_success'>('idle');
   const [connectStep, setConnectStep] = useState<number>(0);
   const [showPortHint, setShowPortHint] = useState(false);
+
+  // Ordering state
+  const [orderModel, setOrderModel] = useState<ObdAdapterType>(selectedType);
+  const [orderName, setOrderName] = useState('გიორგი მაისურაძე');
+  const [orderPhone, setOrderPhone] = useState('+995 599 12 34 56');
+  const [orderCity, setOrderCity] = useState('თბილისი');
+  const [orderAddress, setOrderAddress] = useState('ჭავჭავაძის გამზ. #34, ბინა 12');
+  const [orderPayment, setOrderPayment] = useState<'cod' | 'card' | 'bog_tbc'>('cod');
+  const [orderId, setOrderId] = useState('');
+  const [orderError, setOrderError] = useState('');
 
   // Custom fields
   const [ipAddress, setIpAddress] = useState(vehicleIp);
@@ -118,6 +161,38 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
     setConnectionPhase('idle');
   };
 
+  const handleOrderSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!orderPhone.trim() || !orderAddress.trim()) {
+      sounds.playWarning?.();
+      setOrderError('გთხოვთ მიუთითოთ ტელეფონის ნომერი და მიტანის მისამართი');
+      return;
+    }
+    setOrderError('');
+    const newId = `OBD-${Math.floor(1000 + Math.random() * 9000)}`;
+    setOrderId(newId);
+    sounds.playSuccess();
+    setConnectionPhase('order_success');
+
+    try {
+      const existing = JSON.parse(localStorage.getItem('autohub_obd_orders') || '[]');
+      existing.unshift({
+        id: newId,
+        adapterType: orderModel,
+        modelName: ADAPTER_PRICING[orderModel].name,
+        vehicle: `${vehicleBrand} ${vehicleModel}`,
+        name: orderName,
+        phone: orderPhone,
+        city: orderCity,
+        address: orderAddress,
+        payment: orderPayment,
+        date: new Date().toISOString(),
+        price: ADAPTER_PRICING[orderModel].price
+      });
+      localStorage.setItem('autohub_obd_orders', JSON.stringify(existing));
+    } catch {}
+  };
+
   const adapterOptions = [
     {
       id: 'wifi' as const,
@@ -166,19 +241,41 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
         <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl neu-circle flex items-center justify-center text-gold shadow-sm shrink-0">
-              <Zap className="w-6 h-6 text-navy" />
+              {connectionPhase === 'ordering' ? (
+                <ShoppingBag className="w-6 h-6 text-gold" />
+              ) : connectionPhase === 'order_success' ? (
+                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+              ) : (
+                <Zap className="w-6 h-6 text-navy" />
+              )}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base sm:text-lg font-black text-navy tracking-tight">
-                  OBD-II ადაპტერთან დაკავშირება
+                  {connectionPhase === 'ordering'
+                    ? 'OBD-II ადაპტერის შეკვეთა'
+                    : connectionPhase === 'order_success'
+                    ? 'შეკვეთა მიღებულია!'
+                    : 'OBD-II ადაპტერთან დაკავშირება'}
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-gold/15 text-navy border border-gold/30">
-                  {connectionPhase === 'connected' ? 'LIVE' : connectionPhase === 'connecting' ? 'SYNC' : 'SETUP'}
+                  {connectionPhase === 'ordering'
+                    ? 'EXPRESS 1-2 სთ'
+                    : connectionPhase === 'order_success'
+                    ? 'დადასტურებულია'
+                    : connectionPhase === 'connected'
+                    ? 'LIVE'
+                    : connectionPhase === 'connecting'
+                    ? 'SYNC'
+                    : 'SETUP'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                {connectionPhase === 'connected'
+                {connectionPhase === 'ordering'
+                  ? 'ორიგინალი OBD-II დიაგნოსტიკური ადაპტერები 1-წლიანი გარანტიით'
+                  : connectionPhase === 'order_success'
+                  ? 'ჩვენი კურიერი დაგიკავშირდებათ მითითებულ ნომერზე 15 წუთში'
+                  : connectionPhase === 'connected'
                   ? 'კავშირი წარმატებით დამყარდა! დაიწყეთ მანქანის დიაგნოსტიკა'
                   : connectionPhase === 'connecting'
                   ? 'მიმდინარეობს ECU ბორტ-კომპიუტერთან სინქრონიზაცია...'
@@ -197,7 +294,7 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
         </div>
 
         {/* 1. Adapter Selection (When idle or connecting) */}
-        {connectionPhase !== 'connected' && (
+        {(connectionPhase === 'idle' || connectionPhase === 'connecting') && (
           <div>
             <label className="text-xs font-black text-navy uppercase tracking-wider block mb-2">
               1. აირჩიეთ ადაპტერის ტიპი:
@@ -506,16 +603,303 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
           </div>
         )}
 
+        {/* 5. ORDER ADAPTER VIEW (When user clicks "ადაპტერის შეკვეთა") */}
+        {connectionPhase === 'ordering' && (
+          <div className="space-y-4 animate-fade-in">
+            {/* Top Info Bar */}
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setConnectionPhase('idle');
+                }}
+                className="text-xs font-bold text-navy hover:text-gold flex items-center gap-1.5 transition-colors"
+              >
+                <ArrowLeft size={14} />
+                <span>უკან დაკავშირებაზე</span>
+              </button>
+              <span className="text-[11px] font-mono text-slate-500">
+                ავტომობილი: <strong className="text-navy">{vehicleBrand} {vehicleModel}</strong>
+              </span>
+            </div>
+
+            {/* 1. Model cards */}
+            <div>
+              <label className="text-xs font-black text-navy uppercase tracking-wider block mb-2">
+                1. აირჩიეთ ადაპტერის მოდელი:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {(['wifi', 'bluetooth', 'cloud_4g'] as ObdAdapterType[]).map((typeKey) => {
+                  const info = ADAPTER_PRICING[typeKey];
+                  const isSel = orderModel === typeKey;
+                  const Icon = typeKey === 'wifi' ? Wifi : typeKey === 'bluetooth' ? Bluetooth : Radio;
+                  return (
+                    <div
+                      key={typeKey}
+                      onClick={() => {
+                        sounds.playClick();
+                        setOrderModel(typeKey);
+                      }}
+                      className={`p-3.5 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+                        isSel
+                          ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
+                          : 'neu-btn text-slate-700 hover:text-navy'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-1 mb-2">
+                          <div
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                              isSel ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm font-black font-mono text-navy block">
+                              {info.price} ₾
+                            </span>
+                            <span className="text-[9px] font-bold text-emerald-700">უფასო მიტანა</span>
+                          </div>
+                        </div>
+
+                        <h4 className="text-xs font-black text-navy">{info.name}</h4>
+                        <p className="text-[10px] text-slate-500 font-medium line-clamp-2 mt-1">
+                          {info.desc}
+                        </p>
+                      </div>
+
+                      <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] font-mono">
+                        <span className="text-slate-400">{info.modelCode}</span>
+                        <span className="text-gold font-bold">{info.badge}</span>
+                      </div>
+
+                      {isSel && (
+                        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center">
+                          <Check size={11} className="stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. Delivery details */}
+            <div className="p-4 rounded-2xl bg-white/90 border border-slate-200/80 shadow-xs space-y-3.5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h4 className="text-xs font-black text-navy flex items-center gap-1.5 uppercase tracking-wide">
+                  <Truck size={14} className="text-gold" />
+                  <span>2. მიწოდების მონაცემები</span>
+                </h4>
+                <span className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
+                  ● ექსპრეს კურიერი თბილისში
+                </span>
+              </div>
+
+              {orderError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-bold animate-fade-in">
+                  ⚠️ {orderError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">
+                    მომხმარებლის სახელი & გვარი
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={orderName}
+                      onChange={(e) => setOrderName(e.target.value)}
+                      placeholder="თქვენი სახელი"
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white font-medium text-navy focus:outline-none focus:ring-2 focus:ring-gold/50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">
+                    ტელეფონის ნომერი *
+                  </label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="tel"
+                      value={orderPhone}
+                      onChange={(e) => setOrderPhone(e.target.value)}
+                      placeholder="+995 5XX XX XX XX"
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white font-medium text-navy focus:outline-none focus:ring-2 focus:ring-gold/50"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 mb-1 block">ქალაქი</label>
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  {['თბილისი', 'ბათუმი', 'ქუთაისი', 'რუსთავი'].map((city) => (
+                    <button
+                      key={city}
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setOrderCity(city);
+                      }}
+                      className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all border ${
+                        orderCity === city
+                          ? 'bg-navy text-gold border-navy shadow-sm'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-gold'
+                      }`}
+                    >
+                      {city}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="relative">
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={orderAddress}
+                    onChange={(e) => setOrderAddress(e.target.value)}
+                    placeholder="მიტანის მისამართი (ქუჩა, ბინა, სადარბაზო...)"
+                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white font-medium text-navy focus:outline-none focus:ring-2 focus:ring-gold/50"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Methods */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 mb-1.5 block">გადახდის მეთოდი</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setOrderPayment('cod');
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                      orderPayment === 'cod'
+                        ? 'bg-amber-50 border-gold ring-1 ring-gold text-navy font-bold'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 text-xs font-bold">
+                      <Banknote size={14} className="text-gold shrink-0" />
+                      <span className="truncate">კურიერთან</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 block mt-0.5 truncate">ნაღდი ან ბარათით</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setOrderPayment('card');
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                      orderPayment === 'card'
+                        ? 'bg-amber-50 border-gold ring-1 ring-gold text-navy font-bold'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 text-xs font-bold">
+                      <CreditCard size={14} className="text-gold shrink-0" />
+                      <span className="truncate">ბარათით</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 block mt-0.5 truncate">Apple / Google Pay</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setOrderPayment('bog_tbc');
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                      orderPayment === 'bog_tbc'
+                        ? 'bg-amber-50 border-gold ring-1 ring-gold text-navy font-bold'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 text-xs font-bold">
+                      <Zap size={14} className="text-gold shrink-0" />
+                      <span className="truncate">TBC / BoG</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 block mt-0.5 truncate">ინტერნეტ-ბანკინგი</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Warranty and Config Notice */}
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs font-mono">
+                <span className="text-slate-600">
+                  🛡️ კონფიგურაცია: <strong>{vehicleBrand} {vehicleModel}</strong>-ის ECU-ზე
+                </span>
+                <span className="text-emerald-700 font-bold">1 წელი გარანტია</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. ORDER SUCCESS STATE */}
+        {connectionPhase === 'order_success' && (
+          <div className="p-6 rounded-3xl bg-white border-2 border-emerald-400 shadow-xl space-y-4 animate-fade-in text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-md">
+              <CheckCircle2 className="w-9 h-9 stroke-[2.5]" />
+            </div>
+
+            <div>
+              <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-block mb-2">
+                ● შეკვეთა #{orderId} გაფორმებულია
+              </span>
+              <h3 className="text-lg font-black text-navy">
+                ადაპტერის შეკვეთა წარმატებით მიღებულია!
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                კურიერი დაგიკავშირდებათ ნომერზე: <strong className="text-navy">{orderPhone}</strong> (15-20 წუთში).
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs font-mono space-y-2">
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="text-slate-500">მოდელი:</span>
+                <strong className="text-navy">{ADAPTER_PRICING[orderModel].name}</strong>
+              </div>
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="text-slate-500">ავტომობილი:</span>
+                <strong className="text-navy">{vehicleBrand} {vehicleModel}</strong>
+              </div>
+              <div className="flex justify-between border-b border-slate-200 pb-1.5">
+                <span className="text-slate-500">მისამართი:</span>
+                <strong className="text-navy">{orderCity}, {orderAddress}</strong>
+              </div>
+              <div className="flex justify-between pt-0.5">
+                <span className="text-slate-500">გადასახდელი:</span>
+                <strong className="text-emerald-700 text-sm font-black">{ADAPTER_PRICING[orderModel].price} ₾ (მიწოდება უფასო)</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Footer Actions */}
         <div className="pt-3 border-t border-slate-200/80">
           {connectionPhase === 'idle' ? (
-            /* PHASE 1: Big Tactile Stitch Connect Button */
+            /* PHASE 1: Big Tactile Stitch Connect Button & Order Adapter Button */
             <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
               <button
-                onClick={handleClose}
-                className="btn-stitch-soft w-full sm:w-auto px-6 py-3.5 text-xs font-bold"
+                onClick={() => {
+                  sounds.playClick();
+                  setConnectionPhase('ordering');
+                }}
+                className="btn-stitch-soft w-full sm:w-auto px-6 py-3.5 text-xs font-bold flex items-center justify-center gap-2 hover:border-gold hover:text-navy group transition-all"
               >
-                <span>მოგვიანებით / დემო რეჟიმი</span>
+                <ShoppingBag className="w-4 h-4 text-gold group-hover:scale-110 transition-transform" />
+                <span>ადაპტერის შეკვეთა</span>
               </button>
 
               <button
@@ -525,6 +909,50 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
                 <Zap className="w-5 h-5 text-navy fill-navy" />
                 <span>დაკავშირება</span>
                 <ArrowRight size={17} />
+              </button>
+            </div>
+          ) : connectionPhase === 'ordering' ? (
+            /* ORDERING FOOTER */
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  setConnectionPhase('idle');
+                }}
+                className="btn-stitch-soft w-full sm:w-auto px-6 py-3.5 text-xs font-bold flex items-center justify-center gap-1.5"
+              >
+                <ArrowLeft size={15} />
+                <span>უკან</span>
+              </button>
+
+              <button
+                onClick={handleOrderSubmit}
+                className="btn-stitch-primary w-full sm:flex-1 py-4 px-8 text-sm font-black flex items-center justify-center gap-2"
+              >
+                <ShoppingBag className="w-5 h-5 text-navy fill-navy" />
+                <span>შეკვეთის გაფორმება • {ADAPTER_PRICING[orderModel].price} ₾</span>
+                <ArrowRight size={17} />
+              </button>
+            </div>
+          ) : connectionPhase === 'order_success' ? (
+            /* ORDER SUCCESS FOOTER */
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  setConnectionPhase('idle');
+                }}
+                className="btn-stitch-soft w-full sm:w-auto px-6 py-3.5 text-xs font-bold"
+              >
+                <span>დაკავშირებაზე დაბრუნება</span>
+              </button>
+
+              <button
+                onClick={handleClose}
+                className="btn-stitch-primary w-full sm:flex-1 py-4 px-8 text-sm font-black flex items-center justify-center gap-2"
+              >
+                <Check size={18} />
+                <span>დასრულება & დახურვა</span>
               </button>
             </div>
           ) : connectionPhase === 'connected' ? (
