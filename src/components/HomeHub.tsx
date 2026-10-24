@@ -138,6 +138,7 @@ export const HomeHub: React.FC<Props> = ({
           fines={fines}
           servicesList={services}
           onSelectDepartment={onSelectDepartment}
+          vehicle={vehicle}
         />
       </div>
 
@@ -189,7 +190,7 @@ export const HomeHub: React.FC<Props> = ({
                   </span>
                 </div>
                 
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${dept.badgeColor} flex items-center justify-center font-black text-xs sm:text-sm shadow-md shrink-0`}>
+                <div className={`min-w-8 sm:min-w-10 h-8 sm:h-10 px-2.5 sm:px-3 rounded-full ${dept.badgeColor} flex items-center justify-center font-black text-xs sm:text-sm shadow-md shrink-0 whitespace-nowrap`}>
                   {dept.badgeText}
                 </div>
 

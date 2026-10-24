@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TabType } from "../Navigation";
-import { DtcCode, FineItem, ServiceItem } from "../../types";
+import { DtcCode, FineItem, ServiceItem, VehicleProfile } from "../../types";
 import { sounds } from "../../services/soundEffects";
 import {
   Activity,
@@ -24,6 +24,7 @@ interface Props {
   servicesList: ServiceItem[];
   onSelectDepartment: (tab: TabType) => void;
   lang?: 'ge' | 'en';
+  vehicle?: VehicleProfile;
 }
 
 export const ServicesOrbitCarousel: React.FC<Props> = ({
@@ -31,7 +32,8 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   fines,
   servicesList,
   onSelectDepartment,
-  lang = 'ge'
+  lang = 'ge',
+  vehicle
 }) => {
   const isGe = lang === 'ge';
   const pendingFines = fines.filter(f => f.status === 'pending');
@@ -102,7 +104,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
       name: isGe ? 'მეტი — გარაჟი, მოწმობა & რუკა' : 'Garage, License & Live Map',
       role: isGe ? 'მართვის მოწმობა & რუკა' : 'Driver License & Live Map',
       icon: Car,
-      badgeText: isGe ? '90 ქულა' : '90 Points',
+      badgeText: isGe ? `${vehicle?.driver_license_points ?? 100} ქულა` : `${vehicle?.driver_license_points ?? 100} Points`,
       badgeColor: 'bg-emerald-500 text-white font-black',
       desc: isGe
         ? 'მართვის მოწმობის Google Notebook კონსპექტი, საგზაო წესები, Waze რუკა, რადარები და ბენზინის ფასები.'

@@ -162,7 +162,7 @@ export const GarageModule: React.FC<Props> = ({
             <Award size={15} className="text-gold" />
             <span>მართვის მოწმობა</span>
             <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-gold text-navy">
-              90 ქულა
+              {currentPoints} ქულა
             </span>
           </button>
 
@@ -310,7 +310,7 @@ export const GarageModule: React.FC<Props> = ({
                   <span>მოქმედი • ACTIVE</span>
                 </div>
                 <div className="px-3 py-1 rounded-xl bg-gold text-navy font-mono font-black text-xs shadow-gold-soft">
-                  90 / 100 ქულა
+                  {currentPoints} / 100 ქულა
                 </div>
               </div>
             </div>
@@ -501,7 +501,7 @@ export const GarageModule: React.FC<Props> = ({
                     მართვის მოწმობა & თეორიული კონსპექტი
                   </h4>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                    90 / 100 ქულა
+                    {currentPoints} / 100 ქულა
                   </span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800">
                     B კატეგორია
