@@ -100,9 +100,9 @@ export const ServiceBookingModal: React.FC<Props> = ({
   const [providerName, setProviderName] = useState(SERVICE_PROVIDERS[0].name);
   const [bookingDate, setBookingDate] = useState(defaultDateStr);
   const [bookingTime, setBookingTime] = useState('11:00');
-  const [driverName, setDriverName] = useState(vehicle.driver_name || 'გიორგი ბერიძე');
+  const [driverName, setDriverName] = useState(vehicle.driver_name || 'გიორგი მაისურაძე');
   const [driverPhone, setDriverPhone] = useState(vehicle.driver_phone || '+995 599 12 34 56');
-  const [plateNumber, setPlateNumber] = useState(vehicle.plate_number || 'GE-777-AA');
+  const [plateNumber, setPlateNumber] = useState(vehicle.plate_number || 'FR-282-EE');
   
   // Custom or auto-generated problem description
   const defaultComplaint = dtcCodes.length > 0
@@ -514,7 +514,7 @@ export const ServiceBookingModal: React.FC<Props> = ({
                 sounds.playClick();
                 onClose();
               }}
-              className="px-4 py-2.5 rounded-2xl neu-btn text-xs font-bold text-slate-600 hover:text-navy transition-all shrink-0"
+              className="btn-stitch-soft px-5 py-2.5 text-xs font-bold shrink-0"
             >
               გაუქმება
             </button>
@@ -522,7 +522,7 @@ export const ServiceBookingModal: React.FC<Props> = ({
             <button
               type="button"
               onClick={handleSubmit}
-              className="flex-1 sm:flex-none justify-center px-4 sm:px-5 py-2.5 rounded-2xl bg-gold hover:bg-amber-400 text-navy font-black text-xs shadow-gold-soft hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+              className="btn-stitch-primary flex-1 sm:flex-none justify-center px-6 py-2.5 text-xs font-black"
             >
               <Bot size={15} />
               <span>ჯავშანი & AI დაზუსტება →</span>

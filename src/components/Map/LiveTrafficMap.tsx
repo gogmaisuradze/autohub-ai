@@ -7,7 +7,7 @@ import {
   Navigation,
   Compass,
   Plus,
-  ShieldAlert,
+  Shield,
   Camera,
   AlertTriangle,
   Fuel,
@@ -401,7 +401,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   // Filters definition
   const filterOptions = [
     { key: 'all' as const, label: 'ყველა', icon: Layers },
-    { key: 'patrol' as const, label: 'პატრული', icon: ShieldAlert, color: 'text-blue-500' },
+    { key: 'patrol' as const, label: 'პატრული', icon: Shield, color: 'text-blue-500' },
     { key: 'radar' as const, label: 'რადარები', icon: Camera, color: 'text-amber-500' },
     { key: 'hazard' as const, label: 'საფრთხე', icon: AlertTriangle, color: 'text-rose-500' },
     { key: 'fuel' as const, label: 'ბენზინის ფასები', icon: Fuel, color: 'text-emerald-500' },

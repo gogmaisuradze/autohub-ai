@@ -33,8 +33,11 @@ import {
   ChevronUp,
   Trash2,
   Calculator,
-  Bot
+  Bot,
+  Folder,
+  LayoutGrid
 } from 'lucide-react';
+import GlassFolder, { FolderFile, ArtPreset } from '../ui/glass-folder-cards';
 
 interface Props {
   vehicle: VehicleProfile;
@@ -67,6 +70,116 @@ export const ServiceLogModule: React.FC<Props> = ({
   // Active Category filter ('all' or one of the 6 canonical categories)
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<'all' | ServiceCategory>('all');
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  // View mode: 'folders' (Glass Folders) or 'cards' (Standard Grid)
+  const [viewMode, setViewMode] = useState<'folders' | 'cards'>('folders');
+
+  const FOLDER_CONFIGS: {
+    id: ServiceCategory;
+    label: string;
+    art: ArtPreset;
+    seed: number;
+    tone: 'light' | 'dark';
+    subtitle: string;
+  }[] = [
+    {
+      id: 'fluids',
+      label: 'ზეთები & სითხეები',
+      art: 'ember',
+      seed: 7,
+      tone: 'light',
+      subtitle: 'ძრავი, ATF, ანტიფრიზი, DOT4'
+    },
+    {
+      id: 'chassis',
+      label: 'სავალი ნაწილი',
+      art: 'verdant',
+      seed: 14,
+      tone: 'light',
+      subtitle: 'ამორტიზატორები, რაზვალი, გიტარები'
+    },
+    {
+      id: 'filters',
+      label: 'ფილტრები & ჰაერი',
+      art: 'glacier',
+      seed: 21,
+      tone: 'light',
+      subtitle: 'ძრავის, სალონის & საწვავის'
+    },
+    {
+      id: 'engine',
+      label: 'ძრავი & სვეჩები',
+      art: 'aurora',
+      seed: 33,
+      tone: 'light',
+      subtitle: 'სვეჩები, ბაბინები, ღვედი & ცეპი'
+    },
+    {
+      id: 'electrical',
+      label: 'ელექტროობა & AC',
+      art: 'dusk',
+      seed: 42,
+      tone: 'light',
+      subtitle: 'აკუმულატორი, ფრეონი & გენერატორი'
+    },
+    {
+      id: 'legal',
+      label: 'ტექ-ინსპექცია PTI',
+      art: 'ember',
+      seed: 99,
+      tone: 'dark',
+      subtitle: '1-წლიანი სავალდებულო ინსპექცია'
+    }
+  ];
+
+  const getFolderDataForCategory = (catId: ServiceCategory) => {
+    const catServices = services.filter(s => normalizeCategory(s.category) === catId);
+    const catVariants = SERVICE_VARIANTS.filter(v => v.categoryId === catId);
+
+    if (catServices.length > 0) {
+      const files: FolderFile[] = catServices.map(s => {
+        const isCrit = s.health_percentage <= 25;
+        const isHealthy = s.health_percentage >= 70;
+        const art: ArtPreset = isCrit ? 'ember' : isHealthy ? 'verdant' : 'aurora';
+        return {
+          name: s.title_ge || 'სერვისი',
+          meta: `დარჩა ${s.remaining_km.toLocaleString()} კმ • ${s.health_percentage}%`,
+          art
+        };
+      });
+
+      return {
+        files,
+        count: catServices.length,
+        hasUserServices: true,
+        onSelect: (idx: number) => {
+          if (catServices[idx]) {
+            sounds.playClick();
+            handleOpenEditModal(catServices[idx]);
+          }
+        }
+      };
+    }
+
+    // Default template variants if user hasn't added records yet
+    const arts: ArtPreset[] = ['verdant', 'dusk', 'glacier', 'aurora', 'ember'];
+    const files: FolderFile[] = catVariants.slice(0, 4).map((v, i) => ({
+      name: v.title_ge,
+      meta: `ინტერვალი: ${v.defaultIntervalKm.toLocaleString()} კმ`,
+      art: arts[i % arts.length]
+    }));
+
+    return {
+      files,
+      count: 0,
+      hasUserServices: false,
+      onSelect: (idx: number) => {
+        if (catVariants[idx]) {
+          sounds.playClick();
+          handleOpenAddModal(catId, catVariants[idx].key);
+        }
+      }
+    };
+  };
 
   // Helper to render category icon
   const getCategoryIcon = (cat: ServiceCategory | string) => {
@@ -429,8 +542,139 @@ export const ServiceLogModule: React.FC<Props> = ({
         </div>
       )}
 
-      {/* 3. Category Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+      {/* 3. View Switcher Bar (Glass Folders vs Cards Grid) */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-white rounded-3xl border border-slate-200/80 shadow-xs">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200">
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setViewMode('folders');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              viewMode === 'folders'
+                ? 'bg-navy text-gold shadow-sm font-black scale-102'
+                : 'text-slate-600 hover:text-navy hover:bg-white/60'
+            }`}
+          >
+            <Folder size={14} className={viewMode === 'folders' ? 'text-gold' : 'text-slate-400'} />
+            <span>📁 საქაღალდეების ხედი</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-gold/20 text-gold">3D Glass</span>
+          </button>
+
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setViewMode('cards');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              viewMode === 'cards'
+                ? 'bg-navy text-gold shadow-sm font-black scale-102'
+                : 'text-slate-600 hover:text-navy hover:bg-white/60'
+            }`}
+          >
+            <LayoutGrid size={14} className={viewMode === 'cards' ? 'text-gold' : 'text-slate-400'} />
+            <span>📋 ბარათების ხედი</span>
+          </button>
+        </div>
+
+        <div className="text-right">
+          <span className="text-[11px] font-mono text-slate-500">
+            {viewMode === 'folders'
+              ? 'დააწკაპუნეთ პაპკაზე გასახსნელად • '+' ჩასამატებლად'
+              : `ნაჩვენებია ${filteredServices.length} სერვისი`}
+          </span>
+        </div>
+      </div>
+
+      {/* FOLDERS VIEW: Interactive 3D Glass Folder Cards */}
+      {viewMode === 'folders' ? (
+        <div className="p-5 sm:p-7 rounded-3xl neu-card shadow-neu-card border border-white space-y-6 relative overflow-hidden animate-fade-in">
+          {/* Subtle desk dot pattern */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage: "radial-gradient(#0f172a 1.2px, transparent 1.4px)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10 pb-3 border-b border-slate-200/60">
+            <div>
+              <h3 className="text-sm font-black text-navy flex items-center gap-2">
+                <Sparkles size={16} className="text-gold" />
+                <span>ავტომობილის სერვის-საქაღალდეები (Glass Folders)</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                ზეთები, სავალი ნაწილი, ფილტრები, ძრავი, ელექტროობა & PTI — დახარისხებული ცალ-ცალკე პაპკებად.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold bg-white text-navy border border-slate-200 shadow-2xs">
+                💡 Hover: დახრა • Click: გახსნა • +: დამატება
+              </span>
+            </div>
+          </div>
+
+          <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-8 items-end justify-items-center py-6">
+            {FOLDER_CONFIGS.map((fc, i) => {
+              const { files, count, onSelect } = getFolderDataForCategory(fc.id);
+              return (
+                <div key={fc.id} className="flex flex-col items-center">
+                  <GlassFolder
+                    label={fc.label}
+                    meta={count > 0 ? `${count} ჩანაწერი` : 'ცარიელია'}
+                    tone={fc.tone}
+                    art={fc.art}
+                    seed={fc.seed}
+                    files={files}
+                    action="add"
+                    onAdd={() => handleOpenAddModal(fc.id)}
+                    onFileSelect={(_, idx) => onSelect(idx)}
+                    width={290}
+                    appearDelay={i * 80}
+                  />
+                  <div className="mt-4 flex flex-col items-center gap-1.5 w-full max-w-[280px]">
+                    <span className="text-[11px] font-bold text-slate-500 block text-center">
+                      {fc.subtitle}
+                    </span>
+                    <div className="flex items-center gap-2 mt-1">
+                      {count > 0 && (
+                        <button
+                          onClick={() => {
+                            sounds.playClick();
+                            setActiveCategoryFilter(fc.id);
+                            setViewMode('cards');
+                          }}
+                          className="px-3 py-1 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-navy border border-slate-200 transition-all flex items-center gap-1 shadow-2xs hover:scale-105 active:scale-95"
+                          title="ამ კატეგორიის სერვისების სია"
+                        >
+                          <Layers size={12} className="text-gold" />
+                          <span>სია ({count})</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          handleOpenAddModal(fc.id);
+                        }}
+                        className="px-3 py-1 rounded-xl text-xs font-bold bg-gold/15 hover:bg-gold/25 text-amber-900 border border-gold/30 transition-all flex items-center gap-1 shadow-2xs hover:scale-105 active:scale-95"
+                        title="ახალი სერვისის დამატება ამ კატეგორიაში"
+                      >
+                        <Plus size={12} className="text-amber-800" />
+                        <span>+ დამატება</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* 4. Category Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
         <button
           onClick={() => {
             sounds.playClick();
@@ -918,6 +1162,8 @@ export const ServiceLogModule: React.FC<Props> = ({
             );
           })}
         </div>
+      )}
+        </>
       )}
 
       {/* Thematic Service Fill / Edit Modal */}

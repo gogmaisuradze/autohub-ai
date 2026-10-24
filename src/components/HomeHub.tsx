@@ -83,13 +83,13 @@ export const HomeHub: React.FC<Props> = ({
     },
     {
       id: 'garage' as TabType,
-      title: 'მეტი — გარაჟი, რუკა & ფასები',
-      subtitle: 'ავტომობილის პროფილი, რადარები, პატრული, საწვავის ცოცხალი ფასები და შოურუმები',
+      title: 'მეტი — გარაჟი, მოწმობა & რუკა',
+      subtitle: 'მართვის მოწმობის კონსპექტი, Waze რუკა, რადარები და ბენზინის ფასები',
       icon: Car,
-      badgeText: 'მეტი',
+      badgeText: '90 ქულა',
       badgeColor: 'bg-emerald-500 text-white font-bold shadow-sm',
       badgeSubtext: `${vehicle.brand} ${vehicle.model}`,
-      tag: 'მეტი'
+      tag: 'მართვის მოწმობა'
     },
     {
       id: 'ai' as TabType,
@@ -98,67 +98,21 @@ export const HomeHub: React.FC<Props> = ({
       icon: Bot,
       badgeText: 'AI',
       badgeColor: 'bg-navy text-white',
-      badgeSubtext: 'GPT-4o Engine',
+      badgeSubtext: 'AI ონლაინ',
       tag: 'ხედავს ბორტ-მონაცემებს'
     }
   ];
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      
-      {/* 1. Floating Window Header (Matching Image 2: macOS Window Dots & Search) */}
-      <div className="neu-surface rounded-3xl p-5 shadow-neu-card flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-rose-500 shadow-sm inline-block"></span>
-            <span className="w-3 h-3 rounded-full bg-gold shadow-sm inline-block"></span>
-            <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm inline-block"></span>
-          </div>
-          <div className="h-4 w-px bg-slate-300 mx-1"></div>
-          <div className="flex items-center gap-2">
-            <span className="font-black text-navy text-base tracking-tight">V1 AutoHub</span>
-            <span className="text-xs text-slate-400 font-mono hidden sm:inline">• ლოჯისტიკისა და ავტო-მართვის სივრცე</span>
-          </div>
-        </div>
-
-        {/* Georgian License Plate Mockup & Quick Booking Action */}
-        <div className="flex items-center gap-2">
-          {onOpenBookingModal && (
-            <button
-              onClick={() => {
-                sounds.playClick();
-                onOpenBookingModal();
-              }}
-              className="px-3.5 py-2 rounded-2xl bg-gold hover:bg-amber-400 text-navy font-black text-xs shadow-gold-soft flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
-              title="ჩაწერა ავტო-ექიმთან ან სერვისში"
-            >
-              <Calendar size={13} />
-              <span>📅 ჩაწერა / ჯავშანი</span>
-            </button>
-          )}
-
-          <div className="px-4 py-2 rounded-2xl bg-white text-navy font-black font-mono shadow-sm border border-slate-200 flex items-center gap-3 tracking-widest text-sm">
-            <div className="flex flex-col items-center justify-center pr-2 border-r border-slate-200 text-[10px] font-bold text-blue-700">
-              <span>🇬🇪</span>
-              <span>GE</span>
-            </div>
-            <span>{vehicle.plate_number}</span>
-          </div>
-          <div className="px-3 py-1.5 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-            <span>OBD-II LIVE</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. ORBITING SERVICES CAROUSEL (დასაწყისში გამოტანილი სერვისების ორბიტალური მექანიზმი) */}
-      <div className="neu-card rounded-3xl p-4 sm:p-6 shadow-neu-card relative overflow-hidden">
-        <div className="flex items-center justify-between px-2 mb-2">
+      {/* 2. ORBITING SERVICES CAROUSEL (მთლიანად ჩაღრმავებული სექცია, თითქოს შიგნით ზის) */}
+      <div className="rounded-3xl sm:rounded-[2.2rem] p-4 sm:p-6 bg-[#F6F8FB] border border-white/80 shadow-[inset_6px_6px_16px_rgba(135,148,168,0.36),inset_-6px_-6px_16px_rgba(255,255,255,1)] relative overflow-hidden no-scrollbar flex flex-col items-center justify-center">
+        <div className="w-full flex items-center justify-between px-2 sm:px-4 mb-2">
           <div>
             <span className="text-xs font-bold text-gold uppercase tracking-wider block">
               ● სერვისების ორბიტალური მართვა
             </span>
-            <h3 className="text-lg font-black text-navy">
+            <h3 className="text-base sm:text-lg font-black text-navy">
               აირჩიეთ მიმართულება ორბიტაზე
             </h3>
           </div>

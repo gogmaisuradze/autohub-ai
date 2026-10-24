@@ -11,10 +11,12 @@ import { ServiceLogModule } from './components/ServiceLog/ServiceLogModule';
 import { GarageModule } from './components/Garage/GarageModule';
 import { SettingsModule } from './components/Settings/SettingsModule';
 import { ClearDtcModal } from './components/Modals/ClearDtcModal';
+import { ObdAdapterConnectModal, ObdAdapterType } from './components/Modals/ObdAdapterConnectModal';
 import { PwaInstallBanner } from './components/Modals/PwaInstallBanner';
 import { AddVehicleWizardModal } from './components/Modals/AddVehicleWizardModal';
 import { ContextualFieldPromptModal, PromptFieldType } from './components/Modals/ContextualFieldPromptModal';
 import { ServiceBookingModal } from './components/Booking/ServiceBookingModal';
+import { FloatingMechanicWidget } from './components/AiMechanic/FloatingMechanicWidget';
 import { DtcCode, FineItem, ServiceBookingItem, ServiceItem, TelemetryData, VehicleProfile } from './types';
 import { n8nService } from './services/n8nService';
 import { sounds } from './services/soundEffects';
@@ -22,52 +24,55 @@ import { ArrowLeft } from 'lucide-react';
 
 const INITIAL_VEHICLE: VehicleProfile = {
   id: 'CAR_01',
-  brand: 'BMW',
-  model: '330i M-Sport',
-  year: 2023,
-  engine: '2.0L B48 TwinPower Turbo (255 HP)',
-  vin: 'WBA5R1C50NFP12345',
-  plate_number: 'GE-777-AA',
-  tech_passport: 'AA9876543',
-  mileage_km: 48200,
+  brand: 'Mercedes-Benz',
+  model: 'GLA 250',
+  year: 2016,
+  engine: '2.0L Turbo M270 (1991 cm³ / 208 HP)',
+  vin: 'WDCTG4GB2GJ193791',
+  plate_number: 'FR-282-EE',
+  tech_passport: '22-3999',
+  mileage_km: 78400,
   fuel_type: 'petrol',
   obd_ip: '192.168.0.10',
   obd_port: 35000,
-  driver_license_points: 85,
-  driver_personal_number: '01024085432',
-  driver_name: 'გიორგი ბერიძე'
+  horsepower: 208,
+  last_oil_change_km: 73200,
+  pti_expiry_date: '2027-02-15',
+  driver_license_points: 90,
+  driver_personal_number: '01024085521',
+  driver_name: 'გიორგი მაისურაძე'
 };
 
 const INITIAL_DTC_CODES: DtcCode[] = [
   {
+    code: 'P0011',
+    title_ge: 'Mercedes M270: გამანაწილებელი ლილვის ფაზის გადახრა (Bank 1, Intake Camshaft)',
+    severity: 'medium',
+    safe_to_drive: true,
+    advice: 'M270 ძრავის ტიპიური ხარვეზი: შეამოწმეთ შემშვები ლილვის ელექტრომაგნიტი (Camshaft Solenoid Magnet) ან ზეთის წნევა.',
+    estimated_cost_gel: 160,
+    category: 'engine',
+    timestamp: '2026-10-24'
+  },
+  {
+    code: 'P0128',
+    title_ge: 'Mercedes M270: თერმოსტატის გაგრილების ტემპერატურა დაბალია (Coolant Temp Below Regulating)',
+    severity: 'medium',
+    safe_to_drive: true,
+    advice: 'ელექტრონული თერმოსტატის კორპუსი ღიაა ჩარჩენილი. ძრავი ნელა თბება. რეკომენდირებულია თერმოსტატის შეცვლა.',
+    estimated_cost_gel: 240,
+    category: 'engine',
+    timestamp: '2026-10-24'
+  },
+  {
     code: 'P0133',
-    title_ge: 'ჟანგბადის სენსორის დაგვიანებული რეაგირება (Bank 1, Sensor 1)',
-    severity: 'medium',
+    title_ge: 'ჟანგბადის სენსორის დაგვიანებული რეაგირება (Bank 1, Sensor 1 O2)',
+    severity: 'low',
     safe_to_drive: true,
-    advice: 'გამონაბოლქვში საწვავის ნარევი არაზუსტად იზომება. რეკომენდირებულია სენსორის შემოწმება ან შეცვლა 300-500 კმ-ის ფარგლებში.',
-    estimated_cost_gel: 140,
+    advice: 'გამონაბოლქვში საწვავის ნარევის მონიტორინგი. შეამოწმეთ ლამბდა-ზონდის კონექტორი ან გაწმინდეთ სენსორი.',
+    estimated_cost_gel: 120,
     category: 'emissions',
-    timestamp: '2026-10-21'
-  },
-  {
-    code: 'P0171',
-    title_ge: 'სისტემა ძალიან ღარიბია საწვავით (System Too Lean Bank 1)',
-    severity: 'medium',
-    safe_to_drive: true,
-    advice: 'ძრავში შემოდის ზედმეტი ჰაერი (ვაკუუმის გაპარვა) ან ნაკლები საწვავი მიეწოდება. შეამოწმეთ შემშვები კოლექტორის მილები.',
-    estimated_cost_gel: 80,
-    category: 'engine',
-    timestamp: '2026-10-21'
-  },
-  {
-    code: 'P0300',
-    title_ge: 'შემთხვევითი/მრავლობითი ცილინდრების აფეთქების გამოტოვება (Random Misfire)',
-    severity: 'high',
-    safe_to_drive: false,
-    advice: 'სანთლების (სვეჩების) ან ბაბინების დეფექტი. ძრავის ძლიერი რყევისას მოძრაობის გაგრძელება არარეკომენდირებულია კატალიზატორის დასაცავად!',
-    estimated_cost_gel: 180,
-    category: 'engine',
-    timestamp: '2026-10-21'
+    timestamp: '2026-10-24'
   }
 ];
 
@@ -81,7 +86,7 @@ const INITIAL_FINES: FineItem[] = [
     date: '2026-10-17 16:40',
     location: 'თბილისი, მტკვრის მარჯვენა სანაპირო (კამერა #18)',
     violation_type: 'სიჩქარის გადაჭარბება (+17 კმ/სთ)',
-    plate_number: 'GE-777-AA',
+    plate_number: 'FR-282-EE',
     status: 'pending',
     points_deducted: 10,
     points_status: 'deducted',
@@ -97,7 +102,7 @@ const INITIAL_FINES: FineItem[] = [
     date: '2026-10-11 11:15',
     location: 'თბილისი, ჭავჭავაძის გამზირი #37 (ავტობუსის ზოლი)',
     violation_type: 'საზოგადოებრივი ტრანსპორტის ზოლში (Bus Lane) მოძრაობა',
-    plate_number: 'GE-777-AA',
+    plate_number: 'FR-282-EE',
     status: 'pending',
     points_deducted: 0,
     points_status: 'video_exempt',
@@ -364,12 +369,24 @@ export const App: React.FC = () => {
       localStorage.setItem('autohub_active_tab', tab);
       window.location.hash = tab;
     } catch {}
+
+    // When navigating to Diagnostics (OBD), if not yet connected, pop up the adapter connection modal!
+    if (tab === 'obd' && !isObdConnected) {
+      setIsObdAdapterModalOpen(true);
+    }
   };
 
   const [vehicle, setVehicle] = useState<VehicleProfile>(() => {
     try {
       const saved = localStorage.getItem('autohub_vehicle_profile');
-      return saved ? JSON.parse(saved) : INITIAL_VEHICLE;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && parsed.vin === 'WDCTG4GB2GJ193791') {
+          return { ...INITIAL_VEHICLE, ...parsed };
+        }
+      }
+      localStorage.setItem('autohub_vehicle_profile', JSON.stringify(INITIAL_VEHICLE));
+      return INITIAL_VEHICLE;
     } catch {
       return INITIAL_VEHICLE;
     }
@@ -378,7 +395,11 @@ export const App: React.FC = () => {
   const [dtcCodes, setDtcCodes] = useState<DtcCode[]>(() => {
     try {
       const saved = localStorage.getItem('autohub_dtc_codes');
-      return saved ? JSON.parse(saved) : INITIAL_DTC_CODES;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+      return INITIAL_DTC_CODES;
     } catch {
       return INITIAL_DTC_CODES;
     }
@@ -387,7 +408,11 @@ export const App: React.FC = () => {
   const [fines, setFines] = useState<FineItem[]>(() => {
     try {
       const saved = localStorage.getItem('autohub_fines');
-      return saved ? JSON.parse(saved) : INITIAL_FINES;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return INITIAL_FINES;
     } catch {
       return INITIAL_FINES;
     }
@@ -395,14 +420,12 @@ export const App: React.FC = () => {
 
   const [services, setServices] = useState<ServiceItem[]>(() => {
     try {
-      const version = localStorage.getItem('autohub_services_version_v3');
-      if (!version) {
-        localStorage.setItem('autohub_services_version_v3', 'true');
-        localStorage.setItem('autohub_services', JSON.stringify(INITIAL_SERVICES));
-        return INITIAL_SERVICES;
-      }
       const saved = localStorage.getItem('autohub_services');
-      return saved ? JSON.parse(saved) : INITIAL_SERVICES;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return INITIAL_SERVICES;
     } catch {
       return INITIAL_SERVICES;
     }
@@ -410,17 +433,67 @@ export const App: React.FC = () => {
 
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const [isObdConnected, setIsObdConnected] = useState<boolean>(false);
+  const [isObdAdapterModalOpen, setIsObdAdapterModalOpen] = useState<boolean>(false);
+
+  // Automatically open the OBD Adapter Connection Modal when entering diagnostics while not connected
+  useEffect(() => {
+    if (activeTab === 'obd' && !isObdConnected) {
+      const timer = setTimeout(() => {
+        setIsObdAdapterModalOpen(true);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab]);
+  const [autoStartScanTrigger, setAutoStartScanTrigger] = useState<number>(0);
+  const [obdAdapterType, setObdAdapterType] = useState<ObdAdapterType>(() => {
+    try {
+      const saved = localStorage.getItem('autohub_obd_adapter_type') as ObdAdapterType;
+      if (saved && ['wifi', 'bluetooth', 'cloud_4g'].includes(saved)) return saved;
+    } catch {}
+    return 'wifi';
+  });
   const [aiInitialPrompt, setAiInitialPrompt] = useState<string | undefined>(undefined);
 
   // All Saved Vehicles in Garage
   const [allVehicles, setAllVehicles] = useState<VehicleProfile[]>(() => {
     try {
       const saved = localStorage.getItem('autohub_garage_vehicles');
-      return saved ? JSON.parse(saved) : VEHICLE_PRESETS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return VEHICLE_PRESETS;
     } catch {
       return VEHICLE_PRESETS;
     }
   });
+
+  // Language State: 'ge' (default Georgian) | 'en'
+  const [lang, setLang] = useState<'ge' | 'en'>(() => {
+    try {
+      const saved = localStorage.getItem('autohub_lang') as 'ge' | 'en';
+      if (saved === 'ge' || saved === 'en') return saved;
+    } catch {}
+    return 'ge';
+  });
+
+  const handleToggleLang = () => {
+    sounds.playClick();
+    const nextLang = lang === 'ge' ? 'en' : 'ge';
+    setLang(nextLang);
+    try {
+      localStorage.setItem('autohub_lang', nextLang);
+    } catch {}
+  };
+
+  const handleSelectLang = (selected: 'ge' | 'en') => {
+    sounds.playClick();
+    setLang(selected);
+    try {
+      localStorage.setItem('autohub_lang', selected);
+    } catch {}
+  };
 
   // Modal States
   const [isAddVehicleModalOpen, setIsAddVehicleModalOpen] = useState(false);
@@ -598,34 +671,59 @@ export const App: React.FC = () => {
     setActiveTab('ai');
   };
 
+  const handleConsultAiAboutAllCodes = (codes: DtcCode[]) => {
+    if (codes.length === 0) {
+      setAiInitialPrompt(
+        'გამარჯობა AI მექანიკოსო, ავტომობილის დიაგნოსტიკა სუფთაა. მინდა პროფილაქტიკური რჩევები ჩემი მანქანისთვის.'
+      );
+    } else {
+      const codeList = codes.map(c => `${c.code}: ${c.title_ge}`).join('\n• ');
+      setAiInitialPrompt(
+        `გამარჯობა AI მექანიკოსო, ჩავატარე OBD-II დიაგნოსტიკა და აღმოჩნდა შემდეგი ხარვეზები:\n• ${codeList}\n\nგთხოვთ ამიხსნათ:\n1. რატომ აანთო ეს შეცდომები ერთად და რა არის მთავარი მიზეზი?\n2. რამდენად საშიშია ავტომობილით მოძრაობის გაგრძელება?\n3. რა ნაწილებია შესაცვლელი და რა ჯდება შეკეთება თბილისში?`
+      );
+    }
+    handleTabChange('ai');
+  };
+
   const handleClearSuccess = () => {
     setDtcCodes([]);
   };
 
   return (
-    <div className="min-h-screen bg-[#EDF1F7] text-navy antialiased">
-      {/* 1. Header (Matching Image 2: V1 Logo & Clean Georgian Title) */}
-      <Header
-        vehicle={vehicle}
-        allVehicles={allVehicles}
-        onChangeVehicle={(newVehicle) => {
-          setVehicle(newVehicle);
-          localStorage.setItem('autohub_vehicle_profile', JSON.stringify(newVehicle));
-        }}
-        onDeleteVehicle={handleDeleteVehicle}
-        isSoundEnabled={isSoundEnabled}
-        onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
-        onNavigateHome={() => handleTabChange('home')}
-        onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
-      />
+    <div className="min-h-screen bg-[#ECEAE5] text-navy antialiased">
+      {/* 1 & 2. Unified Sticky Header & Navigation Bar (Always visible on screen, never hidden) */}
+      <div className="sticky top-0 z-40 w-full bg-[#ECEAE5]/95 backdrop-blur-xl border-b border-white/80 transition-colors shadow-xs">
+        <Header
+          vehicle={vehicle}
+          allVehicles={allVehicles}
+          onChangeVehicle={(newVehicle) => {
+            setVehicle(newVehicle);
+            localStorage.setItem('autohub_vehicle_profile', JSON.stringify(newVehicle));
+          }}
+          onDeleteVehicle={handleDeleteVehicle}
+          isSoundEnabled={isSoundEnabled}
+          onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
+          onNavigateHome={() => handleTabChange('home')}
+          onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
+          onOpenBookingModal={() => handleOpenBookingModal()}
+          dtcCount={dtcCodes.length}
+          finesCount={fines.filter(f => f.status === 'pending').length}
+          onSelectTab={handleTabChange}
+          lang={lang}
+          onToggleLang={handleToggleLang}
+          onSelectLang={handleSelectLang}
+          isObdConnected={isObdConnected}
+          onOpenObdModal={() => setIsObdAdapterModalOpen(true)}
+        />
 
-      {/* 2. Neumorphic Navigation Tabs (Matching Image 1 Pill Tabs) */}
-      <Navigation
-        activeTab={activeTab}
-        onSelectTab={handleTabChange}
-        dtcCount={dtcCodes.length}
-        finesCount={fines.filter(f => f.status === 'pending').length}
-      />
+        <Navigation
+          activeTab={activeTab}
+          onSelectTab={handleTabChange}
+          dtcCount={dtcCodes.length}
+          finesCount={fines.filter(f => f.status === 'pending').length}
+          lang={lang}
+        />
+      </div>
 
       {/* 3. Main Content Container */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 sm:pb-24">
@@ -666,12 +764,18 @@ export const App: React.FC = () => {
             onUpdateDtcCodes={setDtcCodes}
             onOpenClearModal={() => setIsClearModalOpen(true)}
             onAskAiAboutCode={handleAskAiAboutCode}
+            onConsultAiMechanic={handleConsultAiAboutAllCodes}
             onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
             onOpenAddVehicleWithData={(data) => {
               setWizardInitialData(data);
               setIsAddVehicleModalOpen(true);
             }}
             onAutoRegisterVehicle={handleSaveNewVehicle}
+            isConnected={isObdConnected}
+            onConnectionChange={setIsObdConnected}
+            adapterType={obdAdapterType}
+            onOpenAdapterModal={() => setIsObdAdapterModalOpen(true)}
+            autoStartScanTrigger={autoStartScanTrigger}
           />
         )}
 
@@ -688,8 +792,16 @@ export const App: React.FC = () => {
         {activeTab === 'parking' && (
           <ParkingModule
             vehicle={vehicle}
+            allVehicles={allVehicles}
+            onSelectVehicle={(v) => {
+              setVehicle(v);
+              try {
+                localStorage.setItem('autohub_vehicle_profile', JSON.stringify(v));
+              } catch {}
+            }}
             onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
             onOpenFieldPrompt={handleOpenFieldPrompt}
+            onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
           />
         )}
 
@@ -755,11 +867,30 @@ export const App: React.FC = () => {
               setVehicle(v);
               localStorage.setItem('autohub_vehicle_profile', JSON.stringify(v));
             }}
+            isSoundEnabled={isSoundEnabled}
+            onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
           />
         )}
       </main>
 
       {/* Modals & Floating Banners */}
+      <ObdAdapterConnectModal
+        isOpen={isObdAdapterModalOpen}
+        onClose={() => setIsObdAdapterModalOpen(false)}
+        onConnectSuccess={(type, startTesting) => {
+          setObdAdapterType(type);
+          setIsObdConnected(true);
+          if (startTesting) {
+            setAutoStartScanTrigger(prev => prev + 1);
+          }
+        }}
+        vehicleIp={vehicle.obd_ip}
+        vehiclePort={vehicle.obd_port}
+        initialType={obdAdapterType}
+        vehicleBrand={vehicle.brand}
+        vehicleModel={vehicle.model}
+      />
+
       <ClearDtcModal
         isOpen={isClearModalOpen}
         onClose={() => setIsClearModalOpen(false)}
@@ -800,7 +931,17 @@ export const App: React.FC = () => {
         preselectedTitle={bookingModalPrefill.title}
       />
 
-      <PwaInstallBanner />
+      {/* Floating Bottom-Right AI Assistant Window */}
+      <FloatingMechanicWidget
+        vehicle={vehicle}
+        dtcCodes={dtcCodes}
+        onOpenFullChat={handleTabChange}
+        onOpenBookingModal={() => handleOpenBookingModal()}
+        lang={lang}
+      />
+
+      {/* PWA Install Banner - შენახულია და გამორთულია (საჭიროებისას ჩაირთვება ტელეფონზე) */}
+      {/* <PwaInstallBanner /> */}
     </div>
   );
 };

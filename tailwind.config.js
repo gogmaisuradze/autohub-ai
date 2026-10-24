@@ -8,9 +8,9 @@ export default {
     extend: {
       colors: {
         neu: {
-          bg: '#EDF1F7',
+          bg: '#ECEAE5',
           card: '#FFFFFF',
-          border: '#E2E8F0',
+          border: '#E2E0DB',
           dark: '#14213D',
         },
         gold: {

@@ -61,7 +61,7 @@ export interface FineItem {
 
 export interface ParkingFineItem {
   id: string;
-  city: 'tbilisi' | 'batumi' | 'kutaisi';
+  city: 'tbilisi' | 'batumi' | 'kutaisi' | 'rustavi';
   fine_type: 'zone_overtime' | 'illegal_parking' | 'sidewalk' | 'bus_lane';
   title_ge: string;
   amount_gel: number;
@@ -75,8 +75,8 @@ export interface ParkingFineItem {
 
 export interface ActiveParkingSession {
   isActive: boolean;
-  city: 'tbilisi' | 'batumi' | 'kutaisi';
-  zone: 'zone_a' | 'zone_b' | 'zone_c' | 'batumi_center' | 'kutaisi';
+  city: 'tbilisi' | 'batumi' | 'kutaisi' | 'rustavi';
+  zone: 'zone_a' | 'zone_b' | 'zone_c' | 'batumi_center' | 'kutaisi' | 'rustavi_center';
   zoneName_ge: string;
   hourlyRateGel: number;
   startTime: number; // timestamp
@@ -90,8 +90,8 @@ export interface ActiveParkingSession {
 export interface ParkingPermitItem {
   id: string;
   title_ge: string;
-  city: 'tbilisi' | 'batumi';
-  permitType: 'annual_standard' | 'resident_free' | 'zone_pass' | 'batumi_annual';
+  city: 'tbilisi' | 'batumi' | 'kutaisi' | 'rustavi';
+  permitType: 'annual_standard' | 'resident_free' | 'zone_pass' | 'batumi_annual' | 'rustavi_annual';
   cost_gel: number;
   expiryDate: string;
   isActive: boolean;

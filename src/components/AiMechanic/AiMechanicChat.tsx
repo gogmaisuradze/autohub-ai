@@ -519,7 +519,7 @@ export const AiMechanicChat: React.FC<Props> = ({
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 shrink-0">
                   <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gold" />
-                  GPT-4o
+                  AI PRO
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-slate-500 flex flex-wrap items-center gap-1 mt-0.5">

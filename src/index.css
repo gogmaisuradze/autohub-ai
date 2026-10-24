@@ -5,62 +5,302 @@
 @layer base {
   body {
     font-family: "FiraGO", system-ui, -apple-system, sans-serif;
-    background-color: #EDF1F7;
+    background-color: #ECEAE5;
     color: #14213D;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Neumorphic Soft UI (Strictly from user reference images) */
+/* Neumorphic Soft UI with Enhanced Tactile Volume & Richer Depth */
 .neu-surface {
   background-color: #FFFFFF;
-  box-shadow: 8px 8px 24px rgba(163, 177, 198, 0.35), -8px -8px 24px rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 8px 8px 24px rgba(135, 148, 168, 0.38), -8px -8px 24px rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.85);
 }
 
 .neu-card {
   background-color: #FFFFFF;
-  box-shadow: 6px 6px 18px rgba(163, 177, 198, 0.3), -6px -6px 18px rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 7px 7px 20px rgba(135, 148, 168, 0.36), -7px -7px 20px rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 .neu-btn {
   background-color: #FFFFFF;
-  box-shadow: 5px 5px 12px rgba(163, 177, 198, 0.35), -5px -5px 12px rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 6px 6px 15px rgba(135, 148, 168, 0.4), -6px -6px 15px rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .neu-btn:hover {
-  box-shadow: 7px 7px 16px rgba(163, 177, 198, 0.45), -7px -7px 16px rgba(255, 255, 255, 1);
+  box-shadow: 8px 8px 20px rgba(135, 148, 168, 0.48), -8px -8px 20px rgba(255, 255, 255, 1);
   transform: translateY(-1px);
 }
 
 .neu-btn:active, .neu-btn-active {
-  box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.45), inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+  box-shadow: inset 3px 3px 7px rgba(135, 148, 168, 0.48), inset -3px -3px 7px rgba(255, 255, 255, 0.95);
   transform: translateY(0);
 }
 
 .neu-circle {
   border-radius: 9999px;
   background-color: #FFFFFF;
-  box-shadow: 5px 5px 14px rgba(163, 177, 198, 0.35), -5px -5px 14px rgba(255, 255, 255, 0.95);
+  box-shadow: 7px 7px 18px rgba(135, 148, 168, 0.42), -7px -7px 18px rgba(255, 255, 255, 0.98);
   border: 1px solid rgba(255, 255, 255, 0.9);
   transition: all 0.2s ease;
 }
 
 .neu-circle:hover {
-  transform: scale(1.04);
+  box-shadow: 9px 9px 24px rgba(135, 148, 168, 0.5), -8px -8px 22px rgba(255, 255, 255, 1);
+  transform: scale(1.05);
 }
 
 .neu-circle:active {
-  box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.45), inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+  box-shadow: inset 3px 3px 6px rgba(135, 148, 168, 0.48), inset -3px -3px 6px rgba(255, 255, 255, 0.95);
 }
 
 .neu-inset {
-  background-color: #E2E8F0;
-  box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.4), inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+  background-color: #E2E0DB;
+  box-shadow: inset 4px 4px 10px rgba(135, 148, 168, 0.42), inset -4px -4px 10px rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.neu-inset-panel {
+  background-color: #E2E0DB;
+  box-shadow: inset 5px 5px 12px rgba(135, 148, 168, 0.42), inset -5px -5px 12px rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+/* ======================================================== */
+/* STITCH DESIGN SYSTEM TACTILE BUTTONS & PILLS            */
+/* ======================================================== */
+.tactile-card {
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.tactile-recess {
+  background: #F8FAFC;
+  box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.tactile-button {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.amber-glow {
+  box-shadow: 0 8px 24px -4px rgba(245, 158, 11, 0.45), 0 2px 6px -1px rgba(245, 158, 11, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+/* ======================================================== */
+/* 🌟 AUTHENTIC "ელვარება" (REFINED LUMINOUS GLOW)          */
+/* CLEAN, TACTILE & SADA BUTTON DESIGN SYSTEM               */
+/* ======================================================== */
+
+/* 1. PRIMARY STITCH AMBER BUTTON (სადა, სუფთა და ელვარე) */
+.btn-stitch-primary {
+  position: relative;
+  background: #FCA311;
+  color: #0D1B2A;
+  font-weight: 800;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 4px 14px 0 rgba(245, 158, 11, 0.4),
+    0 0 12px 1px rgba(251, 191, 36, 0.22),
+    inset 0 1px 1px rgba(255, 255, 255, 0.7);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.btn-stitch-primary:hover {
+  background: #FFB703;
+  box-shadow: 
+    0 6px 18px 0 rgba(245, 158, 11, 0.55),
+    0 0 16px 2px rgba(251, 191, 36, 0.35),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+  transform: translateY(-1.5px);
+}
+
+.btn-stitch-primary:active {
+  box-shadow: 
+    0 2px 6px rgba(245, 158, 11, 0.3),
+    inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  transform: scale(0.98) translateY(1px);
+}
+
+/* 2. COSMIC NAVY ACTION BUTTON (მთავარი ნავიგაცია & ოპერაციები) */
+.btn-stitch-navy {
+  position: relative;
+  background: #0D1B2A;
+  color: #FFFFFF;
+  font-weight: 800;
+  border-radius: 9999px;
+  box-shadow: 
+    0 4px 14px -2px rgba(13, 27, 42, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-stitch-navy:hover {
+  background: #14213D;
+  box-shadow: 
+    0 6px 18px -2px rgba(13, 27, 42, 0.6),
+    0 0 12px rgba(245, 158, 11, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  transform: translateY(-1.5px);
+}
+
+.btn-stitch-navy:active {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+  transform: scale(0.98) translateY(1px);
+}
+
+/* 3. AI AGENT CONSULTATION BUTTON (კონსულტაცია AI მექანიკოსთან) */
+.btn-stitch-ai {
+  position: relative;
+  background: #0D1B2A;
+  color: #FCA311;
+  font-weight: 800;
+  border-radius: 9999px;
+  border: 1px solid rgba(252, 163, 17, 0.4);
+  box-shadow: 
+    0 4px 14px -2px rgba(13, 27, 42, 0.5),
+    0 0 12px 0 rgba(252, 163, 17, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+
+.btn-stitch-ai:hover {
+  background: #14213D;
+  color: #FFC107;
+  border-color: rgba(252, 163, 17, 0.65);
+  box-shadow: 
+    0 6px 20px -2px rgba(13, 27, 42, 0.7),
+    0 0 18px 2px rgba(252, 163, 17, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  transform: translateY(-1.5px);
+}
+
+.btn-stitch-ai:active {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+  transform: scale(0.98) translateY(1px);
+}
+
+/* 4. TACTILE SOFT PILL BUTTON (შემოწმება, დეტალები, მეორადი ღილაკები) */
+.btn-stitch-soft {
+  position: relative;
+  background-color: #FFFFFF;
+  color: #0D1B2A;
+  font-weight: 700;
+  border-radius: 9999px;
+  box-shadow: 
+    2px 3px 8px rgba(166, 171, 189, 0.25),
+    -2px -3px 8px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-stitch-soft:hover {
+  box-shadow: 
+    0 4px 12px rgba(166, 171, 189, 0.35),
+    0 0 10px rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.4);
+  transform: translateY(-1px);
+  color: #D97706;
+}
+
+.btn-stitch-soft:active {
+  box-shadow: inset 2px 2px 5px rgba(166, 171, 189, 0.3);
+  transform: scale(0.98) translateY(1px);
+}
+
+/* 5. TACTILE ROSE/DANGER BUTTON (ჩეკის ჩაქრობა, პარკირების შეჩერება) */
+.btn-stitch-rose {
+  position: relative;
+  background: #E11D48;
+  color: #FFFFFF;
+  font-weight: 800;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 4px 14px -1px rgba(225, 29, 72, 0.4),
+    0 0 10px 1px rgba(244, 63, 94, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-stitch-rose:hover {
+  background: #F43F5E;
+  box-shadow: 
+    0 6px 20px 0 rgba(225, 29, 72, 0.55),
+    0 0 14px 2px rgba(244, 63, 94, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  transform: translateY(-1.5px);
+}
+
+.btn-stitch-rose:active {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  transform: scale(0.98) translateY(1px);
+}
+
+/* Direct Elvareba Helpers (სადა და ელვარე აურა) */
+.elvareba-amber {
+  box-shadow: 
+    0 4px 14px 0 rgba(245, 158, 11, 0.4),
+    0 0 12px 1px rgba(251, 191, 36, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6) !important;
+}
+
+.elvareba-ai {
+  box-shadow: 
+    0 4px 14px -2px rgba(13, 27, 42, 0.5),
+    0 0 12px 0 rgba(252, 163, 17, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+}
+
+.elvareba-rose {
+  box-shadow: 
+    0 4px 14px -1px rgba(225, 29, 72, 0.4),
+    0 0 10px 1px rgba(244, 63, 94, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4) !important;
+}
+
+.elvareba-drop-amber {
+  filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.4));
+}
+
+.elvareba-drop-ai {
+  filter: drop-shadow(0 2px 8px rgba(252, 163, 17, 0.4));
 }
 
 /* Custom Scrollbars */
@@ -80,11 +320,13 @@
 }
 
 .no-scrollbar::-webkit-scrollbar {
-  display: none;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 .no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 /* Leaflet Dark Neon Map Customizations */

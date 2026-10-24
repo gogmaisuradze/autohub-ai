@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FineItem, FinePaymentReceipt, VehicleProfile } from '../../types';
+import { GeorgianLicensePlate } from '../ui/GeorgianLicensePlate';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
 import {
@@ -11,6 +12,7 @@ import {
   CreditCard,
   Car,
   BellRing,
+  Shield,
   ShieldAlert,
   ParkingSquare,
   ChevronRight,
@@ -44,13 +46,13 @@ export const FinesModule: React.FC<Props> = ({
   onNavigateToParking
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [plateInput, setPlateInput] = useState(vehicle.plate_number || 'GE-777-AA');
-  const [techPassportInput, setTechPassportInput] = useState(vehicle.tech_passport || 'AA9876543');
+  const [plateInput, setPlateInput] = useState(vehicle.plate_number || 'FR-282-EE');
+  const [techPassportInput, setTechPassportInput] = useState(vehicle.tech_passport || '22-3999');
   const [isEditingDocs, setIsEditingDocs] = useState(false);
 
   // Driver license points & personal info
-  const driverPoints = vehicle.driver_license_points ?? 85;
-  const driverPersonalNumber = vehicle.driver_personal_number || '01024085432';
+  const driverPoints = vehicle.driver_license_points ?? 90;
+  const driverPersonalNumber = vehicle.driver_personal_number || '01024085521';
   const driverName = vehicle.driver_name || 'გიორგი ბერიძე';
   const [isEditingDriverInfo, setIsEditingDriverInfo] = useState(false);
   const [personalNumberInput, setPersonalNumberInput] = useState(driverPersonalNumber);
@@ -82,10 +84,10 @@ export const FinesModule: React.FC<Props> = ({
   const runAutoFinesSync = async (plate: string, tech: string, personalId?: string, playSound = false) => {
     if (!plate || !tech) return;
     setIsRefreshing(true);
-    setAutoSyncNotice('მონაცემები შეიცვალა — ჯარიმები ავტომატურად მოწმდება police.ge-ზე...');
+    setAutoSyncNotice('მონაცემები შეიცვალა — ჯარიმები მოწმდება police.ge-ზე...');
     try {
       const res = await n8nService.checkFines(plate, tech);
-      if (res && res.fines) {
+      if (res && res.fines && res.fines.length > 0) {
         onUpdateFines(res.fines);
         if (playSound) sounds.playSuccess();
         const nowTime = new Date().toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' });
@@ -262,14 +264,21 @@ export const FinesModule: React.FC<Props> = ({
   const pendingFines = fines.filter(f => f.status === 'pending');
   const paidFines = fines.filter(f => f.status === 'paid');
   const totalPendingAmount = pendingFines.reduce((acc, f) => acc + (f.discount_expires_days > 0 ? f.discounted_amount_gel : f.amount_gel), 0);
+  const totalPendingGel = totalPendingAmount;
   const totalPointsAtRisk = pendingFines.reduce((acc, f) => acc + (f.points_deducted || 0), 0);
 
-  // Points Progress Bar Color
+  // Points Progress Bar Color & Status
   const pointsColor = driverPoints >= 70
     ? 'bg-emerald-500'
     : driverPoints >= 40
     ? 'bg-amber-500'
     : 'bg-rose-500';
+
+  const pointsStrokeColor = driverPoints >= 70
+    ? '#10B981'
+    : driverPoints >= 40
+    ? '#F59E0B'
+    : '#F43F5E';
 
   const pointsTextColor = driverPoints >= 70
     ? 'text-emerald-700'
@@ -277,73 +286,209 @@ export const FinesModule: React.FC<Props> = ({
     ? 'text-amber-800'
     : 'text-rose-700';
 
+  // Circular Gauge Calculations
+  const gaugeRadius = 52;
+  const gaugeCircumference = 2 * Math.PI * gaugeRadius; // ~326.72
+  const clampedDriverPoints = Math.max(0, Math.min(100, driverPoints));
+  const gaugeStrokeDashoffset = gaugeCircumference - (clampedDriverPoints / 100) * gaugeCircumference;
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
       
-      {/* 1. Header Banner & Plate Overview */}
-      <div className="p-4 sm:p-6 rounded-3xl neu-card shadow-neu-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 border border-white">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full md:w-auto">
-          {/* Georgia Car License Plate Graphic */}
-          <div className="px-4 sm:px-5 py-2 sm:py-3 rounded-2xl bg-white text-navy font-black font-mono border-2 border-slate-200 shadow-sm flex items-center gap-3 tracking-widest text-base sm:text-xl shrink-0">
-            <div className="flex flex-col items-center justify-center pr-2 border-r border-slate-200 text-[10px] sm:text-xs font-bold text-blue-700">
-              <span>🇬🇪</span>
-              <span className="text-[9px] sm:text-[10px]">GE</span>
+      {/* ======================================================== */}
+      {/* 1. UNIFIED DRIVER PROFILE & CIRCULAR POINTS SYSTEM CARD   */}
+      {/* ======================================================== */}
+      <div className="p-5 sm:p-7 rounded-3xl neu-card shadow-neu-card border border-white space-y-6">
+        
+        {/* Top Row: User Profile (Left), Circular Points Gauge (Center), Fines & Buttons (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          
+          {/* A. User Profile & Vehicle Documents (5 cols) */}
+          <div className="lg:col-span-5 space-y-3.5 border-b lg:border-b-0 lg:border-r border-slate-200/80 pb-5 lg:pb-0 lg:pr-5">
+            <div className="flex items-center gap-3.5">
+              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-navy via-slate-800 to-navy text-gold flex items-center justify-center shadow-md relative shrink-0">
+                <UserCheck className="w-7 h-7 text-gold" />
+                <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white absolute -top-1 -right-1 animate-pulse" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-black text-navy truncate">
+                    {driverName}
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-gold/15 text-navy border border-gold/30 shrink-0">
+                    მძღოლი
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  პირადი ნომერი: <span className="font-bold text-navy">{driverPersonalNumber}</span>
+                </p>
+                <div className="flex items-center gap-2 text-[11px] text-emerald-700 font-bold mt-0.5">
+                  <ShieldCheck size={13} className="text-emerald-600" />
+                  <span>მართვის მოწმობა: აქტიური (კატეგორია B, B1)</span>
+                </div>
+              </div>
             </div>
-            <span>{vehicle.plate_number || 'GE-777-AA'}</span>
-          </div>
 
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-sm sm:text-base font-extrabold text-navy flex items-center gap-1.5 sm:gap-2">
-                <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-gold shrink-0" />
-                <span>საპატრულო პოლიციის & კამერების ჯარიმები</span>
-              </h2>
-              {pendingFines.length > 0 && (
-                <span className="px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                  {pendingFines.length} აქტიური
-                </span>
-              )}
+            {/* Vehicle Document Pill */}
+            <div className="p-3 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <Car className="w-4 h-4 text-gold shrink-0" />
+                <div>
+                  <div className="text-xs font-black text-navy">{vehicle.brand} {vehicle.model}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">ტექ-პასპორტი: {vehicle.tech_passport || '22-3999'}</div>
+                </div>
+              </div>
+              <GeorgianLicensePlate plate={vehicle.plate_number || 'FR-282-EE'} size="sm" variant="white" />
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span>ტექ-პასპორტი: {vehicle.tech_passport || 'AA9876543'}</span>
-              <span>•</span>
-              <span>ბაზა: police.ge</span>
-              <span>•</span>
+
+            {/* Live Database Status & Edit Trigger */}
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                <span>police.ge სინქრონიზაცია ({lastAutoSyncedTime})</span>
+              </span>
               <button
                 onClick={() => setIsEditingDocs(!isEditingDocs)}
                 className="text-gold font-bold hover:underline"
               >
-                {isEditingDocs ? 'გაუქმება' : 'მონაცემების რედაქტირება'}
+                {isEditingDocs ? 'დახურვა' : 'რედაქტირება'}
               </button>
-            </p>
-
-            <div className="flex items-center gap-2 mt-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                <span>ავტო-სინქრონიზაცია (ბოლო: {lastAutoSyncedTime})</span>
-              </span>
             </div>
           </div>
-        </div>
 
-        {/* Fines Total & Refresh Button */}
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <span className="text-xs text-slate-400 block font-medium">სულ გადასახდელი:</span>
-            <span className="text-2xl font-black font-mono text-navy">
-              {totalPendingAmount} ₾
-            </span>
+          {/* B. Circular Points Radial Gauge (4 cols) */}
+          <div className="lg:col-span-4 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-slate-200/80 pb-5 lg:pb-0 lg:px-3">
+            <div className="flex items-center justify-between w-full mb-2 px-1">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Award size={14} className="text-gold" />
+                <span>ქულების სისტემა (100)</span>
+              </span>
+              <button
+                onClick={() => setShowPointsGuide(!showPointsGuide)}
+                className="text-slate-400 hover:text-gold transition-colors"
+                title="როგორ მუშაობს ქულები?"
+              >
+                <Info size={14} />
+              </button>
+            </div>
+
+            {/* SVG Circular Progress Gauge */}
+            <div className="relative w-36 h-36 flex items-center justify-center">
+              <svg className="w-36 h-36 transform -rotate-90" viewBox="0 0 130 130">
+                {/* Background Ring Track */}
+                <circle
+                  cx="65"
+                  cy="65"
+                  r={gaugeRadius}
+                  stroke="#E2E8F0"
+                  strokeWidth="10"
+                  fill="transparent"
+                />
+                {/* Progress Ring with Dynamic Color & Drop Shadow */}
+                <circle
+                  cx="65"
+                  cy="65"
+                  r={gaugeRadius}
+                  stroke={pointsStrokeColor}
+                  strokeWidth="10"
+                  fill="transparent"
+                  strokeDasharray={gaugeCircumference}
+                  strokeDashoffset={gaugeStrokeDashoffset}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000 ease-out"
+                  style={{ filter: `drop-shadow(0 0 6px ${pointsStrokeColor}40)` }}
+                />
+              </svg>
+
+              {/* Center Points Value */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-3xl font-black font-mono text-navy tracking-tight leading-none">
+                  {driverPoints}
+                </span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                  / 100 ქულა
+                </span>
+              </div>
+            </div>
+
+            {/* Points Status Pill & Deductions Info */}
+            <div className="mt-2 text-center space-y-1">
+              <span className={`px-3 py-0.5 rounded-full text-[10px] font-black border inline-block ${
+                driverPoints >= 70
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : driverPoints >= 40
+                  ? 'bg-amber-50 text-amber-800 border-amber-300'
+                  : 'bg-rose-50 text-rose-800 border-rose-300'
+              }`}>
+                {driverPoints >= 70 ? '● უსაფრთხო ზონა' : driverPoints >= 40 ? '● საშუალო რისკი' : '● კრიტიკული ზონა'}
+              </span>
+              <div className="text-[10px] text-slate-400 font-mono">
+                {100 - driverPoints > 0 ? `დაკლებული: -${100 - driverPoints} ქულა` : 'სრული 100 ქულა შენარჩუნებულია'}
+              </div>
+            </div>
           </div>
 
-          <button
-            onClick={handleRefreshFines}
-            disabled={isRefreshing}
-            className="px-4 py-3 rounded-2xl font-bold neu-btn text-navy flex items-center gap-2 shadow-sm active:scale-95 transition-all"
-            title="police.ge ბაზის გადამოწმება"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-gold' : 'text-gold'}`} />
-            <span>{isRefreshing ? 'მოწმდება...' : 'შემოწმება'}</span>
-          </button>
+          {/* C. Fines Summary, Check Button & Pay Button (3 cols) */}
+          <div className="lg:col-span-3 flex flex-col justify-between space-y-3 lg:pl-2">
+            <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+              <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
+                სულ გადასახდელი:
+              </span>
+              <div className="flex items-baseline justify-between mt-0.5">
+                <span className="text-2xl font-black font-mono text-navy">
+                  {totalPendingAmount} ₾
+                </span>
+                {pendingFines.length > 0 ? (
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                    {pendingFines.length} აქტიური
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    სუფთაა
+                  </span>
+                )}
+              </div>
+              {pendingFines.some(f => f.discount_expires_days > 0) && (
+                <span className="text-[10px] text-emerald-600 font-bold block mt-1">
+                  -20% საშეღავათო ვადა აქტიურია
+                </span>
+              )}
+            </div>
+
+            {/* The Requested Action Buttons: Check & Pay in Stitch Tactile Style */}
+            <div className="space-y-2.5">
+              {/* 1. შემოწმების ღილაკი */}
+              <button
+                onClick={handleRefreshFines}
+                disabled={isRefreshing}
+                className="btn-stitch-soft w-full py-3 px-4 text-xs font-bold"
+                title="police.ge ბაზის გადამოწმება"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-gold' : 'text-gold'}`} />
+                <span>{isRefreshing ? 'მოწმდება...' : 'შემოწმება (police.ge)'}</span>
+              </button>
+
+              {/* 2. გადახდის ღილაკი */}
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  if (pendingFines.length > 0) {
+                    setSelectedFineForPayment(pendingFines[0]);
+                  }
+                }}
+                disabled={pendingFines.length === 0}
+                className={`w-full py-3.5 px-4 text-xs font-black transition-all ${
+                  pendingFines.length > 0
+                    ? 'btn-stitch-primary'
+                    : 'bg-slate-200 text-slate-400 rounded-full cursor-not-allowed opacity-60 flex items-center justify-center gap-2'
+                }`}
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>გადახდა ({totalPendingGel} ₾)</span>
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -372,7 +517,7 @@ export const FinesModule: React.FC<Props> = ({
                 type="text"
                 value={plateInput}
                 onChange={(e) => setPlateInput(e.target.value)}
-                placeholder="GE-777-AA"
+                placeholder="FR-282-EE"
                 className="w-full px-4 py-2.5 rounded-xl neu-inset text-navy font-mono uppercase focus:outline-none"
               />
             </div>
@@ -382,7 +527,7 @@ export const FinesModule: React.FC<Props> = ({
                 type="text"
                 value={techPassportInput}
                 onChange={(e) => setTechPassportInput(e.target.value)}
-                placeholder="AA9876543"
+                placeholder="22-3999"
                 className="w-full px-4 py-2.5 rounded-xl neu-inset text-navy font-mono uppercase focus:outline-none"
               />
             </div>
@@ -404,162 +549,67 @@ export const FinesModule: React.FC<Props> = ({
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* 2. DRIVER POINTS SYSTEM (100-ქულიანი სისტემა) WIDGET     */}
-      {/* ======================================================== */}
-      <div className="p-6 rounded-3xl neu-card shadow-neu-card border border-white space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-navy to-slate-800 text-gold flex items-center justify-center shadow-md">
-              <Award className="w-6 h-6" />
+      {/* Explanatory Guide Box (Toggleable) */}
+      {showPointsGuide && (
+        <div className="p-4 rounded-3xl neu-card border border-blue-200 text-xs text-navy space-y-2 animate-fade-in">
+          <div className="flex items-center gap-2 font-bold text-blue-900">
+            <Info className="w-4 h-4 text-blue-600 shrink-0" />
+            <span>როგორ მუშაობს მართვის მოწმობის 100-ქულიანი სისტემა საქართველოში?</span>
+          </div>
+          <ul className="list-disc pl-5 space-y-1 text-slate-700">
+            <li>ყოველ კალენდარულ წელს (1 იანვარს) ყველა მძღოლს ავტომატურად ერიცხება <strong>100 ქულა</strong>.</li>
+            <li>სამართალდარღვევისას (სიჩქარე, ღერძულა ხაზი, შუქნიშნის წითელი) ქულები <strong>აკლდება</strong> მუხლის შესაბამისად (5-დან 20 ქულამდე).</li>
+            <li><strong>ჭკვიანი ვიდეოკამერების ჯარიმებზე:</strong> ქულა ავტომატურად <strong>არ აკლდება</strong> მფლობელს (0 ქულა), სანამ არ მოხდება რეალური მძღოლის იდენტიფიცირება.</li>
+            <li>თუ წლის განმავლობაში ქულების რაოდენობა <strong>0-მდე</strong> დავა, მართვის უფლება ავტომატურად <strong>ჩერდება 1 წლით</strong>.</li>
+          </ul>
+        </div>
+      )}
+
+      {/* Edit Driver Info Form */}
+      {isEditingDriverInfo && (
+        <div className="p-5 rounded-3xl neu-card border border-gold/40 space-y-3 animate-fade-in">
+          <h4 className="text-xs font-bold text-navy flex items-center gap-1.5">
+            <UserCheck className="w-4 h-4 text-gold" />
+            მძღოლის პირადი რეკვიზიტები
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-bold text-slate-500 block mb-1">სახელი და გვარი</label>
+              <input
+                type="text"
+                value={driverNameInput}
+                onChange={(e) => setDriverNameInput(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl neu-inset text-xs text-navy focus:outline-none"
+                placeholder="გიორგი ბერიძე"
+              />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-extrabold text-navy">
-                  მართვის მოწმობის 100-ქულიანი სისტემა
-                </h3>
-                <button
-                  onClick={() => setShowPointsGuide(!showPointsGuide)}
-                  className="text-slate-400 hover:text-gold transition-colors"
-                  title="როგორ მუშაობს ქულები?"
-                >
-                  <Info className="w-4 h-4" />
-                </button>
-              </div>
-              <p className="text-xs text-slate-500">
-                მძღოლი: <span className="font-bold text-navy">{driverName}</span> (პ/ნ: {driverPersonalNumber})
-              </p>
+              <label className="text-[11px] font-bold text-slate-500 block mb-1">პირადი ნომერი (11 ნიშნა)</label>
+              <input
+                type="text"
+                value={personalNumberInput}
+                onChange={(e) => setPersonalNumberInput(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl neu-inset text-xs font-mono text-navy focus:outline-none"
+                placeholder="01024085432"
+              />
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
+          <div className="flex justify-end gap-2 pt-1">
             <button
-              onClick={() => setIsEditingDriverInfo(!isEditingDriverInfo)}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold neu-btn text-navy hover:text-gold transition-colors"
+              onClick={() => setIsEditingDriverInfo(false)}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold neu-btn text-slate-500"
             >
-              <UserCheck className="w-3.5 h-3.5 inline mr-1" />
-              {isEditingDriverInfo ? 'დახურვა' : 'მძღოლის შეცვლა'}
+              გაუქმება
             </button>
-
-            <div className="px-4 py-2 rounded-2xl bg-white border border-slate-200/80 shadow-sm text-right">
-              <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
-                აქტიური ნაშთი
-              </span>
-              <span className={`text-2xl font-black font-mono ${pointsTextColor}`}>
-                {driverPoints} <span className="text-sm font-bold text-slate-400">/ 100</span>
-              </span>
-            </div>
+            <button
+              onClick={handleSaveDriverInfo}
+              className="px-4 py-1.5 rounded-xl text-xs font-bold bg-gold hover:bg-amber-400 text-navy shadow-gold-soft"
+            >
+              დამახსოვრება
+            </button>
           </div>
         </div>
-
-        {/* Progress Bar of Points */}
-        <div className="space-y-2">
-          <div className="w-full h-3.5 bg-slate-200/80 rounded-full overflow-hidden p-0.5 shadow-inner">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${pointsColor}`}
-              style={{ width: `${Math.max(5, Math.min(100, driverPoints))}%` }}
-            />
-          </div>
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
-            <span>0 ქულა (უფლების შეჩერება)</span>
-            <span className="text-slate-400">50 ქულა (საშუალო ზონა)</span>
-            <span className="text-emerald-600">100 ქულა (მაქსიმუმი)</span>
-          </div>
-        </div>
-
-        {/* Quick Points Breakdown & Warnings */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-          <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/70 flex items-center gap-3">
-            <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-            <div>
-              <span className="text-[11px] text-slate-400 block font-bold">სტატუსი:</span>
-              <span className="text-xs font-extrabold text-navy">
-                {driverPoints >= 70 ? 'უსაფრთხო ზონა' : driverPoints >= 40 ? 'საშუალო რისკი' : 'კრიტიკული ზონა'}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/70 flex items-center gap-3">
-            <AlertTriangle className={`w-5 h-5 ${totalPointsAtRisk > 0 ? 'text-amber-500' : 'text-slate-400'} shrink-0`} />
-            <div>
-              <span className="text-[11px] text-slate-400 block font-bold">რისკის ქვეშ მყოფი ქულები:</span>
-              <span className="text-xs font-extrabold text-navy">
-                {totalPointsAtRisk > 0 ? `-${totalPointsAtRisk} ქულა ჯარიმებიდან` : '0 ქულა (სუფთაა)'}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/70 flex items-center gap-3">
-            <Clock className="w-5 h-5 text-blue-600 shrink-0" />
-            <div>
-              <span className="text-[11px] text-slate-400 block font-bold">ქულების განახლება:</span>
-              <span className="text-xs font-extrabold text-navy">1 იანვარი (100 ქულა)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Explanatory Guide Box (Toggleable) */}
-        {showPointsGuide && (
-          <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-xs text-navy space-y-2 animate-fade-in">
-            <div className="flex items-center gap-2 font-bold text-blue-900">
-              <Info className="w-4 h-4 text-blue-600 shrink-0" />
-              <span>როგორ მუშაობს მართვის მოწმობის 100-ქულიანი სისტემა საქართველოში?</span>
-            </div>
-            <ul className="list-disc pl-5 space-y-1 text-slate-700">
-              <li>ყოველ კალენდარულ წელს (1 იანვარს) ყველა მძღოლს ავტომატურად ერიცხება <strong>100 ქულა</strong>.</li>
-              <li>სამართალდარღვევისას (სიჩქარე, ღერძულა ხაზი, შუქნიშნის წითელი) ქულები <strong>აკლდება</strong> მუხლის შესაბამისად (5-დან 20 ქულამდე).</li>
-              <li><strong>ჭკვიანი ვიდეოკამერების ჯარიმებზე:</strong> ქულა ავტომატურად <strong>არ აკლდება</strong> მფლობელს (0 ქულა), სანამ არ მოხდება რეალური მძღოლის იდენტიფიცირება.</li>
-              <li>თუ წლის განმავლობაში ქულების რაოდენობა <strong>0-მდე</strong> დავა, მართვის უფლება ავტომატურად <strong>ჩერდება 1 წლით</strong>.</li>
-            </ul>
-          </div>
-        )}
-
-        {/* Edit Driver Info Form */}
-        {isEditingDriverInfo && (
-          <div className="p-4 rounded-2xl bg-slate-50 border border-gold/40 space-y-3 animate-fade-in">
-            <h4 className="text-xs font-bold text-navy flex items-center gap-1.5">
-              <UserCheck className="w-4 h-4 text-gold" />
-              მძღოლის პირადი რეკვიზიტები
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-bold text-slate-500 block mb-1">სახელი და გვარი</label>
-                <input
-                  type="text"
-                  value={driverNameInput}
-                  onChange={(e) => setDriverNameInput(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl neu-inset text-xs text-navy focus:outline-none"
-                  placeholder="გიორგი ბერიძე"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-slate-500 block mb-1">პირადი ნომერი (11 ნიშნა)</label>
-                <input
-                  type="text"
-                  value={personalNumberInput}
-                  onChange={(e) => setPersonalNumberInput(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl neu-inset text-xs font-mono text-navy focus:outline-none"
-                  placeholder="01024085432"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <button
-                onClick={() => setIsEditingDriverInfo(false)}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-bold neu-btn text-slate-500"
-              >
-                გაუქმება
-              </button>
-              <button
-                onClick={handleSaveDriverInfo}
-                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-gold hover:bg-amber-400 text-navy shadow-gold-soft"
-              >
-                დამახსოვრება
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* ======================================================== */}
       {/* 3. QUICK PAY BY TICKET NUMBER (ქვითრის ნომრით გადახდა)   */}
@@ -666,7 +716,7 @@ export const FinesModule: React.FC<Props> = ({
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-sm font-extrabold text-navy flex items-center gap-2">
-            <Camera className="w-4 h-4 text-gold" />
+            <ShieldAlert className="w-4 h-4 text-gold" />
             <span>ფიქსირებული ქვითრები & დარღვევები</span>
           </h3>
           <span className="text-xs text-slate-500 font-bold">
@@ -675,14 +725,22 @@ export const FinesModule: React.FC<Props> = ({
         </div>
 
         {fines.length === 0 ? (
-          <div className="p-10 rounded-3xl neu-card text-center flex flex-col items-center justify-center space-y-3 border border-white">
+          <div className="p-10 rounded-3xl neu-card text-center flex flex-col items-center justify-center space-y-3.5 border border-white">
             <div className="w-14 h-14 rounded-full neu-circle flex items-center justify-center text-emerald-600">
               <CheckCircle className="w-7 h-7" />
             </div>
             <h3 className="text-base font-bold text-navy">საპატრულო ჯარიმები არ ფიქსირდება!</h3>
             <p className="text-xs text-slate-500 max-w-sm">
-              თქვენს ავტომობილზე საპატრულო პოლიციის ბაზაში დარღვევები არ იძებნება.
+              თქვენს ავტომობილზე ({vehicle.plate_number}) საპატრულო პოლიციის ბაზაში დარღვევები არ იძებნება.
             </p>
+            <button
+              onClick={handleRefreshFines}
+              disabled={isRefreshing}
+              className="btn-stitch-primary px-5 py-2.5 text-xs font-black flex items-center gap-2 mt-2 shadow-sm"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>{isRefreshing ? 'მოწმდება...' : 'police.ge ბაზის ხელახალი შემოწმება'}</span>
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -802,7 +860,7 @@ export const FinesModule: React.FC<Props> = ({
                     {isPaid ? (
                       <button
                         onClick={() => setReceiptFine(fine)}
-                        className="px-4 py-2.5 rounded-2xl text-xs font-bold neu-btn text-navy hover:text-gold flex items-center gap-1.5 shadow-sm transition-all"
+                        className="btn-stitch-soft px-4 py-2 text-xs font-bold"
                       >
                         <FileText className="w-3.5 h-3.5 text-gold" />
                         <span>ქვითრის ნახვა</span>
@@ -810,7 +868,7 @@ export const FinesModule: React.FC<Props> = ({
                     ) : (
                       <button
                         onClick={() => handleOpenPayment(fine)}
-                        className="px-5 py-2.5 rounded-2xl text-xs font-extrabold bg-gold hover:bg-amber-400 text-navy shadow-gold-soft transition-all flex items-center gap-1.5 active:scale-95"
+                        className="btn-stitch-primary px-5 py-2.5 text-xs font-black"
                       >
                         <CreditCard className="w-3.5 h-3.5" />
                         <span>ქვითრის გადახდა ({fine.discount_expires_days > 0 ? fine.discounted_amount_gel : fine.amount_gel} ₾)</span>
@@ -1012,7 +1070,7 @@ export const FinesModule: React.FC<Props> = ({
                   type="button"
                   onClick={() => setSelectedFineForPayment(null)}
                   disabled={isProcessingPayment}
-                  className="w-1/3 py-3 rounded-2xl neu-btn text-xs font-bold text-slate-600 hover:text-navy"
+                  className="btn-stitch-soft w-1/3 py-3 text-xs font-bold"
                 >
                   გაუქმება
                 </button>
@@ -1020,7 +1078,7 @@ export const FinesModule: React.FC<Props> = ({
                   type="button"
                   onClick={handleExecutePayment}
                   disabled={isProcessingPayment}
-                  className="w-2/3 py-3 rounded-2xl bg-gold hover:bg-amber-400 text-navy font-extrabold text-sm shadow-gold-soft flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  className="btn-stitch-primary w-2/3 py-3.5 text-xs font-black"
                 >
                   {isProcessingPayment ? (
                     <>

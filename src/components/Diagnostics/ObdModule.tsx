@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DtcCode, TelemetryData, VehicleProfile } from '../../types';
 import { ThreeCarScene } from '../ThreeCarScene';
 import { TelemetryGauges } from './TelemetryGauges';
@@ -24,7 +24,10 @@ import {
   Gauge,
   Zap,
   Fuel,
-  ChevronRight
+  ChevronRight,
+  Bluetooth,
+  Settings,
+  Bot
 } from 'lucide-react';
 
 interface Props {
@@ -34,9 +37,15 @@ interface Props {
   onUpdateDtcCodes: (codes: DtcCode[]) => void;
   onOpenClearModal: () => void;
   onAskAiAboutCode: (code: DtcCode) => void;
+  onConsultAiMechanic?: (codes: DtcCode[]) => void;
   onUpdateVehicle?: (updated: Partial<VehicleProfile>) => void;
   onOpenAddVehicleWithData?: (data: Partial<VehicleProfile>) => void;
   onAutoRegisterVehicle?: (newVehicle: VehicleProfile) => void;
+  isConnected?: boolean;
+  onConnectionChange?: (connected: boolean) => void;
+  adapterType?: 'wifi' | 'bluetooth' | 'cloud_4g';
+  onOpenAdapterModal?: () => void;
+  autoStartScanTrigger?: number;
 }
 
 export const ObdModule: React.FC<Props> = ({
@@ -46,12 +55,23 @@ export const ObdModule: React.FC<Props> = ({
   onUpdateDtcCodes,
   onOpenClearModal,
   onAskAiAboutCode,
+  onConsultAiMechanic,
   onUpdateVehicle,
   onOpenAddVehicleWithData,
-  onAutoRegisterVehicle
+  onAutoRegisterVehicle,
+  isConnected: propIsConnected,
+  onConnectionChange,
+  adapterType = 'wifi',
+  onOpenAdapterModal,
+  autoStartScanTrigger
 }) => {
   const [isScanning, setIsScanning] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
+  const [internalConnected, setInternalConnected] = useState(false);
+  const isConnected = propIsConnected !== undefined ? propIsConnected : internalConnected;
+  const setIsConnected = (val: boolean) => {
+    setInternalConnected(val);
+    onConnectionChange?.(val);
+  };
   const [selectedComponent, setSelectedComponent] = useState<string | null>('engine');
   const [lastScanTime, setLastScanTime] = useState<string>('დღეს, 16:42');
 
@@ -82,20 +102,20 @@ export const ObdModule: React.FC<Props> = ({
     // Auto-detected vehicle profile from ECU
     const discovered: VehicleProfile = {
       id: vehicle.id || `CAR_${Date.now().toString().slice(-4)}`,
-      brand: vehicle.brand || 'BMW',
-      model: vehicle.model && vehicle.model !== '' ? vehicle.model : '330i xDrive (M-Sport G20)',
-      year: vehicle.year || 2023,
-      engine: vehicle.engine && vehicle.engine !== '' ? vehicle.engine : '2.0L TwinPower Turbo B48 (258 HP)',
-      vin: vehicle.vin && vehicle.vin.length >= 10 ? vehicle.vin : 'WBA33AY05PFP12948',
-      plate_number: vehicle.plate_number && vehicle.plate_number !== 'GE-000-XX' ? vehicle.plate_number : 'GE-777-AA',
-      tech_passport: vehicle.tech_passport || 'TP-GE-984321',
-      mileage_km: vehicle.mileage_km > 0 ? vehicle.mileage_km : 48200,
+      brand: vehicle.brand || 'Mercedes-Benz',
+      model: vehicle.model && vehicle.model !== '' ? vehicle.model : 'GLA 250',
+      year: vehicle.year || 2016,
+      engine: vehicle.engine && vehicle.engine !== '' ? vehicle.engine : '2.0L Turbo M270 (1991 cm³ / 208 HP)',
+      vin: vehicle.vin && vehicle.vin.length >= 10 ? vehicle.vin : 'WDCTG4GB2GJ193791',
+      plate_number: vehicle.plate_number && vehicle.plate_number !== 'GE-000-XX' ? vehicle.plate_number : 'FR-282-EE',
+      tech_passport: vehicle.tech_passport || '22-3999',
+      mileage_km: vehicle.mileage_km > 0 ? vehicle.mileage_km : 78400,
       fuel_type: vehicle.fuel_type || 'petrol',
       obd_ip: vehicle.obd_ip || '192.168.0.10',
       obd_port: vehicle.obd_port || 35000,
-      last_oil_change_km: vehicle.last_oil_change_km || 45800,
-      pti_expiry_date: vehicle.pti_expiry_date || '2026-12-31',
-      horsepower: vehicle.horsepower || 258
+      last_oil_change_km: vehicle.last_oil_change_km || 73200,
+      pti_expiry_date: vehicle.pti_expiry_date || '2027-02-15',
+      horsepower: vehicle.horsepower || 208
     };
 
     setDetectedVehicleData(discovered);
@@ -108,6 +128,8 @@ export const ObdModule: React.FC<Props> = ({
     sounds.playClick();
     if (isConnected) {
       setIsConnected(false);
+    } else if (onOpenAdapterModal) {
+      onOpenAdapterModal();
     } else {
       startEcuHandshakeAndDiscovery();
     }
@@ -130,6 +152,13 @@ export const ObdModule: React.FC<Props> = ({
       setLastScanTime(new Date().toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' }));
     }
   };
+
+  // Auto-start scan when triggered from modal "ტესტირების დაწყება"
+  useEffect(() => {
+    if (autoStartScanTrigger && autoStartScanTrigger > 0) {
+      handleOneTouchScan();
+    }
+  }, [autoStartScanTrigger]);
 
   const handleInstantAutoRegister = () => {
     if (!detectedVehicleData) return;
@@ -184,12 +213,26 @@ export const ObdModule: React.FC<Props> = ({
       <div className="p-4 sm:p-5 rounded-3xl neu-card shadow-neu-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3 sm:gap-3.5">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl neu-circle flex items-center justify-center text-navy shadow-sm shrink-0">
-            {isConnected ? <Wifi className="w-5 h-5 sm:w-6 sm:h-6 text-gold" /> : <WifiOff className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />}
+            {isConnected ? (
+              adapterType === 'bluetooth' ? (
+                <Bluetooth className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+              ) : adapterType === 'cloud_4g' ? (
+                <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
+              ) : (
+                <Wifi className="w-5 h-5 sm:w-6 sm:h-6 text-gold" />
+              )
+            ) : (
+              <WifiOff className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
+            )}
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span className="text-sm sm:text-base font-extrabold text-navy tracking-wide">
-                OBD-II Wi-Fi ადაპტერი
+                {adapterType === 'bluetooth'
+                  ? 'OBD-II Bluetooth ადაპტერი'
+                  : adapterType === 'cloud_4g'
+                  ? 'OBD-II 4G Cloud ადაპტერი'
+                  : 'OBD-II Wi-Fi ადაპტერი'}
               </span>
               <span className={`px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-bold ${
                 isConnected ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800'
@@ -198,7 +241,7 @@ export const ObdModule: React.FC<Props> = ({
               </span>
             </div>
             <p className="text-[11px] sm:text-xs text-slate-500 font-mono mt-0.5 flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span>IP: {vehicle.obd_ip}:{vehicle.obd_port}</span>
+              <span>{adapterType === 'bluetooth' ? 'Bluetooth BLE 5.0' : adapterType === 'cloud_4g' ? 'LTE Cat-M1' : `IP: ${vehicle.obd_ip}:${vehicle.obd_port}`}</span>
               <span>•</span>
               <span>CAN 11/500</span>
               <span>•</span>
@@ -209,11 +252,26 @@ export const ObdModule: React.FC<Props> = ({
 
         {/* Buttons */}
         <div className="flex items-center flex-wrap gap-2 w-full md:w-auto">
+          {/* Adapter Selection & Instructions Modal Trigger */}
+          {onOpenAdapterModal && (
+            <button
+              onClick={() => {
+                sounds.playClick();
+                onOpenAdapterModal();
+              }}
+              className="btn-stitch-soft flex-1 sm:flex-none justify-center px-3.5 py-2 sm:py-2.5 text-xs font-bold whitespace-nowrap"
+              title="ადაპტერის ტიპის არჩევა (Wi-Fi / Bluetooth / 4G) და ინსტრუქცია"
+            >
+              <Settings className="w-3.5 h-3.5 text-gold shrink-0" />
+              <span>ადაპტერი & ინსტრუქცია</span>
+            </button>
+          )}
+
           {/* ECU Discovery & Register Button */}
           <button
             onClick={startEcuHandshakeAndDiscovery}
             disabled={isHandshaking}
-            className="flex-1 sm:flex-none justify-center px-3.5 py-2 sm:py-2.5 rounded-2xl text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 border border-amber-300 transition-all flex items-center gap-1.5 shadow-sm active:scale-95 whitespace-nowrap"
+            className="btn-stitch-soft flex-1 sm:flex-none justify-center px-4 py-2.5 text-xs font-black whitespace-nowrap"
             title="OBD ECU-დან ავტომობილის მონაცემების ამოკითხვა და რეგისტრაცია"
           >
             <Sparkles className="w-3.5 h-3.5 text-gold shrink-0" />
@@ -223,9 +281,11 @@ export const ObdModule: React.FC<Props> = ({
           <button
             onClick={handleToggleConnection}
             disabled={isHandshaking}
-            className="flex-1 sm:flex-none justify-center px-3.5 py-2 sm:py-2.5 rounded-2xl text-xs font-bold neu-btn text-navy flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
+            className={`flex-1 sm:flex-none justify-center px-4 py-2.5 text-xs font-black whitespace-nowrap transition-all ${
+              isConnected ? 'btn-stitch-soft text-navy' : 'btn-stitch-primary text-navy'
+            }`}
           >
-            <Radio className="w-3.5 h-3.5 text-gold shrink-0" />
+            <Radio className="w-3.5 h-3.5 shrink-0" />
             <span>{isConnected ? 'გათიშვა' : 'მიერთება'}</span>
           </button>
 
@@ -235,10 +295,10 @@ export const ObdModule: React.FC<Props> = ({
               onOpenClearModal();
             }}
             disabled={dtcCodes.length === 0}
-            className={`flex-1 sm:flex-none justify-center px-3.5 py-2 sm:py-2.5 rounded-2xl text-xs font-bold border transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap ${
+            className={`flex-1 sm:flex-none justify-center px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-all ${
               dtcCodes.length > 0
-                ? 'neu-btn text-rose-600 border-rose-200 hover:bg-rose-50'
-                : 'neu-inset text-slate-400 border-transparent cursor-not-allowed'
+                ? 'btn-stitch-rose text-white'
+                : 'neu-inset text-slate-400 rounded-full border-transparent cursor-not-allowed opacity-60'
             }`}
           >
             <Trash2 className="w-3.5 h-3.5 shrink-0" />
@@ -249,7 +309,7 @@ export const ObdModule: React.FC<Props> = ({
           <button
             onClick={handleOneTouchScan}
             disabled={isScanning || isHandshaking}
-            className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold bg-gold hover:bg-amber-400 text-navy shadow-gold-soft active:scale-95 transition-all flex items-center gap-2"
+            className="btn-stitch-primary w-full sm:w-auto justify-center px-6 py-3 text-xs sm:text-sm font-black"
           >
             <RefreshCw className={`w-4 h-4 shrink-0 ${isScanning ? 'animate-spin' : ''}`} />
             <span>{isScanning ? 'სკანირება მიმდინარეობს...' : 'ერთი შეხებით სკანირება'}</span>
@@ -453,6 +513,127 @@ export const ObdModule: React.FC<Props> = ({
           onAskAiAboutCode={onAskAiAboutCode}
           vehicle={vehicle}
         />
+      </div>
+
+      {/* 2.5. DIAGNOSTIC RESULTS: "რა აანთო Check Engine?" + 2 დიდი ღილაკი */}
+      <div className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border border-white space-y-4 animate-fade-in">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+          <div className="flex items-center gap-3.5">
+            <div className={`w-12 h-12 rounded-2xl neu-circle flex items-center justify-center shrink-0 ${
+              dtcCodes.length > 0 ? 'text-rose-500 shadow-rose-500/20' : 'text-emerald-600 shadow-emerald-500/20'
+            }`}>
+              {dtcCodes.length > 0 ? <AlertTriangle className="w-6 h-6 animate-pulse" /> : <CheckCircle2 className="w-6 h-6" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-black text-navy">
+                  {dtcCodes.length > 0 ? 'დიაგნოსტიკის პასუხები: რა აანთო Check Engine?' : 'დიაგნოსტიკის პასუხები: სისტემა გამართულია'}
+                </h3>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold ${
+                  dtcCodes.length > 0 ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-emerald-100 text-emerald-800'
+                }`}>
+                  {dtcCodes.length > 0 ? `${dtcCodes.length} ხარვეზი ნაპოვნია` : '0 ხარვეზი'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {dtcCodes.length > 0
+                  ? 'ბორტ-კომპიუტერმა (ECU) აღმოაჩინა შემდეგი კვანძების გაუმართაობა:'
+                  : 'ბორტ-კომპიუტერში შეცდომის კოდები არ ფიქსირდება. Check Engine ჩამქრალია.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-slate-400">
+              {lastScanTime ? `ბოლო სკანირება: ${lastScanTime}` : 'ცოცხალი რეჟიმი'}
+            </span>
+          </div>
+        </div>
+
+        {/* Breakdown of What Triggered the Warning */}
+        {dtcCodes.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {dtcCodes.map((dtc) => (
+              <div
+                key={dtc.code}
+                className="p-3.5 sm:p-4 rounded-2xl bg-white border border-rose-200/80 shadow-xs space-y-2 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-mono font-black text-xs px-2.5 py-0.5 rounded-lg bg-rose-500 text-white shadow-2xs">
+                      {dtc.code}
+                    </span>
+                    <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                      {dtc.severity === 'critical' || dtc.severity === 'high' ? '● მაღალი რისკი' : '● საშუალო'}
+                    </span>
+                  </div>
+
+                  <h4 className="text-xs font-bold text-navy leading-snug">
+                    {dtc.title_ge}
+                  </h4>
+
+                  <p className="text-[11px] text-slate-600 mt-1 leading-snug bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                    {dtc.advice}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-slate-400">სავარაუდო ხარჯი:</span>
+                  <span className="font-bold text-gold bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-amber-900">
+                    ~{dtc.estimated_cost_gel || 120} ₾
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-6 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-emerald-900 flex items-center gap-3 text-xs font-medium">
+            <CheckCircle2 size={24} className="text-emerald-600 shrink-0" />
+            <div>
+              <strong>ყველა სისტემა ნორმაშია!</strong>
+              <p className="text-[11px] text-emerald-700 mt-0.5">
+                ძრავის, გამონაბოლქვისა და ტრანსმისიის მოდულები მუშაობს გამართულად. Check Engine არ არის გააქტიურებული.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* TWO BIG ACTION BUTTONS: Clear Check Engine & Consult AI Mechanic */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-3">
+          {/* Button 1: გასუფთავება (ჩეკის ჩაქრობა) */}
+          <button
+            onClick={() => {
+              sounds.playClick();
+              onOpenClearModal();
+            }}
+            disabled={dtcCodes.length === 0}
+            className={`py-4 px-6 text-xs sm:text-sm font-black transition-all ${
+              dtcCodes.length > 0
+                ? 'btn-stitch-rose w-full'
+                : 'bg-slate-200 text-slate-400 rounded-full cursor-not-allowed opacity-60 flex items-center justify-center gap-2'
+            }`}
+          >
+            <Trash2 size={18} className="shrink-0" />
+            <span>გასუფთავება (ჩეკის ჩაქრობა)</span>
+          </button>
+
+          {/* Button 2: კონსულტაცია AI მექანიკოსთან */}
+          <button
+            onClick={() => {
+              sounds.playSuccess();
+              if (onConsultAiMechanic) {
+                onConsultAiMechanic(dtcCodes);
+              } else if (dtcCodes.length > 0) {
+                onAskAiAboutCode(dtcCodes[0]);
+              }
+            }}
+            className="btn-stitch-ai w-full py-4 px-6 text-xs sm:text-sm font-black"
+          >
+            <Bot size={18} className="text-gold shrink-0" />
+            <span>კონსულტაცია AI მექანიკოსთან</span>
+            <Sparkles size={16} className="text-gold shrink-0 animate-pulse" />
+          </button>
+        </div>
       </div>
 
       {/* 3. Live Gauges */}

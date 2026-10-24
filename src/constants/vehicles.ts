@@ -3,6 +3,26 @@ import { VehicleProfile } from '../types';
 export const VEHICLE_PRESETS: VehicleProfile[] = [
   {
     id: 'CAR_01',
+    brand: 'Mercedes-Benz',
+    model: 'GLA 250',
+    year: 2016,
+    engine: '2.0L Turbo M270 (1991 cm³ / 208 HP)',
+    vin: 'WDCTG4GB2GJ193791',
+    plate_number: 'FR-282-EE',
+    tech_passport: '22-3999',
+    mileage_km: 78400,
+    fuel_type: 'petrol',
+    obd_ip: '192.168.0.10',
+    obd_port: 35000,
+    horsepower: 208,
+    last_oil_change_km: 73200,
+    pti_expiry_date: '2027-02-15',
+    driver_license_points: 90,
+    driver_personal_number: '01024085521',
+    driver_name: 'გიორგი მაისურაძე'
+  },
+  {
+    id: 'CAR_02',
     brand: 'BMW',
     model: '330i M-Sport',
     year: 2023,
@@ -16,7 +36,7 @@ export const VEHICLE_PRESETS: VehicleProfile[] = [
     obd_port: 35000
   },
   {
-    id: 'CAR_02',
+    id: 'CAR_03',
     brand: 'Porsche',
     model: 'Taycan 4S',
     year: 2024,
@@ -30,7 +50,7 @@ export const VEHICLE_PRESETS: VehicleProfile[] = [
     obd_port: 35000
   },
   {
-    id: 'CAR_03',
+    id: 'CAR_04',
     brand: 'Toyota',
     model: 'RAV4 Hybrid AWD',
     year: 2022,

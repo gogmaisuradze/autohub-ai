@@ -19,7 +19,14 @@ import {
   ArrowRight,
   Sliders,
   Cpu,
-  Network
+  Network,
+  Activity,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react';
 
 interface Props {
@@ -98,6 +105,8 @@ export const ThreeCarScene: React.FC<Props> = ({
   const [isGhostMode, setIsGhostMode] = useState<boolean>(true); // Ghost X-Ray Wireframe body vs Solid
   const [explodeFactor, setExplodeFactor] = useState<number>(0); // 0 to 1
   const [infoCardOpen, setInfoCardOpen] = useState<boolean>(false);
+  const [leftHudOpen, setLeftHudOpen] = useState<boolean>(true);
+  const [rightHudOpen, setRightHudOpen] = useState<boolean>(true);
 
   // References to Three.js elements
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -148,7 +157,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     pctx.font = '900 84px Arial, sans-serif';
     pctx.textAlign = 'center';
     pctx.textBaseline = 'middle';
-    pctx.fillText(plateNumber || 'GE-777-AA', 295, 84);
+    pctx.fillText(plateNumber || 'FR-282-EE', 295, 84);
 
     // Brand watermark
     if (brandText) {
@@ -514,7 +523,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       plateTex.anisotropy = 4;
       plateTextureRef.current = plateTex;
 
-      updateLicensePlateTexture(vehicle?.plate_number || 'GE-777-AA', vehicle?.brand || 'BMW');
+      updateLicensePlateTexture(vehicle?.plate_number || 'FR-282-EE', vehicle?.brand || 'Mercedes-Benz');
 
       const plateMat = new THREE.MeshStandardMaterial({
         map: plateTex, emissive: 0xffffff, emissiveMap: plateTex, emissiveIntensity: 0.35,
@@ -701,12 +710,12 @@ export const ThreeCarScene: React.FC<Props> = ({
         mat.metalness = 0.0;
         mat.depthWrite = false;
       } else {
-        // Solid Deep Midnight Navy Metallic Body
+        // Solid Deep Metallic Obsidian Black (Mercedes-Benz GLA 250 Black)
         mat.transmission = 0.0;
         mat.opacity = 1.0;
-        mat.color.set(0x2e4a73);
-        mat.roughness = 0.22;
-        mat.metalness = 0.8;
+        mat.color.set(0x111111);
+        mat.roughness = 0.20;
+        mat.metalness = 0.85;
         mat.depthWrite = true;
       }
       mat.needsUpdate = true;
@@ -839,6 +848,215 @@ export const ThreeCarScene: React.FC<Props> = ({
 
       {/* 3. 3D WEBGL CANVAS MOUNT */}
       <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-pan-y" />
+
+      {/* 3A. LEFT HUD PANEL: რას აანალიზებს (სისტემები) */}
+      <div className="absolute top-14 sm:top-16 left-2.5 sm:left-4 z-20 pointer-events-auto max-w-[230px] sm:max-w-[270px]">
+        {leftHudOpen ? (
+          <div className="bg-white/92 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
+              <div className="flex items-center gap-1.5">
+                <Activity size={13} className="text-gold shrink-0" />
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-navy">
+                  სისტემების ანალიზი
+                </span>
+              </div>
+              <button
+                onClick={() => setLeftHudOpen(false)}
+                className="w-5 h-5 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 hover:text-navy transition-colors"
+                title="ჩაკეცვა"
+              >
+                <ChevronLeft size={13} />
+              </button>
+            </div>
+
+            <div className="space-y-1.5 text-[10px] sm:text-[11px]">
+              {/* 1. Engine ECU */}
+              <div className="p-1.5 sm:p-2 rounded-xl bg-slate-50/90 border border-slate-200/60 flex items-center justify-between">
+                <div className="min-w-0 pr-1">
+                  <div className="font-bold text-navy truncate">ძრავის ECU</div>
+                  <div className="text-[9px] text-slate-400 font-mono">ანთება, O2, ჰაერი</div>
+                </div>
+                {isScanning ? (
+                  <span className="w-2 h-2 rounded-full bg-gold animate-ping shrink-0" />
+                ) : hasErrors ? (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-black bg-rose-100 text-rose-700 border border-rose-200 shrink-0">
+                    3 ხარვეზი
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                    OK
+                  </span>
+                )}
+              </div>
+
+              {/* 2. Transmission TCM */}
+              <div className="p-1.5 sm:p-2 rounded-xl bg-slate-50/90 border border-slate-200/60 flex items-center justify-between">
+                <div className="min-w-0 pr-1">
+                  <div className="font-bold text-navy truncate">გადაცემათა კოლოფი TCM</div>
+                  <div className="text-[9px] text-slate-400 font-mono">ZF 8HP წნევა, ATF</div>
+                </div>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                  OK
+                </span>
+              </div>
+
+              {/* 3. Exhaust EVAP */}
+              <div className="p-1.5 sm:p-2 rounded-xl bg-slate-50/90 border border-slate-200/60 flex items-center justify-between">
+                <div className="min-w-0 pr-1">
+                  <div className="font-bold text-navy truncate">გამონაბოლქვი EVAP</div>
+                  <div className="text-[9px] text-slate-400 font-mono">კატალიზატორი, O2 Bank 1</div>
+                </div>
+                {isScanning ? (
+                  <span className="w-2 h-2 rounded-full bg-gold animate-ping shrink-0" />
+                ) : hasErrors ? (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-black bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
+                    საყურადღებო
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                    OK
+                  </span>
+                )}
+              </div>
+
+              {/* 4. Electrical BCM */}
+              <div className="p-1.5 sm:p-2 rounded-xl bg-slate-50/90 border border-slate-200/60 flex items-center justify-between">
+                <div className="min-w-0 pr-1">
+                  <div className="font-bold text-navy truncate">ელექტროობა & სენსორები</div>
+                  <div className="text-[9px] text-slate-400 font-mono">14.2V, CAN 11/500</div>
+                </div>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                  OK
+                </span>
+              </div>
+
+              {/* 5. Braking ABS */}
+              <div className="p-1.5 sm:p-2 rounded-xl bg-slate-50/90 border border-slate-200/60 flex items-center justify-between">
+                <div className="min-w-0 pr-1">
+                  <div className="font-bold text-navy truncate">სამუხრუჭე & ABS/ESP</div>
+                  <div className="text-[9px] text-slate-400 font-mono">წნევა, სენსორები</div>
+                </div>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                  OK
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setLeftHudOpen(true)}
+            className="p-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-white/80 shadow-md text-navy hover:text-gold flex items-center gap-1.5 font-bold text-xs"
+            title="სისტემების ანალიზის გახსნა"
+          >
+            <Activity size={14} className="text-gold" />
+            <span className="text-[11px] hidden sm:inline">ანალიზი</span>
+            <ChevronRight size={13} />
+          </button>
+        )}
+      </div>
+
+      {/* 3B. RIGHT HUD PANEL: რას ნახულობს და რა იპოვა */}
+      <div className="absolute top-14 sm:top-16 right-2.5 sm:right-4 z-20 pointer-events-auto max-w-[240px] sm:max-w-[290px]">
+        {rightHudOpen ? (
+          <div className="bg-white/92 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
+              <div className="flex items-center gap-1.5">
+                <Cpu size={13} className="text-gold shrink-0" />
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-navy">
+                  ნახულობს & იპოვა
+                </span>
+              </div>
+              <button
+                onClick={() => setRightHudOpen(false)}
+                className="w-5 h-5 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 hover:text-navy transition-colors"
+                title="ჩაკეცვა"
+              >
+                <ChevronRight size={13} />
+              </button>
+            </div>
+
+            {/* რას ნახულობს: Live PIDs */}
+            <div>
+              <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1">
+                <Search size={9} />
+                <span>რას ნახულობს (სენსორები):</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1 font-mono text-[9px] sm:text-[10px]">
+                <div className="p-1 rounded-lg bg-slate-50 border border-slate-200/60">
+                  <span className="text-slate-400 block text-[8px]">PID 01 0C (RPM)</span>
+                  <span className="font-bold text-navy">780 rpm</span>
+                </div>
+                <div className="p-1 rounded-lg bg-slate-50 border border-slate-200/60">
+                  <span className="text-slate-400 block text-[8px]">PID 01 05 (Temp)</span>
+                  <span className="font-bold text-navy">92°C</span>
+                </div>
+                <div className="p-1 rounded-lg bg-slate-50 border border-slate-200/60">
+                  <span className="text-slate-400 block text-[8px]">PID 01 04 (Load)</span>
+                  <span className="font-bold text-navy">22%</span>
+                </div>
+                <div className="p-1 rounded-lg bg-slate-50 border border-slate-200/60">
+                  <span className="text-slate-400 block text-[8px]">PID 01 06 (Trim)</span>
+                  <span className="font-bold text-amber-700">+4.8%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* რა იპოვა: Found Faults */}
+            <div className="pt-1 border-t border-slate-100">
+              <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <AlertTriangle size={9} className="text-rose-500" />
+                  <span>რა იპოვა (ხარვეზები):</span>
+                </span>
+                <span className="font-mono text-rose-600 font-black">{dtcCodes.length} DTC</span>
+              </div>
+
+              {dtcCodes.length > 0 ? (
+                <div className="space-y-1 max-h-28 overflow-y-auto pr-0.5">
+                  {dtcCodes.map((dtc) => (
+                    <div
+                      key={dtc.code}
+                      onClick={() => {
+                        sounds.playClick();
+                        if (onAskAiAboutCode) onAskAiAboutCode(dtc);
+                      }}
+                      className="p-1.5 rounded-xl bg-rose-50/90 hover:bg-rose-100/80 cursor-pointer border border-rose-200 transition-colors flex items-center justify-between text-[9px] sm:text-[10px]"
+                      title="დააჭირეთ AI კონსულტაციისთვის"
+                    >
+                      <div className="min-w-0 pr-1">
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono font-black text-rose-700 bg-rose-200/70 px-1 rounded text-[9px]">
+                            {dtc.code}
+                          </span>
+                          <span className="font-bold text-navy truncate">
+                            {dtc.title_ge.split('(')[0]}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-800 font-bold flex items-center gap-1.5">
+                  <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+                  <span>სისტემა სუფთაა! Check Engine არ ანთია.</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setRightHudOpen(true)}
+            className="p-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-white/80 shadow-md text-navy hover:text-gold flex items-center gap-1.5 font-bold text-xs"
+            title="შედეგების გახსნა"
+          >
+            <ChevronLeft size={13} />
+            <Cpu size={14} className="text-gold" />
+            <span className="text-[11px] hidden sm:inline">იპოვა ({dtcCodes.length})</span>
+          </button>
+        )}
+      </div>
 
       {/* 4. INTERACTIVE GLASSMORPHISM DETAIL CARD (Opens when component is selected) */}
       {infoCardOpen && selectedCompData && (

@@ -3,7 +3,7 @@ import { MapPointType, MapReport } from '../../types';
 import { sounds } from '../../services/soundEffects';
 import {
   X,
-  ShieldAlert,
+  Shield,
   Camera,
   AlertTriangle,
   Fuel,
@@ -46,7 +46,7 @@ export const AddReportModal: React.FC<Props> = ({
       type: 'patrol' as MapPointType,
       label: 'პატრული',
       sub: 'ეკიპაჟი / ჩასაფრება',
-      icon: ShieldAlert,
+      icon: Shield,
       color: 'bg-blue-600/15 text-blue-600 border-blue-400'
     },
     {
