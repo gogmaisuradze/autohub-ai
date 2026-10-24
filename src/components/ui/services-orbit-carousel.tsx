@@ -61,10 +61,10 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
       role: isGe ? 'ვიდეოკამერების მონიტორინგი' : 'Smart Traffic Monitoring',
       icon: ShieldAlert,
       badgeText: pendingFines.length > 0 ? (isGe ? `${pendingFines.length} აქტიური` : `${pendingFines.length} Active`) : (isGe ? 'სუფთაა' : 'Clean'),
-      badgeColor: 'bg-gold text-navy font-black',
+      badgeColor: pendingFines.length > 0 ? 'bg-gold text-navy font-black' : 'bg-emerald-500 text-white font-bold',
       desc: isGe
-        ? `გადასახდელია ${totalFineDiscounted} ₾ (მოქმედებს -20% საშეღავათო ვადა).`
-        : `Outstanding: ${totalFineDiscounted} GEL (-20% discount active).`,
+        ? (pendingFines.length > 0 ? `გადასახდელია ${totalFineDiscounted} ₾ (მოქმედებს -20% საშეღავათო ვადა).` : 'საპატრულო ჯარიმები არ ფიქსირდება — სისტემა სუფთაა.')
+        : (pendingFines.length > 0 ? `Outstanding: ${totalFineDiscounted} GEL (-20% discount active).` : 'No outstanding traffic fines recorded — record is clean.'),
       accent: '#FCA311'
     },
     {

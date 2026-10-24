@@ -51,9 +51,9 @@ export const FinesModule: React.FC<Props> = ({
   const [isEditingDocs, setIsEditingDocs] = useState(false);
 
   // Driver license points & personal info
-  const driverPoints = vehicle.driver_license_points ?? 90;
+  const driverPoints = vehicle.driver_license_points ?? 100;
   const driverPersonalNumber = vehicle.driver_personal_number || '01024085521';
-  const driverName = vehicle.driver_name || 'გიორგი ბერიძე';
+  const driverName = vehicle.driver_name || 'გიორგი მაისურაძე';
   const [isEditingDriverInfo, setIsEditingDriverInfo] = useState(false);
   const [personalNumberInput, setPersonalNumberInput] = useState(driverPersonalNumber);
   const [driverNameInput, setDriverNameInput] = useState(driverName);
@@ -87,12 +87,21 @@ export const FinesModule: React.FC<Props> = ({
     setAutoSyncNotice('მონაცემები შეიცვალა — ჯარიმები მოწმდება police.ge-ზე...');
     try {
       const res = await n8nService.checkFines(plate, tech);
-      if (res && res.fines && res.fines.length > 0) {
+      if (res && Array.isArray(res.fines)) {
         onUpdateFines(res.fines);
         if (playSound) sounds.playSuccess();
         const nowTime = new Date().toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' });
         setLastAutoSyncedTime(nowTime);
-        setAutoSyncNotice(`ჯარიმები ავტომატურად განახლდა (${nowTime})`);
+        if (res.fines.length === 0) {
+          setAutoSyncNotice(`ჯარიმები არ ფიქსირდება — სისტემა სუფთაა (${nowTime})`);
+          onUpdateVehicle({ driver_license_points: 100 });
+        } else {
+          setAutoSyncNotice(`ჯარიმები განახლდა: ${res.fines.length} ჯარიმა (${nowTime})`);
+          const totalDeducted = res.fines
+            .filter(f => f.status === 'pending' && f.points_status === 'deducted')
+            .reduce((acc, f) => acc + (f.points_deducted || 0), 0);
+          onUpdateVehicle({ driver_license_points: Math.max(0, 100 - totalDeducted) });
+        }
         setTimeout(() => setAutoSyncNotice(null), 4000);
       }
     } catch {
@@ -657,31 +666,58 @@ export const FinesModule: React.FC<Props> = ({
 
       {/* Notification Banner & Quick Link to Parking Service */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* 20% discount alert */}
-        <div className="p-4 rounded-3xl neu-card border-l-4 border-l-gold flex items-center justify-between border border-white">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full neu-circle flex items-center justify-center text-gold shrink-0">
-              <BellRing className="w-5 h-5" />
+        {/* 20% discount alert OR Clean Status Banner */}
+        {pendingFines.some(f => f.discount_expires_days > 0) ? (
+          <div className="p-4 rounded-3xl neu-card border-l-4 border-l-gold flex items-center justify-between border border-white">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full neu-circle flex items-center justify-center text-gold shrink-0">
+                <BellRing className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-navy">
+                  საშეღავათო 20%-იანი პერიოდი აქტიურია!
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  საშეღავათო ვადის ფარგლებში ზოგავთ ჯამში {pendingFines.reduce((acc, f) => acc + (f.amount_gel - f.discounted_amount_gel), 0)} ₾-ს.
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-bold text-navy">
-                საშეღავათო 20%-იანი პერიოდი აქტიურია!
-              </p>
-              <p className="text-[11px] text-slate-500">
-                საშეღავათო ვადის ფარგლებში ზოგავთ ჯამში {pendingFines.reduce((acc, f) => acc + (f.amount_gel - f.discounted_amount_gel), 0)} ₾-ს.
-              </p>
-            </div>
+            <a
+              href="https://police.ge"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold text-gold hover:underline flex items-center gap-1 shrink-0"
+            >
+              <span>police.ge</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
           </div>
-          <a
-            href="https://police.ge"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs font-bold text-gold hover:underline flex items-center gap-1 shrink-0"
-          >
-            <span>police.ge</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        </div>
+        ) : (
+          <div className="p-4 rounded-3xl neu-card border-l-4 border-l-emerald-500 flex items-center justify-between border border-white">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-navy">
+                  საპატრულო მონიტორინგი: სუფთაა
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {vehicle.plate_number}-ზე police.ge ბაზაში ჯარიმები არ იძებნება.
+                </p>
+              </div>
+            </div>
+            <a
+              href="https://police.ge"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-1 shrink-0"
+            >
+              <span>police.ge</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        )}
 
         {/* Dedicated Parking Services Banner */}
         {onNavigateToParking && (
@@ -725,22 +761,48 @@ export const FinesModule: React.FC<Props> = ({
         </div>
 
         {fines.length === 0 ? (
-          <div className="p-10 rounded-3xl neu-card text-center flex flex-col items-center justify-center space-y-3.5 border border-white">
-            <div className="w-14 h-14 rounded-full neu-circle flex items-center justify-center text-emerald-600">
-              <CheckCircle className="w-7 h-7" />
+          <div className="p-8 sm:p-10 rounded-3xl neu-card text-center flex flex-col items-center justify-center space-y-4 border border-white">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
+              <CheckCircle className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-bold text-navy">საპატრულო ჯარიმები არ ფიქსირდება!</h3>
-            <p className="text-xs text-slate-500 max-w-sm">
-              თქვენს ავტომობილზე ({vehicle.plate_number}) საპატრულო პოლიციის ბაზაში დარღვევები არ იძებნება.
-            </p>
-            <button
-              onClick={handleRefreshFines}
-              disabled={isRefreshing}
-              className="btn-stitch-primary px-5 py-2.5 text-xs font-black flex items-center gap-2 mt-2 shadow-sm"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>{isRefreshing ? 'მოწმდება...' : 'police.ge ბაზის ხელახალი შემოწმება'}</span>
-            </button>
+            <div>
+              <h3 className="text-lg font-black text-navy">საპატრულო ჯარიმები არ ფიქსირდება!</h3>
+              <p className="text-xs text-slate-500 max-w-md mt-1">
+                თქვენს ავტომობილზე (<span className="font-mono font-bold text-navy">{vehicle.plate_number}</span>) საპატრულო პოლიციის (police.ge) ცენტრალურ ბაზაში დარღვევები არ იძებნება.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
+                <ShieldCheck size={14} className="text-emerald-600" />
+                <span>მართვის მოწმობის ქულები: 100 / 100</span>
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1.5">
+                <Check size={14} className="text-blue-600" />
+                <span>სისტემა სუფთაა</span>
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                onClick={handleRefreshFines}
+                disabled={isRefreshing}
+                className="btn-stitch-primary px-5 py-2.5 text-xs font-black flex items-center gap-2 shadow-sm"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>{isRefreshing ? 'მოწმდება...' : 'police.ge ხელახალი შემოწმება'}</span>
+              </button>
+
+              <a
+                href="https://police.ge"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-stitch-soft px-5 py-2.5 text-xs font-bold flex items-center gap-2"
+              >
+                <span>police.ge ოფიციალური პორტალი</span>
+                <ExternalLink size={13} />
+              </a>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

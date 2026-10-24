@@ -57,10 +57,10 @@ export const HomeHub: React.FC<Props> = ({
       title: 'საპატრულო ჯარიმები & ვიდეოკამერები',
       subtitle: 'ვიდეოჯარიმების მონიტორინგი და 20%-იანი ფასდაკლების ვადა',
       icon: ShieldAlert,
-      badgeText: `${pendingFines.length}`,
-      badgeColor: 'bg-gold text-navy font-bold shadow-gold-soft',
-      badgeSubtext: `${totalFineDiscounted} ₾ ვადაში`,
-      tag: 'დარჩა 11 დღე'
+      badgeText: pendingFines.length > 0 ? `${pendingFines.length}` : 'OK',
+      badgeColor: pendingFines.length > 0 ? 'bg-gold text-navy font-bold shadow-gold-soft' : 'bg-emerald-500 text-white font-bold shadow-sm',
+      badgeSubtext: pendingFines.length > 0 ? `${totalFineDiscounted} ₾ ვადაში` : 'სისტემა სუფთაა',
+      tag: pendingFines.length > 0 ? 'აქტიური ჯარიმა' : '0 ჯარიმა'
     },
     {
       id: 'parking' as TabType,
@@ -97,8 +97,8 @@ export const HomeHub: React.FC<Props> = ({
       title: 'მეტი — გარაჟი, მოწმობა & პარამეტრები',
       subtitle: 'მართვის მოწმობის კონსპექტი, OBD ადაპტერი და n8n ვებჰუკები',
       icon: Car,
-      badgeText: '90 ქულა',
-      badgeColor: 'bg-emerald-500 text-white font-bold shadow-sm',
+      badgeText: `${vehicle.driver_license_points ?? 100} ქულა`,
+      badgeColor: (vehicle.driver_license_points ?? 100) >= 70 ? 'bg-emerald-500 text-white font-bold shadow-sm' : 'bg-amber-500 text-white font-bold shadow-sm',
       badgeSubtext: `${vehicle.brand} ${vehicle.model}`,
       tag: 'მართვის მოწმობა'
     },

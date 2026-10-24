@@ -39,7 +39,7 @@ const INITIAL_VEHICLE: VehicleProfile = {
   horsepower: 208,
   last_oil_change_km: 73200,
   pti_expiry_date: '2027-02-15',
-  driver_license_points: 90,
+  driver_license_points: 100,
   driver_personal_number: '01024085521',
   driver_name: 'გიორგი მაისურაძე'
 };
@@ -382,11 +382,10 @@ export const App: React.FC = () => {
       const saved = localStorage.getItem('autohub_vehicle_profile');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object' && parsed.vin === 'WDCTG4GB2GJ193791') {
+        if (parsed && typeof parsed === 'object' && parsed.id) {
           return { ...INITIAL_VEHICLE, ...parsed };
         }
       }
-      localStorage.setItem('autohub_vehicle_profile', JSON.stringify(INITIAL_VEHICLE));
       return INITIAL_VEHICLE;
     } catch {
       return INITIAL_VEHICLE;
@@ -411,7 +410,7 @@ export const App: React.FC = () => {
       const saved = localStorage.getItem('autohub_fines');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
       return INITIAL_FINES;
     } catch {
@@ -628,8 +627,16 @@ export const App: React.FC = () => {
     if (vehicle.plate_number && vehicle.tech_passport) {
       n8nService.checkFines(vehicle.plate_number, vehicle.tech_passport)
         .then(res => {
-          if (res && res.fines && res.fines.length > 0) {
+          if (res && Array.isArray(res.fines)) {
             setFines(res.fines);
+            if (res.fines.length === 0) {
+              setVehicle(v => ({ ...v, driver_license_points: 100 }));
+            } else {
+              const totalDeducted = res.fines
+                .filter(f => f.status === 'pending' && f.points_status === 'deducted')
+                .reduce((acc, f) => acc + (f.points_deducted || 0), 0);
+              setVehicle(v => ({ ...v, driver_license_points: Math.max(0, 100 - totalDeducted) }));
+            }
           }
         })
         .catch(() => {});

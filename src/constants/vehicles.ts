@@ -17,7 +17,7 @@ export const VEHICLE_PRESETS: VehicleProfile[] = [
     horsepower: 208,
     last_oil_change_km: 73200,
     pti_expiry_date: '2027-02-15',
-    driver_license_points: 90,
+    driver_license_points: 100,
     driver_personal_number: '01024085521',
     driver_name: 'გიორგი მაისურაძე'
   },
@@ -33,7 +33,8 @@ export const VEHICLE_PRESETS: VehicleProfile[] = [
     mileage_km: 48200,
     fuel_type: 'petrol',
     obd_ip: '192.168.0.10',
-    obd_port: 35000
+    obd_port: 35000,
+    driver_license_points: 100
   },
   {
     id: 'CAR_03',
@@ -47,7 +48,8 @@ export const VEHICLE_PRESETS: VehicleProfile[] = [
     mileage_km: 19400,
     fuel_type: 'electric',
     obd_ip: '192.168.0.10',
-    obd_port: 35000
+    obd_port: 35000,
+    driver_license_points: 100
   },
   {
     id: 'CAR_04',
@@ -61,6 +63,7 @@ export const VEHICLE_PRESETS: VehicleProfile[] = [
     mileage_km: 67300,
     fuel_type: 'hybrid',
     obd_ip: '192.168.0.10',
-    obd_port: 35000
+    obd_port: 35000,
+    driver_license_points: 100
   }
 ];

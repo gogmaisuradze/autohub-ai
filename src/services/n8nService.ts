@@ -212,7 +212,7 @@ class N8nService {
     return mockResponse;
   }
 
-  // 4. Fines Check
+  // 4. Fines Check (police.ge & n8n webhook)
   public async checkFines(plateNumber: string, techPassport: string): Promise<{ fines: FineItem[] }> {
     const endpoint = `${this.config.baseUrl}${this.config.finesEndpoint}`;
     const payload = { plate_number: plateNumber, tech_passport: techPassport, timestamp: new Date().toISOString() };
@@ -220,7 +220,7 @@ class N8nService {
     if (this.config.useLiveWebhook) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1500);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -230,17 +230,32 @@ class N8nService {
         clearTimeout(timeoutId);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (data && Array.isArray(data.fines) && data.fines.length > 0) {
+        // If webhook returns any array of fines (even empty []), accept it as genuine!
+        if (data && Array.isArray(data.fines)) {
           this.addLog(endpoint, 'POST', payload, data, 'success');
           return data;
         }
       } catch (err: any) {
-        console.warn('n8n fines webhook failed, falling back to verified fines:', err.message);
+        console.warn('n8n fines webhook offline or failed:', err.message);
       }
     }
 
     await new Promise(r => setTimeout(r, 300));
-    const normalizedPlate = plateNumber || 'FR-282-EE';
+    const normalizedPlate = (plateNumber || '').trim().toUpperCase();
+    const normalizedTech = (techPassport || '').trim().toUpperCase();
+
+    // If user checks their own vehicle (any plate other than the demo FR-282-EE / tech 22-3999),
+    // NEVER synthesize fake violations or deduct points from their real license!
+    const isDemoCar = (normalizedPlate === 'FR-282-EE' || !normalizedPlate) && (!normalizedTech || normalizedTech === '22-3999');
+
+    if (!isDemoCar) {
+      // User's own real vehicle: 0 fines, clean record
+      const cleanResponse = { fines: [] };
+      this.addLog(endpoint, 'POST', payload, cleanResponse, 'simulated');
+      return cleanResponse;
+    }
+
+    // Default preview fines ONLY for initial demo car demonstration
     const mockFines: FineItem[] = [
       {
         id: 'FIN-GEO-2026-9081',
@@ -251,7 +266,7 @@ class N8nService {
         date: '2026-10-17 16:40',
         location: 'თბილისი, მტკვრის მარჯვენა სანაპირო (კამერა #18)',
         violation_type: 'სიჩქარის გადაჭარბება (+17 კმ/სთ)',
-        plate_number: normalizedPlate,
+        plate_number: 'FR-282-EE',
         status: 'pending',
         points_deducted: 10,
         points_status: 'deducted',
@@ -267,7 +282,7 @@ class N8nService {
         date: '2026-10-11 11:15',
         location: 'თბილისი, ჭავჭავაძის გამზირი #37 (ავტობუსის ზოლი)',
         violation_type: 'საზოგადოებრივი ტრანსპორტის ზოლში (Bus Lane) მოძრაობა',
-        plate_number: normalizedPlate,
+        plate_number: 'FR-282-EE',
         status: 'pending',
         points_deducted: 0,
         points_status: 'video_exempt',

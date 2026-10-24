@@ -64,6 +64,14 @@ export const GarageModule: React.FC<Props> = ({
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'profile' | 'map' | 'license'>(initialSubTab);
 
+  const driverFullName = vehicle.driver_name || 'გიორგი მაისურაძე';
+  const nameParts = driverFullName.trim().split(/\s+/);
+  const firstName = nameParts[0] || 'გიორგი';
+  const lastName = nameParts.slice(1).join(' ') || '';
+  const personalNo = vehicle.driver_personal_number || '01024085521';
+  const currentPoints = vehicle.driver_license_points ?? 100;
+  const deductedPoints = Math.max(0, 100 - currentPoints);
+
   // Driver license portrait photo state (localStorage persisted)
   const [driverPhoto, setDriverPhoto] = useState<string | null>(() => {
     try {
@@ -367,12 +375,12 @@ export const GarageModule: React.FC<Props> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="p-3 rounded-xl neu-surface border border-white">
                     <span className="text-[10px] font-bold text-slate-400 uppercase block">1. გვარი / Surname</span>
-                    <span className="text-sm font-black text-navy font-mono">ბერიძე / BERIDZE</span>
+                    <span className="text-sm font-black text-navy font-mono">{lastName || firstName}</span>
                   </div>
 
                   <div className="p-3 rounded-xl neu-surface border border-white">
                     <span className="text-[10px] font-bold text-slate-400 uppercase block">2. სახელი / Name</span>
-                    <span className="text-sm font-black text-navy font-mono">გიორგი / GIORGI</span>
+                    <span className="text-sm font-black text-navy font-mono">{firstName}</span>
                   </div>
 
                   <div className="p-3 rounded-xl neu-surface border border-white">
@@ -382,7 +390,7 @@ export const GarageModule: React.FC<Props> = ({
 
                   <div className="p-3 rounded-xl neu-surface border border-white">
                     <span className="text-[10px] font-bold text-slate-400 uppercase block">7. პირადი ნომერი / Personal No</span>
-                    <span className="text-xs font-black text-navy font-mono">01024049281</span>
+                    <span className="text-xs font-black text-navy font-mono">{personalNo}</span>
                   </div>
 
                   <div className="p-3 rounded-xl neu-surface border border-white">
@@ -404,7 +412,7 @@ export const GarageModule: React.FC<Props> = ({
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 font-bold block">100-ქულიანი ბალანსი</span>
-                    <span className="font-black text-gold font-mono">90/100 (ჩამოკლებული: 0)</span>
+                    <span className="font-black text-gold font-mono">{currentPoints}/100 {deductedPoints > 0 ? `(დაკლებული: -${deductedPoints})` : '(სუფთაა)'}</span>
                   </div>
                 </div>
               </div>
