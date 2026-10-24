@@ -158,22 +158,39 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     if (!L) return;
 
     if (tileLayerRef.current) {
-      mapInstanceRef.current.removeLayer(tileLayerRef.current);
+      try {
+        mapInstanceRef.current.removeLayer(tileLayerRef.current);
+      } catch (e) {
+        console.warn(e);
+      }
     }
 
     let url = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
     let maxZoom = 19;
     let attribution = '&copy; OpenStreetMap contributors';
+    let className = mapTheme === 'dark' ? 'dark-tiles-filter' : '';
 
     if (mapTheme === 'satellite') {
       url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
       maxZoom = 19;
       attribution = 'Tiles &copy; Esri';
+      className = '';
     }
 
-    const newLayer = L.tileLayer(url, { maxZoom, attribution });
+    const newLayer = L.tileLayer(url, { maxZoom, attribution, className });
     newLayer.addTo(mapInstanceRef.current);
     tileLayerRef.current = newLayer;
+
+    // Direct DOM manipulation on map container for guaranteed styling
+    if (mapContainerRef.current) {
+      if (mapTheme === 'dark') {
+        mapContainerRef.current.classList.add('dark-map-tiles');
+        mapContainerRef.current.style.backgroundColor = '#1a2232';
+      } else {
+        mapContainerRef.current.classList.remove('dark-map-tiles');
+        mapContainerRef.current.style.backgroundColor = mapTheme === 'satellite' ? '#000000' : '#f8fafc';
+      }
+    }
 
     if (markersLayerRef.current) {
       markersLayerRef.current.bringToFront?.();
@@ -479,7 +496,50 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Map Theme Toggle (Dark, Street, Satellite) */}
+            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setMapTheme('dark');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+                  mapTheme === 'dark' ? 'bg-navy text-gold shadow-sm font-black' : 'text-slate-600 hover:text-navy hover:bg-white/60'
+                }`}
+                title="მუქი Waze რეჟიმი"
+              >
+                <span>🌙 მუქი</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setMapTheme('street');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+                  mapTheme === 'street' ? 'bg-navy text-gold shadow-sm font-black' : 'text-slate-600 hover:text-navy hover:bg-white/60'
+                }`}
+                title="სტანდარტული ქუჩების რუკა"
+              >
+                <span>🗺️ ქუჩები</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setMapTheme('satellite');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+                  mapTheme === 'satellite' ? 'bg-navy text-gold shadow-sm font-black' : 'text-slate-600 hover:text-navy hover:bg-white/60'
+                }`}
+                title="Esri სატელიტური აეროფოტო"
+              >
+                <span>🛰️ სატელიტი</span>
+              </button>
+            </div>
+
             {/* Refresh */}
             <button
               onClick={() => {
@@ -583,9 +643,18 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         )}
 
         {/* Floating Layer Theme Switcher on Map (Dark, Street, Satellite) */}
-        <div className="absolute top-4 right-14 z-10 flex items-center gap-1 p-1 rounded-2xl bg-navy/90 backdrop-blur-md border border-slate-700/80 shadow-lg text-xs">
+        <div
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="absolute top-4 right-14 z-20 flex items-center gap-1 p-1 rounded-2xl bg-navy/95 backdrop-blur-md border border-slate-700/80 shadow-lg text-xs"
+        >
           <button
-            onClick={() => {
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
               sounds.playClick();
               setMapTheme('dark');
             }}
@@ -597,7 +666,11 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             <span>🌙 მუქი</span>
           </button>
           <button
-            onClick={() => {
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
               sounds.playClick();
               setMapTheme('street');
             }}
@@ -609,7 +682,11 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             <span>🗺️ ქუჩები</span>
           </button>
           <button
-            onClick={() => {
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
               sounds.playClick();
               setMapTheme('satellite');
             }}
