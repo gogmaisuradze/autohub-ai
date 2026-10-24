@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { VehicleProfile } from '../../types';
+import { VehicleProfile, ServiceItem, ServiceBookingItem } from '../../types';
 import { sounds } from '../../services/soundEffects';
 import { GeorgianLicensePlate } from '../ui/GeorgianLicensePlate';
 import LiveTrafficMap from '../Map/LiveTrafficMap';
 import DrivingExamWidget from './DrivingExamWidget';
+import { decodeVin } from '../../services/vinServiceEngine';
+import { ServiceOfferComparisonModal } from '../Modals/ServiceOfferComparisonModal';
 import {
   Car,
   Plus,
@@ -33,7 +35,13 @@ import {
   FileText,
   GraduationCap,
   HelpCircle,
-  History
+  History,
+  Cpu,
+  Droplets,
+  CircleDot,
+  ChevronDown,
+  ChevronUp,
+  Scale
 } from 'lucide-react';
 
 export const DRIVER_LICENSE_NOTEBOOK_URL = 'https://notebook.google.com/notebook/8435d2c1-fa29-44d0-8d3f-da422e03b3f0/artifact/528eecb6-fcf3-484c-9615-670ae0a800b7';
@@ -46,10 +54,13 @@ interface Props {
   onOpenFieldPrompt: (field: 'plate_number' | 'mileage_km' | 'engine' | 'vin') => void;
   allVehicles: VehicleProfile[];
   onSelectVehicle: (v: VehicleProfile) => void;
-  initialSubTab?: 'profile' | 'map' | 'license';
+  initialSubTab?: 'profile' | 'map' | 'license' | 'vin';
   isSoundEnabled?: boolean;
   onToggleSound?: () => void;
   onOpenVinHistory?: () => void;
+  onResetToVinSpecs?: () => void;
+  services?: ServiceItem[];
+  onAddBooking?: (booking: ServiceBookingItem) => void;
 }
 
 export const GarageModule: React.FC<Props> = ({
@@ -63,9 +74,18 @@ export const GarageModule: React.FC<Props> = ({
   initialSubTab = 'profile',
   isSoundEnabled = true,
   onToggleSound,
-  onOpenVinHistory
+  onOpenVinHistory,
+  onResetToVinSpecs,
+  services = [],
+  onAddBooking
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'map' | 'license'>(initialSubTab);
+  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'map' | 'license' | 'vin'>(initialSubTab);
+  const [isVinSpecsExpanded, setIsVinSpecsExpanded] = useState(false);
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
+  const [comparisonService, setComparisonService] = useState<ServiceItem | null>(null);
+
+  // Factory requirements decoded from VIN
+  const decodedVin = decodeVin(vehicle.vin, vehicle);
 
   const driverFullName = vehicle.driver_name || 'გიორგი მაისურაძე';
   const nameParts = driverFullName.trim().split(/\s+/);
@@ -110,6 +130,196 @@ export const GarageModule: React.FC<Props> = ({
   const completeness = checkFields.reduce((acc, f) => acc + (f.filled ? f.weight : 0), 0);
   const missingFields = checkFields.filter(f => !f.filled);
 
+  const renderVinRequirementsCard = (forceExpand = false) => {
+    const showDetails = forceExpand || isVinSpecsExpanded;
+
+    return (
+      <div className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border border-white space-y-4 animate-fade-in relative overflow-hidden">
+        {/* Top header row */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl neu-circle flex items-center justify-center text-navy shadow-sm shrink-0">
+              <Cpu className="w-5 h-5 text-gold" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm sm:text-base font-black text-navy tracking-tight">
+                  VIN-ით იდენტიფიცირებული ქარხნული საჭიროებები
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-navy text-gold shadow-xs">
+                  {decodedVin.vin}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  ● 100% ქარხნული OEM
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {decodedVin.brand} {decodedVin.model} • {decodedVin.year} წელი • {decodedVin.country} • {decodedVin.engine_desc}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => {
+                sounds.playClick();
+                const urgent = services && services.length > 0
+                  ? (services.find(s => s.health_percentage <= 45) || services[0])
+                  : null;
+                setComparisonService(urgent);
+                setIsComparisonModalOpen(true);
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 transition-all flex items-center gap-1.5 shadow-xs hover:scale-105 active:scale-95"
+              title="საჭიროებების & სერვისების ფასების შედარება"
+            >
+              <Scale size={13} className="text-white" />
+              <span>შედარება & ვარიანტები</span>
+            </button>
+
+            {onOpenVinHistory && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenVinHistory();
+                }}
+                className="px-3.5 py-2 rounded-xl text-xs font-black bg-navy text-gold hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-xs hover:scale-105 active:scale-95"
+                title="მანქანის ისტორიის გადამოწმება და ბრაუზერში ამოყრა"
+              >
+                <History size={13} className="text-gold" />
+                <span>VIN ისტორია & აუქციონი ↗</span>
+              </button>
+            )}
+
+            {onResetToVinSpecs && (
+              <button
+                onClick={() => {
+                  if (window.confirm(`${vehicle.brand} ${vehicle.model}-სთვის (${vehicle.vin}) ქარხნული სერვის-რეგლამენტის თავიდან აწყობა?`)) {
+                    sounds.playClearChime();
+                    onResetToVinSpecs();
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-gold text-navy border border-amber-200 hover:border-gold transition-all flex items-center gap-1.5 shadow-xs hover:scale-105 active:scale-95"
+                title="სერვისების თავიდან გენერირება VIN კოდის მიხედვით"
+              >
+                <Sparkles size={13} className="text-amber-600" />
+                <span>ქარხნული რეგლამენტის სინქრონიზაცია</span>
+              </button>
+            )}
+
+            {!forceExpand && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  setIsVinSpecsExpanded(!isVinSpecsExpanded);
+                }}
+                className="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition-all flex items-center gap-1 shadow-xs"
+              >
+                <span>{isVinSpecsExpanded ? 'აკეცვა' : 'დეტალურად'}</span>
+                {isVinSpecsExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 4 Core Factory Requirements Pills */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* 1. Oil / Powertrain Spec */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+              <Droplets size={16} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-mono font-bold text-slate-400 block uppercase">
+                ძრავის ზეთის საჭიროება
+              </span>
+              <h4 className="text-xs font-black text-navy truncate" title={decodedVin.factory_specs.oil_spec}>
+                {decodedVin.factory_specs.oil_spec}
+              </h4>
+              <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                {decodedVin.factory_specs.oil_viscosity} {decodedVin.factory_specs.oil_capacity_liters > 0 ? `• ${decodedVin.factory_specs.oil_capacity_liters} ლიტრი` : ''}
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Transmission Spec */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+              <CircleDot size={16} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-mono font-bold text-slate-400 block uppercase">
+                კოლოფის ტექ-საჭიროება
+              </span>
+              <h4 className="text-xs font-black text-navy truncate" title={decodedVin.transmission_desc}>
+                {decodedVin.transmission_desc}
+              </h4>
+              <div className="text-[10px] text-slate-500 font-mono mt-0.5 truncate" title={decodedVin.factory_specs.transmission_fluid}>
+                {decodedVin.factory_specs.transmission_fluid}
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Coolant Spec */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+              <Gauge size={16} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-mono font-bold text-slate-400 block uppercase">
+                გაგრილების სისტემა
+              </span>
+              <h4 className="text-xs font-black text-navy truncate" title={decodedVin.factory_specs.coolant_spec}>
+                {decodedVin.factory_specs.coolant_spec}
+              </h4>
+              <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                ფერით: {decodedVin.factory_specs.coolant_color} • -37°C
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Spark Plugs & Brakes Spec */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+              <Zap size={16} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-mono font-bold text-slate-400 block uppercase">
+                აალება & სამუხრუჭე
+              </span>
+              <h4 className="text-xs font-black text-navy truncate" title={decodedVin.factory_specs.spark_plug_spec}>
+                {decodedVin.factory_specs.spark_plug_spec}
+              </h4>
+              <div className="text-[10px] text-slate-500 font-mono mt-0.5 truncate" title={decodedVin.factory_specs.brake_spec}>
+                {decodedVin.factory_specs.brake_spec}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Collapsible Expanded Detailed Specs */}
+        {showDetails && (
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono space-y-2 animate-fade-in">
+            <div className="font-bold text-navy text-[11px] uppercase tracking-wider mb-2 border-b border-slate-200 pb-1 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-emerald-600" />
+              <span>VIN დეკოდირების სრული ქარხნული პროფილი ({decodedVin.vin})</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 text-[11px]">
+              <div><span className="text-slate-400">მწარმოებელი ქარხანა:</span> <strong className="text-navy">{decodedVin.country}</strong></div>
+              <div><span className="text-slate-400">WMI ინდექსი:</span> <strong className="text-navy">{decodedVin.wmi}</strong></div>
+              <div><span className="text-slate-400">საწვავის ტიპი:</span> <strong className="text-navy">{decodedVin.fuel_type.toUpperCase()}</strong></div>
+              <div><span className="text-slate-400">ძრავის კოდი/ტიპი:</span> <strong className="text-navy">{decodedVin.engine_desc}</strong></div>
+              <div><span className="text-slate-400">სამუხრუჭე სითხე:</span> <strong className="text-navy">{decodedVin.factory_specs.brake_fluid}</strong></div>
+              <div><span className="text-slate-400">ჰაერის ფილტრი:</span> <strong className="text-navy">{decodedVin.factory_specs.air_filter_spec}</strong></div>
+              <div><span className="text-slate-400">სალონის მიკროფილტრი:</span> <strong className="text-navy">{decodedVin.factory_specs.cabin_filter_spec}</strong></div>
+              <div><span className="text-slate-400">ტექ-ინსპექტირების ვადა:</span> <strong className="text-navy">სავალდებულო (12 თვეში ერთხელ)</strong></div>
+              <div><span className="text-slate-400">მიმდინარე გარბენი:</span> <strong className="text-navy">{vehicle.mileage_km.toLocaleString()} კმ</strong></div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       
@@ -149,6 +359,21 @@ export const GarageModule: React.FC<Props> = ({
           >
             <Car size={15} />
             <span>ჩემი გარაჟი</span>
+          </button>
+
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setActiveSubTab('vin');
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeSubTab === 'vin'
+                ? 'bg-navy text-gold shadow-sm'
+                : 'text-slate-600 hover:text-navy'
+            }`}
+          >
+            <Cpu size={15} className="text-gold" />
+            <span>ქარხნული VIN</span>
           </button>
 
           <button
@@ -689,6 +914,9 @@ export const GarageModule: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* VIN-DECODED FACTORY REQUIREMENTS & OEM SPECS CARD */}
+          {renderVinRequirementsCard()}
+
           {/* Saved Vehicles / Presets */}
           <div className="space-y-3">
             <h4 className="text-sm font-extrabold text-navy uppercase tracking-wider px-1">
@@ -783,6 +1011,26 @@ export const GarageModule: React.FC<Props> = ({
 
         </div>
       )}
+
+      {/* 4. TAB: VIN FACTORY REQUIREMENTS & OEM SPECS (Standalone Focused View) */}
+      {activeSubTab === 'vin' && (
+        <div className="space-y-6 animate-fade-in">
+          {renderVinRequirementsCard(true)}
+        </div>
+      )}
+
+      {/* Service Offer & Quality Comparison Modal */}
+      <ServiceOfferComparisonModal
+        isOpen={isComparisonModalOpen}
+        onClose={() => setIsComparisonModalOpen(false)}
+        service={comparisonService}
+        vehicle={vehicle}
+        onAcceptOffer={(booking) => {
+          if (onAddBooking) {
+            onAddBooking(booking);
+          }
+        }}
+      />
 
     </div>
   );

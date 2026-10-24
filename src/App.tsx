@@ -942,6 +942,22 @@ export const App: React.FC = () => {
             isSoundEnabled={isSoundEnabled}
             onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
             onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
+            onResetToVinSpecs={() => {
+              const fresh = generateServicesForVehicle(vehicle);
+              setServices(fresh);
+              try {
+                localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(fresh));
+                localStorage.setItem('autohub_services', JSON.stringify(fresh));
+              } catch {}
+            }}
+            services={services}
+            onAddBooking={(newBooking) => {
+              const updated = [newBooking, ...bookings.filter(b => b.id !== newBooking.id)];
+              setBookings(updated);
+              try {
+                localStorage.setItem('autohub_service_bookings', JSON.stringify(updated));
+              } catch {}
+            }}
           />
         )}
       </main>
