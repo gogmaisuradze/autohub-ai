@@ -451,7 +451,7 @@ export const App: React.FC = () => {
       const saved = localStorage.getItem('autohub_obd_adapter_type') as ObdAdapterType;
       if (saved && ['wifi', 'bluetooth', 'cloud_4g'].includes(saved)) return saved;
     } catch {}
-    return 'wifi';
+    return 'cloud_4g';
   });
   const [aiInitialPrompt, setAiInitialPrompt] = useState<string | undefined>(undefined);
 

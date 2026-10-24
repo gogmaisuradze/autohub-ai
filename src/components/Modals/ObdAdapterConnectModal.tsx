@@ -43,11 +43,18 @@ interface Props {
 }
 
 const ADAPTER_PRICING: Record<ObdAdapterType, { name: string; modelCode: string; price: number; badge: string; desc: string }> = {
+  cloud_4g: {
+    name: 'AutoHub 4G LTE Cloud + GPS Tracker',
+    modelCode: '4G LTE GPS Telematics',
+    price: 119,
+    badge: '★ რეკომენდებული • 24/7 Cloud',
+    desc: 'დისტანციური მონიტორინგი ნებისმიერი წერტილიდან, SIM ბარათით, ცოცხალი GPS და სიგნალიზაცია'
+  },
   wifi: {
     name: 'AutoHub Wi-Fi ELM327 Pro (vLinker)',
     modelCode: 'vLinker FD+ Wi-Fi',
     price: 49,
-    badge: 'რეკომენდებული • სწრაფი',
+    badge: 'სწრაფი Wi-Fi',
     desc: 'iOS & Android თავსებადი, 50 PID/წმ, შეცდომების ჩაქრობა და ცოცხალი სენსორები'
   },
   bluetooth: {
@@ -56,13 +63,6 @@ const ADAPTER_PRICING: Record<ObdAdapterType, { name: string; modelCode: string;
     price: 69,
     badge: 'ულტრა-დაბალი ენერგომოხმარება',
     desc: 'მუდმივად ჩასმული მანქანაში, BatterySaver™ ძილის რეჟიმი, არ სვამს აკუმულატორს'
-  },
-  cloud_4g: {
-    name: 'AutoHub 4G LTE Cloud + GPS Tracker',
-    modelCode: '4G LTE GPS Telematics',
-    price: 119,
-    badge: 'დისტანციური 24/7',
-    desc: 'დისტანციური მონიტორინგი ნებისმიერი წერტილიდან, SIM ბარათით და GPS ლოკაციით'
   }
 };
 
@@ -72,7 +72,7 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
   onConnectSuccess,
   vehicleIp = '192.168.0.10',
   vehiclePort = 35000,
-  initialType = 'wifi',
+  initialType = 'cloud_4g',
   vehicleBrand = 'BMW',
   vehicleModel = '330i'
 }) => {
@@ -92,7 +92,7 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
   const [showPortHint, setShowPortHint] = useState(false);
 
   // Ordering state
-  const [orderModel, setOrderModel] = useState<ObdAdapterType>(selectedType);
+  const [orderModel, setOrderModel] = useState<ObdAdapterType>('cloud_4g');
   const [orderName, setOrderName] = useState('გიორგი მაისურაძე');
   const [orderPhone, setOrderPhone] = useState('+995 599 12 34 56');
   const [orderCity, setOrderCity] = useState('თბილისი');
@@ -195,10 +195,19 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
 
   const adapterOptions = [
     {
+      id: 'cloud_4g' as const,
+      title: '4G / GPS Cloud',
+      subtitle: '4G LTE Dongle / Teltonika / GPS ტრეკერი',
+      badge: '★ რეკომენდებული',
+      badgeColor: 'bg-amber-100 text-amber-950 border-amber-300 font-black ring-1 ring-amber-400/40',
+      icon: Radio,
+      speedText: '24/7 ონლაინ მონიტორინგი & GPS'
+    },
+    {
       id: 'wifi' as const,
       title: 'Wi-Fi ადაპტერი',
       subtitle: 'ELM327 Wi-Fi / vLinker / UniCarScan',
-      badge: 'რეკომენდებული',
+      badge: 'სწრაფი (50 PID)',
       badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
       icon: Wifi,
       speedText: 'მაღალი სიჩქარე (50 PID/წმ)'
@@ -211,15 +220,6 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
       badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
       icon: Bluetooth,
       speedText: 'დაბალი ენერგომოხმარება'
-    },
-    {
-      id: 'cloud_4g' as const,
-      title: '4G / GPS Cloud',
-      subtitle: '4G LTE Dongle / Teltonika / GPS ტრეკერი',
-      badge: 'დისტანციური 24/7',
-      badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
-      icon: Radio,
-      speedText: 'ონლაინ მონიტორინგი'
     }
   ];
 
@@ -630,7 +630,7 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
                 1. აირჩიეთ ადაპტერის მოდელი:
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {(['wifi', 'bluetooth', 'cloud_4g'] as ObdAdapterType[]).map((typeKey) => {
+                {(['cloud_4g', 'wifi', 'bluetooth'] as ObdAdapterType[]).map((typeKey) => {
                   const info = ADAPTER_PRICING[typeKey];
                   const isSel = orderModel === typeKey;
                   const Icon = typeKey === 'wifi' ? Wifi : typeKey === 'bluetooth' ? Bluetooth : Radio;
