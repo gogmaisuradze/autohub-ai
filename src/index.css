@@ -373,11 +373,11 @@
 
 .leaflet-container {
   font-family: inherit !important;
-  background-color: #0b0f19 !important;
+  background-color: #1a2232 !important;
 }
 
-/* Dark Mode styling for OpenStreetMap Tiles (Eliminates Carto API Key watermark) */
+/* Modern Soft Slate Dark Styling for OpenStreetMap (Pleasantly brighter, crisp roads & text) */
 .dark-map-tiles .leaflet-tile {
-  filter: invert(100%) hue-rotate(180deg) brightness(88%) contrast(108%);
+  filter: invert(92%) hue-rotate(190deg) brightness(112%) contrast(94%) saturate(1.15);
 }
 

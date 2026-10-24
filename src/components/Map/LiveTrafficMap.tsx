@@ -571,7 +571,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         {/* Leaflet DOM Node */}
         <div
           ref={mapContainerRef}
-          className={`w-full h-full z-0 bg-dark-900 ${mapTheme === 'dark' ? 'dark-map-tiles' : ''}`}
+          className={`w-full h-full z-0 bg-[#1a2232] ${mapTheme === 'dark' ? 'dark-map-tiles' : ''}`}
         />
 
         {/* Loading overlay if Leaflet is still preparing */}
