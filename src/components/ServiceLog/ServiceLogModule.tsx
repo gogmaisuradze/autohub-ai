@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ServiceItem, VehicleProfile, ServiceCategory, ServiceVariantKey, ServiceBookingItem } from '../../types';
 import { sounds } from '../../services/soundEffects';
 import ThematicServiceModal from './ThematicServiceModal';
+import { ServiceOfferComparisonModal } from '../Modals/ServiceOfferComparisonModal';
 import {
   SERVICE_CATEGORIES,
   SERVICE_VARIANTS,
@@ -36,7 +37,8 @@ import {
   Calculator,
   Bot,
   Cpu,
-  History
+  History,
+  Scale
 } from 'lucide-react';
 
 interface Props {
@@ -51,6 +53,7 @@ interface Props {
   onNavigateToAiClarification?: (booking: ServiceBookingItem) => void;
   onResetToVinSpecs?: () => void;
   onOpenVinHistory?: () => void;
+  onAddBooking?: (booking: ServiceBookingItem) => void;
 }
 
 export const ServiceLogModule: React.FC<Props> = ({
@@ -64,12 +67,17 @@ export const ServiceLogModule: React.FC<Props> = ({
   onOpenBookingModal,
   onNavigateToAiClarification,
   onResetToVinSpecs,
-  onOpenVinHistory
+  onOpenVinHistory,
+  onAddBooking
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
   const [modalCategory, setModalCategory] = useState<ServiceCategory | undefined>(undefined);
   const [modalVariantKey, setModalVariantKey] = useState<ServiceVariantKey | undefined>(undefined);
+
+  // Comparison & Offers Modal State
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
+  const [comparisonService, setComparisonService] = useState<ServiceItem | null>(null);
 
   // Active Category filter ('all' or one of the 6 canonical categories)
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<'all' | ServiceCategory>('all');
@@ -114,6 +122,12 @@ export const ServiceLogModule: React.FC<Props> = ({
     setModalCategory(normalizeCategory(item.category));
     setModalVariantKey(item.variant_key);
     setIsModalOpen(true);
+  };
+
+  const handleOpenComparison = (item: ServiceItem) => {
+    sounds.playClick();
+    setComparisonService(item);
+    setIsComparisonModalOpen(true);
   };
 
   const handleSaveService = (service: ServiceItem) => {
@@ -269,6 +283,20 @@ export const ServiceLogModule: React.FC<Props> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => {
+                const urgent = services.find(s => s.health_percentage <= 45) || services[0];
+                if (urgent) {
+                  handleOpenComparison(urgent);
+                }
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 transition-all flex items-center gap-1.5 shadow-xs hover:scale-105 active:scale-95"
+              title="საჭიროებების & სერვისების ფასების შედარება"
+            >
+              <Scale size={13} className="text-white" />
+              <span>შედარება & ვარიანტები</span>
+            </button>
+
             {onOpenVinHistory && (
               <button
                 onClick={() => {
@@ -716,6 +744,34 @@ export const ServiceLogModule: React.FC<Props> = ({
                     </span>
                   </div>
 
+                  {/* Urgent / Warning Service Comparison CTA */}
+                  {(isCritical || isWarning) && (
+                    <div className={`my-2 p-2.5 rounded-2xl flex items-center justify-between gap-2 border text-xs animate-fade-in ${
+                      isCritical 
+                        ? 'bg-rose-50/90 border-rose-200 text-rose-900' 
+                        : 'bg-amber-50/90 border-amber-200 text-amber-900'
+                    }`}>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="shrink-0 text-sm">{isCritical ? '🚨' : '⚠️'}</span>
+                        <div className="min-w-0">
+                          <p className="font-extrabold text-[11px] truncate leading-tight">
+                            {isCritical ? 'კრიტიკული რესურსი! საჭიროებს შეცვლას' : 'რესურსი იწურება! რეკომენდებულია შეცვლა'}
+                          </p>
+                          <p className="text-[10px] text-slate-500 truncate">
+                            შეადარეთ ეკონომიური, ოპტიმალური და პრემიუმ ვარიანტები
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleOpenComparison(item)}
+                        className="shrink-0 px-2.5 py-1.5 rounded-xl bg-navy text-gold text-[10px] font-black hover:bg-slate-800 transition-all shadow-xs flex items-center gap-1 hover:scale-105 active:scale-95"
+                      >
+                        <Scale size={11} />
+                        <span>შედარება</span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* DEDICATED THEMATIC DETAILS BADGES & METRICS */}
 
                   {/* 1. CHASSIS (Tires, Alignment, Brakes, Shocks, Arms) */}
@@ -1056,6 +1112,16 @@ export const ServiceLogModule: React.FC<Props> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5">
+                    {/* Compare Offers & Variants Button */}
+                    <button
+                      onClick={() => handleOpenComparison(item)}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-50/80 hover:bg-gold text-navy border border-amber-200 hover:border-gold transition-all flex items-center gap-1 shadow-xs"
+                      title="ფასებისა და ვარიანტების შედარება (ეკონომი, ოპტიმალური, პრემიუმ OEM)"
+                    >
+                      <Scale size={13} className="text-amber-700" />
+                      <span>შედარება</span>
+                    </button>
+
                     {/* Fill / Edit Thematic Data Button */}
                     <button
                       onClick={() => handleOpenEditModal(item)}
@@ -1108,6 +1174,19 @@ export const ServiceLogModule: React.FC<Props> = ({
         initialCategory={modalCategory}
         initialVariantKey={modalVariantKey}
         vehicle={vehicle}
+      />
+
+      {/* Service Offer & Quality Comparison Modal */}
+      <ServiceOfferComparisonModal
+        isOpen={isComparisonModalOpen}
+        onClose={() => setIsComparisonModalOpen(false)}
+        service={comparisonService}
+        vehicle={vehicle}
+        onAcceptOffer={(booking) => {
+          if (onAddBooking) {
+            onAddBooking(booking);
+          }
+        }}
       />
 
     </div>

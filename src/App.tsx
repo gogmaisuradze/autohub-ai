@@ -873,6 +873,13 @@ export const App: React.FC = () => {
             services={services}
             bookings={bookings}
             onOpenBookingModal={handleOpenBookingModal}
+            onAddBooking={(newBooking) => {
+              const updated = [newBooking, ...bookings.filter(b => b.id !== newBooking.id)];
+              setBookings(updated);
+              try {
+                localStorage.setItem('autohub_service_bookings', JSON.stringify(updated));
+              } catch {}
+            }}
             onNavigateToAiClarification={(booking) => {
               setActiveBookingForAi(booking);
               handleTabChange('ai');
