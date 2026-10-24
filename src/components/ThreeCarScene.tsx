@@ -291,8 +291,8 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     // 2. Camera Setup (Perspective angle matching the user's digital twin blueprint photo)
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(4.6, 3.0, 5.2);
-    const initialTarget = new THREE.Vector3(0, 0.52, 0);
+    camera.position.set(6.6, 4.4, 7.4);
+    const initialTarget = new THREE.Vector3(0, -0.35, 0);
     camera.lookAt(initialTarget);
     cameraRef.current = camera;
 
@@ -411,7 +411,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     dracoLoader.setDecoderPath(`${cleanBase}draco/`);
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    gltfLoader.load(`${cleanBase}models/ghost_car.glb?v=15`, (gltf) => {
+    gltfLoader.load(`${cleanBase}models/ghost_car.glb?v=16`, (gltf) => {
       const root = gltf.scene;
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
       carMasterGroup.add(root);

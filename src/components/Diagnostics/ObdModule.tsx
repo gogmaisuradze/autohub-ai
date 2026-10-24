@@ -4,6 +4,7 @@ import { ThreeCarScene } from '../ThreeCarScene';
 import { TelemetryGauges } from './TelemetryGauges';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
+import { PromptFieldType } from '../Modals/ContextualFieldPromptModal';
 import {
   Wifi,
   WifiOff,
@@ -46,6 +47,7 @@ interface Props {
   adapterType?: 'wifi' | 'bluetooth' | 'cloud_4g';
   onOpenAdapterModal?: () => void;
   autoStartScanTrigger?: number;
+  onOpenFieldPrompt?: (field: PromptFieldType) => void;
 }
 
 export const ObdModule: React.FC<Props> = ({
@@ -63,7 +65,8 @@ export const ObdModule: React.FC<Props> = ({
   onConnectionChange,
   adapterType = 'wifi',
   onOpenAdapterModal,
-  autoStartScanTrigger
+  autoStartScanTrigger,
+  onOpenFieldPrompt
 }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [internalConnected, setInternalConnected] = useState(false);
@@ -316,6 +319,42 @@ export const ObdModule: React.FC<Props> = ({
           </button>
         </div>
       </div>
+
+      {/* Missing Vehicle Info Notice */}
+      {(!vehicle.vin || vehicle.vin.length < 10 || !vehicle.engine) && (
+        <div className="p-3.5 sm:p-4 rounded-3xl bg-amber-50/90 border border-amber-200 text-amber-900 flex flex-wrap items-center justify-between gap-2.5 text-xs animate-fade-in shadow-xs">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+            <span className="font-medium">
+              DTC შეცდომების ზუსტი გაშიფვრისთვის დააზუსტეთ ავტომობილის VIN კოდი და ძრავის ტიპი.
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {!vehicle.engine && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenFieldPrompt?.('engine');
+                }}
+                className="px-3 py-1.5 rounded-xl bg-navy text-gold font-bold shadow-xs hover:bg-slate-800 transition-all text-xs"
+              >
+                + ძრავის მითითება
+              </button>
+            )}
+            {(!vehicle.vin || vehicle.vin.length < 10) && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenFieldPrompt?.('vin');
+                }}
+                className="px-3 py-1.5 rounded-xl bg-gold text-navy font-bold shadow-xs hover:bg-amber-400 transition-all text-xs"
+              >
+                + VIN დამატება
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Handshake Progress Overlay Modal */}
       {isHandshaking && (

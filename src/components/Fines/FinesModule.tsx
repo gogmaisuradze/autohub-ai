@@ -3,6 +3,7 @@ import { FineItem, FinePaymentReceipt, VehicleProfile } from '../../types';
 import { GeorgianLicensePlate } from '../ui/GeorgianLicensePlate';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
+import { PromptFieldType } from '../Modals/ContextualFieldPromptModal';
 import {
   Clock,
   Camera,
@@ -27,7 +28,8 @@ import {
   Info,
   UserCheck,
   Lock,
-  ArrowRight
+  ArrowRight,
+  Bot
 } from 'lucide-react';
 
 interface Props {
@@ -36,6 +38,8 @@ interface Props {
   onUpdateFines: (fines: FineItem[]) => void;
   onUpdateVehicle: (updated: Partial<VehicleProfile>) => void;
   onNavigateToParking?: () => void;
+  onOpenFieldPrompt?: (field: PromptFieldType) => void;
+  onNavigateToAiClarification?: (initialPrompt?: string) => void;
 }
 
 export const FinesModule: React.FC<Props> = ({
@@ -43,7 +47,9 @@ export const FinesModule: React.FC<Props> = ({
   fines,
   onUpdateFines,
   onUpdateVehicle,
-  onNavigateToParking
+  onNavigateToParking,
+  onOpenFieldPrompt,
+  onNavigateToAiClarification
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [plateInput, setPlateInput] = useState(vehicle.plate_number || 'FR-282-EE');
@@ -318,6 +324,44 @@ export const FinesModule: React.FC<Props> = ({
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
+      {/* Missing Fines Sync Requirements Notice */}
+      {(!vehicle.plate_number || vehicle.plate_number === 'GE-000-XX' || !vehicle.tech_passport) && (
+        <div className="p-4 rounded-3xl neu-card border border-amber-300 bg-amber-50/90 text-amber-900 flex flex-wrap items-center justify-between gap-3 shadow-xs animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle size={18} className="text-amber-600 shrink-0" />
+            <span className="text-xs font-bold">
+              ვიდეოჯარიმების 100% ავტომატური სინქრონიზაციისთვის საჭიროა მანქანის ნომრისა და ტექ-პასპორტის დაზუსტება.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {(!vehicle.plate_number || vehicle.plate_number === 'GE-000-XX') && (
+              <button
+                onClick={() => onOpenFieldPrompt?.('plate_number')}
+                className="px-3 py-1.5 rounded-xl bg-navy text-gold text-xs font-bold shadow-xs hover:bg-slate-800 transition-all"
+              >
+                + ნომრის შევსება
+              </button>
+            )}
+            {!vehicle.tech_passport && (
+              <button
+                onClick={() => onOpenFieldPrompt?.('tech_passport')}
+                className="px-3 py-1.5 rounded-xl bg-gold text-navy text-xs font-bold shadow-xs hover:bg-amber-400 transition-all"
+              >
+                + ტექ-პასპორტი
+              </button>
+            )}
+            {onNavigateToAiClarification && (
+              <button
+                onClick={() => onNavigateToAiClarification('გამარჯობა AI მექანიკოსო, როგორ გადავამოწმო ვიდეოჯარიმები და რა დოკუმენტებია საჭირო police.ge-ზე?')}
+                className="px-3 py-1.5 rounded-xl bg-white text-navy border border-slate-200 text-xs font-bold flex items-center gap-1 shadow-xs hover:bg-slate-50 transition-all"
+              >
+                <Bot size={13} className="text-gold" />
+                <span>AI დაზუსტება</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       
       {/* ======================================================== */}
       {/* 1. UNIFIED DRIVER PROFILE & CIRCULAR POINTS SYSTEM CARD   */}

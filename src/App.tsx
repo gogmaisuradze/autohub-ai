@@ -571,6 +571,23 @@ export const App: React.FC = () => {
       localStorage.setItem('autohub_garage_vehicles', JSON.stringify(updatedList));
       localStorage.setItem('autohub_vehicle_profile', JSON.stringify(newV));
     } catch {}
+
+    // Sync this customer's vehicle + info into the shared Google Sheet (keyed by plate)
+    n8nService.syncVehicle({
+      vehicle_id: newV.id,
+      owner_name: newV.driver_name || '',
+      phone: (newV as any).driver_phone || '',
+      plate: newV.plate_number || '',
+      vin: newV.vin || '',
+      brand: newV.brand || '',
+      model: newV.model || '',
+      year: newV.year || '',
+      engine: newV.engine || '',
+      fuel: newV.fuel_type || '',
+      mileage_km: newV.mileage_km || '',
+      active_dtc: dtcCodes,
+      source: 'website'
+    });
   };
 
   const handleDeleteVehicle = (vehicleId: string) => {
@@ -612,6 +629,26 @@ export const App: React.FC = () => {
       localStorage.setItem('autohub_vehicle_profile', JSON.stringify(updatedVehicle));
       localStorage.setItem('autohub_garage_vehicles', JSON.stringify(updatedList));
     } catch {}
+
+    if (field === 'mileage_km' && typeof value === 'number' && value > 0) {
+      const updatedServices = services.map(s => {
+        const lastKm = s.last_service_km || 0;
+        const diff = Math.max(0, value - lastKm);
+        const remainingKm = Math.max(0, s.interval_km - diff);
+        const health = Math.max(0, Math.min(100, Math.round((remainingKm / s.interval_km) * 100)));
+        return {
+          ...s,
+          current_km: value,
+          remaining_km: remainingKm,
+          health_percentage: health
+        };
+      });
+      setServices(updatedServices);
+      try {
+        localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(updatedServices));
+        localStorage.setItem('autohub_services', JSON.stringify(updatedServices));
+      } catch {}
+    }
   };
 
   // Live Telemetry Simulation
@@ -797,8 +834,14 @@ export const App: React.FC = () => {
             dtcCodes={dtcCodes}
             fines={fines}
             services={services}
+            bookings={bookings}
             onSelectDepartment={(tab) => handleTabChange(tab)}
             onOpenBookingModal={() => handleOpenBookingModal()}
+            onOpenFieldPrompt={handleOpenFieldPrompt}
+            onNavigateToAiClarification={(prompt) => {
+              if (prompt) setAiInitialPrompt(prompt);
+              handleTabChange('ai');
+            }}
           />
         )}
 
@@ -823,6 +866,7 @@ export const App: React.FC = () => {
             adapterType={obdAdapterType}
             onOpenAdapterModal={() => setIsObdAdapterModalOpen(true)}
             autoStartScanTrigger={autoStartScanTrigger}
+            onOpenFieldPrompt={handleOpenFieldPrompt}
           />
         )}
 
@@ -833,6 +877,11 @@ export const App: React.FC = () => {
             onUpdateFines={setFines}
             onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
             onNavigateToParking={() => handleTabChange('parking')}
+            onOpenFieldPrompt={handleOpenFieldPrompt}
+            onNavigateToAiClarification={(prompt) => {
+              if (prompt) setAiInitialPrompt(prompt);
+              handleTabChange('ai');
+            }}
           />
         )}
 
@@ -918,6 +967,10 @@ export const App: React.FC = () => {
                 localStorage.setItem('autohub_services', JSON.stringify(fresh));
               } catch {}
             }}
+            onAskAiAboutService={(item) => {
+              setAiInitialPrompt(`გამარჯობა AI მექანიკოსო, გთხოვთ დამიზუსტოთ სერვისის '${item.title_ge}' დეტალები: როდის და რა ინტერვალით უნდა შეიცვალოს, რა ბრენდის ნაწილებია OEM რეკომენდებული ჩემს ${vehicle.brand} ${vehicle.model}-ზე და რა ჯდება?`);
+              handleTabChange('ai');
+            }}
           />
         )}
 
@@ -957,6 +1010,10 @@ export const App: React.FC = () => {
               try {
                 localStorage.setItem('autohub_service_bookings', JSON.stringify(updated));
               } catch {}
+            }}
+            onNavigateToAiClarification={(prompt) => {
+              if (prompt) setAiInitialPrompt(prompt);
+              handleTabChange('ai');
             }}
           />
         )}
@@ -1005,6 +1062,21 @@ export const App: React.FC = () => {
         fieldType={fieldPrompt.fieldType}
         currentValue={fieldPrompt.value}
         onSaveField={handleSaveField}
+        onAskAiToClarify={(field) => {
+          const fieldNames: Record<string, string> = {
+            plate_number: 'სახელმწიფო ნომრის',
+            mileage_km: 'მიმდინარე გარბენის',
+            engine: 'ძრავის სპეციფიკაციის',
+            vin: 'VIN შასის კოდის',
+            fuel_type: 'საწვავის ტიპის',
+            tech_passport: 'ტექ-პასპორტის',
+            driver_name: 'მძღოლის სახელის',
+            driver_phone: 'ტელეფონის',
+            driver_personal_number: 'პირადი ნომრის'
+          };
+          setAiInitialPrompt(`გამარჯობა AI მექანიკოსო, მყავს ${vehicle.brand} ${vehicle.model} (${vehicle.year} წელი, ${vehicle.engine || 'ძრავა დაუზუსტებელი'}). გთხოვთ დამეხმაროთ ${fieldNames[field] || field}-ის დაზუსტებაში ქარხნული მონაცემების მიხედვით.`);
+          handleTabChange('ai');
+        }}
       />
 
       {/* Calendar & Auto-Doctor Service Booking Modal */}

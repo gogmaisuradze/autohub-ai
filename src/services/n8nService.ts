@@ -40,6 +40,23 @@ class N8nService {
     return this.config;
   }
 
+  // Sync a user's vehicle + all known info into the shared Google Sheet (keyed by plate).
+  // Fire-and-forget: never blocks the UI, always attempts when a baseUrl is set.
+  public async syncVehicle(data: Record<string, any>): Promise<void> {
+    const endpoint = `${this.config.baseUrl}/autohub-vehicle-sync`;
+    const payload = { ...data, source: data.source || 'website', synced_at: new Date().toISOString() };
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      this.addLog(endpoint, 'POST', payload, res.ok ? { ok: true } : { status: res.status }, res.ok ? 'success' : 'error');
+    } catch (err: any) {
+      this.addLog(endpoint, 'POST', payload, { error: err?.message }, 'error');
+    }
+  }
+
   public subscribeLogs(listener: (logs: WebhookLog[]) => void) {
     this.logListeners.push(listener);
     listener([...this.logs]);
@@ -197,6 +214,16 @@ class N8nService {
         `2. შემშვები კოლექტორის ვაკუუმის შლანგები (შესამოწმებელია კვამლის აპარატით)\n` +
         `3. ანთების სანთლების კომპლექტი (Iridium).\n` +
         `ნაწილების ყიდვამდე აუცილებლად შეამოწმეთ VIN კოდით: ${carContext.vin || 'WBA330...'}!`;
+    } else if (lower.includes('აკლია') || lower.includes('დაზუსტ') || lower.includes('შევსებ') || lower.includes('მონაცემ') || lower.includes('პარამეტრ')) {
+      reply = `🔍 **ავტომობილის მონაცემების AI დაზუსტება (${carContext.brand || 'ავტომობილი'} ${carContext.model || ''}):**\n\n` +
+        `გავაანალიზე ქარხნული ბაზა და თქვენი მოდელისთვის დავაზუსტე შემდეგი მონაცემები:\n` +
+        `• **ქარხნული ძრავის კოდი:** ${carContext.engine || '2.0L Turbo M270 (208 HP / 350 Nm)'}\n` +
+        `• **ქარხნული ზეთის დაშვება:** 5W-40 / 5W-30 Full Synthetic (MB-Approval 229.5 / 229.51, 5.6 ლიტრი)\n` +
+        `• **გადაცემათა კოლოფის სითხე:** 7G-DCT Fluid (MB 236.21, 6.0 ლიტრი)\n` +
+        `• **ანტიფრიზის სპეციფიკაცია:** MB 325.0 / 326.0 (ლურჯ-მწვანე, -37°C)\n` +
+        `• **სანთლები:** Iridium Laser (0.7-0.8 მმ ღრეჩო)\n` +
+        `• **სამუხრუჭე სითხე:** DOT 4 Plus (12 თვიანი ინტერვალით)\n\n` +
+        `💡 თქვენ შეგიძლიათ ეს მონაცემები ერთი შეხებით შეინახოთ გარაჟის პროფილში ან მიუთითოთ სერვის-წიგნაკში!`;
     } else if (lower.includes('ხელოსანი') || lower.includes('სერვისი') || lower.includes('სად')) {
       reply = `თბილისში აღნიშნულ პრობლემებზე გირჩევთ:\n` +
         `📍 თეგეტა მოტორსი (ცენტრალური ფილიალი, დიღომი) - ზუსტი კომპიუტერული დიაგნოსტიკა\n` +

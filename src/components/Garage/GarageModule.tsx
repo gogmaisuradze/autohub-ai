@@ -6,6 +6,7 @@ import LiveTrafficMap from '../Map/LiveTrafficMap';
 import DrivingExamWidget from './DrivingExamWidget';
 import { decodeVin } from '../../services/vinServiceEngine';
 import { ServiceOfferComparisonModal } from '../Modals/ServiceOfferComparisonModal';
+import { PromptFieldType } from '../Modals/ContextualFieldPromptModal';
 import {
   Car,
   Plus,
@@ -41,7 +42,8 @@ import {
   CircleDot,
   ChevronDown,
   ChevronUp,
-  Scale
+  Scale,
+  Bot
 } from 'lucide-react';
 
 export const DRIVER_LICENSE_NOTEBOOK_URL = 'https://notebook.google.com/notebook/8435d2c1-fa29-44d0-8d3f-da422e03b3f0/artifact/528eecb6-fcf3-484c-9615-670ae0a800b7';
@@ -51,7 +53,7 @@ interface Props {
   onUpdateVehicle: (updated: VehicleProfile) => void;
   onOpenAddModal: () => void;
   onDeleteVehicle?: (id: string) => void;
-  onOpenFieldPrompt: (field: 'plate_number' | 'mileage_km' | 'engine' | 'vin') => void;
+  onOpenFieldPrompt: (field: PromptFieldType) => void;
   allVehicles: VehicleProfile[];
   onSelectVehicle: (v: VehicleProfile) => void;
   initialSubTab?: 'profile' | 'map' | 'license' | 'vin';
@@ -61,6 +63,7 @@ interface Props {
   onResetToVinSpecs?: () => void;
   services?: ServiceItem[];
   onAddBooking?: (booking: ServiceBookingItem) => void;
+  onNavigateToAiClarification?: (initialPrompt?: string) => void;
 }
 
 export const GarageModule: React.FC<Props> = ({
@@ -77,7 +80,8 @@ export const GarageModule: React.FC<Props> = ({
   onOpenVinHistory,
   onResetToVinSpecs,
   services = [],
-  onAddBooking
+  onAddBooking,
+  onNavigateToAiClarification
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'profile' | 'map' | 'license' | 'vin'>(initialSubTab);
   const [isVinSpecsExpanded, setIsVinSpecsExpanded] = useState(false);
@@ -121,10 +125,12 @@ export const GarageModule: React.FC<Props> = ({
 
   // Calculate completeness score
   const checkFields = [
-    { key: 'plate_number', label: 'სახელმწიფო ნომერი', filled: Boolean(vehicle.plate_number && vehicle.plate_number !== 'GE-000-XX'), weight: 25, prompt: 'plate_number' as const },
-    { key: 'engine', label: 'ძრავის სპეციფიკაცია', filled: Boolean(vehicle.engine), weight: 25, prompt: 'engine' as const },
-    { key: 'mileage_km', label: 'მიმდინარე გარბენი', filled: Boolean(vehicle.mileage_km > 0), weight: 25, prompt: 'mileage_km' as const },
-    { key: 'vin', label: 'VIN კოდი', filled: Boolean(vehicle.vin && vehicle.vin.length >= 10), weight: 25, prompt: 'vin' as const }
+    { key: 'plate_number', label: 'სახელმწიფო ნომერი', filled: Boolean(vehicle.plate_number && vehicle.plate_number !== 'GE-000-XX'), weight: 20, prompt: 'plate_number' as PromptFieldType },
+    { key: 'engine', label: 'ძრავის სპეციფიკაცია', filled: Boolean(vehicle.engine), weight: 20, prompt: 'engine' as PromptFieldType },
+    { key: 'mileage_km', label: 'მიმდინარე გარბენი', filled: Boolean(vehicle.mileage_km > 0), weight: 20, prompt: 'mileage_km' as PromptFieldType },
+    { key: 'vin', label: 'VIN კოდი', filled: Boolean(vehicle.vin && vehicle.vin.length >= 10), weight: 20, prompt: 'vin' as PromptFieldType },
+    { key: 'tech_passport', label: 'ტექ-პასპორტი', filled: Boolean(vehicle.tech_passport), weight: 10, prompt: 'tech_passport' as PromptFieldType },
+    { key: 'driver_name', label: 'მძღოლის სახელი', filled: Boolean(vehicle.driver_name), weight: 10, prompt: 'driver_name' as PromptFieldType }
   ];
 
   const completeness = checkFields.reduce((acc, f) => acc + (f.filled ? f.weight : 0), 0);
@@ -858,6 +864,19 @@ export const GarageModule: React.FC<Props> = ({
                       <span>+ {field.label}</span>
                     </button>
                   ))}
+
+                  {onNavigateToAiClarification && (
+                    <button
+                      onClick={() => {
+                        sounds.playClick();
+                        onNavigateToAiClarification(`გამარჯობა AI მექანიკოსო, ჩემი მანქანის (${vehicle.brand} ${vehicle.model}) პროფილში აკლია: ${missingFields.map(m => m.label).join(', ')}. დამეხმარეთ მონაცემების დაზუსტებასა და ქარხნული პარამეტრების შევსებაში.`);
+                      }}
+                      className="px-3.5 py-1 rounded-xl text-xs font-black bg-navy text-gold hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-sm"
+                    >
+                      <Bot size={13} className="text-gold" />
+                      <span>🤖 AI დაზუსტება</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -865,38 +884,77 @@ export const GarageModule: React.FC<Props> = ({
             {/* Vehicle Specs Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3.5 rounded-2xl neu-surface border border-white">
-                <span className="text-[11px] text-slate-400 font-bold block mb-1">საწვავის ტიპი</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] text-slate-400 font-bold block">საწვავის ტიპი</span>
+                  {!vehicle.fuel_type && (
+                    <button
+                      onClick={() => {
+                        sounds.playClick();
+                        onOpenFieldPrompt('fuel_type');
+                      }}
+                      className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded hover:bg-amber-100"
+                    >
+                      + შევსება
+                    </button>
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 font-bold text-xs text-navy">
                   <Fuel size={14} className="text-gold" />
-                  <span className="capitalize">{vehicle.fuel_type}</span>
+                  <span className="capitalize">{vehicle.fuel_type || 'არჩეული არ არის'}</span>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-2xl neu-surface border border-white">
-                <span className="text-[11px] text-slate-400 font-bold block mb-1">გარბენი</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] text-slate-400 font-bold block">გარბენი</span>
+                  {(!vehicle.mileage_km || vehicle.mileage_km === 0) && (
+                    <button
+                      onClick={() => {
+                        sounds.playClick();
+                        onOpenFieldPrompt('mileage_km');
+                      }}
+                      className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded hover:bg-amber-100"
+                    >
+                      + შევსება
+                    </button>
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 font-black text-xs text-navy font-mono">
                   <Gauge size={14} className="text-gold" />
-                  <span>{vehicle.mileage_km.toLocaleString()} კმ</span>
+                  <span>{vehicle.mileage_km ? `${vehicle.mileage_km.toLocaleString()} კმ` : '0 კმ (დაუზუსტებელი)'}</span>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-2xl neu-surface border border-white">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] text-slate-400 font-bold block">VIN შასი</span>
-                  {onOpenVinHistory && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sounds.playClick();
-                        onOpenVinHistory();
-                      }}
-                      className="text-[10px] font-bold text-navy hover:text-gold flex items-center gap-1 transition-colors px-1.5 py-0.5 rounded-md hover:bg-gold/10"
-                      title="მანქანის ისტორიის გადამოწმება ბრაუზერში"
-                    >
-                      <History size={11} className="text-gold" />
-                      <span>ისტორია ↗</span>
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {(!vehicle.vin || vehicle.vin.length < 10) && (
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          onOpenFieldPrompt('vin');
+                        }}
+                        className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded hover:bg-amber-100"
+                      >
+                        + შევსება
+                      </button>
+                    )}
+                    {onOpenVinHistory && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sounds.playClick();
+                          onOpenVinHistory();
+                        }}
+                        className="text-[10px] font-bold text-navy hover:text-gold flex items-center gap-1 transition-colors px-1.5 py-0.5 rounded-md hover:bg-gold/10"
+                        title="მანქანის ისტორიის გადამოწმება ბრაუზერში"
+                      >
+                        <History size={11} className="text-gold" />
+                        <span>ისტორია ↗</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5 font-bold text-xs text-navy font-mono truncate">
                   <Shield size={14} className="text-gold shrink-0" />

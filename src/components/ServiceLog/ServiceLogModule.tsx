@@ -53,6 +53,7 @@ interface Props {
   onResetToVinSpecs?: () => void;
   onOpenVinHistory?: () => void;
   onAddBooking?: (booking: ServiceBookingItem) => void;
+  onAskAiAboutService?: (service: ServiceItem) => void;
 }
 
 export const ServiceLogModule: React.FC<Props> = ({
@@ -67,7 +68,8 @@ export const ServiceLogModule: React.FC<Props> = ({
   onNavigateToAiClarification,
   onResetToVinSpecs,
   onOpenVinHistory,
-  onAddBooking
+  onAddBooking,
+  onAskAiAboutService
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
@@ -250,6 +252,26 @@ export const ServiceLogModule: React.FC<Props> = ({
           </button>
         </div>
       </div>
+
+      {/* Missing Mileage Notice */}
+      {(!vehicle.mileage_km || vehicle.mileage_km === 0) && (
+        <div className="p-4 rounded-3xl neu-card border border-amber-300 bg-amber-50/80 text-amber-900 flex flex-wrap items-center justify-between gap-3 shadow-xs animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <Gauge size={18} className="text-amber-600 shrink-0" />
+            <span className="text-xs font-bold">
+              მიმდინარე გარბენი მითითებული არ არის (0 კმ). სერვის-რესურსის ზუსტად გამოსათვლელად გთხოვთ მიუთითოთ გარბენი.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onOpenFieldPrompt?.('mileage_km')}
+              className="px-3.5 py-1.5 rounded-xl bg-navy text-gold text-xs font-black hover:bg-slate-800 transition-all shadow-xs"
+            >
+              + გარბენის შევსება
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. Expandable Full Component & Service Catalog (23+ Variants) */}
       {isCatalogOpen && (
@@ -945,6 +967,20 @@ export const ServiceLogModule: React.FC<Props> = ({
                       <Calculator size={13} className="text-gold" />
                       <span>✎ აწყობა / კალკულატორი</span>
                     </button>
+
+                    {/* Ask AI to Clarify & Advise on Service */}
+                    {onAskAiAboutService && (
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          onAskAiAboutService(item);
+                        }}
+                        className="p-1.5 rounded-xl text-xs font-bold neu-btn text-navy hover:text-gold transition-all"
+                        title="AI მექანიკოსთან სერვისის დეტალების დაზუსტება"
+                      >
+                        <Bot className="w-4 h-4 text-gold" />
+                      </button>
+                    )}
 
                     {/* Delete Service Button */}
                     {onDeleteService && (

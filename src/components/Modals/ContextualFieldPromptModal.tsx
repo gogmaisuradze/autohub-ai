@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VehicleProfile } from '../../types';
 import { sounds } from '../../services/soundEffects';
-import { Sparkles, X, Check } from 'lucide-react';
+import { Sparkles, X, Check, Bot, HelpCircle } from 'lucide-react';
 
-export type PromptFieldType = 'plate_number' | 'mileage_km' | 'engine' | 'vin';
+export type PromptFieldType =
+  | 'plate_number'
+  | 'mileage_km'
+  | 'engine'
+  | 'vin'
+  | 'fuel_type'
+  | 'tech_passport'
+  | 'driver_name'
+  | 'driver_phone'
+  | 'driver_personal_number';
 
 interface Props {
   isOpen: boolean;
@@ -11,31 +20,63 @@ interface Props {
   fieldType: PromptFieldType;
   currentValue: any;
   onSaveField: (field: PromptFieldType, value: any) => void;
+  onAskAiToClarify?: (field: PromptFieldType, currentVal?: any) => void;
 }
 
-const FIELD_CONFIGS: Record<PromptFieldType, { title: string; hint: string; placeholder: string; inputType: string }> = {
+const FIELD_CONFIGS: Record<PromptFieldType, { title: string; hint: string; placeholder: string; inputType: string; presets?: string[] }> = {
   plate_number: {
     title: 'სახელმწიფო ნომრის მითითება',
     hint: 'სახელმწიფო ნომერი აუცილებელია საპატრულო ვიდეოკამერების ჯარიმებისა და -20%-იანი ფასდაკლების ავტომატური შემოწმებისთვის.',
-    placeholder: 'მაგ. GE-777-AA',
+    placeholder: 'მაგ. GE-777-AA ან FR-282-EE',
     inputType: 'text'
   },
   mileage_km: {
     title: 'მიმდინარე გარბენის განახლება',
     hint: 'გარბენი საჭიროა ძრავის ზეთის, სამუხრუჭე ხუნდების, ფილტრებისა და ტექ-დათვალიერების დარჩენილი რესურსის ზუსტად გამოსათვლელად.',
-    placeholder: 'მაგ. 48200',
+    placeholder: 'მაგ. 78400',
     inputType: 'number'
   },
   engine: {
     title: 'ძრავის სპეციფიკაციის მითითება',
-    hint: 'ძრავის მოცულობა/კოდი ეხმარება AI მექანიკოსს DTC შეცდომის კოდების ზუსტ გაშიფვრასა და ნაწილების თავსებადობის დადგენაში.',
-    placeholder: 'მაგ. 2.0L TwinPower Turbo (B48)',
+    hint: 'ძრავის მოცულობა და კოდი ეხმარება AI მექანიკოსს DTC შეცდომის კოდების ზუსტ გაშიფვრასა და ნაწილების თავსებადობის დადგენაში.',
+    placeholder: 'მაგ. 2.0L Turbo M270 (208 HP)',
     inputType: 'text'
   },
   vin: {
-    title: 'VIN კოდის დამატება',
+    title: 'VIN შასის კოდის დამატება',
     hint: '17-ნიშნა VIN კოდით AI აგენტი ავტომატურად გაწვდით ორიგინალი ნაწილების კატალოგურ ნომრებსა და ქარხნულ რეკომენდაციებს.',
-    placeholder: 'მაგ. WBA5R1C50NFP12345',
+    placeholder: 'მაგ. WDCTG4GB2GJ193791',
+    inputType: 'text'
+  },
+  fuel_type: {
+    title: 'საწვავის ტიპის არჩევა',
+    hint: 'განსაზღვრავს ქარხნული ზეთის დაშვებას, გაზომვის პარამეტრებსა და Waze-ის საწვავის ფასებს.',
+    placeholder: 'petrol, diesel, hybrid, electric',
+    inputType: 'text',
+    presets: ['petrol', 'diesel', 'hybrid', 'electric']
+  },
+  tech_passport: {
+    title: 'ტექ-პასპორტის სერია & ნომერი',
+    hint: 'ტექ-პასპორტის ნომერი აუცილებელია საპატრულო ვიდეოჯარიმებისა და ტექ-ინსპექტირების (PTI) ბაზასთან 100% ავტომატური სინქრონიზაციისთვის.',
+    placeholder: 'მაგ. 22-3999 ან AA1234567',
+    inputType: 'text'
+  },
+  driver_name: {
+    title: 'მძღოლის სახელი & გვარი',
+    hint: 'გამოიყენება მართვის მოწმობის ციფრული ბარათის, სერვის-ვაუჩერების და სადაზღვევო პოლისის პერსონალიზაციისთვის.',
+    placeholder: 'მაგ. გიორგი მაისურაძე',
+    inputType: 'text'
+  },
+  driver_phone: {
+    title: 'საკონტაქტო ტელეფონის ნომერი',
+    hint: 'ტელეფონის ნომერი საჭიროა სერვისცენტრებიდან დაჯავშნის დადასტურებისა და საგანგაშო შეტყობინებების მისაღებად.',
+    placeholder: 'მაგ. +995 599 12 34 56',
+    inputType: 'tel'
+  },
+  driver_personal_number: {
+    title: 'მძღოლის პირადი ნომერი (11 ნიშნა)',
+    hint: 'პირადი ნომერი აუცილებელია მართვის მოწმობის 100-ქულიანი სისტემის ქულებისა და საპატრულო ჯარიმების ავტომატური კონტროლისთვის.',
+    placeholder: 'მაგ. 01024085521',
     inputType: 'text'
   }
 };
@@ -45,15 +86,22 @@ export const ContextualFieldPromptModal: React.FC<Props> = ({
   onClose,
   fieldType,
   currentValue,
-  onSaveField
+  onSaveField,
+  onAskAiToClarify
 }) => {
   const [val, setVal] = useState<string>(currentValue ? String(currentValue) : '');
   const config = FIELD_CONFIGS[fieldType];
 
+  useEffect(() => {
+    if (isOpen) {
+      setVal(currentValue ? String(currentValue) : '');
+    }
+  }, [fieldType, currentValue, isOpen]);
+
   if (!isOpen || !config) return null;
 
   // Allow closing via Escape key
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
@@ -102,9 +150,28 @@ export const ContextualFieldPromptModal: React.FC<Props> = ({
           </button>
         </div>
 
-        <p className="text-xs text-slate-500 mb-4 leading-relaxed bg-amber-50 p-3 rounded-2xl border border-amber-200/60">
+        <p className="text-xs text-slate-500 mb-4 leading-relaxed bg-amber-50/80 p-3 rounded-2xl border border-amber-200/60">
           {config.hint}
         </p>
+
+        {config.presets && config.presets.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {config.presets.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setVal(preset)}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border ${
+                  val === preset
+                    ? 'bg-gold text-navy border-gold shadow-xs'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-gold'
+                }`}
+              >
+                {preset === 'petrol' ? '⛽ ბენზინი' : preset === 'diesel' ? '🛢️ დიზელი' : preset === 'hybrid' ? '🔋 ჰიბრიდი' : preset === 'electric' ? '⚡ ელექტრო' : preset}
+              </button>
+            ))}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -118,23 +185,41 @@ export const ContextualFieldPromptModal: React.FC<Props> = ({
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-navy transition-all"
-            >
-              მოგვიანებით
-            </button>
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+            {onAskAiToClarify ? (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  onAskAiToClarify(fieldType, val);
+                  onClose();
+                }}
+                className="px-3 py-2 rounded-xl bg-navy text-gold text-xs font-bold flex items-center gap-1.5 hover:bg-slate-800 transition-all shadow-xs"
+                title="AI მექანიკოსს სთხოვეთ მონაცემების გარკვევა"
+              >
+                <Bot size={14} className="text-gold" />
+                <span>🤖 AI დაზუსტება</span>
+              </button>
+            ) : <div />}
 
-            <button
-              type="submit"
-              disabled={!val.trim()}
-              className="px-5 py-2 rounded-xl bg-gold hover:bg-amber-400 disabled:opacity-50 text-navy font-black text-xs shadow-gold-soft flex items-center gap-1.5 transition-all"
-            >
-              <Check size={14} />
-              <span>შენახვა</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-navy transition-all"
+              >
+                მოგვიანებით
+              </button>
+
+              <button
+                type="submit"
+                disabled={!val.trim()}
+                className="px-5 py-2 rounded-xl bg-gold hover:bg-amber-400 disabled:opacity-50 text-navy font-black text-xs shadow-gold-soft flex items-center gap-1.5 transition-all"
+              >
+                <Check size={14} />
+                <span>შენახვა</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

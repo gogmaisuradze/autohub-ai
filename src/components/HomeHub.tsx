@@ -1,6 +1,7 @@
 import React from 'react';
 import { TabType } from './Navigation';
-import { DtcCode, FineItem, ServiceItem, VehicleProfile } from '../types';
+import { DtcCode, FineItem, ServiceItem, VehicleProfile, ServiceBookingItem } from '../types';
+import { PromptFieldType } from './Modals/ContextualFieldPromptModal';
 import { ServicesOrbitCarousel } from './ui/services-orbit-carousel';
 import { sounds } from '../services/soundEffects';
 import {
@@ -16,7 +17,8 @@ import {
   BellRing,
   ParkingSquare,
   Calendar,
-  Navigation as NavigationIcon
+  Navigation as NavigationIcon,
+  AlertTriangle
 } from 'lucide-react';
 
 interface Props {
@@ -26,6 +28,9 @@ interface Props {
   services: ServiceItem[];
   onSelectDepartment: (tab: TabType) => void;
   onOpenBookingModal?: () => void;
+  onOpenFieldPrompt?: (field: PromptFieldType) => void;
+  onNavigateToAiClarification?: (initialPrompt?: string) => void;
+  bookings?: ServiceBookingItem[];
 }
 
 export const HomeHub: React.FC<Props> = ({
@@ -34,11 +39,32 @@ export const HomeHub: React.FC<Props> = ({
   fines,
   services,
   onSelectDepartment,
-  onOpenBookingModal
+  onOpenBookingModal,
+  onOpenFieldPrompt,
+  onNavigateToAiClarification,
+  bookings = []
 }) => {
   const pendingFines = fines.filter(f => f.status === 'pending');
   const totalFineDiscounted = pendingFines.reduce((acc, f) => acc + f.discounted_amount_gel, 0);
   const oilService = services.find(s => s.category === 'oil' || s.variant_key === 'engine_oil' || s.title_ge.toLowerCase().includes('ზეთ'));
+
+  // Calculate missing vehicle fields for proactive prompt
+  const missingFields: { field: PromptFieldType; label: string }[] = [];
+  if (!vehicle.plate_number || vehicle.plate_number === 'GE-000-XX') {
+    missingFields.push({ field: 'plate_number', label: 'სახ. ნომერი' });
+  }
+  if (!vehicle.mileage_km || vehicle.mileage_km === 0) {
+    missingFields.push({ field: 'mileage_km', label: 'გარბენი' });
+  }
+  if (!vehicle.engine) {
+    missingFields.push({ field: 'engine', label: 'ძრავა' });
+  }
+  if (!vehicle.vin || vehicle.vin.length < 10) {
+    missingFields.push({ field: 'vin', label: 'VIN შასი' });
+  }
+  if (!vehicle.tech_passport) {
+    missingFields.push({ field: 'tech_passport', label: 'ტექ-პასპორტი' });
+  }
 
   // Horizontal Neumorphic Cards Stack (Matching Image 4)
   const mainDepartments = [
@@ -116,6 +142,58 @@ export const HomeHub: React.FC<Props> = ({
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
+      {/* 1. Missing Data & AI Clarification Banner (If any core vehicle parameters are unfulfilled) */}
+      {missingFields.length > 0 && (
+        <div className="p-4 sm:p-5 rounded-3xl neu-card border border-amber-300/80 bg-gradient-to-r from-amber-50/90 via-white to-amber-50/50 flex flex-wrap items-center justify-between gap-3 shadow-xs animate-fade-in">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Sparkles size={20} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-xs sm:text-sm font-extrabold text-navy">
+                  მონაცემები შესავსებია და დასაზუსტებელია ({missingFields.length} პარამეტრი)
+                </h4>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                  AI ასისტენტი
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                სრული რესურსის, სერვისების და ჯარიმების ზუსტი კონტროლისთვის შეავსეთ ან დააზუსტეთ AI ბოტთან
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {missingFields.slice(0, 3).map(mf => (
+              <button
+                key={mf.field}
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenFieldPrompt?.(mf.field);
+                }}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-navy border border-slate-200 hover:border-gold hover:bg-slate-50 transition-all shadow-xs"
+              >
+                + {mf.label}
+              </button>
+            ))}
+
+            <button
+              onClick={() => {
+                sounds.playClick();
+                onNavigateToAiClarification?.(
+                  `გამარჯობა AI მექანიკოსო, ჩემი მანქანის (${vehicle.brand} ${vehicle.model}) პროფილში აკლია: ${missingFields.map(m => m.label).join(', ')}. გთხოვთ დამეხმაროთ მონაცემების დაზუსტებასა და ქარხნული პარამეტრების შევსებაში.`
+                );
+              }}
+              className="px-4 py-2 rounded-xl bg-navy text-gold text-xs font-black hover:bg-slate-800 transition-all shadow-xs flex items-center gap-1.5"
+            >
+              <Bot size={14} className="text-gold" />
+              <span>🤖 AI დაზუსტება</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 2. ORBITING SERVICES CAROUSEL (მთლიანად ჩაღრმავებული სექცია, თითქოს შიგნით ზის) */}
       <div className="rounded-3xl sm:rounded-[2.2rem] p-4 sm:p-6 bg-[#F6F8FB] border border-white/80 shadow-[inset_6px_6px_16px_rgba(135,148,168,0.36),inset_-6px_-6px_16px_rgba(255,255,255,1)] relative overflow-hidden no-scrollbar flex flex-col items-center justify-center">
         <div className="w-full flex items-center justify-between px-2 sm:px-4 mb-2">
