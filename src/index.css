@@ -376,3 +376,8 @@
   background-color: #0b0f19 !important;
 }
 
+/* Dark Mode styling for OpenStreetMap Tiles (Eliminates Carto API Key watermark) */
+.dark-map-tiles .leaflet-tile {
+  filter: invert(100%) hue-rotate(180deg) brightness(88%) contrast(108%);
+}
+

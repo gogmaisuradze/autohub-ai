@@ -32,7 +32,9 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const mapInstanceRef = useRef<any>(null);
   const markersLayerRef = useRef<any>(null);
   const userMarkerRef = useRef<any>(null);
+  const tileLayerRef = useRef<any>(null);
 
+  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>('dark');
   const [reports, setReports] = useState<MapReport[]>([]);
   const [filterType, setFilterType] = useState<MapPointType | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,21 +109,16 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       attributionControl: false
     });
 
-    // Dark Matter CartoDB Tiles (Perfect for dark neon aesthetic)
-    const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-      subdomains: 'abcd'
-    }).addTo(map);
+    // 100% Free, Reliable OpenStreetMap (Zero watermarks, zero API key)
+    const initialTileUrl = mapTheme === 'satellite'
+      ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-    // Fallback to OSM tiles if CartoDB experiences rate limits
-    tileLayer.on('tileerror', () => {
-      if (!(map as any)._osmFallback) {
-        (map as any)._osmFallback = true;
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19
-        }).addTo(map);
-      }
-    });
+    const tileLayer = L.tileLayer(initialTileUrl, {
+      maxZoom: 19,
+      attribution: mapTheme === 'satellite' ? 'Tiles &copy; Esri' : '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    tileLayerRef.current = tileLayer;
 
     // Zoom control on top-right
     L.control.zoom({ position: 'topright' }).addTo(map);
@@ -153,6 +150,35 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       mapInstanceRef.current = null;
     };
   }, [isLeafletReady]);
+
+  // Update map tile layer dynamically when theme changes (Dark, Street, Satellite)
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const L = (window as any).L;
+    if (!L) return;
+
+    if (tileLayerRef.current) {
+      mapInstanceRef.current.removeLayer(tileLayerRef.current);
+    }
+
+    let url = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    let maxZoom = 19;
+    let attribution = '&copy; OpenStreetMap contributors';
+
+    if (mapTheme === 'satellite') {
+      url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      maxZoom = 19;
+      attribution = 'Tiles &copy; Esri';
+    }
+
+    const newLayer = L.tileLayer(url, { maxZoom, attribution });
+    newLayer.addTo(mapInstanceRef.current);
+    tileLayerRef.current = newLayer;
+
+    if (markersLayerRef.current) {
+      markersLayerRef.current.bringToFront?.();
+    }
+  }, [mapTheme]);
 
   // Helper: Format relative time in Georgian
   const formatTimeAgo = (timestamp: number) => {
@@ -543,7 +569,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       <div className="relative w-full h-[540px] rounded-3xl overflow-hidden neu-card border-2 border-white shadow-neu-card">
         
         {/* Leaflet DOM Node */}
-        <div ref={mapContainerRef} className="w-full h-full z-0 bg-dark-900" />
+        <div
+          ref={mapContainerRef}
+          className={`w-full h-full z-0 bg-dark-900 ${mapTheme === 'dark' ? 'dark-map-tiles' : ''}`}
+        />
 
         {/* Loading overlay if Leaflet is still preparing */}
         {!isLeafletReady && (
@@ -552,6 +581,46 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             <p className="text-xs font-mono font-bold text-gold">რუკის ინიციალიზაცია...</p>
           </div>
         )}
+
+        {/* Floating Layer Theme Switcher on Map (Dark, Street, Satellite) */}
+        <div className="absolute top-4 right-14 z-10 flex items-center gap-1 p-1 rounded-2xl bg-navy/90 backdrop-blur-md border border-slate-700/80 shadow-lg text-xs">
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setMapTheme('dark');
+            }}
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+              mapTheme === 'dark' ? 'bg-gold text-navy shadow-xs font-black' : 'text-slate-300 hover:text-white'
+            }`}
+            title="მუქი Waze რეჟიმი"
+          >
+            <span>🌙 მუქი</span>
+          </button>
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setMapTheme('street');
+            }}
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+              mapTheme === 'street' ? 'bg-gold text-navy shadow-xs font-black' : 'text-slate-300 hover:text-white'
+            }`}
+            title="სტანდარტული ქუჩების რუკა"
+          >
+            <span>🗺️ ქუჩები</span>
+          </button>
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setMapTheme('satellite');
+            }}
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+              mapTheme === 'satellite' ? 'bg-gold text-navy shadow-xs font-black' : 'text-slate-300 hover:text-white'
+            }`}
+            title="Esri სატელიტური აეროფოტო"
+          >
+            <span>🛰️ სატელიტი</span>
+          </button>
+        </div>
 
         {/* Floating Quick Stats Badge on Map */}
         <div className="absolute top-4 left-4 z-10 pointer-events-none hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-navy/85 backdrop-blur-md text-white border border-slate-700/80 shadow-lg text-xs">
