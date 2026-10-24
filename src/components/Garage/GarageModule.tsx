@@ -32,7 +32,8 @@ import {
   Check,
   FileText,
   GraduationCap,
-  HelpCircle
+  HelpCircle,
+  History
 } from 'lucide-react';
 
 export const DRIVER_LICENSE_NOTEBOOK_URL = 'https://notebook.google.com/notebook/8435d2c1-fa29-44d0-8d3f-da422e03b3f0/artifact/528eecb6-fcf3-484c-9615-670ae0a800b7';
@@ -48,6 +49,7 @@ interface Props {
   initialSubTab?: 'profile' | 'map' | 'license';
   isSoundEnabled?: boolean;
   onToggleSound?: () => void;
+  onOpenVinHistory?: () => void;
 }
 
 export const GarageModule: React.FC<Props> = ({
@@ -60,7 +62,8 @@ export const GarageModule: React.FC<Props> = ({
   onSelectVehicle,
   initialSubTab = 'profile',
   isSoundEnabled = true,
-  onToggleSound
+  onToggleSound,
+  onOpenVinHistory
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'profile' | 'map' | 'license'>(initialSubTab);
 
@@ -653,7 +656,23 @@ export const GarageModule: React.FC<Props> = ({
               </div>
 
               <div className="p-3.5 rounded-2xl neu-surface border border-white">
-                <span className="text-[11px] text-slate-400 font-bold block mb-1">VIN შასი</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] text-slate-400 font-bold block">VIN შასი</span>
+                  {onOpenVinHistory && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        onOpenVinHistory();
+                      }}
+                      className="text-[10px] font-bold text-navy hover:text-gold flex items-center gap-1 transition-colors px-1.5 py-0.5 rounded-md hover:bg-gold/10"
+                      title="მანქანის ისტორიის გადამოწმება ბრაუზერში"
+                    >
+                      <History size={11} className="text-gold" />
+                      <span>ისტორია ↗</span>
+                    </button>
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 font-bold text-xs text-navy font-mono truncate">
                   <Shield size={14} className="text-gold shrink-0" />
                   <span className="truncate">{vehicle.vin || 'არ არის მითითებული'}</span>

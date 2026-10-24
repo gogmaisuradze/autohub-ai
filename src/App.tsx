@@ -16,6 +16,7 @@ import { ObdAdapterConnectModal, ObdAdapterType } from './components/Modals/ObdA
 import { PwaInstallBanner } from './components/Modals/PwaInstallBanner';
 import { AddVehicleWizardModal } from './components/Modals/AddVehicleWizardModal';
 import { ContextualFieldPromptModal, PromptFieldType } from './components/Modals/ContextualFieldPromptModal';
+import { VinHistoryModal } from './components/Modals/VinHistoryModal';
 import { ServiceBookingModal } from './components/Booking/ServiceBookingModal';
 import { FloatingMechanicWidget } from './components/AiMechanic/FloatingMechanicWidget';
 import { DtcCode, FineItem, ServiceBookingItem, ServiceItem, TelemetryData, VehicleProfile } from './types';
@@ -551,6 +552,7 @@ export const App: React.FC = () => {
   });
   const [activeBookingForAi, setActiveBookingForAi] = useState<ServiceBookingItem | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isVinHistoryModalOpen, setIsVinHistoryModalOpen] = useState(false);
   const [bookingModalPrefill, setBookingModalPrefill] = useState<{
     serviceType?: ServiceBookingItem['service_type'];
     title?: string;
@@ -900,6 +902,7 @@ export const App: React.FC = () => {
               } catch {}
             }}
             onOpenFieldPrompt={handleOpenFieldPrompt}
+            onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
             onResetToVinSpecs={() => {
               const fresh = generateServicesForVehicle(vehicle);
               setServices(fresh);
@@ -931,6 +934,7 @@ export const App: React.FC = () => {
             }}
             isSoundEnabled={isSoundEnabled}
             onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
+            onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
           />
         )}
       </main>
@@ -991,6 +995,13 @@ export const App: React.FC = () => {
         onSubmitBooking={handleSubmitBooking}
         preselectedServiceType={bookingModalPrefill.serviceType}
         preselectedTitle={bookingModalPrefill.title}
+      />
+
+      {/* Vehicle VIN History & Auction Verification Modal */}
+      <VinHistoryModal
+        isOpen={isVinHistoryModalOpen}
+        onClose={() => setIsVinHistoryModalOpen(false)}
+        vehicle={vehicle}
       />
 
       {/* Floating Bottom-Right AI Assistant Window */}

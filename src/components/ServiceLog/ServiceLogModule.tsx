@@ -35,7 +35,8 @@ import {
   Trash2,
   Calculator,
   Bot,
-  Cpu
+  Cpu,
+  History
 } from 'lucide-react';
 
 interface Props {
@@ -49,6 +50,7 @@ interface Props {
   onOpenBookingModal?: (serviceType?: ServiceBookingItem['service_type'], title?: string) => void;
   onNavigateToAiClarification?: (booking: ServiceBookingItem) => void;
   onResetToVinSpecs?: () => void;
+  onOpenVinHistory?: () => void;
 }
 
 export const ServiceLogModule: React.FC<Props> = ({
@@ -61,7 +63,8 @@ export const ServiceLogModule: React.FC<Props> = ({
   bookings = [],
   onOpenBookingModal,
   onNavigateToAiClarification,
-  onResetToVinSpecs
+  onResetToVinSpecs,
+  onOpenVinHistory
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
@@ -265,7 +268,21 @@ export const ServiceLogModule: React.FC<Props> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {onOpenVinHistory && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenVinHistory();
+                }}
+                className="px-3.5 py-2 rounded-xl text-xs font-black bg-navy text-gold hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-xs hover:scale-105 active:scale-95"
+                title="მანქანის ისტორიის გადამოწმება და ბრაუზერში ამოყრა"
+              >
+                <History size={13} className="text-gold" />
+                <span>VIN ისტორია & აუქციონი ↗</span>
+              </button>
+            )}
+
             {onResetToVinSpecs && (
               <button
                 onClick={() => {
