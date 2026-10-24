@@ -411,7 +411,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     dracoLoader.setDecoderPath(`${cleanBase}draco/`);
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    gltfLoader.load(`${cleanBase}models/ghost_car.glb?v=16`, (gltf) => {
+    gltfLoader.load(`${cleanBase}models/ghost_car.glb?v=17`, (gltf) => {
       const root = gltf.scene;
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
       carMasterGroup.add(root);

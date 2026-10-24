@@ -27,6 +27,12 @@ import {
 } from 'lucide-react';
 import { ParkingZonesMap } from './ParkingZonesMap';
 import { DelineatedParkingZone, DELINEATED_PARKING_ZONES } from '../../constants/parkingZones';
+import {
+  TbilisiCoatOfArms,
+  BatumiCoatOfArms,
+  KutaisiCoatOfArms,
+  CityCoatOfArms
+} from './CityEmblems';
 
 interface Props {
   vehicle: VehicleProfile;
@@ -167,15 +173,20 @@ export const BatumiContourLogo: React.FC<{ className?: string }> = ({ className 
   </svg>
 );
 
+export const KutaisiContourLogo: React.FC<{ className?: string }> = ({ className = "w-14 h-14" }) => (
+  <KutaisiCoatOfArms className={className} />
+);
 
-// City Config with Logos and Regional Attributes
+// City Config with Logos, Official Municipal Coats of Arms and Regional Attributes
 interface CityConfig {
   id: CityType;
   name_ge: string;
   name_en: string;
   region_ge: string;
   subtitle: string;
+  coatOfArms: React.FC<{ className?: string; size?: number }>;
   contourLogo: React.FC<{ className?: string }>;
+  parkingLogoUrl: string;
 }
 
 const CITIES: CityConfig[] = [
@@ -185,7 +196,9 @@ const CITIES: CityConfig[] = [
     name_en: 'Tbilisi',
     region_ge: 'თბილისის პარკინგი',
     subtitle: 'ზონალური A, B, C (1-3 ₾/სთ)',
-    contourLogo: TbilisiContourLogo
+    coatOfArms: TbilisiCoatOfArms,
+    contourLogo: TbilisiContourLogo,
+    parkingLogoUrl: '/tbilisi-parking-transparent.png'
   },
   {
     id: 'batumi',
@@ -193,7 +206,9 @@ const CITIES: CityConfig[] = [
     name_en: 'Batumi',
     region_ge: 'მუნიციპალური ინსპექცია',
     subtitle: 'ბულვარი & სანაპირო (1-1.5 ₾/სთ)',
-    contourLogo: BatumiContourLogo
+    coatOfArms: BatumiCoatOfArms,
+    contourLogo: BatumiContourLogo,
+    parkingLogoUrl: '/batumi-parking-transparent.png'
   },
   {
     id: 'kutaisi',
@@ -201,7 +216,9 @@ const CITIES: CityConfig[] = [
     name_en: 'Kutaisi',
     region_ge: 'სატრანსპორტო სამსახური',
     subtitle: 'ცენტრალური ზონა (1 ₾/სთ)',
-    contourLogo: BatumiContourLogo
+    coatOfArms: KutaisiCoatOfArms,
+    contourLogo: KutaisiContourLogo,
+    parkingLogoUrl: '/kutaisi-parking-transparent.png'
   }
 ];
 
@@ -773,16 +790,19 @@ export const ParkingModule: React.FC<Props> = ({
                   საქართველო
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-navy border border-blue-200 shadow-2xs">
-                  <img src="/tbilisi-parking-transparent.png" alt="თბილისის პარკინგი" className="h-3.5 object-contain" />
-                  <span>თბილისის პარკინგი</span>
+                  <TbilisiCoatOfArms className="w-4 h-4 shrink-0 drop-shadow-2xs" />
+                  <img src="/tbilisi-parking-transparent.png" alt="თბილისის პარკინგი" className="h-3 object-contain" />
+                  <span>თბილისი</span>
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-navy border border-teal-200 shadow-2xs">
-                  <img src="/batumi-parking-transparent.png" alt="ბათუმის ინსპექცია" className="h-3.5 object-contain" />
-                  <span>ბათუმის ინსპექცია</span>
+                  <BatumiCoatOfArms className="w-4 h-4 shrink-0 drop-shadow-2xs" />
+                  <img src="/batumi-parking-transparent.png" alt="ბათუმის ინსპექცია" className="h-3 object-contain" />
+                  <span>ბათუმი</span>
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-navy border border-emerald-200 shadow-2xs">
-                  <img src="/kutaisi-parking-transparent.png" alt="ქუთაისის მერია" className="h-3.5 object-contain" />
-                  <span>ქუთაისის მერია</span>
+                  <KutaisiCoatOfArms className="w-4 h-4 shrink-0 drop-shadow-2xs" />
+                  <img src="/kutaisi-parking-transparent.png" alt="ქუთაისის მერია" className="h-3 object-contain" />
+                  <span>ქუთაისი</span>
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-mono mt-0.5">
@@ -1153,13 +1173,14 @@ export const ParkingModule: React.FC<Props> = ({
                     <span>1. აირჩიეთ ქალაქი / რეგიონი:</span>
                   </label>
                   <span className="text-[11px] text-slate-400 font-mono">
-                    თბილისი • ბათუმი • ქუთაისი • ოფიციალური ლოგოები
+                    თბილისი • ბათუმი • ქუთაისი • ოფიციალური გერბები & ლოგოები
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   {CITIES.map(c => {
                     const isSelected = selectedCity === c.id;
+                    const CoatOfArms = c.coatOfArms;
 
                     return (
                       <button
@@ -1178,40 +1199,49 @@ export const ParkingModule: React.FC<Props> = ({
                             : 'bg-white hover:bg-slate-50 text-navy border-slate-200 shadow-xs'
                         }`}
                       >
-                        {/* Top: Official City Logo & Selection Dot */}
-                        <div className="flex items-start justify-between mb-2">
-                          <div className={`p-2 rounded-2xl transition-all flex items-center justify-center ${
-                            isSelected
-                              ? 'bg-white p-1.5 shadow-sm ring-1 ring-gold/40'
-                              : 'bg-white p-1.5 shadow-xs border border-slate-100'
-                          }`}>
-                            {c.id === 'tbilisi' ? (
+                        {/* Top: Official City Coat of Arms (გერბი) + Municipal Logo + Status Badge */}
+                        <div className="flex items-start justify-between gap-2 mb-2.5 w-full">
+                          <div className="flex items-center gap-2">
+                            {/* Official Municipal Coat of Arms (გერბი) Badge */}
+                            <div className={`p-1.5 rounded-2xl transition-all shadow-sm flex items-center justify-center shrink-0 ${
+                              isSelected
+                                ? 'bg-white/10 border border-gold/50 shadow-inner'
+                                : 'bg-gradient-to-b from-slate-50 to-slate-100 border border-slate-200'
+                            }`}>
+                              <CoatOfArms className="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-md" />
+                            </div>
+
+                            {/* Municipal Parking System Logo */}
+                            <div className={`px-2 py-1 rounded-xl flex items-center justify-center shrink-0 ${
+                              isSelected
+                                ? 'bg-white p-1 border border-gold/40 shadow-xs'
+                                : 'bg-white p-1 border border-slate-200 shadow-2xs'
+                            }`}>
                               <img
-                                src="/tbilisi-parking-transparent.png"
-                                alt="თბილისის პარკინგი"
-                                className="w-16 h-12 sm:w-20 sm:h-14 object-contain"
+                                src={c.parkingLogoUrl}
+                                alt={c.region_ge}
+                                className="h-6 sm:h-7 max-w-[65px] sm:max-w-[75px] object-contain"
                               />
-                            ) : c.id === 'batumi' ? (
-                              <img
-                                src="/batumi-parking-transparent.png"
-                                alt="ბათუმის მუნიციპალური ინსპექცია"
-                                className="w-16 h-12 sm:w-20 sm:h-14 object-contain"
-                              />
-                            ) : (
-                              <img
-                                src="/kutaisi-parking-transparent.png"
-                                alt="ქუთაისის მერია"
-                                className="w-16 h-12 sm:w-20 sm:h-14 object-contain"
-                              />
+                            </div>
+                          </div>
+
+                          {/* Selection Status Badge */}
+                          <div className="flex flex-col items-end gap-1">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider ${
+                              isSelected
+                                ? 'bg-gold text-navy font-black shadow-xs'
+                                : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              {isSelected ? '✓ არჩეულია' : 'გერბი'}
+                            </span>
+                            {isSelected && (
+                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse ring-2 ring-white/40" />
                             )}
                           </div>
-                          {isSelected && (
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse ring-2 ring-white/40" />
-                          )}
                         </div>
 
                         {/* City Details */}
-                        <div>
+                        <div className="w-full">
                           <div className="flex items-center gap-1.5">
                             <span className="font-black text-sm sm:text-base tracking-wide block">{c.name_ge}</span>
                             <span className={`text-[10px] font-mono ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>
@@ -1219,7 +1249,7 @@ export const ParkingModule: React.FC<Props> = ({
                             </span>
                           </div>
                           <span className={`text-[10px] font-mono font-bold block mt-0.5 ${isSelected ? 'text-gold' : 'text-slate-500'}`}>
-                            {c.id === 'tbilisi' ? 'თბილისის პარკინგი • ზონები' : c.id === 'batumi' ? 'მუნიციპალური ინსპექცია' : 'ქუთაისის მერია'}
+                            {c.region_ge}
                           </span>
                           <span className={`text-[11px] font-medium mt-1 block truncate ${isSelected ? 'text-slate-200' : 'text-slate-600'}`}>
                             {c.subtitle}
@@ -1235,6 +1265,9 @@ export const ParkingModule: React.FC<Props> = ({
               {selectedCity === 'tbilisi' && (
                 <div className="p-3.5 sm:p-4 bg-gradient-to-r from-blue-50/90 via-white to-amber-50/40 rounded-2xl border border-blue-200/70 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
                   <div className="flex items-center gap-3">
+                    <div className="p-1.5 rounded-2xl bg-white border border-blue-200 shadow-sm shrink-0">
+                      <TbilisiCoatOfArms className="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-sm" />
+                    </div>
                     <img
                       src="/tbilisi-parking-logo.png"
                       alt="თბილისის პარკინგი"
@@ -1243,7 +1276,7 @@ export const ParkingModule: React.FC<Props> = ({
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs sm:text-sm font-black text-navy">
-                          თბილისის მუნიციპალური პარკინგი
+                          თბილისის ოფიციალური გერბი & მუნიციპალური პარკინგი
                         </span>
                         <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                           ოფიციალური სისტემა
@@ -1266,6 +1299,9 @@ export const ParkingModule: React.FC<Props> = ({
               {selectedCity === 'batumi' && (
                 <div className="p-3.5 sm:p-4 bg-gradient-to-r from-teal-50/90 via-white to-blue-50/40 rounded-2xl border border-teal-200/70 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
                   <div className="flex items-center gap-3">
+                    <div className="p-1.5 rounded-2xl bg-white border border-teal-200 shadow-sm shrink-0">
+                      <BatumiCoatOfArms className="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-sm" />
+                    </div>
                     <img
                       src="/batumi-parking-transparent.png"
                       alt="ბათუმის მუნიციპალური ინსპექცია"
@@ -1274,7 +1310,7 @@ export const ParkingModule: React.FC<Props> = ({
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs sm:text-sm font-black text-navy">
-                          ბათუმის მუნიციპალური ინსპექცია • საპარკინგე სამსახური
+                          ბათუმის ოფიციალური გერბი & მუნიციპალური ინსპექცია
                         </span>
                         <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-teal-100 text-teal-800 border border-teal-200">
                           ოფიციალური კონტროლი
@@ -1297,6 +1333,9 @@ export const ParkingModule: React.FC<Props> = ({
               {selectedCity === 'kutaisi' && (
                 <div className="p-3.5 sm:p-4 bg-gradient-to-r from-emerald-50/90 via-white to-amber-50/40 rounded-2xl border border-emerald-200/70 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
                   <div className="flex items-center gap-3">
+                    <div className="p-1.5 rounded-2xl bg-white border border-emerald-200 shadow-sm shrink-0">
+                      <KutaisiCoatOfArms className="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-sm" />
+                    </div>
                     <img
                       src="/kutaisi-parking-transparent.png"
                       alt="ქუთაისის მერიის სატრანსპორტო სამსახური"
@@ -1305,7 +1344,7 @@ export const ParkingModule: React.FC<Props> = ({
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs sm:text-sm font-black text-navy">
-                          ქუთაისის მერია • სატრანსპორტო სამსახური
+                          ქუთაისის ოფიციალური გერბი & სატრანსპორტო სამსახური
                         </span>
                         <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                           ოფიციალური სისტემა
@@ -1535,17 +1574,20 @@ export const ParkingModule: React.FC<Props> = ({
                       <div className="flex items-center gap-2">
                         {fine.city === 'tbilisi' ? (
                           <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
-                            <img src="/tbilisi-parking-transparent.png" alt="თბილისის პარკინგი" className="h-4 object-contain" />
+                            <TbilisiCoatOfArms className="w-4 h-4 shrink-0 drop-shadow-2xs" />
+                            <img src="/tbilisi-parking-transparent.png" alt="თბილისის პარკინგი" className="h-3.5 object-contain" />
                             <span className="text-[10px] font-bold text-navy">თბილისის პარკინგი</span>
                           </div>
                         ) : fine.city === 'batumi' ? (
                           <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
-                            <img src="/batumi-parking-transparent.png" alt="ბათუმის ინსპექცია" className="h-4 object-contain" />
+                            <BatumiCoatOfArms className="w-4 h-4 shrink-0 drop-shadow-2xs" />
+                            <img src="/batumi-parking-transparent.png" alt="ბათუმის ინსპექცია" className="h-3.5 object-contain" />
                             <span className="text-[10px] font-bold text-navy">ბათუმის ინსპექცია</span>
                           </div>
                         ) : fine.city === 'kutaisi' ? (
                           <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
-                            <img src="/kutaisi-parking-transparent.png" alt="ქუთაისის მერია" className="h-4 object-contain" />
+                            <KutaisiCoatOfArms className="w-4 h-4 shrink-0 drop-shadow-2xs" />
+                            <img src="/kutaisi-parking-transparent.png" alt="ქუთაისის მერია" className="h-3.5 object-contain" />
                             <span className="text-[10px] font-bold text-navy">ქუთაისის მერია</span>
                           </div>
                         ) : (
@@ -1634,17 +1676,20 @@ export const ParkingModule: React.FC<Props> = ({
                     <div className="flex items-center justify-between mb-2">
                       {permit.city === 'tbilisi' ? (
                         <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
-                          <img src="/tbilisi-parking-transparent.png" alt="თბილისის პარკინგი" className="h-4 object-contain" />
+                          <TbilisiCoatOfArms className="w-4 h-4 shrink-0 drop-shadow-2xs" />
+                          <img src="/tbilisi-parking-transparent.png" alt="თბილისის პარკინგი" className="h-3.5 object-contain" />
                           <span className="text-[10px] font-bold text-navy">თბილისის პარკინგი</span>
                         </div>
                       ) : permit.city === 'batumi' ? (
                         <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
-                          <img src="/batumi-parking-transparent.png" alt="ბათუმის ინსპექცია" className="h-4 object-contain" />
+                          <BatumiCoatOfArms className="w-4 h-4 shrink-0 drop-shadow-2xs" />
+                          <img src="/batumi-parking-transparent.png" alt="ბათუმის ინსპექცია" className="h-3.5 object-contain" />
                           <span className="text-[10px] font-bold text-navy">ბათუმის ინსპექცია</span>
                         </div>
                       ) : permit.city === 'kutaisi' ? (
                         <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
-                          <img src="/kutaisi-parking-transparent.png" alt="ქუთაისის მერია" className="h-4 object-contain" />
+                          <KutaisiCoatOfArms className="w-4 h-4 shrink-0 drop-shadow-2xs" />
+                          <img src="/kutaisi-parking-transparent.png" alt="ქუთაისის მერია" className="h-3.5 object-contain" />
                           <span className="text-[10px] font-bold text-navy">ქუთაისის მერია</span>
                         </div>
                       ) : (

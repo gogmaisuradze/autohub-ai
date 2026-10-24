@@ -5,6 +5,7 @@ import {
   getParkingZonesByCity
 } from '../../constants/parkingZones';
 import { sounds } from '../../services/soundEffects';
+import { CityCoatOfArms } from './CityEmblems';
 import {
   MapPin,
   Layers,
@@ -248,6 +249,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
+                <CityCoatOfArms city={city} className="w-5 h-5 shrink-0 drop-shadow-2xs" />
                 <h3 className="text-sm sm:text-base font-extrabold text-navy">
                   დახაზული & დანომრილი ზონების რუკა
                 </h3>
