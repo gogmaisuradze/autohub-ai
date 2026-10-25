@@ -42,8 +42,8 @@ const INITIAL_VEHICLE: VehicleProfile = {
   last_oil_change_km: 73200,
   pti_expiry_date: '2027-02-15',
   driver_license_points: 100,
-  driver_personal_number: '01024085521',
-  driver_name: 'გიორგი მაისურაძე'
+  driver_personal_number: '',
+  driver_name: ''
 };
 
 const INITIAL_DTC_CODES: DtcCode[] = [
@@ -372,11 +372,6 @@ export const App: React.FC = () => {
       localStorage.setItem('autohub_active_tab', tab);
       window.location.hash = tab;
     } catch {}
-
-    // When navigating to Diagnostics (OBD), if not yet connected, pop up the adapter connection modal!
-    if (tab === 'obd' && !isObdConnected) {
-      setIsObdAdapterModalOpen(true);
-    }
   };
 
   const [vehicle, setVehicle] = useState<VehicleProfile>(() => {
@@ -468,16 +463,6 @@ export const App: React.FC = () => {
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [isObdConnected, setIsObdConnected] = useState<boolean>(false);
   const [isObdAdapterModalOpen, setIsObdAdapterModalOpen] = useState<boolean>(false);
-
-  // Automatically open the OBD Adapter Connection Modal when entering diagnostics while not connected
-  useEffect(() => {
-    if (activeTab === 'obd' && !isObdConnected) {
-      const timer = setTimeout(() => {
-        setIsObdAdapterModalOpen(true);
-      }, 400);
-      return () => clearTimeout(timer);
-    }
-  }, [activeTab]);
   const [autoStartScanTrigger, setAutoStartScanTrigger] = useState<number>(0);
   const [obdAdapterType, setObdAdapterType] = useState<ObdAdapterType>(() => {
     try {

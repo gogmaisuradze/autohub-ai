@@ -93,7 +93,7 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
 
   // Ordering state
   const [orderModel, setOrderModel] = useState<ObdAdapterType>('cloud_4g');
-  const [orderName, setOrderName] = useState('გიორგი მაისურაძე');
+  const [orderName, setOrderName] = useState('');
   const [orderPhone, setOrderPhone] = useState('+995 599 12 34 56');
   const [orderCity, setOrderCity] = useState('თბილისი');
   const [orderAddress, setOrderAddress] = useState('ჭავჭავაძის გამზ. #34, ბინა 12');

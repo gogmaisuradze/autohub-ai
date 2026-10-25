@@ -51,7 +51,7 @@ export const ServiceOfferComparisonModal: React.FC<Props> = ({
     return tomorrow.toISOString().split('T')[0];
   });
   const [bookingTime, setBookingTime] = useState<string>('11:00');
-  const [customerName, setCustomerName] = useState<string>(vehicle.driver_name || 'გიორგი მაისურაძე');
+  const [customerName, setCustomerName] = useState<string>(vehicle.driver_name || '');
   const [customerPhone, setCustomerPhone] = useState<string>(vehicle.driver_phone || '+995 599 12 34 56');
 
   // Success Confirmation State

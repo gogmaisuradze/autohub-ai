@@ -58,11 +58,11 @@ export const FinesModule: React.FC<Props> = ({
 
   // Driver license points & personal info
   const driverPoints = vehicle.driver_license_points ?? 100;
-  const driverPersonalNumber = vehicle.driver_personal_number || '01024085521';
-  const driverName = vehicle.driver_name || 'გიორგი მაისურაძე';
+  const driverPersonalNumber = vehicle.driver_personal_number || '';
+  const driverName = vehicle.driver_name || '';
   const [isEditingDriverInfo, setIsEditingDriverInfo] = useState(false);
-  const [personalNumberInput, setPersonalNumberInput] = useState(driverPersonalNumber);
-  const [driverNameInput, setDriverNameInput] = useState(driverName);
+  const [personalNumberInput, setPersonalNumberInput] = useState(vehicle.driver_personal_number || '');
+  const [driverNameInput, setDriverNameInput] = useState(vehicle.driver_name || '');
   const [showPointsGuide, setShowPointsGuide] = useState(false);
 
   // Direct Ticket Search & Pay State
@@ -151,6 +151,17 @@ export const FinesModule: React.FC<Props> = ({
 
   const handleRefreshFines = async () => {
     sounds.playClick();
+    if (!vehicle.plate_number || !vehicle.tech_passport || !vehicle.driver_personal_number) {
+      sounds.playAlert();
+      setAutoSyncNotice('police.ge ბაზაში შემოწმებისთვის საჭიროა სახელმწიფო ნომერი, ტექ-პასპორტი და პირადი ნომერი.');
+      if (!vehicle.plate_number || !vehicle.tech_passport) {
+        setIsEditingDocs(true);
+      }
+      if (!vehicle.driver_personal_number) {
+        setIsEditingDriverInfo(true);
+      }
+      return;
+    }
     await runAutoFinesSync(vehicle.plate_number, vehicle.tech_passport, vehicle.driver_personal_number, true);
   };
 
@@ -325,21 +336,21 @@ export const FinesModule: React.FC<Props> = ({
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
       {/* Missing Fines Sync Requirements Notice */}
-      {(!vehicle.plate_number || vehicle.plate_number === 'GE-000-XX' || !vehicle.tech_passport) && (
+      {(!vehicle.plate_number || vehicle.plate_number === 'GE-000-XX' || !vehicle.tech_passport || !vehicle.driver_name || !vehicle.driver_personal_number) && (
         <div className="p-4 rounded-3xl neu-card border border-amber-300 bg-amber-50/90 text-amber-900 flex flex-wrap items-center justify-between gap-3 shadow-xs animate-fade-in">
           <div className="flex items-center gap-2.5">
             <AlertTriangle size={18} className="text-amber-600 shrink-0" />
             <span className="text-xs font-bold">
-              ვიდეოჯარიმების 100% ავტომატური სინქრონიზაციისთვის საჭიროა მანქანის ნომრისა და ტექ-პასპორტის დაზუსტება.
+              ვიდეოჯარიმებისა და მართვის ქულების ზუსტი შემოწმებისთვის საჭიროა ავტომობილის დოკუმენტებისა და მძღოლის მონაცემების შევსება.
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {(!vehicle.plate_number || vehicle.plate_number === 'GE-000-XX') && (
               <button
                 onClick={() => onOpenFieldPrompt?.('plate_number')}
                 className="px-3 py-1.5 rounded-xl bg-navy text-gold text-xs font-bold shadow-xs hover:bg-slate-800 transition-all"
               >
-                + ნომრის შევსება
+                + ნომერი
               </button>
             )}
             {!vehicle.tech_passport && (
@@ -348,6 +359,30 @@ export const FinesModule: React.FC<Props> = ({
                 className="px-3 py-1.5 rounded-xl bg-gold text-navy text-xs font-bold shadow-xs hover:bg-amber-400 transition-all"
               >
                 + ტექ-პასპორტი
+              </button>
+            )}
+            {!vehicle.driver_name && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  if (onOpenFieldPrompt) onOpenFieldPrompt('driver_name');
+                  else setIsEditingDriverInfo(true);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-navy text-gold text-xs font-bold shadow-xs hover:bg-slate-800 transition-all"
+              >
+                + მძღოლის სახელი
+              </button>
+            )}
+            {!vehicle.driver_personal_number && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  if (onOpenFieldPrompt) onOpenFieldPrompt('driver_personal_number');
+                  else setIsEditingDriverInfo(true);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-gold text-navy text-xs font-bold shadow-xs hover:bg-amber-400 transition-all"
+              >
+                + პირადი ნომერი
               </button>
             )}
             {onNavigateToAiClarification && (
@@ -380,16 +415,48 @@ export const FinesModule: React.FC<Props> = ({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base sm:text-lg font-black text-navy truncate">
-                    {driverName}
-                  </h2>
+                  {driverName ? (
+                    <h2 className="text-base sm:text-lg font-black text-navy truncate">
+                      {driverName}
+                    </h2>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200">
+                        მძღოლის სახელი: შეუვსებელია
+                      </span>
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          setIsEditingDriverInfo(true);
+                        }}
+                        className="text-xs text-gold font-bold hover:underline"
+                      >
+                        + შევსება
+                      </button>
+                    </div>
+                  )}
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-gold/15 text-navy border border-gold/30 shrink-0">
                     მძღოლი
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">
-                  პირადი ნომერი: <span className="font-bold text-navy">{driverPersonalNumber}</span>
-                </p>
+                <div className="text-xs text-slate-500 font-mono mt-0.5">
+                  {driverPersonalNumber ? (
+                    <span>პირადი ნომერი: <span className="font-bold text-navy">{driverPersonalNumber}</span></span>
+                  ) : (
+                    <span className="flex items-center gap-2 text-amber-700">
+                      <span>პირადი #: შეუვსებელია</span>
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          setIsEditingDriverInfo(true);
+                        }}
+                        className="text-xs text-gold font-bold hover:underline font-sans"
+                      >
+                        + შევსება
+                      </button>
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 text-[11px] text-emerald-700 font-bold mt-0.5">
                   <ShieldCheck size={13} className="text-emerald-600" />
                   <span>მართვის მოწმობა: აქტიური (კატეგორია B, B1)</span>
@@ -403,24 +470,37 @@ export const FinesModule: React.FC<Props> = ({
                 <Car className="w-4 h-4 text-gold shrink-0" />
                 <div>
                   <div className="text-xs font-black text-navy">{vehicle.brand} {vehicle.model}</div>
-                  <div className="text-[10px] text-slate-400 font-mono">ტექ-პასპორტი: {vehicle.tech_passport || '22-3999'}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    ტექ-პასპორტი: {vehicle.tech_passport || (
+                      <span className="text-amber-600 font-bold">შეუვსებელია</span>
+                    )}
+                  </div>
                 </div>
               </div>
               <GeorgianLicensePlate plate={vehicle.plate_number || 'FR-282-EE'} size="sm" variant="white" />
             </div>
 
             {/* Live Database Status & Edit Trigger */}
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                 <span>police.ge სინქრონიზაცია ({lastAutoSyncedTime})</span>
               </span>
-              <button
-                onClick={() => setIsEditingDocs(!isEditingDocs)}
-                className="text-gold font-bold hover:underline"
-              >
-                {isEditingDocs ? 'დახურვა' : 'რედაქტირება'}
-              </button>
+              <div className="flex items-center gap-2 font-bold">
+                <button
+                  onClick={() => setIsEditingDocs(!isEditingDocs)}
+                  className="text-gold hover:underline"
+                >
+                  {isEditingDocs ? 'დახურვა' : 'დოკუმენტები'}
+                </button>
+                <span className="text-slate-300">•</span>
+                <button
+                  onClick={() => setIsEditingDriverInfo(!isEditingDriverInfo)}
+                  className="text-gold hover:underline"
+                >
+                  {isEditingDriverInfo ? 'დახურვა' : 'მძღოლი'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -535,6 +615,37 @@ export const FinesModule: React.FC<Props> = ({
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-gold' : 'text-gold'}`} />
                 <span>{isRefreshing ? 'მოწმდება...' : 'შემოწმება (police.ge)'}</span>
               </button>
+
+              {/* შემოწმების ბაზის განმარტება */}
+              <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 space-y-1.5 shadow-2xs">
+                <div className="font-bold text-navy flex items-center justify-between font-sans">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
+                    <span>შემოწმების მონაცემთა ბაზა</span>
+                  </div>
+                  <span className="text-[9px] font-mono font-bold text-slate-400">შსს / police.ge</span>
+                </div>
+                <div className="text-[10px] space-y-1 font-mono">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">1. ნომერი:</span>
+                    <strong className={vehicle.plate_number ? 'text-navy' : 'text-amber-700'}>
+                      {vehicle.plate_number || 'შეუვსებელია ⚠️'}
+                    </strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">2. ტექ-პასპორტი:</span>
+                    <strong className={vehicle.tech_passport ? 'text-navy' : 'text-amber-700'}>
+                      {vehicle.tech_passport || 'შეუვსებელია ⚠️'}
+                    </strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">3. პირადი #:</span>
+                    <strong className={vehicle.driver_personal_number ? 'text-navy' : 'text-amber-700'}>
+                      {vehicle.driver_personal_number || 'შეუვსებელია ⚠️'}
+                    </strong>
+                  </div>
+                </div>
+              </div>
 
               {/* 2. გადახდის ღილაკი */}
               <button

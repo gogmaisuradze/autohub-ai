@@ -75,7 +75,7 @@ export const ObdModule: React.FC<Props> = ({
     setInternalConnected(val);
     onConnectionChange?.(val);
   };
-  const [selectedComponent, setSelectedComponent] = useState<string | null>('engine');
+  const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [lastScanTime, setLastScanTime] = useState<string>('დღეს, 16:42');
 
   // OBD ECU Handshake & Auto-Discovery States
@@ -139,6 +139,13 @@ export const ObdModule: React.FC<Props> = ({
   };
 
   const handleOneTouchScan = async () => {
+    if (!isConnected) {
+      sounds.playAlert();
+      if (onOpenAdapterModal) {
+        onOpenAdapterModal();
+      }
+      return;
+    }
     sounds.playScanSweep();
     setIsScanning(true);
 

@@ -621,7 +621,8 @@ export const ThreeCarScene: React.FC<Props> = ({
           comp.matchingCodes.some(m => c.code.toUpperCase().includes(m.toUpperCase()))
         );
         const isSelected = activePinRef.current === comp.id;
-        const intensity = hasFault ? (1.3 + pulse * 1.7) : isSelected ? (0.8 + pulse * 0.5) : 0;
+        // Only components with active DTC faults pulse/blink. Selected components without faults have a steady calm glow.
+        const intensity = hasFault ? (1.3 + pulse * 1.7) : isSelected ? 0.45 : 0;
 
         if (mats) {
           mats.forEach(mat => {
@@ -634,7 +635,7 @@ export const ThreeCarScene: React.FC<Props> = ({
             }
           });
         }
-        if (light) light.intensity = hasFault ? (0.9 + pulse * 1.6) : isSelected ? (0.6 + pulse * 0.4) : 0;
+        if (light) light.intensity = hasFault ? (0.9 + pulse * 1.6) : isSelected ? 0.35 : 0;
       });
 
       // Smooth Camera & Target Gliding

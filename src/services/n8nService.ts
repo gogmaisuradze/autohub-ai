@@ -450,6 +450,27 @@ class N8nService {
 
       // Fuel Stations & Live Prices
       {
+        id: 'fuel-socar-vake',
+        type: 'fuel',
+        title: 'SOCAR Energy (სოკარი - ვაკე)',
+        description: 'Nano Regular, Nano Premium, Nano Super, Euro Diesel, CNG & EV.',
+        brand: 'Socar',
+        address: 'ჭავჭავაძის გამზირი 80, ვაკე',
+        lat: 41.7100,
+        lng: 44.7430,
+        fuel_prices: {
+          super_98: 3.58,
+          premium_95: 3.08,
+          regular_92: 2.89,
+          diesel: 3.14,
+          lpg: 1.55,
+          ev_kwh: 0.42
+        },
+        timestamp: Date.now() - 20 * 60000,
+        confirmations: 56,
+        active: true
+      },
+      {
         id: 'fuel-1',
         type: 'fuel',
         title: 'Wissol Smart Station (ვისოლი)',
@@ -512,14 +533,15 @@ class N8nService {
       {
         id: 'fuel-4',
         type: 'fuel',
-        title: 'Socar Energy (სოკარი)',
-        description: 'ბენზინი, დიზელი, CNG გაზი და ელექტრო დამტენი.',
+        title: 'SOCAR Energy (სოკარი - კახეთის გზატკეცილი)',
+        description: 'Nano ბენზინი, დიზელი, CNG გაზი და ელექტრო სწრაფი დამტენი.',
         brand: 'Socar',
         address: 'კახეთის გზატკეცილი 12',
         lat: 41.6960,
         lng: 44.8720,
         fuel_prices: {
-          premium_95: 3.07,
+          super_98: 3.58,
+          premium_95: 3.08,
           regular_92: 2.89,
           diesel: 3.14,
           lpg: 1.55,
@@ -549,7 +571,22 @@ class N8nService {
         active: true
       },
 
-      // Auto Showrooms & Official Dealerships
+      // Auto Showrooms & Official Dealerships / Auto Hubs
+      {
+        id: 'showroom-autoban',
+        type: 'showroom',
+        title: 'Autoban Georgia (ავტობანი - autoban.ge)',
+        description: 'ავტონაწილების, აკუმულატორების, ზეთებისა და სერვისის უდიდესი ქსელი.',
+        brand: 'Autoban',
+        address: 'დავით აღმაშენებლის ხეივანი მე-12 კმ / ბელიაშვილის 151',
+        phone: '+995 32 2 400 400',
+        rating: 4.8,
+        lat: 41.7850,
+        lng: 44.7580,
+        timestamp: Date.now() - 300 * 60000,
+        confirmations: 110,
+        active: true
+      },
       {
         id: 'showroom-1',
         type: 'showroom',

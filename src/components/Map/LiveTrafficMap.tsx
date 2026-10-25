@@ -129,12 +129,14 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     // Attach initial layer
     if (mapTheme === 'satellite') {
       satLayer.addTo(map);
+      satLayer.bringToBack();
       if (mapContainerRef.current) {
         mapContainerRef.current.classList.remove('dark-map-tiles');
         mapContainerRef.current.style.backgroundColor = '#000000';
       }
     } else {
       osmLayer.addTo(map);
+      osmLayer.bringToBack();
       if (mapContainerRef.current) {
         if (mapTheme === 'dark') {
           mapContainerRef.current.classList.add('dark-map-tiles');
@@ -189,6 +191,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     if (mapTheme === 'satellite') {
       if (map.hasLayer(osm)) map.removeLayer(osm);
       if (!map.hasLayer(sat)) sat.addTo(map);
+      sat.bringToBack();
       if (mapContainerRef.current) {
         mapContainerRef.current.classList.remove('dark-map-tiles');
         mapContainerRef.current.style.backgroundColor = '#000000';
@@ -197,6 +200,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       // Both 'dark' and 'street' use cached OpenStreetMap
       if (map.hasLayer(sat)) map.removeLayer(sat);
       if (!map.hasLayer(osm)) osm.addTo(map);
+      osm.bringToBack();
 
       // Instant CSS filter toggle — zero network request, zero lag!
       if (mapContainerRef.current) {
@@ -388,6 +392,13 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         maxWidth: 280
       });
 
+      marker.on('click', () => {
+        sounds.playClick();
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo([item.lat, item.lng], 16, { duration: 0.8 });
+        }
+      });
+
       marker.addTo(layer);
     });
 
@@ -439,6 +450,13 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           maxWidth: 280
         });
 
+        polygon.on('click', () => {
+          sounds.playClick();
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.flyTo(zone.center, 16, { duration: 0.8 });
+          }
+        });
+
         polygon.addTo(layer);
 
         // Circular Zone Number Marker Badge
@@ -461,6 +479,13 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         badgeMarker.bindPopup(popupContent, {
           className: 'dark-neon-popup',
           maxWidth: 280
+        });
+
+        badgeMarker.on('click', () => {
+          sounds.playClick();
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.flyTo(zone.center, 16, { duration: 0.8 });
+          }
         });
 
         badgeMarker.addTo(layer);
@@ -740,7 +765,13 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         {/* Leaflet DOM Node */}
         <div
           ref={mapContainerRef}
-          className={`w-full h-full z-0 bg-[#1a2232] ${mapTheme === 'dark' ? 'dark-map-tiles' : ''}`}
+          className={`w-full h-full z-0 transition-colors duration-300 ${
+            mapTheme === 'dark'
+              ? 'bg-[#1a2232] dark-map-tiles'
+              : mapTheme === 'satellite'
+              ? 'bg-black'
+              : 'bg-[#f8fafc]'
+          }`}
         />
 
         {/* Loading overlay if Leaflet is still preparing */}
@@ -868,8 +899,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             <span className="text-[10px] font-mono font-bold text-slate-400">განახლებულია</span>
           </div>
 
-          <div className="space-y-2">
-            {reports.filter(r => r.type === 'fuel' && r.fuel_prices).slice(0, 3).map(station => (
+          <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+            {reports.filter(r => r.type === 'fuel' && r.fuel_prices).slice(0, 5).map(station => (
               <div
                 key={station.id}
                 onClick={() => {
@@ -917,8 +948,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             <span className="text-[10px] font-mono font-bold text-gold">ოფიციალური</span>
           </div>
 
-          <div className="space-y-2">
-            {reports.filter(r => r.type === 'showroom').slice(0, 3).map(showroom => (
+          <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+            {reports.filter(r => r.type === 'showroom').slice(0, 5).map(showroom => (
               <div
                 key={showroom.id}
                 onClick={() => {

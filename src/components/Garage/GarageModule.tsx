@@ -91,11 +91,11 @@ export const GarageModule: React.FC<Props> = ({
   // Factory requirements decoded from VIN
   const decodedVin = decodeVin(vehicle.vin, vehicle);
 
-  const driverFullName = vehicle.driver_name || 'გიორგი მაისურაძე';
+  const driverFullName = vehicle.driver_name || 'მძღოლის პროფილი';
   const nameParts = driverFullName.trim().split(/\s+/);
-  const firstName = nameParts[0] || 'გიორგი';
+  const firstName = nameParts[0] || 'მძღოლი';
   const lastName = nameParts.slice(1).join(' ') || '';
-  const personalNo = vehicle.driver_personal_number || '01024085521';
+  const personalNo = vehicle.driver_personal_number || 'არ არის მითითებული';
   const currentPoints = vehicle.driver_license_points ?? 100;
   const deductedPoints = Math.max(0, 100 - currentPoints);
 

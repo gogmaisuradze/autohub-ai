@@ -86,9 +86,22 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-      // Default Dark Tiles
+      // Default Dark Tiles via OpenStreetMap with CSS Dark Filter
       const tileUrl = getTileUrl(mapTheme);
       tileLayerRef.current = L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(map);
+
+      if (mapContainerRef.current) {
+        if (mapTheme === 'dark') {
+          mapContainerRef.current.classList.add('dark-map-tiles');
+          mapContainerRef.current.style.backgroundColor = '#1a2232';
+        } else if (mapTheme === 'satellite') {
+          mapContainerRef.current.classList.remove('dark-map-tiles');
+          mapContainerRef.current.style.backgroundColor = '#000000';
+        } else {
+          mapContainerRef.current.classList.remove('dark-map-tiles');
+          mapContainerRef.current.style.backgroundColor = '#f8fafc';
+        }
+      }
 
       polygonLayerGroupRef.current = L.layerGroup().addTo(map);
       markerLayerGroupRef.current = L.layerGroup().addTo(map);
@@ -108,13 +121,12 @@ export const ParkingZonesMap: React.FC<Props> = ({
   const getTileUrl = (theme: 'dark' | 'street' | 'satellite') => {
     switch (theme) {
       case 'dark':
-        return 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
       case 'street':
         return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
       case 'satellite':
         return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
       default:
-        return 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
     }
   };
 
@@ -129,6 +141,20 @@ export const ParkingZonesMap: React.FC<Props> = ({
     tileLayerRef.current = L.tileLayer(newUrl, { maxZoom: 19 }).addTo(mapInstanceRef.current);
     // Move tiles behind vector layers
     tileLayerRef.current.bringToBack();
+
+    // Toggle CSS Dark Filter for instant zero-lag dark mode
+    if (mapContainerRef.current) {
+      if (mapTheme === 'dark') {
+        mapContainerRef.current.classList.add('dark-map-tiles');
+        mapContainerRef.current.style.backgroundColor = '#1a2232';
+      } else if (mapTheme === 'satellite') {
+        mapContainerRef.current.classList.remove('dark-map-tiles');
+        mapContainerRef.current.style.backgroundColor = '#000000';
+      } else {
+        mapContainerRef.current.classList.remove('dark-map-tiles');
+        mapContainerRef.current.style.backgroundColor = '#f8fafc';
+      }
+    }
   }, [mapTheme]);
 
   // 3. Render Delineated Polygons & Numbered Badges on Map
@@ -155,6 +181,9 @@ export const ParkingZonesMap: React.FC<Props> = ({
       polygon.on('click', () => {
         sounds.playClick();
         onSelectZone(zone);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo(zone.center, 16, { duration: 0.8 });
+        }
       });
 
       polygon.on('mouseover', () => {
@@ -226,6 +255,9 @@ export const ParkingZonesMap: React.FC<Props> = ({
       marker.on('click', () => {
         sounds.playClick();
         onSelectZone(zone);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo(zone.center, 16, { duration: 0.8 });
+        }
       });
 
       markerLayerGroupRef.current.addLayer(marker);
@@ -235,10 +267,13 @@ export const ParkingZonesMap: React.FC<Props> = ({
   // Pan to zone when selected from outside
   const handleSelectAndPan = (zone: DelineatedParkingZone) => {
     sounds.playClick();
+    setViewMode('map');
     onSelectZone(zone);
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo(zone.center, 15, { duration: 1.2 });
-    }
+    setTimeout(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.flyTo(zone.center, 16, { duration: 1.0 });
+      }
+    }, 80);
   };
 
   return (

@@ -76,7 +76,9 @@ export const AddVehicleWizardModal: React.FC<Props> = ({
     obd_port: initialData?.obd_port || 35000,
     last_oil_change_km: initialData?.last_oil_change_km || 40000,
     pti_expiry_date: initialData?.pti_expiry_date || '2026-12-31',
-    horsepower: initialData?.horsepower || 250
+    horsepower: initialData?.horsepower || 250,
+    driver_name: initialData?.driver_name || '',
+    driver_personal_number: initialData?.driver_personal_number || ''
   });
 
   // Synchronize formData whenever modal opens or initialData changes
@@ -99,7 +101,9 @@ export const AddVehicleWizardModal: React.FC<Props> = ({
         obd_port: initialData?.obd_port || prev.obd_port || 35000,
         last_oil_change_km: initialData?.last_oil_change_km || prev.last_oil_change_km || 40000,
         pti_expiry_date: initialData?.pti_expiry_date || prev.pti_expiry_date || '2026-12-31',
-        horsepower: initialData?.horsepower || prev.horsepower || 250
+        horsepower: initialData?.horsepower || prev.horsepower || 250,
+        driver_name: initialData?.driver_name !== undefined ? initialData.driver_name : (prev.driver_name || ''),
+        driver_personal_number: initialData?.driver_personal_number !== undefined ? initialData.driver_personal_number : (prev.driver_personal_number || '')
       }));
       setStep(initialStep || 1);
     }
@@ -308,6 +312,55 @@ export const AddVehicleWizardModal: React.FC<Props> = ({
                   value={formData.year}
                   onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) || 2023 })}
                   className="w-full px-4 py-2.5 rounded-2xl neu-inset text-xs font-bold text-navy outline-none font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Driver Profile & Tech Passport Fields */}
+            <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-3">
+              <span className="text-[11px] font-black uppercase text-navy tracking-wider block">
+                👤 მფლობელის & დოკუმენტების მონაცემები (საპატრულო ჯარიმებისთვის)
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-navy mb-1">
+                    მძღოლის სახელი და გვარი
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="მაგ. თქვენი სახელი და გვარი"
+                    value={formData.driver_name || ''}
+                    onChange={(e) => setFormData({ ...formData, driver_name: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl neu-inset text-xs font-bold text-navy outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-navy mb-1">
+                    პირადი ნომერი (11-ნიშნა)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={11}
+                    placeholder="მაგ. 01024085432"
+                    value={formData.driver_personal_number || ''}
+                    onChange={(e) => setFormData({ ...formData, driver_personal_number: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl neu-inset text-xs font-bold font-mono text-navy outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-navy mb-1">
+                  ტექ-პასპორტის სერია და ნომერი
+                </label>
+                <input
+                  type="text"
+                  placeholder="მაგ. 22-3999 ან AA1234567"
+                  value={formData.tech_passport || ''}
+                  onChange={(e) => setFormData({ ...formData, tech_passport: e.target.value.toUpperCase() })}
+                  className="w-full px-3.5 py-2 rounded-xl neu-inset text-xs font-bold font-mono text-navy outline-none uppercase"
                 />
               </div>
             </div>

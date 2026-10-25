@@ -18,8 +18,8 @@ export const VEHICLE_PRESETS: VehicleProfile[] = [
     last_oil_change_km: 73200,
     pti_expiry_date: '2027-02-15',
     driver_license_points: 100,
-    driver_personal_number: '01024085521',
-    driver_name: 'გიორგი მაისურაძე'
+    driver_personal_number: '',
+    driver_name: ''
   },
   {
     id: 'CAR_02',

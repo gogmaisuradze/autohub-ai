@@ -808,7 +808,7 @@ export const ParkingModule: React.FC<Props> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-mono mt-0.5">
-                ანგარიშის მფლობელი: <strong className="text-navy">{vehicle.driver_name || 'გიორგი მაისურაძე'}</strong> (პირადი #: <span className="font-mono">{vehicle.driver_personal_number || '01024085521'}</span>)
+                ანგარიშის მფლობელი: <strong className="text-navy">{vehicle.driver_name || 'მძღოლის პროფილი'}</strong> (პირადი #: <span className="font-mono">{vehicle.driver_personal_number || 'არ არის მითითებული'}</span>)
               </p>
               <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600 mt-1">
                 <span className="flex items-center gap-1 text-emerald-700 font-bold">

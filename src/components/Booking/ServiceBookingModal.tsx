@@ -114,7 +114,7 @@ export const ServiceBookingModal: React.FC<Props> = ({
   const [providerName, setProviderName] = useState(SERVICE_PROVIDERS[0].name);
   const [bookingDate, setBookingDate] = useState(defaultDateStr);
   const [bookingTime, setBookingTime] = useState('11:00');
-  const [driverName, setDriverName] = useState(vehicle.driver_name || 'გიორგი მაისურაძე');
+  const [driverName, setDriverName] = useState(vehicle.driver_name || '');
   const [driverPhone, setDriverPhone] = useState(vehicle.driver_phone || '+995 599 12 34 56');
   const [plateNumber, setPlateNumber] = useState(vehicle.plate_number || 'FR-282-EE');
   
