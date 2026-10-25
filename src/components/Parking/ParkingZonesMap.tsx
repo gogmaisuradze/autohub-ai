@@ -335,26 +335,6 @@ export const ParkingZonesMap: React.FC<Props> = ({
                 📋 სია (#{cityZones.length})
               </button>
             </div>
-
-            {/* Map Theme Toggle (only in Map mode) */}
-            {viewMode === 'map' && (
-              <div className="p-1 rounded-xl bg-slate-100 flex items-center gap-1 border border-slate-200 text-xs">
-                {(['dark', 'street', 'satellite'] as const).map(t => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => { sounds.playClick(); setMapTheme(t); }}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                      mapTheme === t
-                        ? 'bg-white text-navy shadow-xs border border-slate-200'
-                        : 'text-slate-500 hover:text-navy'
-                    }`}
-                  >
-                    {t === 'dark' ? 'მუქი' : t === 'street' ? 'ღია' : 'სატელიტი'}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
@@ -435,6 +415,31 @@ export const ParkingZonesMap: React.FC<Props> = ({
       {viewMode === 'map' ? (
         <div className="relative w-full h-[380px] sm:h-[460px] bg-slate-900">
           <div ref={mapContainerRef} className="w-full h-full z-0" />
+
+          {/* Prominent Floating Map Theme Switcher on Top Right */}
+          <div className="absolute top-3 right-3 z-[400] p-1 rounded-2xl bg-navy/95 backdrop-blur-md border-2 border-white/30 shadow-2xl flex items-center gap-1 pointer-events-auto">
+            {(['dark', 'street', 'satellite'] as const).map(t => {
+              const isActive = mapTheme === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setMapTheme(t);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    isActive
+                      ? 'bg-gold text-navy shadow-md font-black ring-2 ring-white/60 scale-105'
+                      : 'text-slate-200 hover:text-white hover:bg-white/10'
+                  }`}
+                  title={`${t === 'dark' ? 'მუქი' : t === 'street' ? 'ღია' : 'სატელიტი'} რუკის რეჟიმი`}
+                >
+                  <span>{t === 'dark' ? '🌙 მუქი' : t === 'street' ? '🗺️ ღია' : '🛰️ სატელიტი'}</span>
+                </button>
+              );
+            })}
+          </div>
 
           {/* Map Floating Legend at Top Left */}
           <div className="absolute top-3 left-3 z-[400] p-2.5 rounded-2xl bg-navy/85 backdrop-blur-md border border-white/10 text-white text-[10px] font-mono space-y-1 shadow-lg pointer-events-auto">

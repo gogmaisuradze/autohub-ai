@@ -48,7 +48,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLeafletReady, setIsLeafletReady] = useState(false);
   const [activeReportCount, setActiveReportCount] = useState(0);
-  const [showParking, setShowParking] = useState(true);
+  const [showParking, setShowParking] = useState(false);
 
   // 1. Ensure Leaflet is loaded
   useEffect(() => {
@@ -438,8 +438,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             </div>
             <div class="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
               <span class="text-amber-300 font-bold">15 წთ უფასო</span>
-              <a href="#parking" class="px-2.5 py-1 rounded-lg bg-gold text-navy font-bold flex items-center gap-1 transition-colors hover:bg-amber-400">
-                ტაიმერი ➔
+              <a href="#parking" class="px-3 py-1.5 rounded-xl bg-gold text-navy font-black flex items-center gap-1 transition-all hover:bg-amber-400 shadow-sm">
+                🅿️ პარკირების დაწყება ➔
               </a>
             </div>
           </div>
@@ -663,15 +663,15 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                 sounds.playClick();
                 setShowParking(v => !v);
               }}
-              title={showParking ? 'პარკინგის ზონების დამალვა' : 'პარკინგის ზონების ჩვენება'}
-              className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 border ${
+              title={showParking ? 'პარკინგის ზონების დამალვა' : 'პარკინგის ზონების ჩვენება და დაწყება'}
+              className={`px-3.5 py-2.5 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all active:scale-95 border ${
                 showParking
-                  ? 'bg-navy text-gold border-gold/40 shadow-sm'
+                  ? 'bg-navy text-gold border-gold/40 shadow-sm ring-2 ring-gold/30'
                   : 'bg-white text-slate-500 border-slate-200 hover:text-navy'
               }`}
             >
               <ParkingSquare size={16} className={showParking ? 'text-gold' : 'text-slate-400'} />
-              <span>პარკინგი {showParking ? 'ჩართ.' : 'გამორთ.'}</span>
+              <span>{showParking ? '🅿️ პარკინგი: ჩართულია' : '🅿️ პარკინგი: გამორთულია'}</span>
             </button>
 
             {/* Refresh */}

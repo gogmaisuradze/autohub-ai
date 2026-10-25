@@ -56,7 +56,7 @@ interface Props {
   onOpenFieldPrompt: (field: PromptFieldType) => void;
   allVehicles: VehicleProfile[];
   onSelectVehicle: (v: VehicleProfile) => void;
-  initialSubTab?: 'profile' | 'map' | 'license' | 'vin';
+  initialSubTab?: 'profile' | 'license' | 'vin';
   isSoundEnabled?: boolean;
   onToggleSound?: () => void;
   onOpenVinHistory?: () => void;
@@ -83,7 +83,7 @@ export const GarageModule: React.FC<Props> = ({
   onAddBooking,
   onNavigateToAiClarification
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'map' | 'license' | 'vin'>(initialSubTab);
+  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'license' | 'vin'>(initialSubTab);
   const [isVinSpecsExpanded, setIsVinSpecsExpanded] = useState(false);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const [comparisonService, setComparisonService] = useState<ServiceItem | null>(null);
@@ -338,48 +338,33 @@ export const GarageModule: React.FC<Props> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-extrabold text-navy tracking-tight">
-                მეტი — გარაჟი, მართვის მოწმობა & Waze რუკა
+                მეტი — ჩემი გარაჟი & მართვის მოწმობა
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-gold/15 text-gold border border-gold/30">
                 {allVehicles.length} ავტომობილი
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              ავტომობილის პროფილი, მართვის მოწმობის კონსპექტი, Waze ცოცხალი რუკა და ბენზინის ფასები
+              ავტომობილის პროფილი, ავტოპარკის მართვა, ციფრული მართვის მოწმობა და 100-ქულიანი სისტემა
             </p>
           </div>
         </div>
 
-        {/* Subtab Switcher Pills */}
+        {/* Subtab Switcher Pills - Dedicated Separate Sections */}
         <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-slate-200/60 border border-white">
           <button
             onClick={() => {
               sounds.playClick();
               setActiveSubTab('profile');
             }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
               activeSubTab === 'profile'
-                ? 'bg-navy text-gold shadow-sm'
-                : 'text-slate-600 hover:text-navy'
+                ? 'bg-navy text-gold shadow-md scale-105'
+                : 'text-slate-600 hover:text-navy hover:bg-white/50'
             }`}
           >
-            <Car size={15} />
-            <span>ჩემი გარაჟი</span>
-          </button>
-
-          <button
-            onClick={() => {
-              sounds.playClick();
-              setActiveSubTab('vin');
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeSubTab === 'vin'
-                ? 'bg-navy text-gold shadow-sm'
-                : 'text-slate-600 hover:text-navy'
-            }`}
-          >
-            <Cpu size={15} className="text-gold" />
-            <span>ქარხნული VIN</span>
+            <Car size={16} />
+            <span>🚗 ჩემი გარაჟი</span>
           </button>
 
           <button
@@ -387,15 +372,15 @@ export const GarageModule: React.FC<Props> = ({
               sounds.playClick();
               setActiveSubTab('license');
             }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
               activeSubTab === 'license'
-                ? 'bg-navy text-gold shadow-sm'
-                : 'text-slate-600 hover:text-navy'
+                ? 'bg-navy text-gold shadow-md scale-105'
+                : 'text-slate-600 hover:text-navy hover:bg-white/50'
             }`}
           >
-            <Award size={15} className="text-gold" />
-            <span>მართვის მოწმობა</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-gold text-navy">
+            <Award size={16} className="text-gold" />
+            <span>🪪 მართვის მოწმობა</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-gold text-navy font-mono">
               {currentPoints} ქულა
             </span>
           </button>
@@ -403,17 +388,16 @@ export const GarageModule: React.FC<Props> = ({
           <button
             onClick={() => {
               sounds.playClick();
-              setActiveSubTab('map');
+              setActiveSubTab('vin');
             }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeSubTab === 'map'
-                ? 'bg-navy text-gold shadow-sm'
-                : 'text-slate-600 hover:text-navy'
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+              activeSubTab === 'vin'
+                ? 'bg-navy text-gold shadow-md scale-105'
+                : 'text-slate-600 hover:text-navy hover:bg-white/50'
             }`}
           >
-            <Navigation size={15} />
-            <span>Waze რუკა & ფასები</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <Cpu size={16} className="text-gold" />
+            <span>⚙️ ქარხნული VIN & OEM</span>
           </button>
         </div>
 
@@ -467,14 +451,7 @@ export const GarageModule: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 2. TAB: LIVE TRAFFIC MAP (Waze, Radars, Patrol, Fuel, Showrooms) */}
-      {activeSubTab === 'map' && (
-        <div className="animate-fade-in">
-          <LiveTrafficMap vehicle={vehicle} />
-        </div>
-      )}
-
-      {/* 3. TAB: DRIVER'S LICENSE & THEORY EXAM (Google Notebook Artifact) */}
+      {/* 1. TAB: DRIVER'S LICENSE & THEORY EXAM (Google Notebook Artifact) */}
       {activeSubTab === 'license' && (
         <div className="space-y-6 animate-fade-in">
           
