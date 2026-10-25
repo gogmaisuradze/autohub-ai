@@ -5,7 +5,11 @@ import {
   getParkingZonesByCity
 } from '../../constants/parkingZones';
 import { sounds } from '../../services/soundEffects';
-import { CityCoatOfArms } from './CityEmblems';
+import {
+  TBILISI_PARKING_LOGO_B64,
+  BATUMI_PARKING_LOGO_B64,
+  KUTAISI_PARKING_LOGO_B64
+} from '../../constants/parkingLogosData';
 import {
   MapPin,
   Layers,
@@ -249,7 +253,13 @@ export const ParkingZonesMap: React.FC<Props> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <CityCoatOfArms city={city} className="w-5 h-5 shrink-0 drop-shadow-2xs" />
+                <div className="h-6 px-1.5 py-0.5 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center justify-center shrink-0">
+                  <img
+                    src={city === 'tbilisi' ? TBILISI_PARKING_LOGO_B64 : city === 'batumi' ? BATUMI_PARKING_LOGO_B64 : KUTAISI_PARKING_LOGO_B64}
+                    alt={city}
+                    className="h-4 max-w-[45px] object-contain"
+                  />
+                </div>
                 <h3 className="text-sm sm:text-base font-extrabold text-navy">
                   დახაზული & დანომრილი ზონების რუკა
                 </h3>
