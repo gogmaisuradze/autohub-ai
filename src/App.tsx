@@ -18,6 +18,7 @@ import { AddVehicleWizardModal } from './components/Modals/AddVehicleWizardModal
 import { ContextualFieldPromptModal, PromptFieldType } from './components/Modals/ContextualFieldPromptModal';
 import { VinHistoryModal } from './components/Modals/VinHistoryModal';
 import { ServiceBookingModal } from './components/Booking/ServiceBookingModal';
+import { CoverAdBanner } from './components/Banner/CoverAdBanner';
 import { FloatingMechanicWidget } from './components/AiMechanic/FloatingMechanicWidget';
 import { DtcCode, FineItem, ServiceBookingItem, ServiceItem, TelemetryData, VehicleProfile } from './types';
 import { n8nService } from './services/n8nService';
@@ -881,8 +882,16 @@ export const App: React.FC = () => {
         />
       </div>
 
+      {/* Cover Advertising Banner (Visible on all pages under menu) */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4">
+        <CoverAdBanner
+          onNavigateTab={handleTabChange}
+          onOpenBookingModal={() => handleOpenBookingModal()}
+        />
+      </div>
+
       {/* 3. Main Content Container */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 sm:pb-24">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5 pb-28 sm:pb-24">
         {/* Home Hub View (Department Buttons on Screen) */}
         {activeTab === 'home' && (
           <HomeHub
