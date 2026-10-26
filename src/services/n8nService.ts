@@ -291,14 +291,18 @@ class N8nService {
         discounted_amount_gel: 40,
         discount_expires_days: 11,
         date: '2026-10-17 16:40',
-        location: 'თბილისი, მტკვრის მარჯვენა სანაპირო (კამერა #18)',
+        location: 'თბილისი, მტკვრის მარჯვენა სანაპირო (სექციური რადარი #18)',
         violation_type: 'სიჩქარის გადაჭარბება (+17 კმ/სთ)',
         plate_number: 'FR-282-EE',
         status: 'pending',
         points_deducted: 10,
         points_status: 'deducted',
         article_law_ge: 'ასკ მუხლი 125, ნაწილი 1',
-        points_explanation_ge: 'სიჩქარის გადაჭარბება 15-დან 40 კმ/სთ-მდე ითვალისწინებს 10 ქულის დაკლებას მართვის მოწმობაზე.'
+        points_explanation_ge: 'სიჩქარის გადაჭარბება 15-დან 40 კმ/სთ-მდე ითვალისწინებს 10 ქულის დაკლებას მართვის მოწმობაზე.',
+        camera_speed_kmh: 77,
+        allowed_speed_kmh: 60,
+        radar_id: 'MIA-RADAR-018-TB',
+        photo_url: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80'
       },
       {
         id: 'FIN-GEO-2026-8422',
@@ -307,14 +311,44 @@ class N8nService {
         discounted_amount_gel: 80,
         discount_expires_days: 4,
         date: '2026-10-11 11:15',
-        location: 'თბილისი, ჭავჭავაძის გამზირი #37 (ავტობუსის ზოლი)',
+        location: 'თბილისი, ჭავჭავაძის გამზირი #37 (ავტობუსის ზოლი - ჭკვიანი კამერა #4)',
         violation_type: 'საზოგადოებრივი ტრანსპორტის ზოლში (Bus Lane) მოძრაობა',
         plate_number: 'FR-282-EE',
         status: 'pending',
         points_deducted: 0,
         points_status: 'video_exempt',
         article_law_ge: 'ასკ მუხლი 125, ნაწილი 8',
-        points_explanation_ge: 'ჭკვიანი ვიდეოკამერის ფიქსაცია: ქულა არ აკლდება ავტომატურად (0 ქულა), სანამ მძღოლის იდენტიფიცირება არ მოხდება.'
+        points_explanation_ge: 'ჭკვიანი ვიდეოკამერის ფიქსაცია: ქულა არ აკლდება ავტომატურად (0 ქულა), სანამ მძღოლის იდენტიფიცირება არ მოხდება.',
+        radar_id: 'MIA-BUSLANE-004-V',
+        photo_url: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'FIN-GEO-2026-7201',
+        ticket_number: 'ოქმი #PT-2026-720110',
+        amount_gel: 50,
+        discounted_amount_gel: 40,
+        discount_expires_days: 0,
+        date: '2026-09-28 14:22',
+        location: 'თბილისი, რუსთაველის გამზირი / კოსტავას კვეთა',
+        violation_type: 'შუქნიშნის ამკრძალავ (წითელ) სიგნალზე გავლა',
+        plate_number: 'FR-282-EE',
+        status: 'paid',
+        points_deducted: 0,
+        points_status: 'video_exempt',
+        article_law_ge: 'ასკ მუხლი 125, ნაწილი 3',
+        points_explanation_ge: 'ჯარიმა სრულად გადახდილია -20% შეღავათით.',
+        radar_id: 'MIA-SMARTCAM-009',
+        photo_url: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=800&q=80',
+        payment_receipt: {
+          txn_id: 'TXN-GE-2026-99381',
+          ticket_number: 'ოქმი #PT-2026-720110',
+          amount_paid: 40,
+          payment_date: '2026-09-29 10:14',
+          payment_method: 'VISA (4127 •••• •••• 8842)',
+          auth_code: 'AUTH-892173',
+          card_last4: '8842',
+          payer_name: 'გიორგი მაისურაძე'
+        }
       }
     ];
 

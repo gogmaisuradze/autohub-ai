@@ -1,6 +1,10 @@
 import { VehicleProfile } from '../types';
 
-export const VEHICLE_PRESETS: VehicleProfile[] = [
+// =========================================================================
+// 1. OWNER ACCOUNT VEHICLES (ჩემი ექაუნთი - მფლობელის ავტომობილები)
+// =========================================================================
+export const OWNER_VEHICLES: VehicleProfile[] = [
+  // 1. პირველი მანქანა (სამუშაო სატესტო მოდელი რეალური ჯარიმებით)
   {
     id: 'CAR_01',
     brand: 'Mercedes-Benz',
@@ -17,10 +21,12 @@ export const VEHICLE_PRESETS: VehicleProfile[] = [
     horsepower: 208,
     last_oil_change_km: 73200,
     pti_expiry_date: '2027-02-15',
-    driver_license_points: 100,
-    driver_personal_number: '',
-    driver_name: ''
+    driver_license_points: 90,
+    driver_personal_number: '01024085432',
+    driver_name: 'გიორგი მაისურაძე',
+    driver_phone: '+995 599 12 34 56'
   },
+  // 2. მეორე მანქანა (ჩანს მხოლოდ ჩემს ექაუნთში)
   {
     id: 'CAR_02',
     brand: 'BMW',
@@ -34,36 +40,36 @@ export const VEHICLE_PRESETS: VehicleProfile[] = [
     fuel_type: 'petrol',
     obd_ip: '192.168.0.10',
     obd_port: 35000,
-    driver_license_points: 100
-  },
-  {
-    id: 'CAR_03',
-    brand: 'Porsche',
-    model: 'Taycan 4S',
-    year: 2024,
-    engine: 'Dual Electric AWD (530 HP)',
-    vin: 'WP0AB2Y15PSA99881',
-    plate_number: 'POR-911-GE',
-    tech_passport: 'BB4455667',
-    mileage_km: 19400,
-    fuel_type: 'electric',
-    obd_ip: '192.168.0.10',
-    obd_port: 35000,
-    driver_license_points: 100
-  },
-  {
-    id: 'CAR_04',
-    brand: 'Toyota',
-    model: 'RAV4 Hybrid AWD',
-    year: 2022,
-    engine: '2.5L Dynamic Force Hybrid (219 HP)',
-    vin: '2T3C1RFV8NC223344',
-    plate_number: 'TOY-555-TT',
-    tech_passport: 'CC1122334',
-    mileage_km: 67300,
-    fuel_type: 'hybrid',
-    obd_ip: '192.168.0.10',
-    obd_port: 35000,
-    driver_license_points: 100
+    horsepower: 255,
+    driver_license_points: 100,
+    driver_personal_number: '01024085432',
+    driver_name: 'გიორგი მაისურაძე',
+    driver_phone: '+995 599 12 34 56'
   }
 ];
+
+// Default export for backward compatibility
+export const VEHICLE_PRESETS: VehicleProfile[] = OWNER_VEHICLES;
+
+// =========================================================================
+// 2. VISITOR / GUEST VEHICLE (შემოსული სტუმრის საწყისი სუფთა პროფილი)
+// ვინც შევა, შეავსებს საკუთარი ავტომობილის მიხედვით.
+// =========================================================================
+export const VISITOR_INITIAL_VEHICLE: VehicleProfile = {
+  id: 'VISITOR_CAR_01',
+  brand: 'ჩემი ავტომობილი',
+  model: '',
+  year: 2020,
+  engine: '2.0L',
+  vin: '',
+  plate_number: '',
+  tech_passport: '',
+  mileage_km: 50000,
+  fuel_type: 'petrol',
+  obd_ip: '192.168.0.10',
+  obd_port: 35000,
+  driver_license_points: 100,
+  driver_personal_number: '',
+  driver_name: '',
+  driver_phone: ''
+};

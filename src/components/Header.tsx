@@ -30,6 +30,8 @@ interface Props {
   onSelectLang?: (lang: 'ge' | 'en') => void;
   isObdConnected?: boolean;
   onOpenObdModal?: () => void;
+  accountMode?: 'owner' | 'visitor';
+  onToggleAccountMode?: () => void;
 }
 
 export const Header: React.FC<Props> = ({
@@ -44,7 +46,9 @@ export const Header: React.FC<Props> = ({
   onToggleLang,
   onSelectLang,
   isObdConnected = false,
-  onOpenObdModal
+  onOpenObdModal,
+  accountMode = 'owner',
+  onToggleAccountMode
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -88,9 +92,39 @@ export const Header: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* 2. Right Controls: OBD Status (LIVE / OFF) -> Vehicle Pill (Brand + White Plate) -> Language Flag Switcher at the end */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* 2. Right Controls: Account Switcher -> OBD Status -> Vehicle Pill -> Language Flag */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           
+          {/* 0. Account Mode Switcher (Owner vs Visitor Mode) */}
+          {onToggleAccountMode && (
+            <button
+              onClick={() => {
+                sounds.playClick();
+                onToggleAccountMode();
+              }}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-2xl text-xs font-black flex items-center gap-1.5 border transition-all ${
+                accountMode === 'owner'
+                  ? 'bg-amber-50/90 text-amber-950 border-amber-300 shadow-xs hover:bg-amber-100'
+                  : 'bg-blue-50/90 text-blue-950 border-blue-300 shadow-xs hover:bg-blue-100'
+              }`}
+              title={
+                accountMode === 'owner'
+                  ? 'ჩემი ექაუნთი (2 მანქანა: Mercedes + BMW) • დააჭირეთ შემოსულის რეჟიმზე გადასართავად'
+                  : 'შემოსული სტუმრის ექაუნთი (1 მანქანა) • დააჭირეთ ჩემს ექაუნთზე დასაბრუნებლად'
+              }
+            >
+              <span className="text-sm">{accountMode === 'owner' ? '👑' : '👤'}</span>
+              <span className="hidden md:inline">
+                {accountMode === 'owner' ? 'ჩემი ექაუნთი' : 'სტუმრის ექაუნთი'}
+              </span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
+                accountMode === 'owner' ? 'bg-amber-200/80 text-amber-950 font-bold' : 'bg-blue-200/80 text-blue-950 font-bold'
+              }`}>
+                {accountMode === 'owner' ? 'Owner (2)' : 'Visitor (1)'}
+              </span>
+            </button>
+          )}
+
           {/* 1. OBD-II Status Indicator (Lights up green ONLY when connected; otherwise dimmed gray OFF) */}
           <button
             onClick={() => {

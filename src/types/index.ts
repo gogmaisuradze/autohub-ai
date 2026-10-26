@@ -50,13 +50,21 @@ export interface FineItem {
   location: string;
   violation_type: string;
   plate_number: string;
-  status: 'pending' | 'paid';
+  status: 'pending' | 'paid' | 'appealed';
   photo_url?: string;
   points_deducted?: number; // e.g. 10, 5, 15, 0
   points_status?: 'deducted' | 'video_exempt' | 'warning';
   points_explanation_ge?: string;
   article_law_ge?: string; // მაგ: "მუხლი 125, ნაწილი 1"
   payment_receipt?: FinePaymentReceipt;
+  camera_speed_kmh?: number;
+  allowed_speed_kmh?: number;
+  radar_id?: string;
+  appeal_status?: 'none' | 'under_review' | 'approved' | 'rejected';
+  appeal_date?: string;
+  appeal_reason?: string;
+  sms_sent?: boolean;
+  sms_sent_phone?: string;
 }
 
 export interface ParkingFineItem {

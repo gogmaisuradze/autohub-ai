@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
-import { VEHICLE_PRESETS } from './constants/vehicles';
+import { VEHICLE_PRESETS, OWNER_VEHICLES, VISITOR_INITIAL_VEHICLE } from './constants/vehicles';
 import { Navigation, TabType } from './components/Navigation';
 import { HomeHub } from './components/HomeHub';
 import { ObdModule } from './components/Diagnostics/ObdModule';
@@ -41,9 +41,10 @@ const INITIAL_VEHICLE: VehicleProfile = {
   horsepower: 208,
   last_oil_change_km: 73200,
   pti_expiry_date: '2027-02-15',
-  driver_license_points: 100,
-  driver_personal_number: '',
-  driver_name: ''
+  driver_license_points: 90,
+  driver_personal_number: '01024085432',
+  driver_name: 'გიორგი მაისურაძე',
+  driver_phone: '+995 599 12 34 56'
 };
 
 const INITIAL_DTC_CODES: DtcCode[] = [
@@ -87,14 +88,18 @@ const INITIAL_FINES: FineItem[] = [
     discounted_amount_gel: 40,
     discount_expires_days: 11,
     date: '2026-10-17 16:40',
-    location: 'თბილისი, მტკვრის მარჯვენა სანაპირო (კამერა #18)',
+    location: 'თბილისი, მტკვრის მარჯვენა სანაპირო (სექციური რადარი #18)',
     violation_type: 'სიჩქარის გადაჭარბება (+17 კმ/სთ)',
     plate_number: 'FR-282-EE',
     status: 'pending',
     points_deducted: 10,
     points_status: 'deducted',
     article_law_ge: 'ასკ მუხლი 125, ნაწილი 1',
-    points_explanation_ge: 'სიჩქარის გადაჭარბება 15-დან 40 კმ/სთ-მდე ითვალისწინებს 10 ქულის დაკლებას მართვის მოწმობაზე.'
+    points_explanation_ge: 'სიჩქარის გადაჭარბება 15-დან 40 კმ/სთ-მდე ითვალისწინებს 10 ქულის დაკლებას მართვის მოწმობაზე.',
+    camera_speed_kmh: 77,
+    allowed_speed_kmh: 60,
+    radar_id: 'MIA-RADAR-018-TB',
+    photo_url: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80'
   },
   {
     id: 'FIN-GEO-2026-8422',
@@ -103,14 +108,44 @@ const INITIAL_FINES: FineItem[] = [
     discounted_amount_gel: 80,
     discount_expires_days: 4,
     date: '2026-10-11 11:15',
-    location: 'თბილისი, ჭავჭავაძის გამზირი #37 (ავტობუსის ზოლი)',
+    location: 'თბილისი, ჭავჭავაძის გამზირი #37 (ავტობუსის ზოლი - ჭკვიანი კამერა #4)',
     violation_type: 'საზოგადოებრივი ტრანსპორტის ზოლში (Bus Lane) მოძრაობა',
     plate_number: 'FR-282-EE',
     status: 'pending',
     points_deducted: 0,
     points_status: 'video_exempt',
     article_law_ge: 'ასკ მუხლი 125, ნაწილი 8',
-    points_explanation_ge: 'ჭკვიანი ვიდეოკამერის ფიქსაცია: ქულა არ აკლდება ავტომატურად (0 ქულა), სანამ მძღოლის იდენტიფიცირება არ მოხდება.'
+    points_explanation_ge: 'ჭკვიანი ვიდეოკამერის ფიქსაცია: ქულა არ აკლდება ავტომატურად (0 ქულა), სანამ მძღოლის იდენტიფიცირება არ მოხდება.',
+    radar_id: 'MIA-BUSLANE-004-V',
+    photo_url: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'FIN-GEO-2026-7201',
+    ticket_number: 'ოქმი #PT-2026-720110',
+    amount_gel: 50,
+    discounted_amount_gel: 40,
+    discount_expires_days: 0,
+    date: '2026-09-28 14:22',
+    location: 'თბილისი, რუსთაველის გამზირი / კოსტავას კვეთა',
+    violation_type: 'შუქნიშნის ამკრძალავ (წითელ) სიგნალზე გავლა',
+    plate_number: 'FR-282-EE',
+    status: 'paid',
+    points_deducted: 0,
+    points_status: 'video_exempt',
+    article_law_ge: 'ასკ მუხლი 125, ნაწილი 3',
+    points_explanation_ge: 'ჯარიმა სრულად გადახდილია -20% შეღავათით.',
+    radar_id: 'MIA-SMARTCAM-009',
+    photo_url: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=800&q=80',
+    payment_receipt: {
+      txn_id: 'TXN-GE-2026-99381',
+      ticket_number: 'ოქმი #PT-2026-720110',
+      amount_paid: 40,
+      payment_date: '2026-09-29 10:14',
+      payment_method: 'VISA (4127 •••• •••• 8842)',
+      auth_code: 'AUTH-892173',
+      card_last4: '8842',
+      payer_name: 'გიორგი მაისურაძე'
+    }
   }
 ];
 
@@ -473,19 +508,69 @@ export const App: React.FC = () => {
   });
   const [aiInitialPrompt, setAiInitialPrompt] = useState<string | undefined>(undefined);
 
+  // Account Mode: 'owner' (ჩემი ექაუნთი - 2 მანქანა) | 'visitor' (სტუმრის რეჟიმი - 1 მანქანა, შევსებადი)
+  const [accountMode, setAccountMode] = useState<'owner' | 'visitor'>(() => {
+    try {
+      const saved = localStorage.getItem('autohub_account_mode') as 'owner' | 'visitor';
+      if (saved === 'owner' || saved === 'visitor') return saved;
+    } catch {}
+    return 'owner';
+  });
+
   // All Saved Vehicles in Garage
   const [allVehicles, setAllVehicles] = useState<VehicleProfile[]>(() => {
     try {
-      const saved = localStorage.getItem('autohub_garage_vehicles');
+      const mode = localStorage.getItem('autohub_account_mode') || 'owner';
+      const storageKey = mode === 'visitor' ? 'autohub_visitor_vehicles' : 'autohub_owner_vehicles';
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-      return VEHICLE_PRESETS;
+      return mode === 'visitor' ? [VISITOR_INITIAL_VEHICLE] : OWNER_VEHICLES;
     } catch {
-      return VEHICLE_PRESETS;
+      return OWNER_VEHICLES;
     }
   });
+
+  const handleToggleAccountMode = () => {
+    sounds.playClick();
+    const nextMode: 'owner' | 'visitor' = accountMode === 'owner' ? 'visitor' : 'owner';
+    setAccountMode(nextMode);
+    try {
+      localStorage.setItem('autohub_account_mode', nextMode);
+    } catch {}
+
+    if (nextMode === 'visitor') {
+      let visitorList: VehicleProfile[] = [];
+      try {
+        const saved = localStorage.getItem('autohub_visitor_vehicles');
+        if (saved) visitorList = JSON.parse(saved);
+      } catch {}
+      if (!visitorList || visitorList.length === 0) {
+        visitorList = [VISITOR_INITIAL_VEHICLE];
+      }
+      setAllVehicles(visitorList);
+      setVehicle(visitorList[0]);
+      try {
+        localStorage.setItem('autohub_vehicle_profile', JSON.stringify(visitorList[0]));
+      } catch {}
+    } else {
+      let ownerList: VehicleProfile[] = [];
+      try {
+        const saved = localStorage.getItem('autohub_owner_vehicles');
+        if (saved) ownerList = JSON.parse(saved);
+      } catch {}
+      if (!ownerList || ownerList.length === 0) {
+        ownerList = OWNER_VEHICLES;
+      }
+      setAllVehicles(ownerList);
+      setVehicle(ownerList[0]);
+      try {
+        localStorage.setItem('autohub_vehicle_profile', JSON.stringify(ownerList[0]));
+      } catch {}
+    }
+  };
 
   // Language State: 'ge' (default Georgian) | 'en'
   const [lang, setLang] = useState<'ge' | 'en'>(() => {
@@ -783,6 +868,8 @@ export const App: React.FC = () => {
           onSelectLang={handleSelectLang}
           isObdConnected={isObdConnected}
           onOpenObdModal={() => setIsObdAdapterModalOpen(true)}
+          accountMode={accountMode}
+          onToggleAccountMode={handleToggleAccountMode}
         />
 
         <Navigation
