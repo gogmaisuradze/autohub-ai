@@ -796,22 +796,6 @@ export const App: React.FC = () => {
 
       {/* 3. Main Content Container */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 sm:pb-24">
-        {/* Back to Home Hub Button (Matching Image 1 Neumorphic Circular Back Button) */}
-        {activeTab !== 'home' && (
-          <div className="mb-4 flex items-center gap-3">
-            <button
-              onClick={() => {
-                sounds.playClick();
-                handleTabChange('home');
-              }}
-              className="px-4 py-2 rounded-2xl neu-btn text-navy font-bold text-xs flex items-center gap-2 hover:text-gold"
-            >
-              <ArrowLeft className="w-4 h-4 text-gold" />
-              <span>← მთავარ მენიუში დაბრუნება</span>
-            </button>
-          </div>
-        )}
-
         {/* Home Hub View (Department Buttons on Screen) */}
         {activeTab === 'home' && (
           <HomeHub
