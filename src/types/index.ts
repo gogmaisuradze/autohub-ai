@@ -266,6 +266,7 @@ export interface VehicleProfile {
   driver_personal_number?: string; // პირადი ნომერი
   driver_name?: string; // მძღოლის სახელი და გვარი
   driver_phone?: string; // მძღოლის საკონტაქტო ნომერი
+  driver_photo_url?: string; // მძღოლის ფოტო / პასპორტის ავატარი
 }
 
 export interface ServiceBookingItem {
