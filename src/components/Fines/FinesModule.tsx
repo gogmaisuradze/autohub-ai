@@ -53,399 +53,95 @@ interface Props {
   onNavigateToAiClarification?: (initialPrompt?: string) => void;
 }
 
-export interface ChessAvatarPreset {
+export interface PhotoAvatarPreset {
   id: string;
-  piece: 'pawn' | 'knight' | 'bishop' | 'rook' | 'queen' | 'king';
-  color: 'white' | 'black';
   title: string;
   subtitle: string;
+  image: string;
   badge: string;
-  symbol: string;
 }
 
-export const CHESS_AVATARS: ChessAvatarPreset[] = [
-  // White Pieces (თეთრი ფიგურები)
-  { id: 'chess_pawn_white', piece: 'pawn', color: 'white', title: 'თეთრი პაიკი', subtitle: 'White Pawn', badge: '♙ PAWN', symbol: '♙' },
-  { id: 'chess_knight_white', piece: 'knight', color: 'white', title: 'თეთრი მხედარი', subtitle: 'White Knight', badge: '♘ KNIGHT', symbol: '♘' },
-  { id: 'chess_bishop_white', piece: 'bishop', color: 'white', title: 'თეთრი კუ', subtitle: 'White Bishop', badge: '♗ BISHOP', symbol: '♗' },
-  { id: 'chess_rook_white', piece: 'rook', color: 'white', title: 'თეთრი ეტლი', subtitle: 'White Rook', badge: '♖ ROOK', symbol: '♖' },
-  { id: 'chess_queen_white', piece: 'queen', color: 'white', title: 'თეთრი დედოფალი', subtitle: 'White Queen', badge: '♕ QUEEN', symbol: '♕' },
-  { id: 'chess_king_white', piece: 'king', color: 'white', title: 'თეთრი მეფე', subtitle: 'White King', badge: '♔ KING', symbol: '♔' },
-
-  // Black Pieces (შავი ფიგურები)
-  { id: 'chess_pawn_black', piece: 'pawn', color: 'black', title: 'შავი პაიკი', subtitle: 'Black Pawn', badge: '♟ PAWN', symbol: '♟' },
-  { id: 'chess_knight_black', piece: 'knight', color: 'black', title: 'შავი მხედარი', subtitle: 'Black Knight', badge: '♞ KNIGHT', symbol: '♞' },
-  { id: 'chess_bishop_black', piece: 'bishop', color: 'black', title: 'შავი კუ', subtitle: 'Black Bishop', badge: '♝ BISHOP', symbol: '♝' },
-  { id: 'chess_rook_black', piece: 'rook', color: 'black', title: 'შავი ეტლი', subtitle: 'Black Rook', badge: '♜ ROOK', symbol: '♜' },
-  { id: 'chess_queen_black', piece: 'queen', color: 'black', title: 'შავი დედოფალი', subtitle: 'Black Queen', badge: '♛ QUEEN', symbol: '♛' },
-  { id: 'chess_king_black', piece: 'king', color: 'black', title: 'შავი მეფე', subtitle: 'Black King', badge: '♚ KING', symbol: '♚' }
+export const PHOTO_AVATARS: PhotoAvatarPreset[] = [
+  {
+    id: 'avatar_lion',
+    title: 'ლომი კლდეზე',
+    subtitle: 'Majestic Lion',
+    image: '/avatars/lion.png',
+    badge: 'LION'
+  },
+  {
+    id: 'avatar_shark',
+    title: 'ოკეანის ზვიგენი',
+    subtitle: 'Ocean Shark',
+    image: '/avatars/shark.png',
+    badge: 'SHARK'
+  },
+  {
+    id: 'avatar_sloth',
+    title: 'ზენი ზარმაცა',
+    subtitle: 'Zen Sloth',
+    image: '/avatars/sloth.png',
+    badge: 'ZEN SLOTH'
+  },
+  {
+    id: 'avatar_dog',
+    title: 'Good Vibes ძაღლი',
+    subtitle: 'Music Lover Dog',
+    image: '/avatars/dog.png',
+    badge: 'GOOD VIBES'
+  },
+  {
+    id: 'avatar_cat',
+    title: 'ყავის კატა',
+    subtitle: 'Chill Coffee Cat',
+    image: '/avatars/cat.png',
+    badge: 'COFFEE CAT'
+  }
 ];
 
-export const renderChessPiece = (
-  piece: 'pawn' | 'knight' | 'bishop' | 'rook' | 'queen' | 'king',
-  color: 'white' | 'black',
-  className = "w-full h-full",
-  showBadge = true
-) => {
-  const isWhite = color === 'white';
-  const gradId = `chess-grad-${piece}-${color}`;
+export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full", showBadge = true) => {
+  // Find matching preset by id or image URL
+  const matchedPreset = PHOTO_AVATARS.find(p => p.id === photoUrl || p.image === photoUrl);
 
-  const badgeMap: Record<string, string> = {
-    pawn: isWhite ? '♙ PAWN' : '♟ PAWN',
-    knight: isWhite ? '♘ KNIGHT' : '♞ KNIGHT',
-    bishop: isWhite ? '♗ BISHOP' : '♝ BISHOP',
-    rook: isWhite ? '♖ ROOK' : '♜ ROOK',
-    queen: isWhite ? '♕ QUEEN' : '♛ QUEEN',
-    king: isWhite ? '♔ KING' : '♚ KING',
-  };
+  const imgSrc = matchedPreset
+    ? matchedPreset.image
+    : photoUrl && (photoUrl.startsWith('http') || photoUrl.startsWith('data:') || photoUrl.startsWith('/'))
+    ? photoUrl
+    : '/avatars/lion.png'; // Default to the first majestic lion photo
+
+  const badgeText = matchedPreset
+    ? matchedPreset.badge
+    : (photoUrl && (photoUrl.startsWith('data:') || photoUrl.startsWith('http')))
+    ? 'PHOTO ID'
+    : 'LION';
 
   return (
-    <div className={`relative ${className} ${
-      isWhite
-        ? 'bg-gradient-to-b from-slate-900 via-navy to-slate-950'
-        : 'bg-gradient-to-b from-slate-950 via-slate-900 to-black'
-    } flex flex-col items-center justify-center overflow-hidden select-none`}>
-      {/* Background Radial Halo & Chess Grid Lines */}
-      <svg className="absolute inset-0 w-full h-full opacity-25 pointer-events-none" viewBox="0 0 100 120" preserveAspectRatio="none">
-        <defs>
-          <radialGradient id={`bg-radial-${color}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={isWhite ? '#FFFFFF' : '#C5A059'} stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <rect width="100" height="120" fill={`url(#bg-radial-${color})`} />
-        <line x1="0" y1="20" x2="100" y2="120" stroke={isWhite ? '#94A3B8' : '#C5A059'} strokeWidth="0.5" strokeDasharray="3 3" />
-        <line x1="100" y1="20" x2="0" y2="120" stroke={isWhite ? '#94A3B8' : '#C5A059'} strokeWidth="0.5" strokeDasharray="3 3" />
-        <circle cx="50" cy="55" r="44" stroke={isWhite ? '#E2E8F0' : '#C5A059'} strokeWidth="0.6" strokeDasharray="2 4" fill="none" />
+    <div className={`relative ${className} overflow-hidden bg-slate-950 flex items-center justify-center select-none group`}>
+      <img
+        src={imgSrc}
+        alt={matchedPreset ? matchedPreset.title : "Driver Avatar"}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        loading="lazy"
+      />
+      {/* Security holographic sheen overlay */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
+      
+      {/* Biometric ID corner target brackets */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none p-1.5 text-gold/70" viewBox="0 0 100 120">
+        <path d="M 6 16 L 6 6 L 16 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M 94 16 L 94 6 L 84 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M 6 104 L 6 114 L 16 114" fill="none" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M 94 104 L 94 114 L 84 114" fill="none" stroke="currentColor" strokeWidth="1.2" />
       </svg>
 
-      {/* Main Chess Piece SVG */}
-      <svg
-        className="w-24 sm:w-28 h-28 sm:h-32 relative z-10"
-        viewBox="0 0 100 120"
-        style={{
-          filter: isWhite
-            ? 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)) drop-shadow(0 4px 6px rgba(0,0,0,0.6))'
-            : 'drop-shadow(0 0 8px rgba(197, 160, 89, 0.55)) drop-shadow(0 4px 6px rgba(0,0,0,0.9))'
-        }}
-      >
-        <defs>
-          <linearGradient id={gradId} x1="20%" y1="0%" x2="80%" y2="100%">
-            {isWhite ? (
-              <>
-                <stop offset="0%" stopColor="#FFFFFF" />
-                <stop offset="45%" stopColor="#F8FAFC" />
-                <stop offset="85%" stopColor="#E2E8F0" />
-                <stop offset="100%" stopColor="#CBD5E1" />
-              </>
-            ) : (
-              <>
-                <stop offset="0%" stopColor="#334155" />
-                <stop offset="35%" stopColor="#1E293B" />
-                <stop offset="75%" stopColor="#0F172A" />
-                <stop offset="100%" stopColor="#020617" />
-              </>
-            )}
-          </linearGradient>
-        </defs>
-
-        {/* 1. PAWN (პაიკი) */}
-        {piece === 'pawn' && (
-          <g
-            fill={`url(#${gradId})`}
-            stroke={isWhite ? '#0F172A' : '#C5A059'}
-            strokeWidth={isWhite ? '1.6' : '1.8'}
-            strokeLinejoin="round"
-          >
-            <circle cx="50" cy="34" r="14" />
-            <path
-              d="M 44 26 C 48 23 54 23 58 26"
-              fill="none"
-              stroke={isWhite ? '#94A3B8' : '#FDE047'}
-              strokeWidth="1.2"
-              strokeLinecap="round"
-            />
-            <ellipse cx="50" cy="49" rx="11" ry="3" />
-            <path d="M 43 50 C 42 66 36 78 30 86 L 70 86 C 64 78 58 66 57 50 Z" />
-            <path
-              d="M 50 54 L 50 82"
-              fill="none"
-              stroke={isWhite ? '#CBD5E1' : '#EAB308'}
-              strokeWidth="1"
-              strokeDasharray="2 3"
-            />
-            <path d="M 26 86 L 74 86 L 77 92 L 23 92 Z" />
-            <path d="M 19 92 L 81 92 L 83 98 L 17 98 Z" />
-            <rect x="14" y="98" width="72" height="6" rx="2" />
-          </g>
-        )}
-
-        {/* 2. KNIGHT (მხედარი / ცხენი) */}
-        {piece === 'knight' && (
-          <g
-            fill={`url(#${gradId})`}
-            stroke={isWhite ? '#0F172A' : '#C5A059'}
-            strokeWidth={isWhite ? '1.6' : '1.8'}
-            strokeLinejoin="round"
-          >
-            <path d="M 48 20 L 44 28 L 38 24 C 32 30 22 42 22 52 C 22 58 26 62 34 60 L 44 58 C 44 68 38 78 28 86 L 72 86 C 74 74 72 58 68 46 C 64 36 56 24 48 20 Z" />
-            <circle
-              cx="38"
-              cy="38"
-              r="2.2"
-              fill={isWhite ? '#0F172A' : '#FDE047'}
-              stroke="none"
-            />
-            <circle
-              cx="28"
-              cy="53"
-              r="1.5"
-              fill={isWhite ? '#94A3B8' : '#C5A059'}
-              stroke="none"
-            />
-            <path
-              d="M 25 57 L 31 57"
-              fill="none"
-              stroke={isWhite ? '#0F172A' : '#C5A059'}
-              strokeWidth="1.2"
-              strokeLinecap="round"
-            />
-            <path
-              d="M 64 40 L 56 44 M 68 52 L 60 56 M 70 66 L 62 70"
-              fill="none"
-              stroke={isWhite ? '#94A3B8' : '#FDE047'}
-              strokeWidth="1.3"
-              strokeLinecap="round"
-            />
-            <path
-              d="M 44 58 C 48 50 48 40 42 34"
-              fill="none"
-              stroke={isWhite ? '#CBD5E1' : '#EAB308'}
-              strokeWidth="1"
-            />
-            <path d="M 24 86 L 76 86 L 79 92 L 21 92 Z" />
-            <path d="M 18 92 L 82 92 L 84 98 L 16 98 Z" />
-            <rect x="13" y="98" width="74" height="6" rx="2" />
-          </g>
-        )}
-
-        {/* 3. BISHOP (კუ / ოფიცერი) */}
-        {piece === 'bishop' && (
-          <g
-            fill={`url(#${gradId})`}
-            stroke={isWhite ? '#0F172A' : '#C5A059'}
-            strokeWidth={isWhite ? '1.6' : '1.8'}
-            strokeLinejoin="round"
-          >
-            <circle cx="50" cy="18" r="3.5" />
-            <path d="M 50 22 C 34 22 32 46 38 56 C 42 60 58 60 62 56 C 68 46 66 22 50 22 Z" />
-            <path
-              d="M 50 28 L 60 42 L 56 44 L 46 30 Z"
-              fill={isWhite ? '#0F172A' : '#FDE047'}
-              stroke="none"
-            />
-            <ellipse cx="50" cy="58" rx="13" ry="3.5" />
-            <path d="M 42 59 C 41 72 34 80 28 86 L 72 86 C 66 80 59 72 58 59 Z" />
-            <line
-              x1="50"
-              y1="62"
-              x2="50"
-              y2="84"
-              stroke={isWhite ? '#CBD5E1' : '#EAB308'}
-              strokeWidth="1"
-              strokeDasharray="2 3"
-            />
-            <path d="M 24 86 L 76 86 L 79 92 L 21 92 Z" />
-            <path d="M 18 92 L 82 92 L 84 98 L 16 98 Z" />
-            <rect x="13" y="98" width="74" height="6" rx="2" />
-          </g>
-        )}
-
-        {/* 4. ROOK (ეტლი) */}
-        {piece === 'rook' && (
-          <g
-            fill={`url(#${gradId})`}
-            stroke={isWhite ? '#0F172A' : '#C5A059'}
-            strokeWidth={isWhite ? '1.6' : '1.8'}
-            strokeLinejoin="round"
-          >
-            <rect x="27" y="24" width="10" height="12" rx="1" />
-            <rect x="45" y="24" width="10" height="12" rx="1" />
-            <rect x="63" y="24" width="10" height="12" rx="1" />
-            <path d="M 25 36 L 75 36 L 71 44 L 29 44 Z" />
-            <path d="M 32 44 L 30 86 L 70 86 L 68 44 Z" />
-            <rect
-              x="48"
-              y="54"
-              width="4"
-              height="16"
-              rx="1.5"
-              fill={isWhite ? '#0F172A' : '#FDE047'}
-              stroke="none"
-            />
-            <line
-              x1="31"
-              y1="64"
-              x2="45"
-              y2="64"
-              stroke={isWhite ? '#CBD5E1' : '#C5A059'}
-              strokeWidth="1"
-            />
-            <line
-              x1="55"
-              y1="64"
-              x2="69"
-              y2="64"
-              stroke={isWhite ? '#CBD5E1' : '#C5A059'}
-              strokeWidth="1"
-            />
-            <path d="M 25 86 L 75 86 L 78 92 L 22 92 Z" />
-            <path d="M 18 92 L 82 92 L 84 98 L 16 98 Z" />
-            <rect x="13" y="98" width="74" height="6" rx="2" />
-          </g>
-        )}
-
-        {/* 5. QUEEN (დედოფალი / ლაზიერი) */}
-        {piece === 'queen' && (
-          <g
-            fill={`url(#${gradId})`}
-            stroke={isWhite ? '#0F172A' : '#C5A059'}
-            strokeWidth={isWhite ? '1.6' : '1.8'}
-            strokeLinejoin="round"
-          >
-            <circle cx="28" cy="24" r="2.8" />
-            <circle cx="39" cy="20" r="2.8" />
-            <circle cx="50" cy="17" r="3.4" />
-            <circle cx="61" cy="20" r="2.8" />
-            <circle cx="72" cy="24" r="2.8" />
-            <path d="M 28 26 L 33 42 L 39 22 L 44 42 L 50 20 L 56 42 L 61 22 L 67 42 L 72 26 L 72 44 C 72 48 28 48 28 44 Z" />
-            <ellipse cx="50" cy="46" rx="18" ry="4" />
-            <path d="M 40 48 C 38 64 32 76 26 86 L 74 86 C 68 76 62 64 60 48 Z" />
-            <path
-              d="M 44 54 C 47 62 53 62 56 54"
-              fill="none"
-              stroke={isWhite ? '#CBD5E1' : '#FDE047'}
-              strokeWidth="1.2"
-            />
-            <path
-              d="M 41 68 C 46 76 54 76 59 68"
-              fill="none"
-              stroke={isWhite ? '#CBD5E1' : '#FDE047'}
-              strokeWidth="1.2"
-            />
-            <path d="M 22 86 L 78 86 L 81 92 L 19 92 Z" />
-            <path d="M 17 92 L 83 92 L 85 98 L 15 98 Z" />
-            <rect x="12" y="98" width="76" height="6" rx="2" />
-          </g>
-        )}
-
-        {/* 6. KING (მეფე) */}
-        {piece === 'king' && (
-          <g
-            fill={`url(#${gradId})`}
-            stroke={isWhite ? '#0F172A' : '#C5A059'}
-            strokeWidth={isWhite ? '1.6' : '1.8'}
-            strokeLinejoin="round"
-          >
-            <path
-              d="M 50 11 L 50 24 M 45 16 L 55 16"
-              fill="none"
-              stroke={isWhite ? '#0F172A' : '#FDE047'}
-              strokeWidth="2.4"
-              strokeLinecap="square"
-            />
-            <path d="M 50 24 C 32 24 30 46 30 48 L 70 48 C 70 46 68 24 50 24 Z" />
-            <path
-              d="M 42 28 C 46 38 46 44 45 48 M 58 28 C 54 38 54 44 55 48"
-              fill="none"
-              stroke={isWhite ? '#94A3B8' : '#FDE047'}
-              strokeWidth="1.3"
-            />
-            <circle
-              cx="50"
-              cy="36"
-              r="2.5"
-              fill={isWhite ? '#C5A059' : '#EF4444'}
-              stroke="none"
-            />
-            <ellipse cx="50" cy="49" rx="20" ry="4.5" />
-            <path d="M 38 51 C 36 68 30 78 24 86 L 76 86 C 70 78 64 68 62 51 Z" />
-            <path
-              d="M 42 53 L 50 68 L 58 53"
-              fill="none"
-              stroke={isWhite ? '#CBD5E1' : '#FDE047'}
-              strokeWidth="1.3"
-            />
-            <path d="M 21 86 L 79 86 L 82 92 L 18 92 Z" />
-            <path d="M 16 92 L 84 92 L 86 98 L 14 98 Z" />
-            <rect x="11" y="98" width="78" height="6" rx="2" />
-          </g>
-        )}
-      </svg>
-
-      {/* Security Corner Marks & Piece Badge */}
+      {/* Security Hologram Badge */}
       {showBadge && (
-        <div className={`absolute top-2 right-2 text-[8px] font-mono font-black px-1.5 py-0.5 rounded shadow-xs z-20 ${
-          isWhite
-            ? 'bg-white text-navy border border-slate-300'
-            : 'bg-navy/95 text-gold border border-gold/40'
-        }`}>
-          {badgeMap[piece]}
+        <div className="absolute top-2 right-2 text-[8px] font-mono font-black bg-navy/90 text-gold border border-gold/40 px-1.5 py-0.5 rounded shadow-xs z-20">
+          {badgeText}
         </div>
       )}
     </div>
   );
-};
-
-export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full", showBadge = true) => {
-  // If it's a URL starting with http, https, or data:image (Custom Uploaded Photo)
-  if (photoUrl && (photoUrl.startsWith('http') || photoUrl.startsWith('data:'))) {
-    return (
-      <div className={`relative ${className} overflow-hidden bg-slate-950 flex items-center justify-center`}>
-        <img
-          src={photoUrl}
-          alt="Driver Biometric Photo"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
-        <svg className="absolute inset-0 w-full h-full pointer-events-none p-1.5 text-gold/70" viewBox="0 0 100 120">
-          <path d="M 6 16 L 6 6 L 16 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
-          <path d="M 94 16 L 94 6 L 84 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
-          <path d="M 6 104 L 6 114 L 16 114" fill="none" stroke="currentColor" strokeWidth="1.2" />
-          <path d="M 94 104 L 94 114 L 84 114" fill="none" stroke="currentColor" strokeWidth="1.2" />
-        </svg>
-        {showBadge && (
-          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-gold border border-gold/40 px-1.5 py-0.5 rounded shadow-xs z-20">
-            PHOTO ID
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Check if it's a chess preset (e.g. chess_pawn_white, chess_king_black, etc.)
-  if (photoUrl && photoUrl.startsWith('chess_')) {
-    const parts = photoUrl.split('_');
-    const piece = parts[1] as 'pawn' | 'knight' | 'bishop' | 'rook' | 'queen' | 'king';
-    const color = (parts[2] || 'white') as 'white' | 'black';
-    if (['pawn', 'knight', 'bishop', 'rook', 'queen', 'king'].includes(piece)) {
-      return renderChessPiece(piece, color, className, showBadge);
-    }
-  }
-
-  // Graceful legacy mappings to chess pieces:
-  if (photoUrl === 'car' || photoUrl === 'car_mercedes' || photoUrl === 'contour_suv') {
-    return renderChessPiece('rook', 'white', className, showBadge);
-  }
-  if (photoUrl === 'car_sport' || photoUrl === 'car_supercar' || photoUrl === 'contour_sportscar' || photoUrl === 'contour_wheel') {
-    return renderChessPiece('knight', 'black', className, showBadge);
-  }
-  if (photoUrl === 'avatar_racer' || photoUrl === 'contour_helmet') {
-    return renderChessPiece('queen', 'white', className, showBadge);
-  }
-
-  // Default: White King (♙/♔ თეთრი მეფე)
-  return renderChessPiece('king', 'white', className, showBadge);
 };
 
 export const FinesModule: React.FC<Props> = ({
@@ -546,20 +242,12 @@ export const FinesModule: React.FC<Props> = ({
     }, 1100);
   };
 
-  // Driver Photo & Chess Avatar Modal State
+  // Driver Photo Avatar Modal State
   const photoInputRef = React.useRef<HTMLInputElement>(null);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
-  const [chessColorTab, setChessColorTab] = useState<'white' | 'black'>(() => {
-    return vehicle.driver_photo_url && vehicle.driver_photo_url.includes('_black') ? 'black' : 'white';
-  });
 
   const handleTriggerPhotoUpload = () => {
     sounds.playClick();
-    if (vehicle.driver_photo_url && vehicle.driver_photo_url.includes('_black')) {
-      setChessColorTab('black');
-    } else if (vehicle.driver_photo_url && vehicle.driver_photo_url.includes('_white')) {
-      setChessColorTab('white');
-    }
     setIsAvatarPickerOpen(true);
   };
 
@@ -946,7 +634,7 @@ export const FinesModule: React.FC<Props> = ({
       isFilled: true, // Silhouette, avatar, or car photo is always accepted!
       value: vehicle.driver_photo_url && (vehicle.driver_photo_url.startsWith('data:') || vehicle.driver_photo_url.startsWith('http'))
         ? 'პირადი ფოტო ✓'
-        : 'ჭადრაკის ფიგურა ✓',
+        : 'ავატარი ✓',
       onAction: () => {
         sounds.playClick();
         setIsAvatarPickerOpen(true);
@@ -2753,54 +2441,24 @@ export const FinesModule: React.FC<Props> = ({
               </button>
             </div>
 
-            {/* Section 1: Chess Piece Avatars (Pawn to King with White/Black Color Selector) */}
+            {/* Section 1: 5 Photo Avatars */}
             <div>
               <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
                 <span className="text-xs font-black uppercase text-slate-800 tracking-wider flex items-center gap-1.5">
-                  <Crown size={15} className="text-gold" />
-                  <span>ჭადრაკის ფიგურები (პაიკიდან მეფემდე)</span>
+                  <Sparkles size={15} className="text-gold" />
+                  <span>აირჩიეთ ავატარი (5 ფოტო)</span>
                 </span>
-
-                {/* Color Selector Pills: White vs Black */}
-                <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setChessColorTab('white');
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-                      chessColorTab === 'white'
-                        ? 'bg-white text-navy shadow-xs border border-slate-200'
-                        : 'text-slate-500 hover:text-navy'
-                    }`}
-                  >
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-100 border border-slate-400" />
-                    <span>თეთრი</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setChessColorTab('black');
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-                      chessColorTab === 'black'
-                        ? 'bg-slate-900 text-gold shadow-xs border border-slate-700'
-                        : 'text-slate-500 hover:text-navy'
-                    }`}
-                  >
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-950 border border-gold" />
-                    <span>შავი</span>
-                  </button>
-                </div>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {PHOTO_AVATARS.length} ავატარი
+                </span>
               </div>
 
-              {/* Grid of 6 Pieces (Pawn, Knight, Bishop, Rook, Queen, King) */}
-              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                {CHESS_AVATARS.filter(a => a.color === chessColorTab).map((preset) => {
+              {/* Responsive Grid of 5 Photo Avatars */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {PHOTO_AVATARS.map((preset) => {
                   const isCurrent = vehicle.driver_photo_url === preset.id ||
-                    (!vehicle.driver_photo_url && preset.id === 'chess_king_white');
+                    vehicle.driver_photo_url === preset.image ||
+                    (!vehicle.driver_photo_url && preset.id === 'avatar_lion');
 
                   return (
                     <button
@@ -2813,11 +2471,15 @@ export const FinesModule: React.FC<Props> = ({
                           : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
-                      {/* Chess Piece Preview Box */}
-                      <div className="w-full h-20 sm:h-22 rounded-xl overflow-hidden shadow-xs border border-slate-700 bg-slate-950 relative">
-                        {renderChessPiece(preset.piece, preset.color, "w-full h-full", false)}
+                      {/* Avatar Photo Preview */}
+                      <div className="w-full h-24 sm:h-28 rounded-xl overflow-hidden shadow-xs border border-slate-700 bg-slate-950 relative">
+                        <img
+                          src={preset.image}
+                          alt={preset.title}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
                         <span className="absolute bottom-1 left-1 px-1.5 py-0.2 rounded text-[8px] font-mono font-black bg-navy/90 text-gold border border-gold/30">
-                          {preset.symbol} {preset.piece.toUpperCase()}
+                          {preset.badge}
                         </span>
                       </div>
 
@@ -2853,7 +2515,7 @@ export const FinesModule: React.FC<Props> = ({
               {/* If user currently has a custom base64 / external image */}
               {vehicle.driver_photo_url &&
                (vehicle.driver_photo_url.startsWith('data:') || vehicle.driver_photo_url.startsWith('http')) &&
-               !CHESS_AVATARS.some(p => p.id === vehicle.driver_photo_url) ? (
+               !PHOTO_AVATARS.some(p => p.id === vehicle.driver_photo_url || p.image === vehicle.driver_photo_url) ? (
                 <div className="p-3 rounded-2xl border-2 border-emerald-300 bg-emerald-50/50 flex items-center gap-3">
                   <div className="w-12 h-14 rounded-xl overflow-hidden border border-emerald-400 shadow-xs shrink-0 bg-slate-900">
                     <img
@@ -2882,10 +2544,10 @@ export const FinesModule: React.FC<Props> = ({
                       type="button"
                       onClick={() => {
                         sounds.playClick();
-                        onUpdateVehicle({ driver_photo_url: 'chess_king_white' });
+                        onUpdateVehicle({ driver_photo_url: 'avatar_lion' });
                       }}
                       className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                      title="ფიგურაზე დაბრუნება"
+                      title="ლომზე დაბრუნება"
                     >
                       <Trash2 size={15} />
                     </button>
