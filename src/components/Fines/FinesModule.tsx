@@ -56,137 +56,183 @@ export interface AvatarPreset {
   id: string;
   title: string;
   subtitle: string;
-  type: 'avatar' | 'car';
+  type: 'driver' | 'car' | 'gear';
+  badge: string;
 }
 
 export const AVATAR_PRESETS: AvatarPreset[] = [
   {
-    id: 'silhouette',
-    title: 'ბიომეტრიული',
-    subtitle: 'კლასიკური სილუეტი',
-    type: 'avatar'
+    id: 'contour_biometric',
+    title: 'ბიომეტრიული სკანი',
+    subtitle: 'Face Scan Mesh',
+    type: 'driver',
+    badge: 'BIO SCAN'
   },
   {
-    id: 'avatar_racer',
-    title: 'მრბოლელი',
-    subtitle: 'Motorsport Track',
-    type: 'avatar'
+    id: 'contour_sportscar',
+    title: 'სპორტული ავტო',
+    subtitle: 'GT Coupe Wireframe',
+    type: 'car',
+    badge: 'GT WIRE'
   },
   {
-    id: 'avatar_business',
-    title: 'ბიზნეს მძღოლი',
-    subtitle: 'Executive Driver',
-    type: 'avatar'
+    id: 'contour_suv',
+    title: 'GLA / SUV კონტური',
+    subtitle: 'Luxury SUV Outline',
+    type: 'car',
+    badge: 'SUV HUD'
   },
   {
-    id: 'car_mercedes',
-    title: 'Mercedes GLA',
-    subtitle: 'Luxury SUV',
-    type: 'car'
+    id: 'contour_helmet',
+    title: 'მრბოლელის ჩაფხუტი',
+    subtitle: 'Racer Helmet Line',
+    type: 'gear',
+    badge: 'RACER'
   },
   {
-    id: 'car_sport',
-    title: 'M-Sport სედანი',
-    subtitle: 'Dynamic Sedan',
-    type: 'car'
+    id: 'contour_wheel',
+    title: 'სპორტული საჭე',
+    subtitle: 'Sport Wheel & HUD',
+    type: 'gear',
+    badge: 'M-WHEEL'
   },
   {
-    id: 'car_supercar',
-    title: 'Stealth GT',
-    subtitle: 'GT Performance',
-    type: 'car'
+    id: 'contour_cyber',
+    title: 'პოლიგონალური მძღოლი',
+    subtitle: '3D Polygonal Mesh',
+    type: 'driver',
+    badge: '3D MESH'
   }
 ];
 
 export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full", showBadge = true) => {
-  // If it's a URL starting with http, https, or data:image
+  // If it's a URL starting with http, https, or data:image (Custom Uploaded Photo)
   if (photoUrl && (photoUrl.startsWith('http') || photoUrl.startsWith('data:'))) {
     return (
-      <div className={`relative ${className} overflow-hidden bg-slate-900`}>
+      <div className={`relative ${className} overflow-hidden bg-slate-950 flex items-center justify-center`}>
         <img
           src={photoUrl}
-          alt="Driver Avatar"
+          alt="Driver Biometric Photo"
           className="w-full h-full object-cover"
         />
+        {/* Hologram security overlay and biometric corner brackets */}
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
-      </div>
-    );
-  }
-
-  // Predefined avatar IDs:
-  if (photoUrl === 'car_mercedes' || photoUrl === 'car') {
-    return (
-      <div className={`relative ${className} overflow-hidden bg-slate-900`}>
-        <img
-          src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=600&q=80"
-          alt="Mercedes-Benz"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-        {showBadge && (
-          <div className="absolute bottom-1.5 inset-x-1 text-center">
-            <span className="text-[8px] font-black text-gold font-mono uppercase bg-navy/90 px-1.5 py-0.5 rounded shadow-xs">
-              MERCEDES
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (photoUrl === 'car_sport') {
-    return (
-      <div className={`relative ${className} overflow-hidden bg-slate-900`}>
-        <img
-          src="https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=600&q=80"
-          alt="M-Sport Sedan"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-        {showBadge && (
-          <div className="absolute bottom-1.5 inset-x-1 text-center">
-            <span className="text-[8px] font-black text-gold font-mono uppercase bg-navy/90 px-1.5 py-0.5 rounded shadow-xs">
-              M-SPORT
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (photoUrl === 'car_supercar') {
-    return (
-      <div className={`relative ${className} overflow-hidden bg-slate-900`}>
-        <img
-          src="https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=600&q=80"
-          alt="GT Coupe"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-        {showBadge && (
-          <div className="absolute bottom-1.5 inset-x-1 text-center">
-            <span className="text-[8px] font-black text-gold font-mono uppercase bg-navy/90 px-1.5 py-0.5 rounded shadow-xs">
-              PERFORMANCE
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (photoUrl === 'avatar_racer') {
-    return (
-      <div className={`relative ${className} bg-gradient-to-b from-amber-950/60 via-slate-900 to-slate-950 flex flex-col items-center justify-end overflow-hidden`}>
-        <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 100 120" preserveAspectRatio="none">
-          <circle cx="50" cy="50" r="40" stroke="#C5A059" strokeWidth="1" fill="none" strokeDasharray="4 2" />
-          <line x1="10" y1="50" x2="90" y2="50" stroke="#C5A059" strokeWidth="0.5" />
-        </svg>
-        <svg className="w-20 sm:w-24 h-26 sm:h-30 text-gold/90 relative z-10" viewBox="0 0 100 120" fill="currentColor">
-          <path d="M50 20 C32 20 22 34 22 52 C22 62 26 70 34 74 C34 78 30 84 20 105 L80 105 C70 84 66 78 66 74 C74 70 78 62 78 52 C78 34 68 20 50 20 Z" />
-          <path d="M30 46 C34 40 66 40 70 46 C72 52 68 58 50 58 C32 58 28 52 30 46 Z" fill="#001F3F" />
+        <svg className="absolute inset-0 w-full h-full pointer-events-none p-1.5 text-gold/70" viewBox="0 0 100 120">
+          <path d="M 6 16 L 6 6 L 16 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M 94 16 L 94 6 L 84 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M 6 104 L 6 114 L 16 114" fill="none" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M 94 104 L 94 114 L 84 114" fill="none" stroke="currentColor" strokeWidth="1.2" />
         </svg>
         {showBadge && (
-          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-amber-500/20 text-gold border border-gold/40 px-1.5 py-0.5 rounded shadow-xs z-10">
+          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-gold border border-gold/40 px-1.5 py-0.5 rounded shadow-xs z-20">
+            PHOTO ID
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 1. Sportscar Wireframe Contour
+  if (photoUrl === 'contour_sportscar' || photoUrl === 'car_sport' || photoUrl === 'car_supercar') {
+    return (
+      <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
+        {/* Blueprint coordinate grid */}
+        <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 100 120" preserveAspectRatio="none">
+          <line x1="50" y1="0" x2="50" y2="120" stroke="#FACC15" strokeWidth="0.5" strokeDasharray="2 3" />
+          <line x1="0" y1="80" x2="100" y2="80" stroke="#FACC15" strokeWidth="0.5" strokeDasharray="2 3" />
+        </svg>
+        {/* Sportscar Front Contour */}
+        <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.45))' }}>
+          <path d="M 32 36 C 40 28 60 28 68 36 L 76 56 L 24 56 Z" stroke="#FACC15" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 40 36 L 46 56" stroke="#94A3B8" strokeWidth="0.8" strokeDasharray="2 2" />
+          <path d="M 60 36 L 54 56" stroke="#94A3B8" strokeWidth="0.8" strokeDasharray="2 2" />
+          <path d="M 24 56 C 22 66 22 74 20 84 L 80 84 C 78 74 78 66 76 56" stroke="#FACC15" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 36 56 L 38 78" stroke="#38BDF8" strokeWidth="1.2" strokeLinecap="round" />
+          <path d="M 64 56 L 62 78" stroke="#38BDF8" strokeWidth="1.2" strokeLinecap="round" />
+          <path d="M 23 72 L 35 74 L 32 79 L 22 76 Z" stroke="#38BDF8" strokeWidth="1.4" fill="rgba(56, 189, 248, 0.15)" strokeLinejoin="round" />
+          <path d="M 77 72 L 65 74 L 68 79 L 78 76 Z" stroke="#38BDF8" strokeWidth="1.4" fill="rgba(56, 189, 248, 0.15)" strokeLinejoin="round" />
+          <rect x="40" y="74" width="20" height="9" rx="3" stroke="#FACC15" strokeWidth="1.3" />
+          <line x1="50" y1="74" x2="50" y2="83" stroke="#FACC15" strokeWidth="1" />
+          <path d="M 16 88 L 22 84 L 78 84 L 84 88 L 78 94 L 22 94 Z" stroke="#E2E8F0" strokeWidth="1.4" strokeLinejoin="round" />
+          <line x1="28" y1="88" x2="36" y2="88" stroke="#38BDF8" strokeWidth="1.2" />
+          <line x1="64" y1="88" x2="72" y2="88" stroke="#38BDF8" strokeWidth="1.2" />
+          <ellipse cx="19" cy="88" rx="4" ry="7" stroke="#94A3B8" strokeWidth="1.2" />
+          <ellipse cx="81" cy="88" rx="4" ry="7" stroke="#94A3B8" strokeWidth="1.2" />
+          <path d="M 8 106 L 35 95" stroke="#FACC15" strokeWidth="1" strokeDasharray="3 3" />
+          <path d="M 92 106 L 65 95" stroke="#FACC15" strokeWidth="1" strokeDasharray="3 3" />
+        </svg>
+        {showBadge && (
+          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-yellow-400 border border-yellow-400/40 px-1.5 py-0.5 rounded shadow-xs z-20">
+            GT WIRE
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 2. SUV / GLA Contour
+  if (photoUrl === 'contour_suv' || photoUrl === 'car_mercedes' || photoUrl === 'car') {
+    return (
+      <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
+        {/* Modern SUV Stance Contour */}
+        <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(197, 160, 89, 0.45))' }}>
+          <line x1="28" y1="26" x2="38" y2="26" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
+          <line x1="62" y1="26" x2="72" y2="26" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M 28 32 C 38 28 62 28 72 32 L 80 54 L 20 54 Z" stroke="#C5A059" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 20 54 L 16 66 L 16 80 L 84 80 L 84 66 L 80 54" stroke="#C5A059" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 28 54 L 28 76" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="2 2" />
+          <path d="M 72 54 L 72 76" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="2 2" />
+          <circle cx="50" cy="69" r="6.5" stroke="#C5A059" strokeWidth="1.4" fill="rgba(197, 160, 89, 0.1)" />
+          <path d="M 50 63 L 50 75" stroke="#C5A059" strokeWidth="1.2" />
+          <path d="M 45 66 L 55 72" stroke="#C5A059" strokeWidth="1.2" />
+          <path d="M 45 72 L 55 66" stroke="#C5A059" strokeWidth="1.2" />
+          <path d="M 32 67 L 42 67" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M 58 67 L 68 67" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M 34 71 L 42 71" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M 58 71 L 66 71" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M 18 64 L 28 64 L 27 70 L 17 68 Z" stroke="#38BDF8" strokeWidth="1.4" fill="rgba(56, 189, 248, 0.2)" strokeLinejoin="round" />
+          <path d="M 82 64 L 72 64 L 73 70 L 83 68 Z" stroke="#38BDF8" strokeWidth="1.4" fill="rgba(56, 189, 248, 0.2)" strokeLinejoin="round" />
+          <path d="M 15 84 L 24 80 L 76 80 L 85 84 L 80 92 L 20 92 Z" stroke="#94A3B8" strokeWidth="1.4" strokeLinejoin="round" />
+          <path d="M 38 86 L 62 86" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
+          <rect x="42" y="88" width="16" height="3" stroke="#C5A059" strokeWidth="1" />
+          <path d="M 16 52 L 20 54" stroke="#C5A059" strokeWidth="1.4" />
+          <path d="M 84 52 L 80 54" stroke="#C5A059" strokeWidth="1.4" />
+        </svg>
+        {showBadge && (
+          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-gold border border-gold/40 px-1.5 py-0.5 rounded shadow-xs z-20">
+            SUV HUD
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 3. Racer Helmet Contour
+  if (photoUrl === 'contour_helmet' || photoUrl === 'avatar_racer') {
+    return (
+      <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
+        {/* Airflow / Speed Trails */}
+        <svg className="absolute inset-0 w-full h-full opacity-30 pointer-events-none" viewBox="0 0 100 120">
+          <path d="M 68 28 C 78 28 88 32 94 40" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="3 3" fill="none" />
+          <path d="M 72 48 C 82 48 90 54 96 64" stroke="#F59E0B" strokeWidth="0.8" strokeDasharray="3 3" fill="none" />
+          <path d="M 70 68 C 80 68 88 74 94 84" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="3 3" fill="none" />
+        </svg>
+        {/* Helmet Contour */}
+        <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(245, 158, 11, 0.45))' }}>
+          <path d="M 48 20 C 30 20 18 34 18 54 C 18 70 24 82 40 86 L 70 86 C 80 82 82 70 82 58 C 82 36 70 20 48 20 Z" stroke="#F59E0B" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 20 62 C 14 65 14 74 24 76" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M 42 38 L 76 38 C 79 46 78 56 74 62 L 40 62 C 34 56 34 44 42 38 Z" stroke="#38BDF8" strokeWidth="1.5" fill="rgba(56, 189, 248, 0.12)" strokeLinejoin="round" />
+          <path d="M 48 42 L 68 42" stroke="#FFFFFF" strokeWidth="1.2" strokeLinecap="round" />
+          <path d="M 44 48 L 56 48" stroke="#38BDF8" strokeWidth="1" strokeLinecap="round" />
+          <circle cx="37" cy="50" r="3" stroke="#F59E0B" strokeWidth="1.3" fill="rgba(245, 158, 11, 0.2)" />
+          <path d="M 54 72 L 68 72" stroke="#E2E8F0" strokeWidth="1.2" strokeLinecap="round" />
+          <path d="M 56 76 L 66 76" stroke="#E2E8F0" strokeWidth="1.2" strokeLinecap="round" />
+          <path d="M 32 86 L 24 108" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M 66 86 L 76 108" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M 24 108 C 40 102 60 102 76 108" stroke="#38BDF8" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+        {showBadge && (
+          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-amber-400 border border-amber-400/40 px-1.5 py-0.5 rounded shadow-xs z-20">
             RACER
           </div>
         )}
@@ -194,41 +240,120 @@ export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full
     );
   }
 
-  if (photoUrl === 'avatar_business') {
+  // 4. M-Performance Steering Wheel & HUD Contour
+  if (photoUrl === 'contour_wheel') {
     return (
-      <div className={`relative ${className} bg-gradient-to-b from-slate-800 via-slate-900 to-navy flex flex-col items-center justify-end overflow-hidden`}>
-        <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 100 120" preserveAspectRatio="none">
-          <rect x="15" y="15" width="70" height="90" rx="6" stroke="#94A3B8" strokeWidth="0.8" fill="none" strokeDasharray="3 3" />
+      <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
+        {/* Tachometer HUD arcs */}
+        <svg className="absolute inset-0 w-full h-full opacity-35 pointer-events-none" viewBox="0 0 100 120">
+          <path d="M 22 40 A 36 36 0 0 1 78 40" stroke="#EF4444" strokeWidth="1" strokeDasharray="3 3" fill="none" />
+          <circle cx="50" cy="58" r="44" stroke="#38BDF8" strokeWidth="0.5" strokeDasharray="4 4" fill="none" />
         </svg>
-        <svg className="w-20 sm:w-24 h-26 sm:h-30 text-slate-300 relative z-10" viewBox="0 0 100 120" fill="currentColor">
-          <circle cx="50" cy="38" r="20" />
-          <path d="M22 110 C22 84 34 74 50 74 C66 74 78 84 78 110 Z" />
-          <path d="M46 74 L50 90 L54 74 Z" fill="#C5A059" />
-          <polygon points="48,90 52,90 54,105 50,110 46,105" fill="#C5A059" />
+        {/* Flat-bottom Racing Steering Wheel */}
+        <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.45))' }}>
+          <path d="M 20 44 L 18 36 L 24 38" stroke="#38BDF8" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 80 44 L 82 36 L 76 38" stroke="#38BDF8" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 24 50 C 24 32 34 24 50 24 C 66 24 76 32 76 50 C 76 68 70 82 58 84 L 42 84 C 30 82 24 68 24 50 Z" stroke="#38BDF8" strokeWidth="2.2" strokeLinejoin="round" />
+          <rect x="47" y="24" width="6" height="5" fill="#EF4444" stroke="#EF4444" rx="1" />
+          <path d="M 30 50 C 30 38 38 32 50 32 C 62 32 70 38 70 50 C 70 64 64 76 56 78 L 44 78 C 36 76 30 64 30 50 Z" stroke="#94A3B8" strokeWidth="1" />
+          <circle cx="50" cy="54" r="10" stroke="#C5A059" strokeWidth="1.5" fill="rgba(197, 160, 89, 0.15)" />
+          <circle cx="50" cy="54" r="4" stroke="#38BDF8" strokeWidth="1" />
+          <path d="M 30 54 L 40 54" stroke="#C5A059" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="34" cy="54" r="1" fill="#38BDF8" />
+          <path d="M 60 54 L 70 54" stroke="#C5A059" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="66" cy="54" r="1" fill="#38BDF8" />
+          <path d="M 50 64 L 50 78" stroke="#C5A059" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="42" cy="18" r="1.5" fill="#22C55E" />
+          <circle cx="47" cy="17" r="1.5" fill="#EAB308" />
+          <circle cx="53" cy="17" r="1.5" fill="#EAB308" />
+          <circle cx="58" cy="18" r="1.5" fill="#EF4444" />
         </svg>
         {showBadge && (
-          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-slate-800/90 text-slate-200 border border-slate-600 px-1.5 py-0.5 rounded shadow-xs z-10">
-            EXECUTIVE
+          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-cyan-400 border border-cyan-400/40 px-1.5 py-0.5 rounded shadow-xs z-20">
+            M-WHEEL
           </div>
         )}
       </div>
     );
   }
 
-  // Default: Biometric classic silhouette
+  // 5. 3D Polygonal Mesh Driver Contour
+  if (photoUrl === 'contour_cyber' || photoUrl === 'avatar_business') {
+    return (
+      <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
+        {/* HUD circles */}
+        <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 100 120">
+          <circle cx="50" cy="54" r="42" stroke="#34D399" strokeWidth="0.6" strokeDasharray="2 4" fill="none" />
+          <line x1="50" y1="12" x2="50" y2="96" stroke="#34D399" strokeWidth="0.4" strokeDasharray="3 3" />
+          <line x1="10" y1="54" x2="90" y2="54" stroke="#34D399" strokeWidth="0.4" strokeDasharray="3 3" />
+        </svg>
+        {/* 3D Geometric Polygonal Head Contour */}
+        <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(52, 211, 153, 0.45))' }}>
+          <polygon points="50,22 36,32 50,38 64,32" stroke="#34D399" strokeWidth="1.3" fill="rgba(52, 211, 153, 0.08)" />
+          <polygon points="36,32 26,46 40,48 50,38" stroke="#34D399" strokeWidth="1.2" />
+          <polygon points="64,32 74,46 60,48 50,38" stroke="#34D399" strokeWidth="1.2" />
+          <polygon points="50,38 40,48 50,56 60,48" stroke="#38BDF8" strokeWidth="1.4" fill="rgba(56, 189, 248, 0.12)" />
+          <polygon points="40,48 26,46 30,64 42,66 50,56" stroke="#34D399" strokeWidth="1.2" />
+          <polygon points="60,48 74,46 70,64 58,66 50,56" stroke="#34D399" strokeWidth="1.2" />
+          <polygon points="50,56 42,66 50,74 58,66" stroke="#38BDF8" strokeWidth="1.3" />
+          <polygon points="42,66 30,64 36,80 50,84 50,74" stroke="#34D399" strokeWidth="1.2" />
+          <polygon points="58,66 70,64 64,80 50,84 50,74" stroke="#34D399" strokeWidth="1.2" />
+          <path d="M 36 80 L 20 106 L 50 98 L 80 106 L 64 80" stroke="#34D399" strokeWidth="1.3" strokeLinejoin="round" />
+          <line x1="50" y1="84" x2="50" y2="98" stroke="#34D399" strokeWidth="1.2" />
+          <circle cx="50" cy="22" r="1.6" fill="#34D399" />
+          <circle cx="36" cy="32" r="1.4" fill="#38BDF8" />
+          <circle cx="64" cy="32" r="1.4" fill="#38BDF8" />
+          <circle cx="50" cy="38" r="1.6" fill="#FACC15" />
+          <circle cx="50" cy="56" r="1.6" fill="#FACC15" />
+          <circle cx="50" cy="84" r="1.6" fill="#34D399" />
+        </svg>
+        {showBadge && (
+          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-emerald-400 border border-emerald-400/40 px-1.5 py-0.5 rounded shadow-xs z-20">
+            3D MESH
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 6. Default: Biometric Driver Face Contour (Handles 'silhouette', 'contour_biometric', and undefined)
   return (
-    <div className={`relative ${className} bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 flex flex-col items-center justify-end overflow-hidden`}>
-      <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 100 120" preserveAspectRatio="none">
-        <circle cx="50" cy="60" r="45" stroke="#C5A059" strokeWidth="0.8" fill="none" strokeDasharray="3 3" />
-        <circle cx="50" cy="60" r="32" stroke="#001F3F" strokeWidth="0.6" fill="none" />
+    <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
+      {/* Blueprint grid */}
+      <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 100 120" preserveAspectRatio="none">
+        <circle cx="50" cy="52" r="42" stroke="#38BDF8" strokeWidth="0.5" strokeDasharray="3 3" fill="none" />
+        <circle cx="50" cy="52" r="28" stroke="#C5A059" strokeWidth="0.6" strokeDasharray="6 4" fill="none" />
       </svg>
-      <svg className="w-20 sm:w-24 h-26 sm:h-30 text-slate-400/90 relative z-10" viewBox="0 0 100 120" fill="currentColor">
-        <circle cx="50" cy="38" r="22" />
-        <path d="M16,115 C16,84 32,70 50,70 C68,70 84,84 84,115 Z" />
+      {/* Target Corner Brackets & Scan Line */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none p-1.5 text-gold/60" viewBox="0 0 100 120">
+        <path d="M 6 16 L 6 6 L 16 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M 94 16 L 94 6 L 84 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M 6 104 L 6 114 L 16 114" fill="none" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M 94 104 L 94 114 L 84 114" fill="none" stroke="currentColor" strokeWidth="1.2" />
+        <line x1="12" y1="52" x2="88" y2="52" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="2 2" opacity="0.6" />
+      </svg>
+      {/* Contour Vector Driver Lines */}
+      <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 5px rgba(197, 160, 89, 0.45))' }}>
+        <path d="M 34 38 C 34 22 66 22 66 38 C 66 48 62 58 50 62 C 38 58 34 48 34 38 Z" stroke="#C5A059" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M 33 34 C 34 18 66 18 67 34" stroke="#FDE047" strokeWidth="1.3" strokeLinecap="round" />
+        <path d="M 40 40 L 46 40" stroke="#38BDF8" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M 54 40 L 60 40" stroke="#38BDF8" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="43" cy="40" r="1.5" fill="#38BDF8" />
+        <circle cx="57" cy="40" r="1.5" fill="#38BDF8" />
+        <path d="M 50 42 L 50 48 L 47 50" stroke="#C5A059" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M 45 55 C 48 57 52 57 55 55" stroke="#C5A059" strokeWidth="1.3" strokeLinecap="round" />
+        <path d="M 44 62 L 44 72" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
+        <path d="M 56 62 L 56 72" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
+        <path d="M 18 110 C 18 84 34 76 44 72 L 56 72 C 66 76 82 84 82 110" stroke="#C5A059" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M 44 72 L 50 84 L 56 72" stroke="#38BDF8" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="50" cy="24" r="1.5" fill="#C5A059" />
+        <circle cx="50" cy="62" r="1.5" fill="#38BDF8" />
+        <circle cx="28" cy="88" r="1.2" fill="#C5A059" />
+        <circle cx="72" cy="88" r="1.2" fill="#C5A059" />
       </svg>
       {showBadge && (
-        <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/80 text-gold px-1.5 py-0.5 rounded shadow-xs z-10">
-          BIOMETRIC
+        <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-gold border border-gold/40 px-1.5 py-0.5 rounded shadow-xs z-20">
+          BIO SCAN
         </div>
       )}
     </div>
@@ -2534,22 +2659,27 @@ export const FinesModule: React.FC<Props> = ({
               </button>
             </div>
 
-            {/* Section 1: Ready-made Avatars & Cars */}
+            {/* Section 1: Ready-made Contour Avatars */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
                   <Sparkles size={13} className="text-gold" />
-                  <span>მზა ავატარები & მანქანები</span>
+                  <span>კონტურული ავატარები & ხაზოვანი გრაფიკა</span>
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
-                  {AVATAR_PRESETS.length} არჩევანი
+                  {AVATAR_PRESETS.length} კონტური
                 </span>
               </div>
 
               <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
                 {AVATAR_PRESETS.map((preset) => {
                   const isCurrent = vehicle.driver_photo_url === preset.id ||
-                    (!vehicle.driver_photo_url && preset.id === 'silhouette');
+                    (!vehicle.driver_photo_url && preset.id === 'contour_biometric') ||
+                    (vehicle.driver_photo_url === 'silhouette' && preset.id === 'contour_biometric') ||
+                    ((vehicle.driver_photo_url === 'car' || vehicle.driver_photo_url === 'car_mercedes') && preset.id === 'contour_suv') ||
+                    ((vehicle.driver_photo_url === 'car_sport' || vehicle.driver_photo_url === 'car_supercar') && preset.id === 'contour_sportscar') ||
+                    (vehicle.driver_photo_url === 'avatar_racer' && preset.id === 'contour_helmet') ||
+                    (vehicle.driver_photo_url === 'avatar_business' && preset.id === 'contour_cyber');
 
                   return (
                     <button
@@ -2563,8 +2693,11 @@ export const FinesModule: React.FC<Props> = ({
                       }`}
                     >
                       {/* Avatar Preview Box */}
-                      <div className="w-full h-18 sm:h-20 rounded-xl overflow-hidden shadow-xs border border-slate-200 bg-slate-900">
+                      <div className="w-full h-18 sm:h-20 rounded-xl overflow-hidden shadow-xs border border-slate-700 bg-slate-950 relative">
                         {renderDriverAvatar(preset.id, "w-full h-full", false)}
+                        <span className="absolute bottom-1 left-1 px-1 py-0.2 rounded text-[7px] font-mono font-bold bg-navy/80 text-gold border border-gold/30">
+                          {preset.badge}
+                        </span>
                       </div>
 
                       {/* Labels */}
