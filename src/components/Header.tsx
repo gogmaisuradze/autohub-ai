@@ -9,7 +9,8 @@ import {
   ChevronDown,
   Plus,
   Trash2,
-  Check
+  Check,
+  HelpCircle
 } from 'lucide-react';
 
 interface Props {
@@ -32,6 +33,7 @@ interface Props {
   onOpenObdModal?: () => void;
   accountMode?: 'owner' | 'visitor';
   onToggleAccountMode?: () => void;
+  onOpenTour?: () => void;
 }
 
 export const Header: React.FC<Props> = ({
@@ -48,7 +50,8 @@ export const Header: React.FC<Props> = ({
   isObdConnected = false,
   onOpenObdModal,
   accountMode = 'owner',
-  onToggleAccountMode
+  onToggleAccountMode,
+  onOpenTour
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -127,6 +130,7 @@ export const Header: React.FC<Props> = ({
 
           {/* 1. OBD-II Status Indicator (Lights up green ONLY when connected; otherwise dimmed gray OFF) */}
           <button
+            data-tour="obd-status"
             onClick={() => {
               sounds.playClick();
               if (onOpenObdModal) {
@@ -158,7 +162,7 @@ export const Header: React.FC<Props> = ({
 
           {/* 2. Vehicle Pill: Only Brand + Clean White License Plate (no full model name) */}
           {hasSelectedVehicle && vehicle ? (
-            <div className="relative">
+            <div data-tour="header-vehicle" className="relative">
               <button
                 onClick={() => {
                   sounds.playClick();
@@ -265,7 +269,22 @@ export const Header: React.FC<Props> = ({
             </button>
           )}
 
-          {/* 3. Separate Language Flag Switcher (🇬🇪 / 🇬🇧) - at the very end */}
+          {/* 3. Interactive Tour Guide Trigger Button */}
+          {onOpenTour && (
+            <button
+              onClick={() => {
+                sounds.playSuccess();
+                onOpenTour();
+              }}
+              className="btn-stitch-soft px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold text-navy hover:text-gold flex items-center gap-1.5 transition-all shadow-xs"
+              title={isGe ? 'საიტის გიდი • ინტერაქტიული ტური' : 'Site Tour Guide'}
+            >
+              <HelpCircle size={15} className="text-gold" />
+              <span className="hidden md:inline font-bold">{isGe ? 'გიდი' : 'Tour'}</span>
+            </button>
+          )}
+
+          {/* 4. Separate Language Flag Switcher (🇬🇪 / 🇬🇧) - at the very end */}
           <div
             className="relative"
             onMouseEnter={() => setLangDropdownOpen(true)}

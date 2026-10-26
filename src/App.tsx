@@ -20,6 +20,7 @@ import { VinHistoryModal } from './components/Modals/VinHistoryModal';
 import { ServiceBookingModal } from './components/Booking/ServiceBookingModal';
 import { CoverAdBanner } from './components/Banner/CoverAdBanner';
 import { FloatingMechanicWidget } from './components/AiMechanic/FloatingMechanicWidget';
+import { InteractiveSiteTour } from './components/Guide/InteractiveSiteTour';
 import { DtcCode, FineItem, ServiceBookingItem, ServiceItem, TelemetryData, VehicleProfile } from './types';
 import { n8nService } from './services/n8nService';
 import { sounds } from './services/soundEffects';
@@ -628,6 +629,12 @@ export const App: React.FC = () => {
     serviceType?: ServiceBookingItem['service_type'];
     title?: string;
   }>({});
+  const [tourTrigger, setTourTrigger] = useState<number>(0);
+
+  const handleOpenTour = () => {
+    sounds.playSuccess();
+    setTourTrigger(prev => prev + 1);
+  };
 
   const handleSaveNewVehicle = (newV: VehicleProfile) => {
     const updatedList = [newV, ...allVehicles.filter(v => v.id !== newV.id)];
@@ -871,6 +878,7 @@ export const App: React.FC = () => {
           onOpenObdModal={() => setIsObdAdapterModalOpen(true)}
           accountMode={accountMode}
           onToggleAccountMode={handleToggleAccountMode}
+          onOpenTour={handleOpenTour}
         />
 
         <Navigation
@@ -883,7 +891,7 @@ export const App: React.FC = () => {
       </div>
 
       {/* Cover Advertising Banner (Visible on all pages under menu, clean bright digital services) */}
-      <div className="max-w-[1420px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
+      <div data-tour="cover-banner" className="max-w-[1420px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
         <CoverAdBanner
           onNavigateTab={handleTabChange}
           onOpenBookingModal={() => handleOpenBookingModal()}
@@ -1173,6 +1181,12 @@ export const App: React.FC = () => {
         onOpenFullChat={handleTabChange}
         onOpenBookingModal={() => handleOpenBookingModal()}
         lang={lang}
+      />
+
+      {/* Interactive Cloud Bot & Google-Style Guided Site Tour */}
+      <InteractiveSiteTour
+        onNavigateTab={handleTabChange}
+        externalTrigger={tourTrigger}
       />
 
       {/* PWA Install Banner - შენახულია და გამორთულია (საჭიროებისას ჩაირთვება ტელეფონზე) */}

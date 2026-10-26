@@ -129,7 +129,7 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
   }
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-40 font-sans">
+    <div data-tour="ai-floating-widget" className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-40 font-sans">
       {/* 1. COLLAPSED FLOATING PILL BUTTON */}
       {!isOpen && (
         <div className="flex items-center gap-1.5">

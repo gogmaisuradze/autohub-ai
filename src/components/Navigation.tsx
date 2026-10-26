@@ -95,7 +95,7 @@ export const Navigation: React.FC<Props> = ({
   return (
     <>
       {/* 1. TOP HORIZONTAL PILL NAV BAR (Always completely visible on screen, never hides) */}
-      <nav className="w-full transition-colors">
+      <nav data-tour="navigation-menu" className="w-full transition-colors">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 lg:gap-5 py-2 sm:py-2.5">
             {tabs.map((tab) => {
