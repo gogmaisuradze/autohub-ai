@@ -246,7 +246,11 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
           </svg>
         </motion.div>
 
-        {/* Central Recessed Inset Card (ჩაღრმავებული სუფთა თეთრი ფანჯარა, თითქოს შიგნით ზის) */}
+        {/* Subtle Ambient Radial Glow & Background Halo behind the central window */}
+        <div className="absolute w-[210px] sm:w-[250px] h-[210px] sm:h-[250px] rounded-full bg-gradient-to-tr from-gold/20 via-blue-500/15 to-transparent blur-xl pointer-events-none z-0" />
+        <div className="absolute w-[195px] sm:w-[235px] h-[195px] sm:h-[235px] rounded-full bg-white/40 border border-slate-200/50 pointer-events-none z-0" />
+
+        {/* Central Recessed Inset Card (ორბიტის ცენტრალური ფანჯარა ელეგანტური ბექგრაუნდით) */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeService.id}
@@ -254,7 +258,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.92 }}
             transition={{ type: "spring", stiffness: 340, damping: 28 }}
-            className="z-10 rounded-3xl p-3.5 sm:p-4.5 w-[185px] min-[400px]:w-[205px] sm:w-[225px] md:w-[235px] text-center bg-[#F7F9FC] border border-slate-200/80 shadow-[inset_4px_4px_10px_rgba(140,155,175,0.32),inset_-4px_-4px_10px_rgba(255,255,255,1)]"
+            className="z-10 rounded-3xl p-3.5 sm:p-4.5 w-[185px] min-[400px]:w-[205px] sm:w-[225px] md:w-[235px] text-center bg-gradient-to-b from-white via-[#F8FAFD] to-[#EDF2F8] border border-slate-200/90 shadow-[0_12px_28px_-6px_rgba(20,33,61,0.14),0_4px_10px_-2px_rgba(20,33,61,0.06),inset_0_1px_1px_rgba(255,255,255,1),inset_0_-2px_4px_rgba(140,155,175,0.12)]"
           >
             {/* Top Badge */}
             <div className="flex items-center justify-center mb-1 sm:mb-1.5">

@@ -194,8 +194,8 @@ export const HomeHub: React.FC<Props> = ({
         </div>
       )}
 
-      {/* 2. ORBITING SERVICES CAROUSEL (მთლიანად ჩაღრმავებული სექცია, თითქოს შიგნით ზის) */}
-      <div className="rounded-3xl sm:rounded-[2.2rem] p-4 sm:p-6 bg-[#F6F8FB] border border-white/80 shadow-[inset_6px_6px_16px_rgba(135,148,168,0.36),inset_-6px_-6px_16px_rgba(255,255,255,1)] relative overflow-hidden no-scrollbar flex flex-col items-center justify-center">
+      {/* 2. ORBITING SERVICES CAROUSEL (ორბიტის ფანჯარა ელეგანტური ბექგრაუნდით) */}
+      <div className="rounded-3xl sm:rounded-[2.2rem] p-4 sm:p-6 bg-gradient-to-b from-[#F8FAFD] via-[#F2F5F9] to-[#EAEFF6] border border-white/90 shadow-[inset_4px_4px_14px_rgba(135,148,168,0.28),inset_-4px_-4px_14px_rgba(255,255,255,1)] relative overflow-hidden no-scrollbar flex flex-col items-center justify-center">
         <div className="w-full flex items-center justify-between px-2 sm:px-4 mb-2">
           <div>
             <span className="text-xs font-bold text-gold uppercase tracking-wider block">
