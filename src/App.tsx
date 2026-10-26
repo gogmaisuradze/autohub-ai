@@ -882,11 +882,13 @@ export const App: React.FC = () => {
         />
       </div>
 
-      {/* Cover Advertising Banner (Visible on all pages under menu, slightly wider & taller) */}
+      {/* Cover Advertising Banner (Visible on all pages under menu, clean bright digital services) */}
       <div className="max-w-[1420px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
         <CoverAdBanner
           onNavigateTab={handleTabChange}
           onOpenBookingModal={() => handleOpenBookingModal()}
+          onOpenObdModal={() => setIsObdAdapterModalOpen(true)}
+          onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
         />
       </div>
 
