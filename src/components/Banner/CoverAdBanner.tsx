@@ -159,8 +159,8 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     tagColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
     accentColor: '#10B981',
     badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
-    imageUrl: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=1920&q=85',
-    carModelHint: 'PRECISION TITANIUM ENGINEERING & CHASSIS DYNAMICS',
+    imageUrl: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1920&q=85',
+    carModelHint: 'PORSCHE 911 GT PERFORMANCE & PRECISION SERVICE',
     description: 'ავტომობილის სრული ციფრული ისტორია: ძრავის ზეთის, ფილტრების, სამუხრუჭე ხუნდების, საბურავებისა და სავალი ნაწილის შეცვლის თარიღები, გარბენი და ხარჯები. ავტომატური შეხსენებები მორიგ გეგმიურ სერვისზე და ავტომობილის საბაზრო ღირებულების შენარჩუნება გაყიდვისას.',
     highlights: [
       'ზეთისა & ფილტრების კალენდარი',

@@ -119,14 +119,13 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
             setIsDismissed(false);
             setIsOpen(true);
           }}
-          className="relative w-12 h-12 rounded-full bg-navy text-gold shadow-2xl border-2 border-gold hover:scale-110 active:scale-95 transition-all flex items-center justify-center group ai-lightning-btn"
+          className="relative w-12 h-12 rounded-full bg-navy text-gold shadow-xl border border-gold/70 hover:scale-110 active:scale-95 transition-all flex items-center justify-center group ai-lightning-btn overflow-hidden"
           title={isGe ? 'AI მექანიკოსის გამოჩენა' : 'Open AI Mechanic'}
         >
-          {/* Pulsating electric shockwave rings */}
-          <span className="absolute -inset-1 rounded-full bg-gold/50 animate-ping opacity-65"></span>
-          <span className="absolute -inset-2 rounded-full bg-gradient-to-r from-amber-400 via-gold to-yellow-300 opacity-70 blur-xs animate-pulse"></span>
+          {/* Subtle lightning sweep flash */}
+          <div className="ai-lightning-flash" />
           
-          <Bot size={22} className="relative z-10 text-gold group-hover:rotate-12 transition-transform drop-shadow-[0_0_10px_rgba(252,163,17,0.95)]" />
+          <Bot size={22} className="relative z-10 text-gold group-hover:rotate-12 transition-transform" />
           <Zap size={11} className="absolute -bottom-0.5 -right-0.5 text-gold fill-gold z-20 animate-bounce" />
           <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-navy z-20 animate-pulse"></span>
         </button>
@@ -136,19 +135,15 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
 
   return (
     <div data-tour="ai-floating-widget" className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-40 font-sans">
-      {/* 1. COLLAPSED FLOATING PILL BUTTON (ელავს - LIGHTNING & ELECTRIC FLASH) */}
+      {/* 1. COLLAPSED FLOATING PILL BUTTON (ელავს - LIGHTNING FLASH, სუფთა სიყვითლის ფონის გარეშე) */}
       {!isOpen && (
         <div className="relative flex items-center gap-1.5">
-          {/* Outward Expanding Electric Glow Halo */}
-          <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-gold via-amber-400 to-yellow-300 opacity-70 blur-md animate-pulse pointer-events-none" />
-          <div className="absolute -inset-1.5 rounded-full border border-gold/60 animate-ping opacity-40 pointer-events-none" />
-
           <button
             onClick={() => {
               sounds.playSuccess();
               setIsOpen(true);
             }}
-            className="group relative overflow-hidden btn-stitch-ai px-4 py-3 shadow-[0_0_28px_rgba(252,163,17,0.65)] border-2 border-gold z-10 ai-lightning-btn"
+            className="group relative overflow-hidden btn-stitch-ai px-4 py-3 shadow-xl border border-gold/70 z-10 ai-lightning-btn"
             title={isGe ? 'AI მექანიკოსის ფანჯარა' : 'AI Mechanic Window'}
           >
             {/* Diagonal Sweeping Lightning Flash Layer */}
@@ -156,8 +151,8 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
 
             <div className="relative z-10 flex items-center gap-2">
               <div className="relative">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-navy/90 flex items-center justify-center text-gold shadow-sm group-hover:scale-110 transition-transform border border-gold/50">
-                  <Bot size={18} className="drop-shadow-[0_0_8px_rgba(252,163,17,0.95)]" />
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-navy/90 flex items-center justify-center text-gold shadow-sm group-hover:scale-110 transition-transform border border-gold/40">
+                  <Bot size={18} className="drop-shadow-xs" />
                 </div>
                 <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-navy animate-pulse"></span>
                 <Zap size={10} className="absolute -bottom-1 -left-1 text-gold fill-gold animate-bounce" />
@@ -167,13 +162,13 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-black tracking-tight text-white group-hover:text-gold transition-colors flex items-center gap-1">
                     <span>{isGe ? 'AI მექანიკოსი' : 'AI Mechanic'}</span>
-                    <Zap size={13} className="text-gold fill-gold animate-pulse drop-shadow-[0_0_8px_rgba(252,163,17,0.95)]" />
+                    <Zap size={13} className="text-gold fill-gold animate-pulse" />
                   </span>
-                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-gold/25 text-gold border border-gold shadow-[0_0_8px_rgba(252,163,17,0.7)] animate-pulse">
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-gold/20 text-gold border border-gold/50 shadow-xs">
                     24/7
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-200 font-bold drop-shadow-xs">
+                <p className="text-[10px] text-slate-200 font-bold">
                   {dtcCodes.length > 0
                     ? (isGe ? `${dtcCodes.length} ხარვეზი • ონლაინ` : `${dtcCodes.length} issues • Online`)
                     : (isGe ? '⚡ ონლაინ AI კონსულტაცია' : '⚡ Live AI Advice')}

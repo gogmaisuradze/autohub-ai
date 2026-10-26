@@ -241,7 +241,7 @@ export const HomeHub: React.FC<Props> = ({
               }}
               className={`neu-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer hover:shadow-neu-flat transition-all group active:scale-[0.99] relative overflow-hidden ${
                 isAi
-                  ? 'border-2 border-gold/70 shadow-[0_0_22px_rgba(252,163,17,0.4)]'
+                  ? 'border border-gold/40 shadow-sm hover:border-gold/70'
                   : ''
               }`}
             >
