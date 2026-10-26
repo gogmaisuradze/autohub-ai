@@ -61,7 +61,7 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     accentColor: '#FCA311',
     badgeBg: 'bg-gold/20 text-gold border-gold/40',
     imageUrl: 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=1920&q=85',
-    carModelHint: 'PORSCHE 911 DIGITAL COCKPIT & LIVE TELEMETRY',
+    carModelHint: 'PORSCHE 911 DIGITAL COCKPIT & TELEMETRY',
     description: 'პირადად Bluetooth / Wi-Fi OBD-II ადაპტერის შეერთებით ან ონლაინ ღრუბლოვანი ტელემეტრიით: ძრავის Check Engine შეცდომების (DTC) წაკითხვა, წაშლა, სენსორების ცოცხალი პარამეტრები (RPM, ტემპერატურა, წნევა, აკუმულატორი) და ხელოვნური ინტელექტის (AI) მექანიკოსის დაუყოვნებლივი დასკვნა ქართულ ენაზე.',
     highlights: [
       'Bluetooth / Wi-Fi ELM327 ადაპტერი',
@@ -259,7 +259,7 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     accentColor: '#C084FC',
     badgeBg: 'bg-purple-500/20 text-purple-300 border-purple-400/40',
     imageUrl: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1920&q=85',
-    carModelHint: 'MERCEDES-AMG GT SHOWROOM GLAMOUR & VEHICLE PROVENANCE',
+    carModelHint: 'MERCEDES-AMG GT SHOWROOM GLAMOUR & PROVENANCE',
     description: 'ავტომობილის 17-ნიშნა VIN შასის კოდით სრული ისტორიის გაშიფვრა: ამერიკული აუქციონების (Copart, IAAI) საარქივო ფოტოები და დაზიანების ხარისხი, რეალური გარბენის გადამოწმება, აირბაგების გახსნის ისტორია, ქარხნული კომპლექტაცია და ტექნიკური მონაცემები.',
     highlights: [
       'Copart & IAAI აუქციონის რეალური ფოტოები',
@@ -396,51 +396,51 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
     );
   }
 
-  // Visual Interactive Frosted Glass Preview Card (Right Column)
+  // Visual Sleek Frosted Glass HUD Widget (Lightweight & Translucent so the Car Shines Through)
   const renderVisualCard = () => {
     switch (current.previewType) {
       case 'obd_gauge':
         return (
-          <div className="w-full backdrop-blur-xl bg-slate-950/75 rounded-2xl p-4 sm:p-5 border border-white/20 shadow-2xl flex flex-col justify-between gap-3 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-white/20 shadow-xl flex flex-col gap-2.5 text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
               <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
+                <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span className="text-xs font-mono font-bold text-slate-200">OBD-II Bluetooth 5.0</span>
+                <span className="text-[11px] font-mono font-bold text-slate-200">OBD-II Bluetooth 5.0</span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-gold text-[10px] font-mono font-black border border-gold/40">
+              <span className="px-2 py-0.5 rounded-md bg-amber-500/25 text-gold text-[9px] font-mono font-black border border-gold/40">
                 14.2 V • LIVE
               </span>
             </div>
 
             {/* Live Telemetry Dial / Metrics */}
-            <div className="grid grid-cols-3 gap-2 text-center py-1">
-              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
-                <div className="text-[10px] font-mono text-slate-400 uppercase">RPM</div>
-                <div className="text-base sm:text-lg font-black text-white font-mono">780</div>
-                <div className="text-[9px] text-emerald-400 font-bold">ნორმა</div>
+            <div className="grid grid-cols-3 gap-1.5 text-center">
+              <div className="p-1.5 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-[9px] font-mono text-slate-400 uppercase">RPM</div>
+                <div className="text-sm font-black text-white font-mono">780</div>
+                <div className="text-[8px] text-emerald-400 font-bold">ნორმა</div>
               </div>
-              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
-                <div className="text-[10px] font-mono text-slate-400 uppercase">ტემპერატურა</div>
-                <div className="text-base sm:text-lg font-black text-white font-mono">92°C</div>
-                <div className="text-[9px] text-emerald-400 font-bold">ოპტიმალური</div>
+              <div className="p-1.5 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-[9px] font-mono text-slate-400 uppercase">ტემპ.</div>
+                <div className="text-sm font-black text-white font-mono">92°C</div>
+                <div className="text-[8px] text-emerald-400 font-bold">ოპტიმ.</div>
               </div>
-              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
-                <div className="text-[10px] font-mono text-slate-400 uppercase">წნევა</div>
-                <div className="text-base sm:text-lg font-black text-white font-mono">38 PSI</div>
-                <div className="text-[9px] text-emerald-400 font-bold">სტაბილური</div>
+              <div className="p-1.5 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-[9px] font-mono text-slate-400 uppercase">წნევა</div>
+                <div className="text-sm font-black text-white font-mono">38 PSI</div>
+                <div className="text-[8px] text-emerald-400 font-bold">სტაბილ.</div>
               </div>
             </div>
 
             {/* Status Footer */}
-            <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[11px]">
-              <span className="flex items-center gap-1.5 font-bold text-emerald-400">
-                <CheckCircle2 size={14} className="text-emerald-400" />
-                DTC: 0 შეცდომა (Clean)
+            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
+              <span className="flex items-center gap-1 font-bold text-emerald-400">
+                <CheckCircle2 size={12} className="text-emerald-400" />
+                0 DTC შეცდომა (Clean)
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-gold/20 text-gold text-[10px] font-bold border border-gold/30">
+              <span className="px-1.5 py-0.5 rounded-full bg-gold/20 text-gold text-[9px] font-bold border border-gold/30">
                 🤖 AI მექანიკოსი
               </span>
             </div>
@@ -449,41 +449,36 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
       case 'fines_card':
         return (
-          <div className="w-full backdrop-blur-xl bg-slate-950/75 rounded-2xl p-4 sm:p-5 border border-rose-500/30 shadow-2xl flex flex-col justify-between gap-3 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-rose-300">
-                <ShieldAlert size={15} className="text-rose-400" />
+          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-rose-500/30 shadow-xl flex flex-col gap-2.5 text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-300">
+                <ShieldAlert size={14} className="text-rose-400" />
                 <span>Police.ge რადარი #GEO-412</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-mono font-bold border border-rose-400/40">
+              <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[9px] font-mono font-bold border border-rose-400/40">
                 ცოცხალი ბაზა
               </span>
             </div>
 
-            {/* Violation Details with 20% discount highlight */}
-            <div className="space-y-1.5 bg-white/5 p-2.5 rounded-xl border border-white/10">
+            <div className="space-y-1 bg-white/5 p-2 rounded-xl border border-white/10">
               <div className="text-xs font-black text-white">
                 სიჩქარის გადაჭარბება (+24 კმ/სთ)
               </div>
-              <div className="text-[11px] text-slate-300">
-                თბილისი-სენაკი KM 34 • ვიდეოკამერა
-              </div>
-              <div className="flex items-baseline gap-2 pt-1">
-                <span className="text-xs text-slate-400 line-through">50.00 ₾</span>
-                <span className="text-lg font-black text-emerald-400 font-mono">40.00 ₾</span>
+              <div className="flex items-baseline gap-2 pt-0.5">
+                <span className="text-[11px] text-slate-400 line-through">50.00 ₾</span>
+                <span className="text-base font-black text-emerald-400 font-mono">40.00 ₾</span>
                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                   -20% ფასდაკლება
                 </span>
               </div>
             </div>
 
-            {/* Status Footer */}
-            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[11px]">
+            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
               <span className="text-rose-400 font-bold flex items-center gap-1">
-                <Clock size={13} />
+                <Clock size={12} />
                 დარჩენილია 7 დღე
               </span>
-              <span className="text-slate-300 font-mono text-[10px]">
+              <span className="text-slate-300 font-mono text-[9px]">
                 ქულები: 100 / 100
               </span>
             </div>
@@ -492,72 +487,72 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
       case 'parking_zone':
         return (
-          <div className="w-full backdrop-blur-xl bg-slate-950/75 rounded-2xl p-4 sm:p-5 border border-blue-500/30 shadow-2xl flex flex-col justify-between gap-3 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-blue-300">
-                <ParkingSquare size={15} className="text-blue-400" />
+          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-blue-500/30 shadow-xl flex flex-col gap-2.5 text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-300">
+                <ParkingSquare size={14} className="text-blue-400" />
                 <span>მუნიციპალური პარკინგი</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-mono font-bold border border-blue-400/40">
+              <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[9px] font-mono font-bold border border-blue-400/40">
                 თბილისი • ზონა A
               </span>
             </div>
 
-            <div className="space-y-1.5 bg-white/5 p-2.5 rounded-xl border border-white/10">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-white">რუსთაველის გამზირი #14</span>
-                <span className="text-xs font-mono font-bold text-blue-400">1.00 ₾ / სთ</span>
+            <div className="space-y-1 bg-white/5 p-2 rounded-xl border border-white/10">
+              <div className="flex items-center justify-between text-xs font-black text-white">
+                <span>რუსთაველის გამზირი #14</span>
+                <span className="font-mono text-blue-400">1.00 ₾/სთ</span>
               </div>
-              <div className="flex items-center gap-2 pt-1">
-                <div className="px-2 py-1 rounded-lg bg-white/10 border border-blue-400/40 text-xs font-mono font-black text-white flex items-center gap-1">
-                  <Clock size={13} className="text-blue-400" />
+              <div className="flex items-center gap-2 pt-0.5">
+                <div className="px-2 py-0.5 rounded-lg bg-white/10 border border-blue-400/40 text-[11px] font-mono font-black text-white flex items-center gap-1">
+                  <Clock size={11} className="text-blue-400" />
                   <span>00:46:18</span>
                 </div>
-                <span className="text-[11px] text-emerald-400 font-bold">
+                <span className="text-[10px] text-emerald-400 font-bold">
                   ✓ აქტიური პარკირება
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[11px]">
+            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
               <span className="text-slate-300 font-bold">SMS 9110 გაგზავნილია</span>
-              <span className="text-[10px] font-mono text-slate-400">22:00-მდე ფასიანი</span>
+              <span className="text-[9px] font-mono text-slate-400">22:00-მდე ფასიანი</span>
             </div>
           </div>
         );
 
       case 'log_timeline':
         return (
-          <div className="w-full backdrop-blur-xl bg-slate-950/75 rounded-2xl p-4 sm:p-5 border border-emerald-500/30 shadow-2xl flex flex-col justify-between gap-3 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300">
-                <BookOpen size={15} className="text-emerald-400" />
+          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-emerald-500/30 shadow-xl flex flex-col gap-2.5 text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-300">
+                <BookOpen size={14} className="text-emerald-400" />
                 <span>ციფრული სერვის-წიგნაკი</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold border border-emerald-400/40">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-400/40">
                 124,500 კმ
               </span>
             </div>
 
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10">
-                <div className="flex items-center gap-1.5 font-bold text-white">
-                  <Check size={13} className="text-emerald-400" />
+            <div className="space-y-1.5 text-xs">
+              <div className="flex items-center justify-between p-1.5 rounded-xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-1.5 font-bold text-white text-[11px]">
+                  <Check size={11} className="text-emerald-400" />
                   <span>ძრავის ზეთი (5W-30)</span>
                 </div>
-                <span className="text-[11px] font-mono text-emerald-400 font-black">92% რესურსი</span>
+                <span className="text-[10px] font-mono text-emerald-400 font-black">92% რესურსი</span>
               </div>
-              <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10">
-                <div className="flex items-center gap-1.5 font-bold text-white">
-                  <Check size={13} className="text-emerald-400" />
+              <div className="flex items-center justify-between p-1.5 rounded-xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-1.5 font-bold text-white text-[11px]">
+                  <Check size={11} className="text-emerald-400" />
                   <span>სამუხრუჭე ხუნდები</span>
                 </div>
-                <span className="text-[11px] font-mono text-gold font-black">+7,500 კმ</span>
+                <span className="text-[10px] font-mono text-gold font-black">+7,500 კმ</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[11px]">
-              <span className="text-slate-400 font-medium">შემდეგი: 128,000 კმ</span>
+            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
+              <span className="text-slate-400">შემდეგი: 128k კმ</span>
               <span className="font-bold text-gold">ჯამი: 420 ₾</span>
             </div>
           </div>
@@ -565,107 +560,101 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
       case 'radar_hud':
         return (
-          <div className="w-full backdrop-blur-xl bg-slate-950/75 rounded-2xl p-4 sm:p-5 border border-cyan-500/30 shadow-2xl flex flex-col justify-between gap-3 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-300">
-                <Radio size={15} className="text-cyan-400 animate-pulse" />
+          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-cyan-500/30 shadow-xl flex flex-col gap-2.5 text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-cyan-300">
+                <Radio size={14} className="text-cyan-400 animate-pulse" />
                 <span>რადარების დეტექტორი</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-mono font-bold border border-cyan-400/40">
+              <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[9px] font-mono font-bold border border-cyan-400/40">
                 GPS LIVE
               </span>
             </div>
 
-            <div className="space-y-2 bg-white/5 p-2.5 rounded-xl border border-white/10">
+            <div className="space-y-1.5 bg-white/5 p-2 rounded-xl border border-white/10">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-black text-white">
                   ⚠️ სიჩქარის რადარი • 350მ წინ
                 </div>
-                <div className="w-8 h-8 rounded-full border-2 border-rose-500 bg-white/10 flex items-center justify-center text-xs font-black text-rose-400 shadow-xs">
+                <div className="w-7 h-7 rounded-full border-2 border-rose-500 bg-white/10 flex items-center justify-center text-[11px] font-black text-rose-400">
                   80
                 </div>
               </div>
-              <div className="flex items-center justify-between text-[11px]">
+              <div className="flex items-center justify-between text-[10px]">
                 <span className="text-slate-300">მიმდინარე სიჩქარე:</span>
                 <span className="font-mono font-black text-emerald-400">72 კმ/სთ (უსაფრთხო)</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[11px]">
+            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
               <span className="text-cyan-300 font-bold">Bus Lane კამერა</span>
-              <span className="text-emerald-400 font-bold">🟢 გზა თავისუფალია</span>
+              <span className="text-emerald-400 font-bold">🟢 თავისუფალია</span>
             </div>
           </div>
         );
 
       case 'exam_badge':
         return (
-          <div className="w-full backdrop-blur-xl bg-slate-950/75 rounded-2xl p-4 sm:p-5 border border-indigo-500/30 shadow-2xl flex flex-col justify-between gap-3 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-300">
-                <GraduationCap size={15} className="text-indigo-400" />
+          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-indigo-500/30 shadow-xl flex flex-col gap-2.5 text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-300">
+                <GraduationCap size={14} className="text-indigo-400" />
                 <span>საგამოცდო ბილეთები 2026</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-mono font-bold border border-indigo-400/40">
+              <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[9px] font-mono font-bold border border-indigo-400/40">
                 კატეგორია B
               </span>
             </div>
 
-            <div className="space-y-1.5 bg-white/5 p-2.5 rounded-xl border border-white/10">
+            <div className="space-y-1 bg-white/5 p-2 rounded-xl border border-white/10">
               <div className="flex items-center justify-between text-xs font-black text-white">
                 <span>ბილეთი №14</span>
                 <span className="font-mono text-indigo-300">კითხვა 18 / 30</span>
               </div>
-              <div className="w-full bg-white/15 rounded-full h-1.5 overflow-hidden">
-                <div className="bg-gradient-to-r from-indigo-500 to-indigo-400 h-1.5 rounded-full w-[60%]"></div>
+              <div className="w-full bg-white/15 rounded-full h-1 overflow-hidden">
+                <div className="bg-gradient-to-r from-indigo-500 to-indigo-400 h-1 rounded-full w-[60%]"></div>
               </div>
-              <div className="flex items-center justify-between text-[11px] pt-1">
+              <div className="flex items-center justify-between text-[10px] pt-0.5">
                 <span className="text-slate-300">⏱️ დრო: 22:45</span>
-                <span className="text-emerald-400 font-bold">შეცდომები: 0 / 3</span>
+                <span className="text-emerald-400 font-bold">შეცდომა: 0 / 3</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[11px]">
+            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
               <span className="text-indigo-300 font-bold">მზადყოფნა: 94%</span>
-              <span className="text-slate-400 font-mono text-[10px]">33 თემატიკა</span>
+              <span className="text-slate-400 font-mono text-[9px]">33 თემატიკა</span>
             </div>
           </div>
         );
 
       case 'vin_report':
         return (
-          <div className="w-full backdrop-blur-xl bg-slate-950/75 rounded-2xl p-4 sm:p-5 border border-purple-500/30 shadow-2xl flex flex-col justify-between gap-3 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300">
-                <ShieldCheck size={15} className="text-purple-400" />
+          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-purple-500/30 shadow-xl flex flex-col gap-2.5 text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-purple-300">
+                <ShieldCheck size={14} className="text-purple-400" />
                 <span>Carfax & Copart ანგარიში</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-mono font-bold border border-purple-400/40">
+              <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[9px] font-mono font-bold border border-purple-400/40">
                 VERIFIED
               </span>
             </div>
 
-            <div className="space-y-1.5 bg-white/5 p-2.5 rounded-xl border border-white/10 text-[11px]">
-              <div className="font-mono font-bold text-white">VIN: WBA3...9281 (BMW 330i)</div>
-              <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+            <div className="space-y-1 bg-white/5 p-2 rounded-xl border border-white/10 text-[10px]">
+              <div className="font-mono font-bold text-white text-[11px]">VIN: WBA3...9281 (BMW 330i)</div>
+              <div className="grid grid-cols-2 gap-1 pt-0.5">
                 <div className="flex items-center gap-1 text-emerald-400 font-bold">
-                  <Check size={12} />
+                  <Check size={11} />
                   <span>გარბენი: 87k mi</span>
                 </div>
                 <div className="flex items-center gap-1 text-emerald-400 font-bold">
-                  <Check size={12} />
+                  <Check size={11} />
                   <span>Airbags: გაუხსნელი</span>
-                </div>
-                <div className="flex items-center gap-1 text-slate-300 font-medium">
-                  <span>• აუქციონი: Copart</span>
-                </div>
-                <div className="flex items-center gap-1 text-slate-300 font-medium">
-                  <span>• 1 მფლობელი აშშ</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[11px]">
+            <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
               <span className="text-purple-300 font-bold">სტატუსი: Clean Title</span>
               <span className="text-emerald-400 font-bold">Run & Drive</span>
             </div>
@@ -681,26 +670,29 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
     <div
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-700/60 transition-all bg-slate-950 group"
+      className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-700/50 transition-all bg-slate-950 group"
     >
-      {/* Background Thematic Car Photography with Subtle Zoom */}
+      {/* Background Thematic Car Photography - 100% Opacity, Vibrant & Crystal Clear */}
       <div className="absolute inset-0 bg-slate-950 overflow-hidden">
         <img
           src={current.imageUrl}
           alt={current.title}
-          className="w-full h-full object-cover object-center transform transition-all duration-1000 ease-out scale-100 group-hover:scale-105 opacity-85"
+          className="w-full h-full object-cover object-center transform transition-all duration-1000 ease-out scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05]"
         />
 
-        {/* Refined Luxury Dual-Gradient (Ensures high visibility of the car on the right & center, flawless readability on the left) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/75 to-slate-950/20 lg:to-slate-950/10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/35" />
+        {/* Targeted Left Gradient ONLY (Protects text contrast on left, leaving the center and right 100% crystal clear for the car!) */}
+        <div className="absolute inset-y-0 left-0 w-full sm:w-4/5 lg:w-3/5 bg-gradient-to-r from-slate-950/95 via-slate-950/65 to-transparent pointer-events-none" />
+        
+        {/* Subtle Top & Bottom Shadow for Controls Legibility */}
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950/60 to-transparent pointer-events-none" />
       </div>
 
       {/* Top Gold Laser Accent Line */}
       <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent opacity-85 z-20" />
 
-      {/* Main Content Container */}
-      <div className="relative z-10 px-4 sm:px-7 lg:px-9 py-4 sm:py-5 flex flex-col justify-between min-h-[230px] sm:min-h-[260px] md:min-h-[290px]">
+      {/* Main Content Container (Enlarged Height for Grand Car Visibility) */}
+      <div className="relative z-10 px-4 sm:px-7 lg:px-9 py-4 sm:py-6 flex flex-col justify-between min-h-[260px] sm:min-h-[300px] md:min-h-[330px]">
         
         {/* Top Header: Category Tag, Horizontal Service Selector Tabs & Drawer Toggle */}
         <div className="space-y-2.5">
@@ -713,7 +705,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
               <span className="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[9px] font-mono font-black bg-gold/20 text-gold border border-gold/40">
                 {current.badge}
               </span>
-              <span className="hidden xl:inline-block text-[9px] font-mono tracking-widest text-slate-400/80 font-bold uppercase">
+              <span className="hidden xl:inline-block text-[9px] font-mono tracking-widest text-slate-200/90 font-bold uppercase drop-shadow-sm">
                 // {current.carModelHint}
               </span>
             </div>
@@ -777,21 +769,21 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
           </div>
         </div>
 
-        {/* Center: Two-Column Responsive Layout (Left: Description, Right: Visual Mockup) */}
+        {/* Center: Two-Column Responsive Layout (Car in the center/right is wide open to view!) */}
         <div className="my-2 sm:my-3 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center">
           {/* Left Column: Title, Subtitle, Full Explanation & Bullets (7 cols) */}
-          <div className="lg:col-span-7 space-y-2">
+          <div className="lg:col-span-7 space-y-2.5 max-w-2xl">
             <div>
-              <div className="text-[10px] sm:text-[11px] font-mono tracking-widest text-gold/90 font-bold uppercase">
+              <div className="text-[10px] sm:text-[11px] font-mono tracking-widest text-gold font-bold uppercase drop-shadow-sm">
                 {current.subtitle}
               </div>
-              <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-tight drop-shadow-md">
+              <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-tight drop-shadow-lg">
                 {current.title}
               </h2>
             </div>
 
             {/* Detailed Explanation ("თავისი განმარტებით") */}
-            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium drop-shadow-sm line-clamp-3 sm:line-clamp-none">
+            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium drop-shadow-md line-clamp-3 sm:line-clamp-none">
               {current.description}
             </p>
 
@@ -800,7 +792,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
               {current.highlights.map((h, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg backdrop-blur-md bg-slate-900/75 border border-white/15 text-[10px] sm:text-[11px] font-bold text-white shadow-xs truncate"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg backdrop-blur-md bg-slate-950/65 border border-white/15 text-[10px] sm:text-[11px] font-bold text-white shadow-xs truncate"
                 >
                   <CheckCircle2 size={13} className="text-gold shrink-0" />
                   <span className="truncate">{h}</span>
@@ -809,8 +801,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Visual Interactive Mockup Card (5 cols) */}
-          <div className="lg:col-span-5 flex items-center justify-center">
+          {/* Right Column: Sleek Frosted Glass HUD Widget (Compact & aligned to right, letting the car in center shine!) */}
+          <div className="lg:col-span-5 flex items-center justify-end">
             {renderVisualCard()}
           </div>
         </div>
@@ -841,7 +833,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
           {/* Carousel Arrows & Number Indicator */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <span className="text-[11px] font-mono font-bold text-slate-400">
+            <span className="text-[11px] font-mono font-bold text-slate-300">
               <span className="text-gold font-black">{currentIndex + 1}</span> / {totalServices}
             </span>
 
@@ -913,13 +905,13 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                   }`}
                 >
                   {/* Thematic Car Thumbnail */}
-                  <div className="relative h-24 w-full overflow-hidden">
+                  <div className="relative h-28 w-full overflow-hidden">
                     <img
                       src={srv.imageUrl}
                       alt={srv.title}
                       className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-950/80 text-[10px] font-mono font-bold text-gold border border-gold/30">
                       <Icon size={11} />
                       <span>{srv.shortName}</span>
