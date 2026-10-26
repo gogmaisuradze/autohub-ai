@@ -38,7 +38,8 @@ import {
   Scale,
   MessageSquare,
   Eye,
-  Download
+  Download,
+  Trash2
 } from 'lucide-react';
 
 interface Props {
@@ -50,6 +51,189 @@ interface Props {
   onOpenFieldPrompt?: (field: PromptFieldType) => void;
   onNavigateToAiClarification?: (initialPrompt?: string) => void;
 }
+
+export interface AvatarPreset {
+  id: string;
+  title: string;
+  subtitle: string;
+  type: 'avatar' | 'car';
+}
+
+export const AVATAR_PRESETS: AvatarPreset[] = [
+  {
+    id: 'silhouette',
+    title: 'ბიომეტრიული',
+    subtitle: 'კლასიკური სილუეტი',
+    type: 'avatar'
+  },
+  {
+    id: 'avatar_racer',
+    title: 'მრბოლელი',
+    subtitle: 'Motorsport Track',
+    type: 'avatar'
+  },
+  {
+    id: 'avatar_business',
+    title: 'ბიზნეს მძღოლი',
+    subtitle: 'Executive Driver',
+    type: 'avatar'
+  },
+  {
+    id: 'car_mercedes',
+    title: 'Mercedes GLA',
+    subtitle: 'Luxury SUV',
+    type: 'car'
+  },
+  {
+    id: 'car_sport',
+    title: 'M-Sport სედანი',
+    subtitle: 'Dynamic Sedan',
+    type: 'car'
+  },
+  {
+    id: 'car_supercar',
+    title: 'Stealth GT',
+    subtitle: 'GT Performance',
+    type: 'car'
+  }
+];
+
+export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full", showBadge = true) => {
+  // If it's a URL starting with http, https, or data:image
+  if (photoUrl && (photoUrl.startsWith('http') || photoUrl.startsWith('data:'))) {
+    return (
+      <div className={`relative ${className} overflow-hidden bg-slate-900`}>
+        <img
+          src={photoUrl}
+          alt="Driver Avatar"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
+      </div>
+    );
+  }
+
+  // Predefined avatar IDs:
+  if (photoUrl === 'car_mercedes' || photoUrl === 'car') {
+    return (
+      <div className={`relative ${className} overflow-hidden bg-slate-900`}>
+        <img
+          src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=600&q=80"
+          alt="Mercedes-Benz"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+        {showBadge && (
+          <div className="absolute bottom-1.5 inset-x-1 text-center">
+            <span className="text-[8px] font-black text-gold font-mono uppercase bg-navy/90 px-1.5 py-0.5 rounded shadow-xs">
+              MERCEDES
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (photoUrl === 'car_sport') {
+    return (
+      <div className={`relative ${className} overflow-hidden bg-slate-900`}>
+        <img
+          src="https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=600&q=80"
+          alt="M-Sport Sedan"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+        {showBadge && (
+          <div className="absolute bottom-1.5 inset-x-1 text-center">
+            <span className="text-[8px] font-black text-gold font-mono uppercase bg-navy/90 px-1.5 py-0.5 rounded shadow-xs">
+              M-SPORT
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (photoUrl === 'car_supercar') {
+    return (
+      <div className={`relative ${className} overflow-hidden bg-slate-900`}>
+        <img
+          src="https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=600&q=80"
+          alt="GT Coupe"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+        {showBadge && (
+          <div className="absolute bottom-1.5 inset-x-1 text-center">
+            <span className="text-[8px] font-black text-gold font-mono uppercase bg-navy/90 px-1.5 py-0.5 rounded shadow-xs">
+              PERFORMANCE
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (photoUrl === 'avatar_racer') {
+    return (
+      <div className={`relative ${className} bg-gradient-to-b from-amber-950/60 via-slate-900 to-slate-950 flex flex-col items-center justify-end overflow-hidden`}>
+        <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 100 120" preserveAspectRatio="none">
+          <circle cx="50" cy="50" r="40" stroke="#C5A059" strokeWidth="1" fill="none" strokeDasharray="4 2" />
+          <line x1="10" y1="50" x2="90" y2="50" stroke="#C5A059" strokeWidth="0.5" />
+        </svg>
+        <svg className="w-20 sm:w-24 h-26 sm:h-30 text-gold/90 relative z-10" viewBox="0 0 100 120" fill="currentColor">
+          <path d="M50 20 C32 20 22 34 22 52 C22 62 26 70 34 74 C34 78 30 84 20 105 L80 105 C70 84 66 78 66 74 C74 70 78 62 78 52 C78 34 68 20 50 20 Z" />
+          <path d="M30 46 C34 40 66 40 70 46 C72 52 68 58 50 58 C32 58 28 52 30 46 Z" fill="#001F3F" />
+        </svg>
+        {showBadge && (
+          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-amber-500/20 text-gold border border-gold/40 px-1.5 py-0.5 rounded shadow-xs z-10">
+            RACER
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (photoUrl === 'avatar_business') {
+    return (
+      <div className={`relative ${className} bg-gradient-to-b from-slate-800 via-slate-900 to-navy flex flex-col items-center justify-end overflow-hidden`}>
+        <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 100 120" preserveAspectRatio="none">
+          <rect x="15" y="15" width="70" height="90" rx="6" stroke="#94A3B8" strokeWidth="0.8" fill="none" strokeDasharray="3 3" />
+        </svg>
+        <svg className="w-20 sm:w-24 h-26 sm:h-30 text-slate-300 relative z-10" viewBox="0 0 100 120" fill="currentColor">
+          <circle cx="50" cy="38" r="20" />
+          <path d="M22 110 C22 84 34 74 50 74 C66 74 78 84 78 110 Z" />
+          <path d="M46 74 L50 90 L54 74 Z" fill="#C5A059" />
+          <polygon points="48,90 52,90 54,105 50,110 46,105" fill="#C5A059" />
+        </svg>
+        {showBadge && (
+          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-slate-800/90 text-slate-200 border border-slate-600 px-1.5 py-0.5 rounded shadow-xs z-10">
+            EXECUTIVE
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Default: Biometric classic silhouette
+  return (
+    <div className={`relative ${className} bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 flex flex-col items-center justify-end overflow-hidden`}>
+      <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 100 120" preserveAspectRatio="none">
+        <circle cx="50" cy="60" r="45" stroke="#C5A059" strokeWidth="0.8" fill="none" strokeDasharray="3 3" />
+        <circle cx="50" cy="60" r="32" stroke="#001F3F" strokeWidth="0.6" fill="none" />
+      </svg>
+      <svg className="w-20 sm:w-24 h-26 sm:h-30 text-slate-400/90 relative z-10" viewBox="0 0 100 120" fill="currentColor">
+        <circle cx="50" cy="38" r="22" />
+        <path d="M16,115 C16,84 32,70 50,70 C68,70 84,84 84,115 Z" />
+      </svg>
+      {showBadge && (
+        <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/80 text-gold px-1.5 py-0.5 rounded shadow-xs z-10">
+          BIOMETRIC
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const FinesModule: React.FC<Props> = ({
   vehicle,
@@ -151,10 +335,19 @@ export const FinesModule: React.FC<Props> = ({
 
   // Driver Photo Upload Ref & Handler
   const photoInputRef = React.useRef<HTMLInputElement>(null);
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
 
   const handleTriggerPhotoUpload = () => {
     sounds.playClick();
-    photoInputRef.current?.click();
+    setIsAvatarPickerOpen(true);
+  };
+
+  const handleSelectAvatarPreset = (presetId: string) => {
+    sounds.playSuccess();
+    onUpdateVehicle({ driver_photo_url: presetId });
+    setAutoSyncNotice('ავატარი განახლდა!');
+    setTimeout(() => setAutoSyncNotice(null), 3000);
+    setIsAvatarPickerOpen(false);
   };
 
   const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,16 +360,19 @@ export const FinesModule: React.FC<Props> = ({
         onUpdateVehicle({ driver_photo_url: reader.result });
         setAutoSyncNotice('მძღოლის ფოტო წარმატებით აიტვირთა!');
         setTimeout(() => setAutoSyncNotice(null), 3500);
+        setIsAvatarPickerOpen(false);
       }
     };
     reader.readAsDataURL(file);
   };
 
-  // Allow closing payment / receipt / photo / protocol / appeal modals with Escape key
+  // Allow closing payment / receipt / photo / protocol / appeal / avatar modals with Escape key
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (selectedFineForPayment && !isProcessingPayment) {
+        if (isAvatarPickerOpen) {
+          setIsAvatarPickerOpen(false);
+        } else if (selectedFineForPayment && !isProcessingPayment) {
           setSelectedFineForPayment(null);
         } else if (receiptFine) {
           setReceiptFine(null);
@@ -191,7 +387,7 @@ export const FinesModule: React.FC<Props> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedFineForPayment, isProcessingPayment, receiptFine, selectedFineForPhoto, selectedFineForProtocol, selectedFineForAppeal, isSubmittingAppeal]);
+  }, [isAvatarPickerOpen, selectedFineForPayment, isProcessingPayment, receiptFine, selectedFineForPhoto, selectedFineForProtocol, selectedFineForAppeal, isSubmittingAppeal]);
 
   // Auto-sync status and last updated time
   const [lastAutoSyncedTime, setLastAutoSyncedTime] = useState<string>(() => {
@@ -527,12 +723,15 @@ export const FinesModule: React.FC<Props> = ({
       label: 'ავატარი / ფოტო',
       shortLabel: 'ავატარი',
       isFilled: true, // Silhouette, avatar, or car photo is always accepted!
-      value: vehicle.driver_photo_url && vehicle.driver_photo_url !== 'silhouette' && vehicle.driver_photo_url !== 'car'
+      value: vehicle.driver_photo_url && (vehicle.driver_photo_url.startsWith('data:') || vehicle.driver_photo_url.startsWith('http'))
         ? 'პირადი ფოტო ✓'
-        : vehicle.driver_photo_url === 'car'
+        : vehicle.driver_photo_url && vehicle.driver_photo_url.startsWith('car')
         ? 'მანქანა ✓'
-        : 'სილუეტი ✓',
-      onAction: handleTriggerPhotoUpload
+        : 'ავატარი ✓',
+      onAction: () => {
+        sounds.playClick();
+        setIsAvatarPickerOpen(true);
+      }
     }
   ];
 
@@ -690,112 +889,50 @@ export const FinesModule: React.FC<Props> = ({
               <div className="flex flex-col items-center shrink-0">
                 <div className="relative group">
                   <div
-                    onClick={handleTriggerPhotoUpload}
-                    className="w-28 sm:w-32 h-36 sm:h-40 rounded-2xl border-2 border-slate-300 bg-slate-900 overflow-hidden shadow-md flex flex-col items-center justify-center relative cursor-pointer transition-all hover:border-gold"
-                    title="დააჭირეთ ფოტოს შესაცვლელად / ასატვირთად"
+                    onClick={() => {
+                      sounds.playClick();
+                      setIsAvatarPickerOpen(true);
+                    }}
+                    className="w-28 sm:w-32 h-36 sm:h-40 rounded-2xl border-2 border-slate-300 bg-slate-900 overflow-hidden shadow-md flex flex-col items-center justify-center relative cursor-pointer transition-all hover:border-gold hover:shadow-lg"
+                    title="დააჭირეთ ფოტოს / ავატარის შესაცვლელად"
                   >
-                    {vehicle.driver_photo_url === 'car' ? (
-                      /* 1. Car Photo Option */
-                      <div className="w-full h-full bg-slate-900 relative">
-                        <img
-                          src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=600&q=80"
-                          alt={vehicle.brand + ' ' + vehicle.model}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-                        <div className="absolute bottom-2 inset-x-1 text-center">
-                          <span className="text-[9px] font-black text-gold font-mono uppercase bg-navy/90 px-2 py-0.5 rounded shadow-xs">
-                            {vehicle.brand} {vehicle.model}
-                          </span>
-                        </div>
-                      </div>
-                    ) : vehicle.driver_photo_url && vehicle.driver_photo_url !== 'silhouette' ? (
-                      /* 2. Custom Uploaded Image */
-                      <>
-                        <img
-                          src={vehicle.driver_photo_url}
-                          alt={driverName || 'Driver'}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent pointer-events-none" />
-                        <div className="absolute inset-0 bg-navy/70 text-white flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold">
-                          <Camera size={18} className="text-gold" />
-                          <span>შეცვლა</span>
-                        </div>
-                      </>
-                    ) : (
-                      /* 3. Driver Stylized Biometric Silhouette Avatar (Default) */
-                      <div className="w-full h-full bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 flex flex-col items-center justify-end relative overflow-hidden">
-                        <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 100 120" preserveAspectRatio="none">
-                          <circle cx="50" cy="60" r="45" stroke="#C5A059" strokeWidth="0.8" fill="none" strokeDasharray="3 3" />
-                          <circle cx="50" cy="60" r="32" stroke="#001F3F" strokeWidth="0.6" fill="none" />
-                        </svg>
-                        <svg className="w-20 sm:w-24 h-26 sm:h-30 text-slate-400/90 relative z-10" viewBox="0 0 100 120" fill="currentColor">
-                          <circle cx="50" cy="38" r="22" />
-                          <path d="M16,115 C16,84 32,70 50,70 C68,70 84,84 84,115 Z" />
-                        </svg>
-                        <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/80 text-gold px-1.5 py-0.5 rounded shadow-xs z-10">
-                          AVATAR
-                        </div>
-                      </div>
-                    )}
+                    {renderDriverAvatar(vehicle.driver_photo_url, "w-full h-full")}
+
+                    {/* Security Hologram overlay sheen */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent pointer-events-none" />
+
+                    {/* Hover action overlay */}
+                    <div className="absolute inset-0 bg-navy/75 text-white flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold">
+                      <Camera size={20} className="text-gold" />
+                      <span>შეცვლა</span>
+                    </div>
                   </div>
 
                   {/* Corner Biometric Fingerprint Badge */}
                   <div
-                    onClick={handleTriggerPhotoUpload}
+                    onClick={() => {
+                      sounds.playClick();
+                      setIsAvatarPickerOpen(true);
+                    }}
                     className="absolute -bottom-1.5 -right-1.5 bg-navy text-gold p-1.5 rounded-xl border border-gold/40 shadow-xs cursor-pointer hover:scale-110 transition-transform"
-                    title="ფოტოს / ავატარის შეცვლა"
+                    title="ფოტოს / ავატარის არჩევა"
                   >
                     <Fingerprint size={14} />
                   </div>
                 </div>
 
-                {/* 1-Click Quick Selector: Silhouette | Car | Upload */}
-                <div className="flex items-center gap-1 mt-2 justify-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      onUpdateVehicle({ driver_photo_url: 'silhouette' });
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all ${
-                      !vehicle.driver_photo_url || vehicle.driver_photo_url === 'silhouette'
-                        ? 'bg-navy text-gold border-navy shadow-xs'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                    }`}
-                    title="მძღოლის სილუეტის არჩევა"
-                  >
-                    👤 სილუეტი
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      onUpdateVehicle({ driver_photo_url: 'car' });
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all ${
-                      vehicle.driver_photo_url === 'car'
-                        ? 'bg-navy text-gold border-navy shadow-xs'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                    }`}
-                    title="ავტომობილის ფოტოს არჩევა"
-                  >
-                    🚗 მანქანა
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleTriggerPhotoUpload}
-                    className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all ${
-                      vehicle.driver_photo_url && vehicle.driver_photo_url !== 'silhouette' && vehicle.driver_photo_url !== 'car'
-                        ? 'bg-navy text-gold border-navy shadow-xs'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                    }`}
-                    title="საკუთარი ფოტოს ატვირთვა"
-                  >
-                    📷 ატვირთვა
-                  </button>
-                </div>
+                {/* Single Clean Action: "აირჩიე ფოტო" */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setIsAvatarPickerOpen(true);
+                  }}
+                  className="mt-2.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white text-navy border border-slate-200 hover:border-gold hover:text-gold shadow-xs hover:shadow transition-all flex items-center justify-center gap-1.5 group"
+                >
+                  <Camera size={13} className="text-gold group-hover:scale-110 transition-transform" />
+                  <span>აირჩიე ფოტო</span>
+                </button>
               </div>
 
               {/* Passport Driver Attributes (Dual-Script Georgian & Latin) */}
@@ -2356,6 +2493,184 @@ export const FinesModule: React.FC<Props> = ({
           >
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 11. AVATAR & PHOTO SELECTION MODAL                       */}
+      {/* ======================================================== */}
+      {isAvatarPickerOpen && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAvatarPickerOpen(false);
+          }}
+          className="fixed inset-0 z-50 bg-navy/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-md sm:max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-gold/30 space-y-4 my-8 cursor-default animate-scale-up"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-navy text-gold flex items-center justify-center shadow-xs">
+                  <UserCheck size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-navy leading-tight">
+                    აირჩიეთ ფოტო ან ავატარი
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    აირჩიეთ მზა ავატარი, მანქანა ან ატვირთეთ თქვენი ფოტო
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAvatarPickerOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-navy flex items-center justify-center transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Section 1: Ready-made Avatars & Cars */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+                  <Sparkles size={13} className="text-gold" />
+                  <span>მზა ავატარები & მანქანები</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {AVATAR_PRESETS.length} არჩევანი
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                {AVATAR_PRESETS.map((preset) => {
+                  const isCurrent = vehicle.driver_photo_url === preset.id ||
+                    (!vehicle.driver_photo_url && preset.id === 'silhouette');
+
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => handleSelectAvatarPreset(preset.id)}
+                      className={`relative group rounded-2xl border-2 p-1.5 flex flex-col items-center gap-1.5 transition-all text-center ${
+                        isCurrent
+                          ? 'border-gold bg-gold/5 shadow-md ring-2 ring-gold/20'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {/* Avatar Preview Box */}
+                      <div className="w-full h-18 sm:h-20 rounded-xl overflow-hidden shadow-xs border border-slate-200 bg-slate-900">
+                        {renderDriverAvatar(preset.id, "w-full h-full", false)}
+                      </div>
+
+                      {/* Labels */}
+                      <div className="w-full px-0.5">
+                        <div className="text-[11px] font-bold text-navy truncate">
+                          {preset.title}
+                        </div>
+                        <div className="text-[9px] text-slate-400 truncate">
+                          {preset.subtitle}
+                        </div>
+                      </div>
+
+                      {/* Active Indicator Badge */}
+                      {isCurrent && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-gold text-navy text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Section 2: Upload Custom Photo */}
+            <div className="pt-3 border-t border-slate-100">
+              <span className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5 mb-2">
+                <Upload size={13} className="text-gold" />
+                <span>ან ატვირთეთ თქვენი ფოტო</span>
+              </span>
+
+              {/* If user currently has a custom base64 / external image */}
+              {vehicle.driver_photo_url &&
+               (vehicle.driver_photo_url.startsWith('data:') || vehicle.driver_photo_url.startsWith('http')) &&
+               !AVATAR_PRESETS.some(p => p.id === vehicle.driver_photo_url) ? (
+                <div className="p-3 rounded-2xl border-2 border-emerald-300 bg-emerald-50/50 flex items-center gap-3">
+                  <div className="w-12 h-14 rounded-xl overflow-hidden border border-emerald-400 shadow-xs shrink-0 bg-slate-900">
+                    <img
+                      src={vehicle.driver_photo_url}
+                      alt="Uploaded Custom"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold text-emerald-900 block truncate">
+                      ✓ პირადი ფოტო დაყენებულია
+                    </span>
+                    <span className="text-[10px] text-emerald-700">
+                      გამოჩნდება თქვენს პასპორტის ბარათზე
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      className="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-gold text-xs font-bold text-navy shadow-xs"
+                    >
+                      შეცვლა
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        onUpdateVehicle({ driver_photo_url: 'silhouette' });
+                      }}
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="სილუეტზე დაბრუნება"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => photoInputRef.current?.click()}
+                  className="p-3.5 sm:p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-gold bg-slate-50 hover:bg-gold/5 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all group text-center"
+                >
+                  <div className="w-9 h-9 rounded-full bg-white text-gold flex items-center justify-center shadow-xs border border-slate-200 group-hover:scale-110 transition-transform">
+                    <Upload size={17} />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-navy block group-hover:text-gold transition-colors">
+                      დააჭირეთ პირადი ფოტოს ასატვირთად
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      JPG, PNG, WebP ფაილები
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+              <span className="text-[10px] text-slate-400 font-medium">
+                არჩევანი მყისიერად ინახება
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsAvatarPickerOpen(false)}
+                className="px-4 py-2 rounded-xl bg-navy hover:bg-slate-800 text-white text-xs font-bold shadow-md transition-all"
+              >
+                მზადაა
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
