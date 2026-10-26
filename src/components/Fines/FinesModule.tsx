@@ -39,7 +39,8 @@ import {
   MessageSquare,
   Eye,
   Download,
-  Trash2
+  Trash2,
+  Crown
 } from 'lucide-react';
 
 interface Props {
@@ -52,58 +53,349 @@ interface Props {
   onNavigateToAiClarification?: (initialPrompt?: string) => void;
 }
 
-export interface AvatarPreset {
+export interface ChessAvatarPreset {
   id: string;
+  piece: 'pawn' | 'knight' | 'bishop' | 'rook' | 'queen' | 'king';
+  color: 'white' | 'black';
   title: string;
   subtitle: string;
-  type: 'driver' | 'car' | 'gear';
   badge: string;
+  symbol: string;
 }
 
-export const AVATAR_PRESETS: AvatarPreset[] = [
-  {
-    id: 'contour_biometric',
-    title: 'ბიომეტრიული სკანი',
-    subtitle: 'Face Scan Mesh',
-    type: 'driver',
-    badge: 'BIO SCAN'
-  },
-  {
-    id: 'contour_sportscar',
-    title: 'სპორტული ავტო',
-    subtitle: 'GT Coupe Wireframe',
-    type: 'car',
-    badge: 'GT WIRE'
-  },
-  {
-    id: 'contour_suv',
-    title: 'GLA / SUV კონტური',
-    subtitle: 'Luxury SUV Outline',
-    type: 'car',
-    badge: 'SUV HUD'
-  },
-  {
-    id: 'contour_helmet',
-    title: 'მრბოლელის ჩაფხუტი',
-    subtitle: 'Racer Helmet Line',
-    type: 'gear',
-    badge: 'RACER'
-  },
-  {
-    id: 'contour_wheel',
-    title: 'სპორტული საჭე',
-    subtitle: 'Sport Wheel & HUD',
-    type: 'gear',
-    badge: 'M-WHEEL'
-  },
-  {
-    id: 'contour_cyber',
-    title: 'პოლიგონალური მძღოლი',
-    subtitle: '3D Polygonal Mesh',
-    type: 'driver',
-    badge: '3D MESH'
-  }
+export const CHESS_AVATARS: ChessAvatarPreset[] = [
+  // White Pieces (თეთრი ფიგურები)
+  { id: 'chess_pawn_white', piece: 'pawn', color: 'white', title: 'თეთრი პაიკი', subtitle: 'White Pawn', badge: '♙ PAWN', symbol: '♙' },
+  { id: 'chess_knight_white', piece: 'knight', color: 'white', title: 'თეთრი მხედარი', subtitle: 'White Knight', badge: '♘ KNIGHT', symbol: '♘' },
+  { id: 'chess_bishop_white', piece: 'bishop', color: 'white', title: 'თეთრი კუ', subtitle: 'White Bishop', badge: '♗ BISHOP', symbol: '♗' },
+  { id: 'chess_rook_white', piece: 'rook', color: 'white', title: 'თეთრი ეტლი', subtitle: 'White Rook', badge: '♖ ROOK', symbol: '♖' },
+  { id: 'chess_queen_white', piece: 'queen', color: 'white', title: 'თეთრი დედოფალი', subtitle: 'White Queen', badge: '♕ QUEEN', symbol: '♕' },
+  { id: 'chess_king_white', piece: 'king', color: 'white', title: 'თეთრი მეფე', subtitle: 'White King', badge: '♔ KING', symbol: '♔' },
+
+  // Black Pieces (შავი ფიგურები)
+  { id: 'chess_pawn_black', piece: 'pawn', color: 'black', title: 'შავი პაიკი', subtitle: 'Black Pawn', badge: '♟ PAWN', symbol: '♟' },
+  { id: 'chess_knight_black', piece: 'knight', color: 'black', title: 'შავი მხედარი', subtitle: 'Black Knight', badge: '♞ KNIGHT', symbol: '♞' },
+  { id: 'chess_bishop_black', piece: 'bishop', color: 'black', title: 'შავი კუ', subtitle: 'Black Bishop', badge: '♝ BISHOP', symbol: '♝' },
+  { id: 'chess_rook_black', piece: 'rook', color: 'black', title: 'შავი ეტლი', subtitle: 'Black Rook', badge: '♜ ROOK', symbol: '♜' },
+  { id: 'chess_queen_black', piece: 'queen', color: 'black', title: 'შავი დედოფალი', subtitle: 'Black Queen', badge: '♛ QUEEN', symbol: '♛' },
+  { id: 'chess_king_black', piece: 'king', color: 'black', title: 'შავი მეფე', subtitle: 'Black King', badge: '♚ KING', symbol: '♚' }
 ];
+
+export const renderChessPiece = (
+  piece: 'pawn' | 'knight' | 'bishop' | 'rook' | 'queen' | 'king',
+  color: 'white' | 'black',
+  className = "w-full h-full",
+  showBadge = true
+) => {
+  const isWhite = color === 'white';
+  const gradId = `chess-grad-${piece}-${color}`;
+
+  const badgeMap: Record<string, string> = {
+    pawn: isWhite ? '♙ PAWN' : '♟ PAWN',
+    knight: isWhite ? '♘ KNIGHT' : '♞ KNIGHT',
+    bishop: isWhite ? '♗ BISHOP' : '♝ BISHOP',
+    rook: isWhite ? '♖ ROOK' : '♜ ROOK',
+    queen: isWhite ? '♕ QUEEN' : '♛ QUEEN',
+    king: isWhite ? '♔ KING' : '♚ KING',
+  };
+
+  return (
+    <div className={`relative ${className} ${
+      isWhite
+        ? 'bg-gradient-to-b from-slate-900 via-navy to-slate-950'
+        : 'bg-gradient-to-b from-slate-950 via-slate-900 to-black'
+    } flex flex-col items-center justify-center overflow-hidden select-none`}>
+      {/* Background Radial Halo & Chess Grid Lines */}
+      <svg className="absolute inset-0 w-full h-full opacity-25 pointer-events-none" viewBox="0 0 100 120" preserveAspectRatio="none">
+        <defs>
+          <radialGradient id={`bg-radial-${color}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={isWhite ? '#FFFFFF' : '#C5A059'} stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <rect width="100" height="120" fill={`url(#bg-radial-${color})`} />
+        <line x1="0" y1="20" x2="100" y2="120" stroke={isWhite ? '#94A3B8' : '#C5A059'} strokeWidth="0.5" strokeDasharray="3 3" />
+        <line x1="100" y1="20" x2="0" y2="120" stroke={isWhite ? '#94A3B8' : '#C5A059'} strokeWidth="0.5" strokeDasharray="3 3" />
+        <circle cx="50" cy="55" r="44" stroke={isWhite ? '#E2E8F0' : '#C5A059'} strokeWidth="0.6" strokeDasharray="2 4" fill="none" />
+      </svg>
+
+      {/* Main Chess Piece SVG */}
+      <svg
+        className="w-24 sm:w-28 h-28 sm:h-32 relative z-10"
+        viewBox="0 0 100 120"
+        style={{
+          filter: isWhite
+            ? 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)) drop-shadow(0 4px 6px rgba(0,0,0,0.6))'
+            : 'drop-shadow(0 0 8px rgba(197, 160, 89, 0.55)) drop-shadow(0 4px 6px rgba(0,0,0,0.9))'
+        }}
+      >
+        <defs>
+          <linearGradient id={gradId} x1="20%" y1="0%" x2="80%" y2="100%">
+            {isWhite ? (
+              <>
+                <stop offset="0%" stopColor="#FFFFFF" />
+                <stop offset="45%" stopColor="#F8FAFC" />
+                <stop offset="85%" stopColor="#E2E8F0" />
+                <stop offset="100%" stopColor="#CBD5E1" />
+              </>
+            ) : (
+              <>
+                <stop offset="0%" stopColor="#334155" />
+                <stop offset="35%" stopColor="#1E293B" />
+                <stop offset="75%" stopColor="#0F172A" />
+                <stop offset="100%" stopColor="#020617" />
+              </>
+            )}
+          </linearGradient>
+        </defs>
+
+        {/* 1. PAWN (პაიკი) */}
+        {piece === 'pawn' && (
+          <g
+            fill={`url(#${gradId})`}
+            stroke={isWhite ? '#0F172A' : '#C5A059'}
+            strokeWidth={isWhite ? '1.6' : '1.8'}
+            strokeLinejoin="round"
+          >
+            <circle cx="50" cy="34" r="14" />
+            <path
+              d="M 44 26 C 48 23 54 23 58 26"
+              fill="none"
+              stroke={isWhite ? '#94A3B8' : '#FDE047'}
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+            <ellipse cx="50" cy="49" rx="11" ry="3" />
+            <path d="M 43 50 C 42 66 36 78 30 86 L 70 86 C 64 78 58 66 57 50 Z" />
+            <path
+              d="M 50 54 L 50 82"
+              fill="none"
+              stroke={isWhite ? '#CBD5E1' : '#EAB308'}
+              strokeWidth="1"
+              strokeDasharray="2 3"
+            />
+            <path d="M 26 86 L 74 86 L 77 92 L 23 92 Z" />
+            <path d="M 19 92 L 81 92 L 83 98 L 17 98 Z" />
+            <rect x="14" y="98" width="72" height="6" rx="2" />
+          </g>
+        )}
+
+        {/* 2. KNIGHT (მხედარი / ცხენი) */}
+        {piece === 'knight' && (
+          <g
+            fill={`url(#${gradId})`}
+            stroke={isWhite ? '#0F172A' : '#C5A059'}
+            strokeWidth={isWhite ? '1.6' : '1.8'}
+            strokeLinejoin="round"
+          >
+            <path d="M 48 20 L 44 28 L 38 24 C 32 30 22 42 22 52 C 22 58 26 62 34 60 L 44 58 C 44 68 38 78 28 86 L 72 86 C 74 74 72 58 68 46 C 64 36 56 24 48 20 Z" />
+            <circle
+              cx="38"
+              cy="38"
+              r="2.2"
+              fill={isWhite ? '#0F172A' : '#FDE047'}
+              stroke="none"
+            />
+            <circle
+              cx="28"
+              cy="53"
+              r="1.5"
+              fill={isWhite ? '#94A3B8' : '#C5A059'}
+              stroke="none"
+            />
+            <path
+              d="M 25 57 L 31 57"
+              fill="none"
+              stroke={isWhite ? '#0F172A' : '#C5A059'}
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M 64 40 L 56 44 M 68 52 L 60 56 M 70 66 L 62 70"
+              fill="none"
+              stroke={isWhite ? '#94A3B8' : '#FDE047'}
+              strokeWidth="1.3"
+              strokeLinecap="round"
+            />
+            <path
+              d="M 44 58 C 48 50 48 40 42 34"
+              fill="none"
+              stroke={isWhite ? '#CBD5E1' : '#EAB308'}
+              strokeWidth="1"
+            />
+            <path d="M 24 86 L 76 86 L 79 92 L 21 92 Z" />
+            <path d="M 18 92 L 82 92 L 84 98 L 16 98 Z" />
+            <rect x="13" y="98" width="74" height="6" rx="2" />
+          </g>
+        )}
+
+        {/* 3. BISHOP (კუ / ოფიცერი) */}
+        {piece === 'bishop' && (
+          <g
+            fill={`url(#${gradId})`}
+            stroke={isWhite ? '#0F172A' : '#C5A059'}
+            strokeWidth={isWhite ? '1.6' : '1.8'}
+            strokeLinejoin="round"
+          >
+            <circle cx="50" cy="18" r="3.5" />
+            <path d="M 50 22 C 34 22 32 46 38 56 C 42 60 58 60 62 56 C 68 46 66 22 50 22 Z" />
+            <path
+              d="M 50 28 L 60 42 L 56 44 L 46 30 Z"
+              fill={isWhite ? '#0F172A' : '#FDE047'}
+              stroke="none"
+            />
+            <ellipse cx="50" cy="58" rx="13" ry="3.5" />
+            <path d="M 42 59 C 41 72 34 80 28 86 L 72 86 C 66 80 59 72 58 59 Z" />
+            <line
+              x1="50"
+              y1="62"
+              x2="50"
+              y2="84"
+              stroke={isWhite ? '#CBD5E1' : '#EAB308'}
+              strokeWidth="1"
+              strokeDasharray="2 3"
+            />
+            <path d="M 24 86 L 76 86 L 79 92 L 21 92 Z" />
+            <path d="M 18 92 L 82 92 L 84 98 L 16 98 Z" />
+            <rect x="13" y="98" width="74" height="6" rx="2" />
+          </g>
+        )}
+
+        {/* 4. ROOK (ეტლი) */}
+        {piece === 'rook' && (
+          <g
+            fill={`url(#${gradId})`}
+            stroke={isWhite ? '#0F172A' : '#C5A059'}
+            strokeWidth={isWhite ? '1.6' : '1.8'}
+            strokeLinejoin="round"
+          >
+            <rect x="27" y="24" width="10" height="12" rx="1" />
+            <rect x="45" y="24" width="10" height="12" rx="1" />
+            <rect x="63" y="24" width="10" height="12" rx="1" />
+            <path d="M 25 36 L 75 36 L 71 44 L 29 44 Z" />
+            <path d="M 32 44 L 30 86 L 70 86 L 68 44 Z" />
+            <rect
+              x="48"
+              y="54"
+              width="4"
+              height="16"
+              rx="1.5"
+              fill={isWhite ? '#0F172A' : '#FDE047'}
+              stroke="none"
+            />
+            <line
+              x1="31"
+              y1="64"
+              x2="45"
+              y2="64"
+              stroke={isWhite ? '#CBD5E1' : '#C5A059'}
+              strokeWidth="1"
+            />
+            <line
+              x1="55"
+              y1="64"
+              x2="69"
+              y2="64"
+              stroke={isWhite ? '#CBD5E1' : '#C5A059'}
+              strokeWidth="1"
+            />
+            <path d="M 25 86 L 75 86 L 78 92 L 22 92 Z" />
+            <path d="M 18 92 L 82 92 L 84 98 L 16 98 Z" />
+            <rect x="13" y="98" width="74" height="6" rx="2" />
+          </g>
+        )}
+
+        {/* 5. QUEEN (დედოფალი / ლაზიერი) */}
+        {piece === 'queen' && (
+          <g
+            fill={`url(#${gradId})`}
+            stroke={isWhite ? '#0F172A' : '#C5A059'}
+            strokeWidth={isWhite ? '1.6' : '1.8'}
+            strokeLinejoin="round"
+          >
+            <circle cx="28" cy="24" r="2.8" />
+            <circle cx="39" cy="20" r="2.8" />
+            <circle cx="50" cy="17" r="3.4" />
+            <circle cx="61" cy="20" r="2.8" />
+            <circle cx="72" cy="24" r="2.8" />
+            <path d="M 28 26 L 33 42 L 39 22 L 44 42 L 50 20 L 56 42 L 61 22 L 67 42 L 72 26 L 72 44 C 72 48 28 48 28 44 Z" />
+            <ellipse cx="50" cy="46" rx="18" ry="4" />
+            <path d="M 40 48 C 38 64 32 76 26 86 L 74 86 C 68 76 62 64 60 48 Z" />
+            <path
+              d="M 44 54 C 47 62 53 62 56 54"
+              fill="none"
+              stroke={isWhite ? '#CBD5E1' : '#FDE047'}
+              strokeWidth="1.2"
+            />
+            <path
+              d="M 41 68 C 46 76 54 76 59 68"
+              fill="none"
+              stroke={isWhite ? '#CBD5E1' : '#FDE047'}
+              strokeWidth="1.2"
+            />
+            <path d="M 22 86 L 78 86 L 81 92 L 19 92 Z" />
+            <path d="M 17 92 L 83 92 L 85 98 L 15 98 Z" />
+            <rect x="12" y="98" width="76" height="6" rx="2" />
+          </g>
+        )}
+
+        {/* 6. KING (მეფე) */}
+        {piece === 'king' && (
+          <g
+            fill={`url(#${gradId})`}
+            stroke={isWhite ? '#0F172A' : '#C5A059'}
+            strokeWidth={isWhite ? '1.6' : '1.8'}
+            strokeLinejoin="round"
+          >
+            <path
+              d="M 50 11 L 50 24 M 45 16 L 55 16"
+              fill="none"
+              stroke={isWhite ? '#0F172A' : '#FDE047'}
+              strokeWidth="2.4"
+              strokeLinecap="square"
+            />
+            <path d="M 50 24 C 32 24 30 46 30 48 L 70 48 C 70 46 68 24 50 24 Z" />
+            <path
+              d="M 42 28 C 46 38 46 44 45 48 M 58 28 C 54 38 54 44 55 48"
+              fill="none"
+              stroke={isWhite ? '#94A3B8' : '#FDE047'}
+              strokeWidth="1.3"
+            />
+            <circle
+              cx="50"
+              cy="36"
+              r="2.5"
+              fill={isWhite ? '#C5A059' : '#EF4444'}
+              stroke="none"
+            />
+            <ellipse cx="50" cy="49" rx="20" ry="4.5" />
+            <path d="M 38 51 C 36 68 30 78 24 86 L 76 86 C 70 78 64 68 62 51 Z" />
+            <path
+              d="M 42 53 L 50 68 L 58 53"
+              fill="none"
+              stroke={isWhite ? '#CBD5E1' : '#FDE047'}
+              strokeWidth="1.3"
+            />
+            <path d="M 21 86 L 79 86 L 82 92 L 18 92 Z" />
+            <path d="M 16 92 L 84 92 L 86 98 L 14 98 Z" />
+            <rect x="11" y="98" width="78" height="6" rx="2" />
+          </g>
+        )}
+      </svg>
+
+      {/* Security Corner Marks & Piece Badge */}
+      {showBadge && (
+        <div className={`absolute top-2 right-2 text-[8px] font-mono font-black px-1.5 py-0.5 rounded shadow-xs z-20 ${
+          isWhite
+            ? 'bg-white text-navy border border-slate-300'
+            : 'bg-navy/95 text-gold border border-gold/40'
+        }`}>
+          {badgeMap[piece]}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full", showBadge = true) => {
   // If it's a URL starting with http, https, or data:image (Custom Uploaded Photo)
@@ -115,7 +407,6 @@ export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full
           alt="Driver Biometric Photo"
           className="w-full h-full object-cover"
         />
-        {/* Hologram security overlay and biometric corner brackets */}
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
         <svg className="absolute inset-0 w-full h-full pointer-events-none p-1.5 text-gold/70" viewBox="0 0 100 120">
           <path d="M 6 16 L 6 6 L 16 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
@@ -132,232 +423,29 @@ export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full
     );
   }
 
-  // 1. Sportscar Wireframe Contour
-  if (photoUrl === 'contour_sportscar' || photoUrl === 'car_sport' || photoUrl === 'car_supercar') {
-    return (
-      <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
-        {/* Blueprint coordinate grid */}
-        <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 100 120" preserveAspectRatio="none">
-          <line x1="50" y1="0" x2="50" y2="120" stroke="#FACC15" strokeWidth="0.5" strokeDasharray="2 3" />
-          <line x1="0" y1="80" x2="100" y2="80" stroke="#FACC15" strokeWidth="0.5" strokeDasharray="2 3" />
-        </svg>
-        {/* Sportscar Front Contour */}
-        <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.45))' }}>
-          <path d="M 32 36 C 40 28 60 28 68 36 L 76 56 L 24 56 Z" stroke="#FACC15" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M 40 36 L 46 56" stroke="#94A3B8" strokeWidth="0.8" strokeDasharray="2 2" />
-          <path d="M 60 36 L 54 56" stroke="#94A3B8" strokeWidth="0.8" strokeDasharray="2 2" />
-          <path d="M 24 56 C 22 66 22 74 20 84 L 80 84 C 78 74 78 66 76 56" stroke="#FACC15" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M 36 56 L 38 78" stroke="#38BDF8" strokeWidth="1.2" strokeLinecap="round" />
-          <path d="M 64 56 L 62 78" stroke="#38BDF8" strokeWidth="1.2" strokeLinecap="round" />
-          <path d="M 23 72 L 35 74 L 32 79 L 22 76 Z" stroke="#38BDF8" strokeWidth="1.4" fill="rgba(56, 189, 248, 0.15)" strokeLinejoin="round" />
-          <path d="M 77 72 L 65 74 L 68 79 L 78 76 Z" stroke="#38BDF8" strokeWidth="1.4" fill="rgba(56, 189, 248, 0.15)" strokeLinejoin="round" />
-          <rect x="40" y="74" width="20" height="9" rx="3" stroke="#FACC15" strokeWidth="1.3" />
-          <line x1="50" y1="74" x2="50" y2="83" stroke="#FACC15" strokeWidth="1" />
-          <path d="M 16 88 L 22 84 L 78 84 L 84 88 L 78 94 L 22 94 Z" stroke="#E2E8F0" strokeWidth="1.4" strokeLinejoin="round" />
-          <line x1="28" y1="88" x2="36" y2="88" stroke="#38BDF8" strokeWidth="1.2" />
-          <line x1="64" y1="88" x2="72" y2="88" stroke="#38BDF8" strokeWidth="1.2" />
-          <ellipse cx="19" cy="88" rx="4" ry="7" stroke="#94A3B8" strokeWidth="1.2" />
-          <ellipse cx="81" cy="88" rx="4" ry="7" stroke="#94A3B8" strokeWidth="1.2" />
-          <path d="M 8 106 L 35 95" stroke="#FACC15" strokeWidth="1" strokeDasharray="3 3" />
-          <path d="M 92 106 L 65 95" stroke="#FACC15" strokeWidth="1" strokeDasharray="3 3" />
-        </svg>
-        {showBadge && (
-          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-yellow-400 border border-yellow-400/40 px-1.5 py-0.5 rounded shadow-xs z-20">
-            GT WIRE
-          </div>
-        )}
-      </div>
-    );
+  // Check if it's a chess preset (e.g. chess_pawn_white, chess_king_black, etc.)
+  if (photoUrl && photoUrl.startsWith('chess_')) {
+    const parts = photoUrl.split('_');
+    const piece = parts[1] as 'pawn' | 'knight' | 'bishop' | 'rook' | 'queen' | 'king';
+    const color = (parts[2] || 'white') as 'white' | 'black';
+    if (['pawn', 'knight', 'bishop', 'rook', 'queen', 'king'].includes(piece)) {
+      return renderChessPiece(piece, color, className, showBadge);
+    }
   }
 
-  // 2. SUV / GLA Contour
-  if (photoUrl === 'contour_suv' || photoUrl === 'car_mercedes' || photoUrl === 'car') {
-    return (
-      <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
-        {/* Modern SUV Stance Contour */}
-        <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(197, 160, 89, 0.45))' }}>
-          <line x1="28" y1="26" x2="38" y2="26" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
-          <line x1="62" y1="26" x2="72" y2="26" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
-          <path d="M 28 32 C 38 28 62 28 72 32 L 80 54 L 20 54 Z" stroke="#C5A059" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M 20 54 L 16 66 L 16 80 L 84 80 L 84 66 L 80 54" stroke="#C5A059" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M 28 54 L 28 76" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="2 2" />
-          <path d="M 72 54 L 72 76" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="2 2" />
-          <circle cx="50" cy="69" r="6.5" stroke="#C5A059" strokeWidth="1.4" fill="rgba(197, 160, 89, 0.1)" />
-          <path d="M 50 63 L 50 75" stroke="#C5A059" strokeWidth="1.2" />
-          <path d="M 45 66 L 55 72" stroke="#C5A059" strokeWidth="1.2" />
-          <path d="M 45 72 L 55 66" stroke="#C5A059" strokeWidth="1.2" />
-          <path d="M 32 67 L 42 67" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
-          <path d="M 58 67 L 68 67" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
-          <path d="M 34 71 L 42 71" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
-          <path d="M 58 71 L 66 71" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
-          <path d="M 18 64 L 28 64 L 27 70 L 17 68 Z" stroke="#38BDF8" strokeWidth="1.4" fill="rgba(56, 189, 248, 0.2)" strokeLinejoin="round" />
-          <path d="M 82 64 L 72 64 L 73 70 L 83 68 Z" stroke="#38BDF8" strokeWidth="1.4" fill="rgba(56, 189, 248, 0.2)" strokeLinejoin="round" />
-          <path d="M 15 84 L 24 80 L 76 80 L 85 84 L 80 92 L 20 92 Z" stroke="#94A3B8" strokeWidth="1.4" strokeLinejoin="round" />
-          <path d="M 38 86 L 62 86" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
-          <rect x="42" y="88" width="16" height="3" stroke="#C5A059" strokeWidth="1" />
-          <path d="M 16 52 L 20 54" stroke="#C5A059" strokeWidth="1.4" />
-          <path d="M 84 52 L 80 54" stroke="#C5A059" strokeWidth="1.4" />
-        </svg>
-        {showBadge && (
-          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-gold border border-gold/40 px-1.5 py-0.5 rounded shadow-xs z-20">
-            SUV HUD
-          </div>
-        )}
-      </div>
-    );
+  // Graceful legacy mappings to chess pieces:
+  if (photoUrl === 'car' || photoUrl === 'car_mercedes' || photoUrl === 'contour_suv') {
+    return renderChessPiece('rook', 'white', className, showBadge);
+  }
+  if (photoUrl === 'car_sport' || photoUrl === 'car_supercar' || photoUrl === 'contour_sportscar' || photoUrl === 'contour_wheel') {
+    return renderChessPiece('knight', 'black', className, showBadge);
+  }
+  if (photoUrl === 'avatar_racer' || photoUrl === 'contour_helmet') {
+    return renderChessPiece('queen', 'white', className, showBadge);
   }
 
-  // 3. Racer Helmet Contour
-  if (photoUrl === 'contour_helmet' || photoUrl === 'avatar_racer') {
-    return (
-      <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
-        {/* Airflow / Speed Trails */}
-        <svg className="absolute inset-0 w-full h-full opacity-30 pointer-events-none" viewBox="0 0 100 120">
-          <path d="M 68 28 C 78 28 88 32 94 40" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="3 3" fill="none" />
-          <path d="M 72 48 C 82 48 90 54 96 64" stroke="#F59E0B" strokeWidth="0.8" strokeDasharray="3 3" fill="none" />
-          <path d="M 70 68 C 80 68 88 74 94 84" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="3 3" fill="none" />
-        </svg>
-        {/* Helmet Contour */}
-        <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(245, 158, 11, 0.45))' }}>
-          <path d="M 48 20 C 30 20 18 34 18 54 C 18 70 24 82 40 86 L 70 86 C 80 82 82 70 82 58 C 82 36 70 20 48 20 Z" stroke="#F59E0B" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M 20 62 C 14 65 14 74 24 76" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
-          <path d="M 42 38 L 76 38 C 79 46 78 56 74 62 L 40 62 C 34 56 34 44 42 38 Z" stroke="#38BDF8" strokeWidth="1.5" fill="rgba(56, 189, 248, 0.12)" strokeLinejoin="round" />
-          <path d="M 48 42 L 68 42" stroke="#FFFFFF" strokeWidth="1.2" strokeLinecap="round" />
-          <path d="M 44 48 L 56 48" stroke="#38BDF8" strokeWidth="1" strokeLinecap="round" />
-          <circle cx="37" cy="50" r="3" stroke="#F59E0B" strokeWidth="1.3" fill="rgba(245, 158, 11, 0.2)" />
-          <path d="M 54 72 L 68 72" stroke="#E2E8F0" strokeWidth="1.2" strokeLinecap="round" />
-          <path d="M 56 76 L 66 76" stroke="#E2E8F0" strokeWidth="1.2" strokeLinecap="round" />
-          <path d="M 32 86 L 24 108" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
-          <path d="M 66 86 L 76 108" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
-          <path d="M 24 108 C 40 102 60 102 76 108" stroke="#38BDF8" strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-        {showBadge && (
-          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-amber-400 border border-amber-400/40 px-1.5 py-0.5 rounded shadow-xs z-20">
-            RACER
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // 4. M-Performance Steering Wheel & HUD Contour
-  if (photoUrl === 'contour_wheel') {
-    return (
-      <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
-        {/* Tachometer HUD arcs */}
-        <svg className="absolute inset-0 w-full h-full opacity-35 pointer-events-none" viewBox="0 0 100 120">
-          <path d="M 22 40 A 36 36 0 0 1 78 40" stroke="#EF4444" strokeWidth="1" strokeDasharray="3 3" fill="none" />
-          <circle cx="50" cy="58" r="44" stroke="#38BDF8" strokeWidth="0.5" strokeDasharray="4 4" fill="none" />
-        </svg>
-        {/* Flat-bottom Racing Steering Wheel */}
-        <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.45))' }}>
-          <path d="M 20 44 L 18 36 L 24 38" stroke="#38BDF8" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M 80 44 L 82 36 L 76 38" stroke="#38BDF8" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M 24 50 C 24 32 34 24 50 24 C 66 24 76 32 76 50 C 76 68 70 82 58 84 L 42 84 C 30 82 24 68 24 50 Z" stroke="#38BDF8" strokeWidth="2.2" strokeLinejoin="round" />
-          <rect x="47" y="24" width="6" height="5" fill="#EF4444" stroke="#EF4444" rx="1" />
-          <path d="M 30 50 C 30 38 38 32 50 32 C 62 32 70 38 70 50 C 70 64 64 76 56 78 L 44 78 C 36 76 30 64 30 50 Z" stroke="#94A3B8" strokeWidth="1" />
-          <circle cx="50" cy="54" r="10" stroke="#C5A059" strokeWidth="1.5" fill="rgba(197, 160, 89, 0.15)" />
-          <circle cx="50" cy="54" r="4" stroke="#38BDF8" strokeWidth="1" />
-          <path d="M 30 54 L 40 54" stroke="#C5A059" strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="34" cy="54" r="1" fill="#38BDF8" />
-          <path d="M 60 54 L 70 54" stroke="#C5A059" strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="66" cy="54" r="1" fill="#38BDF8" />
-          <path d="M 50 64 L 50 78" stroke="#C5A059" strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="42" cy="18" r="1.5" fill="#22C55E" />
-          <circle cx="47" cy="17" r="1.5" fill="#EAB308" />
-          <circle cx="53" cy="17" r="1.5" fill="#EAB308" />
-          <circle cx="58" cy="18" r="1.5" fill="#EF4444" />
-        </svg>
-        {showBadge && (
-          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-cyan-400 border border-cyan-400/40 px-1.5 py-0.5 rounded shadow-xs z-20">
-            M-WHEEL
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // 5. 3D Polygonal Mesh Driver Contour
-  if (photoUrl === 'contour_cyber' || photoUrl === 'avatar_business') {
-    return (
-      <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
-        {/* HUD circles */}
-        <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 100 120">
-          <circle cx="50" cy="54" r="42" stroke="#34D399" strokeWidth="0.6" strokeDasharray="2 4" fill="none" />
-          <line x1="50" y1="12" x2="50" y2="96" stroke="#34D399" strokeWidth="0.4" strokeDasharray="3 3" />
-          <line x1="10" y1="54" x2="90" y2="54" stroke="#34D399" strokeWidth="0.4" strokeDasharray="3 3" />
-        </svg>
-        {/* 3D Geometric Polygonal Head Contour */}
-        <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(52, 211, 153, 0.45))' }}>
-          <polygon points="50,22 36,32 50,38 64,32" stroke="#34D399" strokeWidth="1.3" fill="rgba(52, 211, 153, 0.08)" />
-          <polygon points="36,32 26,46 40,48 50,38" stroke="#34D399" strokeWidth="1.2" />
-          <polygon points="64,32 74,46 60,48 50,38" stroke="#34D399" strokeWidth="1.2" />
-          <polygon points="50,38 40,48 50,56 60,48" stroke="#38BDF8" strokeWidth="1.4" fill="rgba(56, 189, 248, 0.12)" />
-          <polygon points="40,48 26,46 30,64 42,66 50,56" stroke="#34D399" strokeWidth="1.2" />
-          <polygon points="60,48 74,46 70,64 58,66 50,56" stroke="#34D399" strokeWidth="1.2" />
-          <polygon points="50,56 42,66 50,74 58,66" stroke="#38BDF8" strokeWidth="1.3" />
-          <polygon points="42,66 30,64 36,80 50,84 50,74" stroke="#34D399" strokeWidth="1.2" />
-          <polygon points="58,66 70,64 64,80 50,84 50,74" stroke="#34D399" strokeWidth="1.2" />
-          <path d="M 36 80 L 20 106 L 50 98 L 80 106 L 64 80" stroke="#34D399" strokeWidth="1.3" strokeLinejoin="round" />
-          <line x1="50" y1="84" x2="50" y2="98" stroke="#34D399" strokeWidth="1.2" />
-          <circle cx="50" cy="22" r="1.6" fill="#34D399" />
-          <circle cx="36" cy="32" r="1.4" fill="#38BDF8" />
-          <circle cx="64" cy="32" r="1.4" fill="#38BDF8" />
-          <circle cx="50" cy="38" r="1.6" fill="#FACC15" />
-          <circle cx="50" cy="56" r="1.6" fill="#FACC15" />
-          <circle cx="50" cy="84" r="1.6" fill="#34D399" />
-        </svg>
-        {showBadge && (
-          <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-emerald-400 border border-emerald-400/40 px-1.5 py-0.5 rounded shadow-xs z-20">
-            3D MESH
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // 6. Default: Biometric Driver Face Contour (Handles 'silhouette', 'contour_biometric', and undefined)
-  return (
-    <div className={`relative ${className} bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none`}>
-      {/* Blueprint grid */}
-      <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 100 120" preserveAspectRatio="none">
-        <circle cx="50" cy="52" r="42" stroke="#38BDF8" strokeWidth="0.5" strokeDasharray="3 3" fill="none" />
-        <circle cx="50" cy="52" r="28" stroke="#C5A059" strokeWidth="0.6" strokeDasharray="6 4" fill="none" />
-      </svg>
-      {/* Target Corner Brackets & Scan Line */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none p-1.5 text-gold/60" viewBox="0 0 100 120">
-        <path d="M 6 16 L 6 6 L 16 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
-        <path d="M 94 16 L 94 6 L 84 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
-        <path d="M 6 104 L 6 114 L 16 114" fill="none" stroke="currentColor" strokeWidth="1.2" />
-        <path d="M 94 104 L 94 114 L 84 114" fill="none" stroke="currentColor" strokeWidth="1.2" />
-        <line x1="12" y1="52" x2="88" y2="52" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="2 2" opacity="0.6" />
-      </svg>
-      {/* Contour Vector Driver Lines */}
-      <svg className="w-24 sm:w-28 h-28 sm:h-32 relative z-10" viewBox="0 0 100 120" fill="none" style={{ filter: 'drop-shadow(0 0 5px rgba(197, 160, 89, 0.45))' }}>
-        <path d="M 34 38 C 34 22 66 22 66 38 C 66 48 62 58 50 62 C 38 58 34 48 34 38 Z" stroke="#C5A059" strokeWidth="1.6" strokeLinecap="round" />
-        <path d="M 33 34 C 34 18 66 18 67 34" stroke="#FDE047" strokeWidth="1.3" strokeLinecap="round" />
-        <path d="M 40 40 L 46 40" stroke="#38BDF8" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 54 40 L 60 40" stroke="#38BDF8" strokeWidth="1.5" strokeLinecap="round" />
-        <circle cx="43" cy="40" r="1.5" fill="#38BDF8" />
-        <circle cx="57" cy="40" r="1.5" fill="#38BDF8" />
-        <path d="M 50 42 L 50 48 L 47 50" stroke="#C5A059" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M 45 55 C 48 57 52 57 55 55" stroke="#C5A059" strokeWidth="1.3" strokeLinecap="round" />
-        <path d="M 44 62 L 44 72" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
-        <path d="M 56 62 L 56 72" stroke="#C5A059" strokeWidth="1.4" strokeLinecap="round" />
-        <path d="M 18 110 C 18 84 34 76 44 72 L 56 72 C 66 76 82 84 82 110" stroke="#C5A059" strokeWidth="1.6" strokeLinecap="round" />
-        <path d="M 44 72 L 50 84 L 56 72" stroke="#38BDF8" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="50" cy="24" r="1.5" fill="#C5A059" />
-        <circle cx="50" cy="62" r="1.5" fill="#38BDF8" />
-        <circle cx="28" cy="88" r="1.2" fill="#C5A059" />
-        <circle cx="72" cy="88" r="1.2" fill="#C5A059" />
-      </svg>
-      {showBadge && (
-        <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/90 text-gold border border-gold/40 px-1.5 py-0.5 rounded shadow-xs z-20">
-          BIO SCAN
-        </div>
-      )}
-    </div>
-  );
+  // Default: White King (♙/♔ თეთრი მეფე)
+  return renderChessPiece('king', 'white', className, showBadge);
 };
 
 export const FinesModule: React.FC<Props> = ({
@@ -458,12 +546,20 @@ export const FinesModule: React.FC<Props> = ({
     }, 1100);
   };
 
-  // Driver Photo Upload Ref & Handler
+  // Driver Photo & Chess Avatar Modal State
   const photoInputRef = React.useRef<HTMLInputElement>(null);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
+  const [chessColorTab, setChessColorTab] = useState<'white' | 'black'>(() => {
+    return vehicle.driver_photo_url && vehicle.driver_photo_url.includes('_black') ? 'black' : 'white';
+  });
 
   const handleTriggerPhotoUpload = () => {
     sounds.playClick();
+    if (vehicle.driver_photo_url && vehicle.driver_photo_url.includes('_black')) {
+      setChessColorTab('black');
+    } else if (vehicle.driver_photo_url && vehicle.driver_photo_url.includes('_white')) {
+      setChessColorTab('white');
+    }
     setIsAvatarPickerOpen(true);
   };
 
@@ -850,9 +946,7 @@ export const FinesModule: React.FC<Props> = ({
       isFilled: true, // Silhouette, avatar, or car photo is always accepted!
       value: vehicle.driver_photo_url && (vehicle.driver_photo_url.startsWith('data:') || vehicle.driver_photo_url.startsWith('http'))
         ? 'პირადი ფოტო ✓'
-        : vehicle.driver_photo_url && vehicle.driver_photo_url.startsWith('car')
-        ? 'მანქანა ✓'
-        : 'ავატარი ✓',
+        : 'ჭადრაკის ფიგურა ✓',
       onAction: () => {
         sounds.playClick();
         setIsAvatarPickerOpen(true);
@@ -2659,27 +2753,54 @@ export const FinesModule: React.FC<Props> = ({
               </button>
             </div>
 
-            {/* Section 1: Ready-made Contour Avatars */}
+            {/* Section 1: Chess Piece Avatars (Pawn to King with White/Black Color Selector) */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
-                  <Sparkles size={13} className="text-gold" />
-                  <span>კონტურული ავატარები & ხაზოვანი გრაფიკა</span>
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                <span className="text-xs font-black uppercase text-slate-800 tracking-wider flex items-center gap-1.5">
+                  <Crown size={15} className="text-gold" />
+                  <span>ჭადრაკის ფიგურები (პაიკიდან მეფემდე)</span>
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">
-                  {AVATAR_PRESETS.length} კონტური
-                </span>
+
+                {/* Color Selector Pills: White vs Black */}
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setChessColorTab('white');
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                      chessColorTab === 'white'
+                        ? 'bg-white text-navy shadow-xs border border-slate-200'
+                        : 'text-slate-500 hover:text-navy'
+                    }`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-100 border border-slate-400" />
+                    <span>თეთრი</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setChessColorTab('black');
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                      chessColorTab === 'black'
+                        ? 'bg-slate-900 text-gold shadow-xs border border-slate-700'
+                        : 'text-slate-500 hover:text-navy'
+                    }`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-950 border border-gold" />
+                    <span>შავი</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-                {AVATAR_PRESETS.map((preset) => {
+              {/* Grid of 6 Pieces (Pawn, Knight, Bishop, Rook, Queen, King) */}
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                {CHESS_AVATARS.filter(a => a.color === chessColorTab).map((preset) => {
                   const isCurrent = vehicle.driver_photo_url === preset.id ||
-                    (!vehicle.driver_photo_url && preset.id === 'contour_biometric') ||
-                    (vehicle.driver_photo_url === 'silhouette' && preset.id === 'contour_biometric') ||
-                    ((vehicle.driver_photo_url === 'car' || vehicle.driver_photo_url === 'car_mercedes') && preset.id === 'contour_suv') ||
-                    ((vehicle.driver_photo_url === 'car_sport' || vehicle.driver_photo_url === 'car_supercar') && preset.id === 'contour_sportscar') ||
-                    (vehicle.driver_photo_url === 'avatar_racer' && preset.id === 'contour_helmet') ||
-                    (vehicle.driver_photo_url === 'avatar_business' && preset.id === 'contour_cyber');
+                    (!vehicle.driver_photo_url && preset.id === 'chess_king_white');
 
                   return (
                     <button
@@ -2692,11 +2813,11 @@ export const FinesModule: React.FC<Props> = ({
                           : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
-                      {/* Avatar Preview Box */}
-                      <div className="w-full h-18 sm:h-20 rounded-xl overflow-hidden shadow-xs border border-slate-700 bg-slate-950 relative">
-                        {renderDriverAvatar(preset.id, "w-full h-full", false)}
-                        <span className="absolute bottom-1 left-1 px-1 py-0.2 rounded text-[7px] font-mono font-bold bg-navy/80 text-gold border border-gold/30">
-                          {preset.badge}
+                      {/* Chess Piece Preview Box */}
+                      <div className="w-full h-20 sm:h-22 rounded-xl overflow-hidden shadow-xs border border-slate-700 bg-slate-950 relative">
+                        {renderChessPiece(preset.piece, preset.color, "w-full h-full", false)}
+                        <span className="absolute bottom-1 left-1 px-1.5 py-0.2 rounded text-[8px] font-mono font-black bg-navy/90 text-gold border border-gold/30">
+                          {preset.symbol} {preset.piece.toUpperCase()}
                         </span>
                       </div>
 
@@ -2732,7 +2853,7 @@ export const FinesModule: React.FC<Props> = ({
               {/* If user currently has a custom base64 / external image */}
               {vehicle.driver_photo_url &&
                (vehicle.driver_photo_url.startsWith('data:') || vehicle.driver_photo_url.startsWith('http')) &&
-               !AVATAR_PRESETS.some(p => p.id === vehicle.driver_photo_url) ? (
+               !CHESS_AVATARS.some(p => p.id === vehicle.driver_photo_url) ? (
                 <div className="p-3 rounded-2xl border-2 border-emerald-300 bg-emerald-50/50 flex items-center gap-3">
                   <div className="w-12 h-14 rounded-xl overflow-hidden border border-emerald-400 shadow-xs shrink-0 bg-slate-900">
                     <img
@@ -2761,10 +2882,10 @@ export const FinesModule: React.FC<Props> = ({
                       type="button"
                       onClick={() => {
                         sounds.playClick();
-                        onUpdateVehicle({ driver_photo_url: 'silhouette' });
+                        onUpdateVehicle({ driver_photo_url: 'chess_king_white' });
                       }}
                       className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                      title="სილუეტზე დაბრუნება"
+                      title="ფიგურაზე დაბრუნება"
                     >
                       <Trash2 size={15} />
                     </button>
