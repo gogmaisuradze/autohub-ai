@@ -424,9 +424,9 @@ export const FinesModule: React.FC<Props> = ({
     ? 'text-amber-800'
     : 'text-rose-700';
 
-  // Circular Gauge Calculations
-  const gaugeRadius = 40;
-  const gaugeCircumference = 2 * Math.PI * gaugeRadius; // ~251.33
+  // Circular Gauge Calculations (Prominent 100-Point Circular Radial Gauge)
+  const gaugeRadius = 52;
+  const gaugeCircumference = 2 * Math.PI * gaugeRadius; // ~326.72
   const clampedDriverPoints = Math.max(0, Math.min(100, driverPoints));
   const gaugeStrokeDashoffset = gaugeCircumference - (clampedDriverPoints / 100) * gaugeCircumference;
 
@@ -524,10 +524,14 @@ export const FinesModule: React.FC<Props> = ({
     },
     {
       id: 'photo',
-      label: 'ბიომეტრიული ფოტო',
-      shortLabel: 'ფოტო',
-      isFilled: Boolean(vehicle.driver_photo_url && vehicle.driver_photo_url.length > 0),
-      value: vehicle.driver_photo_url ? 'ატვირთულია' : 'არ არის ატვირთული',
+      label: 'ავატარი / ფოტო',
+      shortLabel: 'ავატარი',
+      isFilled: true, // Silhouette, avatar, or car photo is always accepted!
+      value: vehicle.driver_photo_url && vehicle.driver_photo_url !== 'silhouette' && vehicle.driver_photo_url !== 'car'
+        ? 'პირადი ფოტო ✓'
+        : vehicle.driver_photo_url === 'car'
+        ? 'მანქანა ✓'
+        : 'სილუეტი ✓',
       onAction: handleTriggerPhotoUpload
     }
   ];
@@ -675,68 +679,133 @@ export const FinesModule: React.FC<Props> = ({
         <div className="p-3.5 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-stretch relative">
           
           {/* =================================================== */}
-          {/* A. LEFT COLUMN: PHOTO, NAME, SURNAME, CAR (5 cols)  */}
+          {/* A. LEFT COLUMN: ENLARGED PHOTO, NAME, VEHICLE (5)   */}
           {/* =================================================== */}
-          <div className="lg:col-span-5 space-y-3 border-b lg:border-b-0 lg:border-r border-slate-200/80 pb-4 lg:pb-0 lg:pr-5">
+          <div className="lg:col-span-5 space-y-3.5 border-b lg:border-b-0 lg:border-r border-slate-200/80 pb-4 lg:pb-0 lg:pr-5">
             
             {/* Top: Driver Biometric Photo & Personal Name Dual-Script */}
-            <div className="flex items-start gap-3">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
               
-              {/* Biometric Photo Frame (Compact Passport Proportion) */}
-              <div className="relative group shrink-0">
-                <div
-                  onClick={handleTriggerPhotoUpload}
-                  className={`w-20 sm:w-22 h-26 sm:h-28 rounded-xl border-2 overflow-hidden shadow-xs flex flex-col items-center justify-center relative cursor-pointer transition-all ${
-                    vehicle.driver_photo_url
-                      ? 'border-slate-300 bg-slate-900'
-                      : 'border-amber-400 bg-amber-500/15 ring-2 ring-amber-300 animate-pulse'
-                  }`}
-                  title="დააჭირეთ ფოტოს ასატვირთად"
-                >
-                  {vehicle.driver_photo_url ? (
-                    <>
-                      <img
-                        src={vehicle.driver_photo_url}
-                        alt={driverName || 'Driver'}
-                        className="w-full h-full object-cover"
-                      />
-                      {/* Security Hologram overlay sheen */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent pointer-events-none" />
-                      {/* Hover action button */}
-                      <div className="absolute inset-0 bg-navy/70 text-white flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold">
-                        <Camera size={16} className="text-gold" />
-                        <span>შეცვლა</span>
+              {/* Biometric Photo Frame (Enlarged Portrait Proportion) */}
+              <div className="flex flex-col items-center shrink-0">
+                <div className="relative group">
+                  <div
+                    onClick={handleTriggerPhotoUpload}
+                    className="w-28 sm:w-32 h-36 sm:h-40 rounded-2xl border-2 border-slate-300 bg-slate-900 overflow-hidden shadow-md flex flex-col items-center justify-center relative cursor-pointer transition-all hover:border-gold"
+                    title="დააჭირეთ ფოტოს შესაცვლელად / ასატვირთად"
+                  >
+                    {vehicle.driver_photo_url === 'car' ? (
+                      /* 1. Car Photo Option */
+                      <div className="w-full h-full bg-slate-900 relative">
+                        <img
+                          src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=600&q=80"
+                          alt={vehicle.brand + ' ' + vehicle.model}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+                        <div className="absolute bottom-2 inset-x-1 text-center">
+                          <span className="text-[9px] font-black text-gold font-mono uppercase bg-navy/90 px-2 py-0.5 rounded shadow-xs">
+                            {vehicle.brand} {vehicle.model}
+                          </span>
+                        </div>
                       </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-1.5 text-center text-amber-900 hover:bg-amber-100/60 transition-colors">
-                      <div className="w-8 h-8 rounded-full bg-amber-200/80 flex items-center justify-center mb-1 text-amber-800">
-                        <Upload size={15} />
+                    ) : vehicle.driver_photo_url && vehicle.driver_photo_url !== 'silhouette' ? (
+                      /* 2. Custom Uploaded Image */
+                      <>
+                        <img
+                          src={vehicle.driver_photo_url}
+                          alt={driverName || 'Driver'}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-navy/70 text-white flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold">
+                          <Camera size={18} className="text-gold" />
+                          <span>შეცვლა</span>
+                        </div>
+                      </>
+                    ) : (
+                      /* 3. Driver Stylized Biometric Silhouette Avatar (Default) */
+                      <div className="w-full h-full bg-gradient-to-b from-slate-100 via-slate-200 to-slate-300 flex flex-col items-center justify-end relative overflow-hidden">
+                        <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 100 120" preserveAspectRatio="none">
+                          <circle cx="50" cy="60" r="45" stroke="#C5A059" strokeWidth="0.8" fill="none" strokeDasharray="3 3" />
+                          <circle cx="50" cy="60" r="32" stroke="#001F3F" strokeWidth="0.6" fill="none" />
+                        </svg>
+                        <svg className="w-20 sm:w-24 h-26 sm:h-30 text-slate-400/90 relative z-10" viewBox="0 0 100 120" fill="currentColor">
+                          <circle cx="50" cy="38" r="22" />
+                          <path d="M16,115 C16,84 32,70 50,70 C68,70 84,84 84,115 Z" />
+                        </svg>
+                        <div className="absolute top-2 right-2 text-[8px] font-mono font-bold bg-navy/80 text-gold px-1.5 py-0.5 rounded shadow-xs z-10">
+                          AVATAR
+                        </div>
                       </div>
-                      <span className="text-[9px] font-black leading-tight">ფოტო</span>
-                      <span className="text-[8px] text-amber-700/90 font-mono">PHOTO</span>
-                    </div>
-                  )}
+                    )}
+                  </div>
+
+                  {/* Corner Biometric Fingerprint Badge */}
+                  <div
+                    onClick={handleTriggerPhotoUpload}
+                    className="absolute -bottom-1.5 -right-1.5 bg-navy text-gold p-1.5 rounded-xl border border-gold/40 shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                    title="ფოტოს / ავატარის შეცვლა"
+                  >
+                    <Fingerprint size={14} />
+                  </div>
                 </div>
 
-                {/* Corner Security Hologram Badge */}
-                <div
-                  onClick={handleTriggerPhotoUpload}
-                  className="absolute -bottom-1.5 -right-1.5 bg-navy text-gold p-1 rounded-lg border border-gold/40 shadow-xs cursor-pointer hover:scale-110 transition-transform"
-                  title="ბიომეტრიული ფოტოს შეცვლა"
-                >
-                  <Fingerprint size={12} />
+                {/* 1-Click Quick Selector: Silhouette | Car | Upload */}
+                <div className="flex items-center gap-1 mt-2 justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      onUpdateVehicle({ driver_photo_url: 'silhouette' });
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all ${
+                      !vehicle.driver_photo_url || vehicle.driver_photo_url === 'silhouette'
+                        ? 'bg-navy text-gold border-navy shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                    title="მძღოლის სილუეტის არჩევა"
+                  >
+                    👤 სილუეტი
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      onUpdateVehicle({ driver_photo_url: 'car' });
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all ${
+                      vehicle.driver_photo_url === 'car'
+                        ? 'bg-navy text-gold border-navy shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                    title="ავტომობილის ფოტოს არჩევა"
+                  >
+                    🚗 მანქანა
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleTriggerPhotoUpload}
+                    className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all ${
+                      vehicle.driver_photo_url && vehicle.driver_photo_url !== 'silhouette' && vehicle.driver_photo_url !== 'car'
+                        ? 'bg-navy text-gold border-navy shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                    title="საკუთარი ფოტოს ატვირთვა"
+                  >
+                    📷 ატვირთვა
+                  </button>
                 </div>
               </div>
 
               {/* Passport Driver Attributes (Dual-Script Georgian & Latin) */}
-              <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="min-w-0 flex-1 space-y-2 w-full">
                 {/* 1. გვარი / Surname */}
                 <div>
-                  <div className="text-[8px] uppercase font-bold text-slate-400 tracking-wider leading-none">
+                  <div className="text-[9px] uppercase font-bold text-slate-400 tracking-wider leading-none">
                     1. გვარი / SURNAME
                   </div>
-                  <div className="text-xs sm:text-sm font-black text-navy leading-tight truncate mt-0.5">
+                  <div className="text-sm sm:text-base font-black text-navy leading-tight truncate mt-0.5">
                     {lastName || (
                       <button
                         onClick={() => {
@@ -744,24 +813,24 @@ export const FinesModule: React.FC<Props> = ({
                           if (onOpenFieldPrompt) onOpenFieldPrompt('driver_name');
                           else setIsEditingDriverInfo(true);
                         }}
-                        className="text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded font-bold inline-flex items-center gap-1 hover:bg-amber-200 text-[10px]"
+                        className="text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded font-bold inline-flex items-center gap-1 hover:bg-amber-200 text-xs"
                       >
                         <span>შეუვსებელია</span>
-                        <Edit3 size={10} />
+                        <Edit3 size={11} />
                       </button>
                     )}
                   </div>
-                  <div className="text-[9px] font-mono text-slate-400 font-bold uppercase tracking-wider leading-none">
+                  <div className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider leading-none">
                     {lastNameLatin || 'SURNAME'}
                   </div>
                 </div>
 
                 {/* 2. სახელი / Given Name */}
                 <div>
-                  <div className="text-[8px] uppercase font-bold text-slate-400 tracking-wider leading-none">
+                  <div className="text-[9px] uppercase font-bold text-slate-400 tracking-wider leading-none">
                     2. სახელი / GIVEN NAME
                   </div>
-                  <div className="text-xs sm:text-sm font-black text-navy leading-tight truncate mt-0.5">
+                  <div className="text-sm sm:text-base font-black text-navy leading-tight truncate mt-0.5">
                     {firstName || (
                       <button
                         onClick={() => {
@@ -769,27 +838,27 @@ export const FinesModule: React.FC<Props> = ({
                           if (onOpenFieldPrompt) onOpenFieldPrompt('driver_name');
                           else setIsEditingDriverInfo(true);
                         }}
-                        className="text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded font-bold inline-flex items-center gap-1 hover:bg-amber-200 text-[10px]"
+                        className="text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded font-bold inline-flex items-center gap-1 hover:bg-amber-200 text-xs"
                       >
                         <span>შეუვსებელია</span>
-                        <Edit3 size={10} />
+                        <Edit3 size={11} />
                       </button>
                     )}
                   </div>
-                  <div className="text-[9px] font-mono text-slate-400 font-bold uppercase tracking-wider leading-none">
+                  <div className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider leading-none">
                     {firstNameLatin || 'GIVEN NAME'}
                   </div>
                 </div>
 
                 {/* 4c & 4d: Nationality & Personal ID */}
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-[10px]">
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-xs">
                   <div>
                     <span className="text-[8px] uppercase font-bold text-slate-400 block leading-none">4c. მოქალაქეობა</span>
-                    <span className="font-bold text-navy font-mono text-[11px]">GEO</span>
+                    <span className="font-bold text-navy font-mono">GEO / საქართველო</span>
                   </div>
                   <div>
                     <span className="text-[8px] uppercase font-bold text-slate-400 block leading-none">4d. პირადი #</span>
-                    <span className="font-mono font-bold text-navy text-[11px] truncate block">
+                    <span className="font-mono font-bold text-navy truncate block">
                       {driverPersonalNumber || (
                         <button
                           onClick={() => {
@@ -797,13 +866,24 @@ export const FinesModule: React.FC<Props> = ({
                             if (onOpenFieldPrompt) onOpenFieldPrompt('driver_personal_number');
                             else setIsEditingDriverInfo(true);
                           }}
-                          className="text-amber-800 bg-amber-100 px-1 py-0.2 rounded font-bold hover:bg-amber-200 text-[9px]"
+                          className="text-amber-800 bg-amber-100 px-1 py-0.2 rounded font-bold hover:bg-amber-200 text-[10px]"
                         >
                           + შევსება
                         </button>
                       )}
                     </span>
                   </div>
+                </div>
+
+                {/* 9. License Categories */}
+                <div className="pt-1 flex items-center justify-between text-[10px]">
+                  <span className="font-bold text-slate-500">
+                    კატეგორია: <span className="font-mono text-navy font-black">B, B1</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <ShieldCheck size={11} />
+                    <span>მართვის უფლება: აქტიური</span>
+                  </span>
                 </div>
               </div>
 
@@ -864,104 +944,105 @@ export const FinesModule: React.FC<Props> = ({
                 className="text-navy hover:text-gold flex items-center gap-1 transition-colors"
               >
                 <Camera size={11} className="text-gold" />
-                <span>ფოტო</span>
+                <span>ფოტოს შეცვლა</span>
               </button>
             </div>
 
           </div>
 
           {/* ============================================================== */}
-          {/* B. MIDDLE COLUMN: POINTS & CONTOUR WATERMARK VISUAL (3.5 cols)  */}
+          {/* B. MIDDLE COLUMN: PROMINENT CIRCULAR POINTS GAUGE (4 cols)     */}
           {/* ============================================================== */}
-          <div className="lg:col-span-4 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-slate-200/80 pb-4 lg:pb-0 lg:px-3 relative overflow-hidden rounded-xl bg-slate-50/50">
+          <div className="lg:col-span-4 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-slate-200/80 pb-5 lg:pb-0 lg:px-4 relative overflow-hidden rounded-2xl bg-slate-50/50">
             
             {/* Contour Wave Guilloche Security Watermark (Authentic Security Line Art) */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-25">
-              <svg className="w-full h-full" viewBox="0 0 240 240" preserveAspectRatio="none" fill="none">
-                <circle cx="120" cy="110" r="95" stroke="#001F3F" strokeWidth="0.8" opacity="0.3" strokeDasharray="3 3" />
-                <circle cx="120" cy="110" r="80" stroke="#C5A059" strokeWidth="1" opacity="0.35" />
-                <circle cx="120" cy="110" r="65" stroke="#001F3F" strokeWidth="0.7" opacity="0.25" strokeDasharray="2 3" />
-                <path d="M-10,50 Q60,10 120,50 T250,50" stroke="#001F3F" strokeWidth="0.7" opacity="0.3" />
-                <path d="M-10,70 Q70,30 130,70 T250,70" stroke="#C5A059" strokeWidth="0.8" opacity="0.25" />
-                <path d="M-10,150 Q70,190 130,150 T250,150" stroke="#C5A059" strokeWidth="0.8" opacity="0.25" />
-                <path d="M-10,170 Q60,210 120,170 T250,170" stroke="#001F3F" strokeWidth="0.7" opacity="0.3" />
+              <svg className="w-full h-full" viewBox="0 0 320 320" preserveAspectRatio="none" fill="none">
+                <circle cx="160" cy="140" r="130" stroke="#001F3F" strokeWidth="0.8" opacity="0.3" strokeDasharray="3 3" />
+                <circle cx="160" cy="140" r="110" stroke="#C5A059" strokeWidth="1.2" opacity="0.4" />
+                <circle cx="160" cy="140" r="90" stroke="#001F3F" strokeWidth="0.8" opacity="0.3" strokeDasharray="2 4" />
+                <circle cx="160" cy="140" r="70" stroke="#C5A059" strokeWidth="0.6" opacity="0.35" />
+                <path d="M-20,70 Q60,20 160,70 T340,70" stroke="#001F3F" strokeWidth="0.8" opacity="0.35" />
+                <path d="M-20,95 Q80,45 160,95 T340,95" stroke="#C5A059" strokeWidth="0.9" opacity="0.3" />
+                <path d="M-20,185 Q80,235 160,185 T340,185" stroke="#C5A059" strokeWidth="0.9" opacity="0.3" />
+                <path d="M-20,210 Q60,260 160,210 T340,210" stroke="#001F3F" strokeWidth="0.8" opacity="0.35" />
               </svg>
             </div>
 
             {/* Header: Points System with Info Trigger */}
-            <div className="flex items-center justify-between w-full mb-1 px-1 relative z-10">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                <Award size={13} className="text-gold" />
-                <span>ქულები (100)</span>
+            <div className="flex items-center justify-between w-full mb-1.5 px-1 relative z-10">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Award size={14} className="text-gold" />
+                <span>ქულების სისტემა (100)</span>
               </span>
               <button
                 onClick={() => setShowPointsGuide(!showPointsGuide)}
-                className="text-slate-400 hover:text-gold transition-colors p-0.5"
+                className="text-slate-400 hover:text-gold transition-colors p-1"
                 title="როგორ მუშაობს ქულები?"
               >
-                <Info size={13} />
+                <Info size={14} />
               </button>
             </div>
 
-            {/* SVG Circular Progress Gauge (Compact Radius 40) */}
-            <div className="relative w-26 h-26 flex items-center justify-center relative z-10 my-0.5">
-              <svg className="w-26 h-26 transform -rotate-90" viewBox="0 0 100 100">
+            {/* SVG Circular Progress Gauge (Full Prominent Circular Ring, Radius 52) */}
+            <div className="relative w-36 h-36 flex items-center justify-center relative z-10 my-1">
+              <svg className="w-36 h-36 transform -rotate-90" viewBox="0 0 130 130">
                 {/* Background Ring Track */}
                 <circle
-                  cx="50"
-                  cy="50"
+                  cx="65"
+                  cy="65"
                   r={gaugeRadius}
                   stroke="#E2E8F0"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   fill="transparent"
                 />
                 {/* Progress Ring with Dynamic Color & Drop Shadow */}
                 <circle
-                  cx="50"
-                  cy="50"
+                  cx="65"
+                  cy="65"
                   r={gaugeRadius}
                   stroke={pointsStrokeColor}
-                  strokeWidth="8"
+                  strokeWidth="10"
                   fill="transparent"
                   strokeDasharray={gaugeCircumference}
                   strokeDashoffset={gaugeStrokeDashoffset}
                   strokeLinecap="round"
                   className="transition-all duration-1000 ease-out"
-                  style={{ filter: `drop-shadow(0 0 5px ${pointsStrokeColor}40)` }}
+                  style={{ filter: `drop-shadow(0 0 8px ${pointsStrokeColor}45)` }}
                 />
               </svg>
 
               {/* Center Points Value */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-2xl font-black font-mono text-navy tracking-tight leading-none">
+                <span className="text-3xl sm:text-4xl font-black font-mono text-navy tracking-tight leading-none">
                   {driverPoints}
                 </span>
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                   / 100 ქულა
                 </span>
               </div>
             </div>
 
             {/* Points Status Pill & Deductions Info */}
-            <div className="mt-1 text-center space-y-0.5 relative z-10">
-              <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black border inline-block ${
+            <div className="mt-1.5 text-center space-y-1 relative z-10">
+              <span className={`px-3 py-0.5 rounded-full text-[10px] font-black border inline-block ${
                 driverPoints >= 70
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                   : driverPoints >= 40
                   ? 'bg-amber-50 text-amber-800 border-amber-300'
                   : 'bg-rose-50 text-rose-800 border-rose-300'
               }`}>
-                {driverPoints >= 70 ? '● უსაფრთხო' : driverPoints >= 40 ? '● საშუალო რისკი' : '● კრიტიკული'}
+                {driverPoints >= 70 ? '● უსაფრთხო ზონა' : driverPoints >= 40 ? '● საშუალო რისკი' : '● კრიტიკული ზონა'}
               </span>
-              <div className="text-[9px] text-slate-500 font-mono">
-                {100 - driverPoints > 0 ? `დაკლებული: -${100 - driverPoints} ქულა` : '100 ქულა შენარჩუნებულია'}
+              <div className="text-[10px] text-slate-500 font-mono">
+                {100 - driverPoints > 0 ? `დაკლებული: -${100 - driverPoints} ქულა` : 'სრული 100 ქულა შენარჩუნებულია'}
               </div>
             </div>
 
-            {/* Bottom MRZ Security Barcode Lines (Compact) */}
-            <div className="mt-2 w-full p-1.5 rounded-lg bg-slate-900/95 text-gold font-mono text-[7px] sm:text-[8px] tracking-widest text-center shadow-inner opacity-90 leading-tight select-all relative z-10">
-              <div className="truncate">P&lt;GEODRIVER&lt;&lt;{(lastNameLatin || 'SURNAME')}&lt;{(firstNameLatin || 'NAME')}&lt;&lt;&lt;&lt;&lt;</div>
-              <div className="truncate">{(driverPersonalNumber || '00000000000')}GEO{vehicle.year || '24'}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;01</div>
+            {/* Bottom MRZ Security Barcode Lines */}
+            <div className="mt-3 w-full p-2 rounded-xl bg-slate-900/95 text-gold font-mono text-[8px] sm:text-[9px] tracking-widest text-center shadow-inner opacity-90 leading-relaxed select-all relative z-10">
+              <div className="truncate">P&lt;GEODRIVER&lt;&lt;{(lastNameLatin || 'SURNAME')}&lt;{(firstNameLatin || 'NAME')}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
+              <div className="truncate">{(driverPersonalNumber || '00000000000')}GEO{vehicle.year || '24'}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;01</div>
             </div>
 
           </div>
