@@ -231,6 +231,7 @@ export const HomeHub: React.FC<Props> = ({
 
         {mainDepartments.map((dept) => {
           const Icon = dept.icon;
+          const isAi = dept.id === 'ai';
           return (
             <div
               key={dept.id}
@@ -238,10 +239,17 @@ export const HomeHub: React.FC<Props> = ({
                 sounds.playClick();
                 onSelectDepartment(dept.id);
               }}
-              className="neu-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer hover:shadow-neu-flat transition-all group active:scale-[0.99]"
+              className={`neu-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer hover:shadow-neu-flat transition-all group active:scale-[0.99] relative overflow-hidden ${
+                isAi
+                  ? 'border-2 border-gold/70 shadow-[0_0_22px_rgba(252,163,17,0.4)]'
+                  : ''
+              }`}
             >
+              {isAi && <div className="ai-lightning-flash" />}
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl neu-circle flex items-center justify-center shrink-0">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl neu-circle flex items-center justify-center shrink-0 ${
+                  isAi ? 'border border-gold/60' : ''
+                }`}>
                   <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-navy group-hover:text-gold transition-colors" />
                 </div>
 
@@ -268,7 +276,9 @@ export const HomeHub: React.FC<Props> = ({
                   </span>
                 </div>
                 
-                <div className={`min-w-8 sm:min-w-10 h-8 sm:h-10 px-2.5 sm:px-3 rounded-full ${dept.badgeColor} flex items-center justify-center font-black text-xs sm:text-sm shadow-md shrink-0 whitespace-nowrap`}>
+                <div className={`min-w-8 sm:min-w-10 h-8 sm:h-10 px-2.5 sm:px-3 rounded-full ${dept.badgeColor} flex items-center justify-center font-black text-xs sm:text-sm shadow-md shrink-0 whitespace-nowrap ${
+                  isAi ? 'border-2 border-gold shadow-[0_0_12px_rgba(252,163,17,0.7)]' : ''
+                }`}>
                   {dept.badgeText}
                 </div>
 
