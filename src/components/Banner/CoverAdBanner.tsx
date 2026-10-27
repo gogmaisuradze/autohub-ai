@@ -680,8 +680,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
           className="w-full h-full object-cover object-center transform transition-all duration-1000 ease-out scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05]"
         />
 
-        {/* Targeted Left Gradient ONLY (Protects text contrast on left, leaving the center and right 100% crystal clear for the car!) */}
-        <div className="absolute inset-y-0 left-0 w-full sm:w-4/5 lg:w-3/5 bg-gradient-to-r from-slate-950/95 via-slate-950/65 to-transparent pointer-events-none" />
+        {/* Targeted Left Gradient (Protects text contrast on left while letting car show gracefully on right) */}
+        <div className="absolute inset-y-0 left-0 w-full sm:w-5/6 lg:w-3/4 xl:w-2/3 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-transparent pointer-events-none" />
         
         {/* Subtle Top & Bottom Shadow for Controls Legibility */}
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent pointer-events-none" />
@@ -691,8 +691,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
       {/* Top Gold Laser Accent Line */}
       <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent opacity-85 z-20" />
 
-      {/* Main Content Container (Enlarged Height for Grand Car Visibility) */}
-      <div className="relative z-10 px-4 sm:px-7 lg:px-9 py-4 sm:py-6 flex flex-col justify-between min-h-[260px] sm:min-h-[300px] md:min-h-[330px]">
+      {/* Main Content Container (Spacious, Wide & Crystal Clear for Effortless Reading) */}
+      <div className="relative z-10 px-4 sm:px-8 lg:px-10 py-5 sm:py-6 flex flex-col justify-between min-h-[290px] sm:min-h-[330px] md:min-h-[350px]">
         
         {/* Top Header: Category Tag, Horizontal Service Selector Tabs & Drawer Toggle */}
         <div className="space-y-2.5">
@@ -769,40 +769,40 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
           </div>
         </div>
 
-        {/* Center: Two-Column Responsive Layout (Car in the center/right is wide open to view!) */}
-        <div className="my-2 sm:my-3 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center">
-          {/* Left Column: Title, Subtitle, Full Explanation & Bullets (7 cols) */}
-          <div className="lg:col-span-7 space-y-2.5 max-w-2xl">
+        {/* Center: Two-Column Responsive Layout (Expanded, Highly Legible & Spacious) */}
+        <div className="my-2 sm:my-3 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center">
+          {/* Left Column: Title, Subtitle, Full Explanation & Bullets (Expanded across 8 cols without narrow constraints) */}
+          <div className="lg:col-span-8 xl:col-span-8 space-y-3 w-full">
             <div>
-              <div className="text-[10px] sm:text-[11px] font-mono tracking-widest text-gold font-bold uppercase drop-shadow-sm">
+              <div className="text-[11px] sm:text-xs font-mono tracking-widest text-gold font-bold uppercase drop-shadow-sm mb-1">
                 {current.subtitle}
               </div>
-              <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-tight drop-shadow-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[32px] font-black text-white tracking-tight leading-snug drop-shadow-lg">
                 {current.title}
               </h2>
             </div>
 
-            {/* Detailed Explanation ("თავისი განმარტებით") */}
-            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium drop-shadow-md line-clamp-3 sm:line-clamp-none">
+            {/* Detailed Explanation ("თავისი განმარტებით" - Spacious, Clear Font for Easy Reading) */}
+            <p className="text-sm sm:text-base text-slate-100 leading-relaxed font-medium drop-shadow-md max-w-3xl">
               {current.description}
             </p>
 
-            {/* Highlights Grid */}
-            <div className="grid grid-cols-2 gap-1.5 pt-1">
+            {/* Highlights Grid (Expanded Comfortable Cards without Truncation) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 pt-1 max-w-3xl">
               {current.highlights.map((h, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg backdrop-blur-md bg-slate-950/65 border border-white/15 text-[10px] sm:text-[11px] font-bold text-white shadow-xs truncate"
+                  className="flex items-center gap-2.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl backdrop-blur-md bg-slate-950/80 border border-white/20 text-xs sm:text-sm font-semibold text-slate-100 shadow-sm transition-all hover:border-gold/50 hover:bg-slate-900/80"
                 >
-                  <CheckCircle2 size={13} className="text-gold shrink-0" />
-                  <span className="truncate">{h}</span>
+                  <CheckCircle2 size={16} className="text-gold shrink-0" />
+                  <span className="leading-snug">{h}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right Column: Sleek Frosted Glass HUD Widget (Compact & aligned to right, letting the car in center shine!) */}
-          <div className="lg:col-span-5 flex items-center justify-end">
+          {/* Right Column: Sleek Frosted Glass HUD Widget (Compact & aligned to right) */}
+          <div className="lg:col-span-4 xl:col-span-4 flex items-center justify-end">
             {renderVisualCard()}
           </div>
         </div>
