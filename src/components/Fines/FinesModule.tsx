@@ -67,6 +67,13 @@ export interface PhotoAvatarPreset {
 
 export const PHOTO_AVATARS: PhotoAvatarPreset[] = [
   {
+    id: 'avatar_dog',
+    title: 'Good Vibes ძაღლი',
+    subtitle: 'Music Lover Dog',
+    image: '/avatars/dog.png',
+    badge: 'GOOD VIBES'
+  },
+  {
     id: 'avatar_lion',
     title: 'ლომი კლდეზე',
     subtitle: 'Majestic Lion',
@@ -88,13 +95,6 @@ export const PHOTO_AVATARS: PhotoAvatarPreset[] = [
     badge: 'ZEN SLOTH'
   },
   {
-    id: 'avatar_dog',
-    title: 'Good Vibes ძაღლი',
-    subtitle: 'Music Lover Dog',
-    image: '/avatars/dog.png',
-    badge: 'GOOD VIBES'
-  },
-  {
     id: 'avatar_cat',
     title: 'ყავის კატა',
     subtitle: 'Chill Coffee Cat',
@@ -107,17 +107,19 @@ export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full
   // Find matching preset by id or image URL
   const matchedPreset = PHOTO_AVATARS.find(p => p.id === photoUrl || p.image === photoUrl);
 
-  const imgSrc = matchedPreset
-    ? matchedPreset.image
+  const effectivePreset = matchedPreset || (!photoUrl || photoUrl === 'avatar_lion' ? PHOTO_AVATARS[0] : null);
+
+  const imgSrc = effectivePreset
+    ? effectivePreset.image
     : photoUrl && (photoUrl.startsWith('http') || photoUrl.startsWith('data:') || photoUrl.startsWith('/'))
     ? photoUrl
-    : '/avatars/lion.png'; // Default to the first majestic lion photo
+    : '/avatars/dog.png'; // Default to Good Vibes dog
 
-  const badgeText = matchedPreset
-    ? matchedPreset.badge
+  const badgeText = effectivePreset
+    ? effectivePreset.badge
     : (photoUrl && (photoUrl.startsWith('data:') || photoUrl.startsWith('http')))
     ? 'PHOTO ID'
-    : 'LION';
+    : 'GOOD VIBES';
 
   return (
     <div className={`relative ${className} overflow-hidden bg-slate-950 flex items-center justify-center select-none group`}>
@@ -2554,7 +2556,7 @@ export const FinesModule: React.FC<Props> = ({
                 {PHOTO_AVATARS.map((preset) => {
                   const isCurrent = vehicle.driver_photo_url === preset.id ||
                     vehicle.driver_photo_url === preset.image ||
-                    (!vehicle.driver_photo_url && preset.id === 'avatar_lion');
+                    ((!vehicle.driver_photo_url || vehicle.driver_photo_url === 'avatar_lion') && preset.id === 'avatar_dog');
 
                   return (
                     <button
@@ -2640,10 +2642,10 @@ export const FinesModule: React.FC<Props> = ({
                       type="button"
                       onClick={() => {
                         sounds.playClick();
-                        onUpdateVehicle({ driver_photo_url: 'avatar_lion' });
+                        onUpdateVehicle({ driver_photo_url: 'avatar_dog' });
                       }}
                       className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                      title="ლომზე დაბრუნება"
+                      title="Good Vibes ძაღლზე დაბრუნება"
                     >
                       <Trash2 size={15} />
                     </button>

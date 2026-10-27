@@ -49,7 +49,8 @@ const INITIAL_VEHICLE: VehicleProfile = {
   driver_license_points: 90,
   driver_personal_number: '01024085432',
   driver_name: 'გიორგი მაისურაძე',
-  driver_phone: '+995 599 12 34 56'
+  driver_phone: '+995 599 12 34 56',
+  driver_photo_url: 'avatar_dog'
 };
 
 const INITIAL_DTC_CODES: DtcCode[] = [
@@ -422,7 +423,11 @@ export const App: React.FC = () => {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object' && parsed.id) {
-          return { ...INITIAL_VEHICLE, ...parsed };
+          const loaded = { ...INITIAL_VEHICLE, ...parsed };
+          if (!loaded.driver_photo_url || loaded.driver_photo_url === 'avatar_lion') {
+            loaded.driver_photo_url = 'avatar_dog';
+          }
+          return loaded;
         }
       }
       return INITIAL_VEHICLE;
