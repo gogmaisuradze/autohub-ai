@@ -380,7 +380,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     controls.dampingFactor = 0.06;
     controls.target.copy(initialTarget);
     controls.minDistance = 2.0;
-    controls.maxDistance = 11.0;
+    controls.maxDistance = 22.0;
     controls.maxPolarAngle = Math.PI / 2 + 0.05;
     controlsRef.current = controls;
 
@@ -444,6 +444,19 @@ export const ThreeCarScene: React.FC<Props> = ({
     // 7. Master Automotive Model Hierarchy
     const carMasterGroup = new THREE.Group();
     scene.add(carMasterGroup);
+    const fitWholeAssembly = () => {
+      carMasterGroup.updateWorldMatrix(true, true);
+      const box = new THREE.Box3().setFromObject(carMasterGroup);
+      if (box.isEmpty()) return;
+      const sphere = box.getBoundingSphere(new THREE.Sphere());
+      const vertical = THREE.MathUtils.degToRad(camera.fov / 2);
+      const horizontal = Math.atan(Math.tan(vertical) * camera.aspect);
+      const distance = sphere.radius / Math.sin(Math.min(vertical, horizontal)) * 1.18;
+      const direction = new THREE.Vector3(.85, .6, 1).normalize();
+      targetCamLookRef.current = sphere.center;
+      targetCamPosRef.current = sphere.center.clone().addScaledVector(direction, distance);
+      controls.maxDistance = Math.max(22, distance * 1.2);
+    };
 
     // =========================================================================
     // A. LOAD GHOST CAR MODEL (Blender GLB) + WIRE UP SUBSYSTEM GROUPS
@@ -473,56 +486,45 @@ export const ThreeCarScene: React.FC<Props> = ({
     const visual = {
       fill: { value: 0 }, lift: { value: 0 },
       scanZ: { value: -2.6 }, scanStrength: { value: 0 },
-      carInverse: { value: new THREE.Matrix4() },
-      // შევსება ცენტრიდან (ძრავიდან) გავრცელდება: წყარო, რადიუსი და მკვეთრი კიდე
-      fillOrigin: { value: new THREE.Vector3(0, 0.5, 1.0) },
-      fillReach: { value: 3.6 }, fillEdge: { value: 0.16 }
+      carInverse: { value: new THREE.Matrix4() }
+
     };
     const ghostColor = new THREE.Color(0xaecbe6);
-    const applySurfaceEffects = (mat: THREE.MeshStandardMaterial, body: boolean) => {
+    const applySurfaceEffects = (mat: THREE.MeshStandardMaterial, body: boolean, paintLayer = false) => {
       const solidColor = new THREE.Color(mat.userData.solidColor ?? 0x91b6db);
       mat.onBeforeCompile = shader => {
         Object.assign(shader.uniforms, {
           uFill: visual.fill, uLift: visual.lift, uScanZ: visual.scanZ,
           uScanStrength: visual.scanStrength, uCarInverse: visual.carInverse,
-          uFillOrigin: visual.fillOrigin, uFillReach: visual.fillReach, uFillEdge: visual.fillEdge,
           uGhostColor: { value: ghostColor }, uPaintColor: { value: solidColor },
           uGhostAlpha: { value: mat.userData.ghostOpacity ?? .26 }
         });
         shader.vertexShader = 'uniform mat4 uCarInverse; varying vec3 vCarSurface;\n' + shader.vertexShader;
         shader.vertexShader = shader.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvCarSurface = (uCarInverse * modelMatrix * vec4(transformed, 1.0)).xyz;');
-        shader.fragmentShader = `uniform float uFill, uLift, uScanZ, uScanStrength, uGhostAlpha, uFillReach, uFillEdge;
-          uniform vec3 uGhostColor, uPaintColor, uFillOrigin; varying vec3 vCarSurface;\n` + shader.fragmentShader;
+        shader.fragmentShader = `uniform float uFill, uLift, uScanZ, uScanStrength, uGhostAlpha;
+          uniform vec3 uGhostColor, uPaintColor; varying vec3 vCarSurface;\n` + shader.fragmentShader;
         if (body) {
           shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-            // შევსება ძრავის ცენტრიდან გარეთ, მკვეთრი ფრონტით
-            float pd = distance(vCarSurface, uFillOrigin);
-            float pR = uFill * uFillReach;
-            float painted = smoothstep(pR + uFillEdge, pR - uFillEdge, pd);
-            diffuseColor.rgb = mix(uGhostColor, uPaintColor, painted);
-            diffuseColor.a = mix(uGhostAlpha, 1.0, painted);`);
-          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(.12, .42, painted);');
-          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(.03, .14, painted);');
+            diffuseColor.rgb = ${paintLayer ? 'uPaintColor' : 'uGhostColor'};
+            diffuseColor.a = ${paintLayer ? 'uFill' : 'uGhostAlpha * (1.0 - uFill)'};`);
+          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = ' + (paintLayer ? '.30;' : '.13;'));
+          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = ' + (paintLayer ? '.40;' : '.03;'));
         }
         shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
           float scanBand = exp(-pow((vCarSurface.z - uScanZ) / .075, 2.0));
           float scanHalo = exp(-pow((vCarSurface.z - uScanZ) / .25, 2.0));
           outgoingLight += (vec3(.48, .76, 1.0) * scanBand * 1.15 + vec3(.10, .30, .48) * scanHalo * .22) * uScanStrength;
-          // ნათელი ფრონტი შევსების კიდეზე — ცენტრიდან (ძრავიდან) გავრცელებული ტალღა
-          float fd = distance(vCarSurface, uFillOrigin);
-          float fR = uFill * uFillReach;
-          float fillFront = exp(-pow((fd - fR) / max(uFillEdge, .001), 2.0)) * step(.02, uFill) * (1.0 - smoothstep(.9, 1.0, uFill));
-          outgoingLight += vec3(.55, .82, 1.0) * fillFront * 1.25;
           #include <opaque_fragment>`);
       };
-      mat.customProgramCacheKey = () => body ? 'autohub-paint-fill-v2' : 'autohub-surface-scan-v2';
+      mat.customProgramCacheKey = () => body ? (paintLayer ? 'autohub-opaque-paint-v3' : 'autohub-glass-fade-v3') : 'autohub-surface-scan-v3';
       mat.needsUpdate = true;
     };
     const engineParts: { node: THREE.Group; rest: THREE.Vector3; offset: THREE.Vector3 }[] = [];
+    let windowMaterial: THREE.MeshPhysicalMaterial | null = null;
     let headlightMat: THREE.MeshStandardMaterial | null = null;
     let taillightMat: THREE.MeshStandardMaterial | null = null;
     let disposed = false;
-    gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=9`, (gltf) => {
+    gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=10`, (gltf) => {
       const root = gltf.scene;
       if (disposed) return;
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
@@ -651,10 +653,46 @@ export const ThreeCarScene: React.FC<Props> = ({
 
       // მინები — ყოველთვის გამჭვირვ. (საქარე მინა/ფანჯრები)
       const windowMat = new THREE.MeshPhysicalMaterial({
-        color: 0xaecbe6, transmission: 0.0, opacity: 0.10, transparent: true,
+        color: 0x57758a, transmission: 0.0, opacity: 0.10, transparent: true,
         roughness: 0.05, ior: 1.5, metalness: 0.0, clearcoat: 1.0, depthWrite: false
       });
-      meshesOf('Body_Glass').forEach(m => { m.material = windowMat; bodyGrp.attach(m); });
+      windowMaterial = windowMat;
+      meshesOf('Body_Glass').forEach(m => {
+        // The downloaded model includes its panoramic roof in the glass mesh.
+        // Separate the roof from the windows so solid mode has a complete shell.
+        const geometry = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+        const positions = geometry.getAttribute('position');
+        const roof: number[] = [], windows: number[] = [];
+        const point = new THREE.Vector3(), normal = new THREE.Vector3();
+        const triangle = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+        for (let i = 0; i < positions.count; i += 3) {
+          for (let j = 0; j < 3; j++) triangle[j].fromBufferAttribute(positions, i + j).applyMatrix4(m.matrixWorld);
+          point.copy(triangle[0]).add(triangle[1]).add(triangle[2]).multiplyScalar(1 / 3);
+          normal.subVectors(triangle[1], triangle[0]).cross(new THREE.Vector3().subVectors(triangle[2], triangle[0])).normalize();
+          const list = point.y > 1.31 && point.z > -.95 && point.z < .24 && Math.abs(normal.y) > .78 ? roof : windows;
+          list.push(i, i + 1, i + 2);
+        }
+        const subset = (ids: number[]) => {
+          const out = new THREE.BufferGeometry();
+          Object.entries(geometry.attributes).forEach(([name, attribute]) => {
+            const attr = attribute as THREE.BufferAttribute;
+            const values = new (attr.array.constructor as any)(ids.length * attr.itemSize);
+            ids.forEach((index, n) => { for (let c = 0; c < attr.itemSize; c++) values[n * attr.itemSize + c] = attr.array[index * attr.itemSize + c]; });
+            out.setAttribute(name, new THREE.BufferAttribute(values, attr.itemSize, attr.normalized));
+          });
+          out.computeBoundingSphere();
+          return out;
+        };
+        if (roof.length) {
+          const roofMesh = new THREE.Mesh(subset(roof), ghostGlassMat);
+          roofMesh.name = 'BMW_Roof_Panel';
+          roofMesh.matrix.copy(m.matrix); roofMesh.matrix.decompose(roofMesh.position, roofMesh.quaternion, roofMesh.scale);
+          m.parent?.add(roofMesh); bodyGrp.attach(roofMesh);
+          m.geometry = subset(windows);
+        }
+        geometry.dispose();
+        m.material = windowMat; bodyGrp.attach(m);
+      });
 
       const headLensMat = new THREE.MeshPhysicalMaterial({color: 0xc5dfed, transparent: true, opacity: .24, roughness: .08, metalness: 0, clearcoat: 1, ior: 1.49, depthWrite: false});
       const tailLensMat = new THREE.MeshPhysicalMaterial({color: 0x9e101c, transparent: true, opacity: .55, roughness: .13, metalness: 0, clearcoat: 1, ior: 1.49, depthWrite: false});
@@ -734,22 +772,28 @@ export const ThreeCarScene: React.FC<Props> = ({
           }
         });
       });
-      // შევსების წყარო = ძრავის ცენტრი (მოდელ-ლოკალში), რადიუსი = კორპუსის მაქს. მანძილი
-      carMasterGroup.updateWorldMatrix(true, true);
-      const egrp = groupsRef.current['engine'];
-      if (egrp) {
-        const ec = new THREE.Box3().setFromObject(egrp).getCenter(new THREE.Vector3());
-        carMasterGroup.worldToLocal(ec);
-        visual.fillOrigin.value.copy(ec);
-      }
-      const fillBox = new THREE.Box3().setFromObject(bodyGrp);
-      let reach = 0.1;
-      for (let xi = 0; xi < 2; xi++) for (let yi = 0; yi < 2; yi++) for (let zi = 0; zi < 2; zi++) {
-        const corner = new THREE.Vector3(xi ? fillBox.max.x : fillBox.min.x, yi ? fillBox.max.y : fillBox.min.y, zi ? fillBox.max.z : fillBox.min.z);
-        carMasterGroup.worldToLocal(corner);
-        reach = Math.max(reach, corner.distanceTo(visual.fillOrigin.value));
-      }
-      visual.fillReach.value = reach + 0.12;
+      // Opaque hashed paint progressively replaces the glass, with depth testing
+      // active from the first frame. There is no final material/depth-mode switch.
+      const paintMeshes: THREE.Mesh[] = [];
+      const paintMaterials = new Map<THREE.Material, THREE.MeshPhysicalMaterial>();
+      bodyGrp.traverse(node => {
+        if (!(node instanceof THREE.Mesh) || !bodyMaterials.has(node.material as THREE.Material)) return;
+        const ghostMat = node.material as THREE.MeshPhysicalMaterial;
+        let paintMat = paintMaterials.get(ghostMat);
+        if (!paintMat) {
+          paintMat = ghostMat.clone();
+          paintMat.transparent = false; paintMat.depthWrite = true; paintMat.alphaHash = true;
+          paintMat.polygonOffset = true; paintMat.polygonOffsetFactor = -1; paintMat.polygonOffsetUnits = -1;
+          applySurfaceEffects(paintMat, true, true);
+          paintMaterials.set(ghostMat, paintMat);
+        }
+        const paint = new THREE.Mesh(node.geometry, paintMat);
+        paint.name = 'PaintLayer_' + node.name;
+        paint.position.copy(node.position); paint.quaternion.copy(node.quaternion); paint.scale.copy(node.scale);
+        paint.castShadow = false;
+        paintMeshes.push(paint);
+      });
+      paintMeshes.forEach(mesh => bodyGrp.add(mesh));
       carMasterGroup.remove(root);
       modelReadyRef.current = true;
     }, undefined, (err) => { if (!disposed) setModelError(true); console.error('BMW model load error', err); });
@@ -771,6 +815,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     let fillProgress = 0;
     let scanPhase = 0;
     let previousTime = 0;
+    let framedExplode = -1;
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
@@ -781,17 +826,11 @@ export const ThreeCarScene: React.FC<Props> = ({
       fillProgress = THREE.MathUtils.clamp(fillProgress + Math.sign(solidTargetRef.current - fillProgress) * Math.min(Math.abs(solidTargetRef.current - fillProgress), fillStep), 0, 1);
       visual.fill.value = fillProgress * fillProgress * (3 - 2 * fillProgress);
       visual.lift.value = currentExplodeRef.current * 1.10;
+      if (windowMaterial) windowMaterial.opacity = THREE.MathUtils.lerp(.10, .36, visual.fill.value);
       // ფარები ინთება როცა მანქანა მკაფიო/მყარი ხდება
       if (headlightMat) headlightMat.emissiveIntensity = 0.22 + fillProgress * 3.0;
       if (taillightMat) taillightMat.emissiveIntensity = 0.18 + fillProgress * 1.9;
-      // მყარ რეჟიმში შიდა აგრეგატები იმალება (კაპოტიდან ძრავა აღარ ამოდის)
-      const hideInternals = fillProgress > 0.9;
-      ['engine', 'ecu', 'exhaust', 'cooling', 'suspension', 'battery', 'ignition_coil', 'oxygen_sensor', 'coolant_sensor', 'throttle_sensor', 'fuel_injectors', 'fuel_pump', 'intake_sensor', 'knock_sensor', 'map_sensor'].forEach(id => {
-        const g = groupsRef.current[id];
-        if (g && g.visible === hideInternals) g.visible = !hideInternals;
-      });
-      // All surfaces finish together and restore normal solid-body occlusion.
-      bodyMaterialsRef.current.forEach(mat => { mat.depthWrite = fillProgress > .995; });
+      bodyMaterialsRef.current.forEach(mat => { mat.depthWrite = false; });
 
       const sequence = sequenceRef.current;
       if (sequence.active && modelReadyRef.current) {
@@ -824,15 +863,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           const matches = componentsList.filter(comp => liveStateRef.current.dtcCodes.some(code => comp.matchingCodes.some(prefix => code.code.toUpperCase().includes(prefix))));
           const matched = matches.find(comp => comp.id.endsWith('_sensor') || comp.id === 'fuel_injectors') || matches[0];
           if (matched) {
-            const group = groupsRef.current[matched.id];
-            if (group) {
-              group.updateWorldMatrix(true, true);
-              const box = new THREE.Box3().setFromObject(group);
-              const center = box.getCenter(new THREE.Vector3());
-              const distance = THREE.MathUtils.clamp(box.getSize(new THREE.Vector3()).length() / (2 * Math.sin(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.25, 2.0, 8.0);
-              targetCamLookRef.current = center;
-              targetCamPosRef.current = center.clone().add(new THREE.Vector3(.85, .6, 1).normalize().multiplyScalar(distance));
-            }
+            fitWholeAssembly();
             activePinRef.current = matched.id;
             setActivePin(matched.id);
             setInfoCardOpen(true);
@@ -912,6 +943,11 @@ export const ThreeCarScene: React.FC<Props> = ({
         }
         if (light) light.intensity = hasFault ? (.45 + pulse * .35) : isSelected ? 0.35 : 0;
       });
+
+      if (modelReadyRef.current && Math.abs(curExp - framedExplode) > .003) {
+        if (curExp > .01 || framedExplode > .01) fitWholeAssembly();
+        framedExplode = curExp;
+      }
 
       // Smooth Camera & Target Gliding
       if (targetCamPosRef.current) {
