@@ -288,13 +288,15 @@ export interface CoverAdBannerProps {
   onOpenObdModal?: () => void;
   onOpenVinHistory?: () => void;
   onOpenBookingModal?: () => void;
+  onScrollPastBanner?: () => void;
 }
 
 export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
   onNavigateTab,
   onOpenObdModal,
   onOpenVinHistory,
-  onOpenBookingModal
+  onOpenBookingModal,
+  onScrollPastBanner
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -377,6 +379,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
   const handleAction = (service = current) => {
     sounds.playSuccess();
+    setIsCatalogExpanded(false);
 
     if (service.id === 'vin_check') {
       if (onOpenVinHistory) {
@@ -869,6 +872,21 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                 className="hidden sm:inline-flex px-3 py-2 rounded-xl backdrop-blur-md bg-slate-900/70 hover:bg-slate-900 text-slate-200 hover:text-white text-xs font-bold border border-white/15 shadow-xs transition-colors"
               >
                 {current.secondaryCtaText}
+              </button>
+            )}
+
+            {onScrollPastBanner && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  onScrollPastBanner();
+                }}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl backdrop-blur-md bg-slate-900/60 hover:bg-slate-900 text-slate-300 hover:text-gold text-xs font-bold border border-white/10 hover:border-gold/30 shadow-xs transition-all group/scroll"
+                title="გვერდის კონტენტზე ნელა ჩასქროლვა"
+              >
+                <span>კონტენტი</span>
+                <ChevronDown size={14} className="group-hover/scroll:translate-y-0.5 transition-transform text-gold" />
               </button>
             )}
           </div>

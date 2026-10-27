@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { VEHICLE_PRESETS, OWNER_VEHICLES, VISITOR_INITIAL_VEHICLE } from './constants/vehicles';
 import { Navigation, TabType } from './components/Navigation';
@@ -409,12 +409,91 @@ export const App: React.FC = () => {
     }
   });
 
+  // Animation ID reference for smooth organic scrolling
+  const scrollAnimRef = useRef<number | null>(null);
+
+  const smoothScrollTo = (targetY: number, duration = 900) => {
+    if (scrollAnimRef.current !== null) {
+      cancelAnimationFrame(scrollAnimRef.current);
+      scrollAnimRef.current = null;
+    }
+
+    const startY = window.pageYOffset || document.documentElement.scrollTop;
+    const distance = targetY - startY;
+
+    if (Math.abs(distance) < 6) return;
+
+    let startTime: number | null = null;
+
+    const cancelListeners = () => {
+      window.removeEventListener('wheel', handleInterrupt);
+      window.removeEventListener('touchstart', handleInterrupt);
+    };
+
+    const handleInterrupt = () => {
+      if (scrollAnimRef.current !== null) {
+        cancelAnimationFrame(scrollAnimRef.current);
+        scrollAnimRef.current = null;
+      }
+      cancelListeners();
+    };
+
+    window.addEventListener('wheel', handleInterrupt, { passive: true });
+    window.addEventListener('touchstart', handleInterrupt, { passive: true });
+
+    // Smooth cubic bezier easing for organic, graceful scrolling
+    const easeInOutCubic = (t: number) => {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    };
+
+    const step = (currentTime: number) => {
+      if (startTime === null) startTime = currentTime;
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = easeInOutCubic(progress);
+
+      window.scrollTo(0, startY + distance * ease);
+
+      if (elapsed < duration) {
+        scrollAnimRef.current = requestAnimationFrame(step);
+      } else {
+        scrollAnimRef.current = null;
+        cancelListeners();
+      }
+    };
+
+    scrollAnimRef.current = requestAnimationFrame(step);
+  };
+
+  const scrollToMainContent = (duration = 950) => {
+    const mainEl = document.getElementById('main-content');
+    if (!mainEl) return;
+
+    const stickyHeaderEl = document.getElementById('sticky-header');
+    const headerHeight = stickyHeaderEl ? stickyHeaderEl.getBoundingClientRect().height : 110;
+
+    const rect = mainEl.getBoundingClientRect();
+    const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const targetY = Math.max(0, rect.top + currentScrollY - headerHeight - 10);
+
+    smoothScrollTo(targetY, duration);
+  };
+
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     try {
       localStorage.setItem('autohub_active_tab', tab);
       window.location.hash = tab;
     } catch {}
+
+    if (tab === 'home') {
+      smoothScrollTo(0, 750);
+    } else {
+      // Gently glide down past the banner so page content starts cleanly below the sticky navigation
+      setTimeout(() => {
+        scrollToMainContent(950);
+      }, 40);
+    }
   };
 
   // Global Keyboard Navigation: Alt + ArrowLeft / Alt + ArrowRight for switching main tabs
@@ -909,7 +988,7 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#ECEAE5] text-navy antialiased">
       {/* 1 & 2. Unified Sticky Header & Navigation Bar (Always visible on screen, never hidden) */}
-      <div className="sticky top-0 z-40 w-full bg-[#ECEAE5]/95 backdrop-blur-xl border-b border-white/80 transition-colors shadow-xs">
+      <div id="sticky-header" className="sticky top-0 z-40 w-full bg-[#ECEAE5]/95 backdrop-blur-xl border-b border-white/80 transition-colors shadow-xs">
         <Header
           vehicle={vehicle}
           allVehicles={allVehicles}
@@ -946,17 +1025,18 @@ export const App: React.FC = () => {
       </div>
 
       {/* Cover Advertising Banner (Wider panoramic layout for grand automotive photography) */}
-      <div data-tour="cover-banner" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
+      <div id="cover-banner-section" data-tour="cover-banner" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
         <CoverAdBanner
           onNavigateTab={handleTabChange}
           onOpenBookingModal={() => handleOpenBookingModal()}
           onOpenObdModal={() => setIsObdAdapterModalOpen(true)}
           onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
+          onScrollPastBanner={() => scrollToMainContent(950)}
         />
       </div>
 
       {/* 3. Main Content Container (Unified wide layout matching CoverAdBanner) */}
-      <main className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-28 sm:pb-24">
+      <main id="main-content" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-28 sm:pb-24">
         {/* Home Hub View (Department Buttons on Screen) */}
         {activeTab === 'home' && (
           <HomeHub
