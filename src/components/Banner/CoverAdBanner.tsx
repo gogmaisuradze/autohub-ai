@@ -54,7 +54,7 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     shortName: 'OBD დიაგნოსტიკა',
     category: 'დიაგნოსტიკა & AI',
     title: 'ონლაინ და ადაპტერით დიაგნოსტიკა & AI მექანიკოსი',
-    subtitle: 'OBD-II LIVE TELEMETRY, SMART DTC SCAN & BLUETOOTH ADAPTER',
+    subtitle: 'OBD-II LIVE TELEMETRY • SMART DTC SCAN • AI MECHANIC',
     badge: 'OBD-II & AI',
     tag: '🔌 ციფრული დიაგნოსტიკა • OBD-II & AI',
     tagColor: 'bg-amber-500/20 text-gold border-gold/40',
@@ -62,12 +62,12 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     badgeBg: 'bg-gold/20 text-gold border-gold/40',
     imageUrl: 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=1920&q=85',
     carModelHint: 'PORSCHE 911 DIGITAL COCKPIT & TELEMETRY',
-    description: 'პირადად Bluetooth / Wi-Fi OBD-II ადაპტერის შეერთებით ან ონლაინ ღრუბლოვანი ტელემეტრიით: ძრავის Check Engine შეცდომების (DTC) წაკითხვა, წაშლა, სენსორების ცოცხალი პარამეტრები (RPM, ტემპერატურა, წნევა, აკუმულატორი) და ხელოვნური ინტელექტის (AI) მექანიკოსის დაუყოვნებლივი დასკვნა ქართულ ენაზე.',
+    description: 'Bluetooth/Wi-Fi ELM327 ადაპტერი და AI ტელემეტრია: ძრავის Check Engine შეცდომების (DTC) წაკითხვა, წაშლა და სენსორების რეალური მონაცემები რეალურ დროში.',
     highlights: [
-      'Bluetooth / Wi-Fi ELM327 ადაპტერი',
-      'Check Engine შეცდომების წაშლა',
+      'Check Engine (DTC) წაკითხვა & წაშლა',
       'სენსორების ცოცხალი ტელემეტრია',
-      'AI მექანიკოსის ონლაინ კონსულტაცია'
+      'Bluetooth / Wi-Fi ELM327 კავშირი',
+      'AI მექანიკოსის ონლაინ დიაგნოზი'
     ],
     specs: [
       { label: 'პროტოკოლი', value: 'OBD-II / CAN-BUS' },
@@ -86,8 +86,8 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     id: 'fines',
     shortName: 'პოლიციის ჯარიმები',
     category: 'საპატრულო პოლიცია',
-    title: 'საპატრულო პოლიციის ყველა ჯარიმა და სერვისი ერთად',
-    subtitle: 'POLICE.GE SPEED RADARS, VIDEO FINES & 20% DISCOUNT',
+    title: 'საპატრულო პოლიციის ჯარიმები & რადარები',
+    subtitle: 'POLICE.GE SPEED RADARS • 20% DISCOUNT • SMS ALERTS',
     badge: 'POLICE.GE',
     tag: '🚨 საპატრულო პოლიცია • POLICE.GE',
     tagColor: 'bg-rose-500/20 text-rose-300 border-rose-400/40',
@@ -95,12 +95,12 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-400/40',
     imageUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=85',
     carModelHint: 'PORSCHE 911 GT3 HIGHWAY SPEED CORRIDOR',
-    description: 'საპატრულო პოლიციის (Police.ge) სიჩქარის რადარების, ჭკვიანი კამერებისა და საპატრულო ეკიპაჟის მიერ გამოწერილი ყველა ჯარიმის ცოცხალი გადამოწმება ერთ სივრცეში. 20%-იანი ფასდაკლების 10-დღიანი ტაიმერი, SMS შეტყობინებები ახალ ჯარიმაზე, 100-ქულიანი სისტემის კონტროლი და პირდაპირი გადახდა/გასაჩივრება.',
+    description: 'Police.ge სიჩქარის რადარების, კამერებისა და პატრულის ჯარიმების ცოცხალი შემოწმება, -20% ფასდაკლების 10-დღიანი ტაიმერი და SMS შეტყობინებები.',
     highlights: [
-      'Police.ge ბაზასთან ცოცხალი სინქრონიზაცია',
-      '20% ფასდაკლება პირველ 10 დღეში',
-      'ვიდეოჯარიმები & რადარის ფოტოები',
-      'უფასო SMS შეტყობინება ახალ ჯარიმაზე'
+      'Police.ge ბაზასთან ცოცხალი კავშირი',
+      '-20% ფასდაკლება პირველ 10 დღეში',
+      'რადარების & კამერების ფოტოები',
+      'SMS შეტყობინება & 100 ქულის კონტროლი'
     ],
     specs: [
       { label: 'ფასდაკლება', value: '20% 10 დღის ვადაში' },
@@ -119,8 +119,8 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     id: 'parking',
     shortName: 'პარკინგის სერვისები',
     category: 'მუნიციპალური პარკინგი',
-    title: 'მუნიციპალური და ზონალური პარკინგი (თბილისი, ბათუმი)',
-    subtitle: 'CITY PARKING, ZONAL PASSES & INSTANT SMS 9110',
+    title: 'მუნიციპალური & ზონალური პარკინგი',
+    subtitle: 'CITY ZONAL PARKING • ACTIVE TIMER • SMS 9110',
     badge: 'PARKING PRO',
     tag: '🅿️ პარკინგის სისტემა • PARKING PRO',
     tagColor: 'bg-blue-500/20 text-blue-300 border-blue-400/40',
@@ -128,12 +128,12 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     badgeBg: 'bg-blue-500/20 text-blue-300 border-blue-400/40',
     imageUrl: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1920&q=85',
     carModelHint: 'MERCEDES-BENZ LUXURY URBAN BOULEVARD PARKING',
-    description: 'თბილისის, ბათუმისა და ქუთაისის მუნიციპალური პარკირების მართვა: საათობრივი ზონალური (A, B, C ზონები) ტარიფები, წლიური/თვიური აბონემენტების შეძენა, მიმდინარე ზონის ავტომატური ამოცნობა რუკაზე და სწრაფი გადახდა SMS 9110-ით ზედმეტი ჯარიმების თავიდან ასაცილებლად.',
+    description: 'A, B, C ზონების ავტომატური ამოცნობა რუკაზე (თბილისი, ბათუმი, ქუთაისი), აქტიური პარკირების ტაიმერი და მომენტალური გადახდა SMS 9110-ით.',
     highlights: [
-      'A, B, C ზონალური პარკირება',
+      'A, B, C ზონების ავტო-ამოცნობა',
       'თბილისი, ბათუმი & ქუთაისი',
       'SMS 9110 სწრაფი აქტივაცია',
-      'ჯარიმის თავიდან არიდების ტაიმერი'
+      'ჯარიმის არიდების ჭკვიანი ტაიმერი'
     ],
     specs: [
       { label: 'ზონები', value: 'A / B / C ზონალური სისტემა' },
@@ -152,8 +152,8 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     id: 'servicelog',
     shortName: 'სერვისების დღიური',
     category: 'სერვისის ისტორია',
-    title: 'ავტომობილის ციფრული სერვის-დღიური & ხარჯების აღრიცხვა',
-    subtitle: 'DIGITAL SERVICE LOGBOOK & MAINTENANCE EXPENSE TRACKER',
+    title: 'ციფრული სერვის-დღიური & ხარჯთაღრიცხვა',
+    subtitle: 'DIGITAL SERVICE LOGBOOK • MAINTENANCE TRACKER',
     badge: 'LOGBOOK',
     tag: '📖 სერვისის ისტორია • LOGBOOK',
     tagColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
@@ -161,12 +161,12 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
     imageUrl: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1920&q=85',
     carModelHint: 'PORSCHE 911 GT PERFORMANCE & PRECISION SERVICE',
-    description: 'ავტომობილის სრული ციფრული ისტორია: ძრავის ზეთის, ფილტრების, სამუხრუჭე ხუნდების, საბურავებისა და სავალი ნაწილის შეცვლის თარიღები, გარბენი და ხარჯები. ავტომატური შეხსენებები მორიგ გეგმიურ სერვისზე და ავტომობილის საბაზრო ღირებულების შენარჩუნება გაყიდვისას.',
+    description: 'ზეთის, ფილტრების, ხუნდებისა და სავალი ნაწილის გეგმიური აღრიცხვა, გარბენის მიხედვით შეხსენებები და ავტომობილის ხარჯების კონტროლი.',
     highlights: [
-      'ზეთისა & ფილტრების კალენდარი',
-      'შეცვლილი ნაწილების ხარჯთაღრიცხვა',
+      'ზეთისა & ფილტრების ისტორია',
+      'სათადარიგო ნაწილების აღრიცხვა',
       'მორიგი სერვისის კმ შეხსენება',
-      'გაყიდვისას სანდო სერვის-ისტორია'
+      'დამოწმებული ციფრული სერვის-პასპორტი'
     ],
     specs: [
       { label: 'აღრიცხვა', value: '100% ციფრული ისტორია' },
@@ -185,8 +185,8 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     id: 'map',
     shortName: 'რადარების რუკა',
     category: 'ცოცხალი რუკა',
-    title: 'ცოცხალი რუკა: რადარები, კამერები & გზის ინფორმაცია',
-    subtitle: 'LIVE RADARS, SPEED CAMERAS, BUS LANES & ROAD HAZARDS',
+    title: 'ცოცხალი საგზაო რუკა: რადარები & კამერები',
+    subtitle: 'LIVE RADAR MAP • SPEED CAMERAS • AUDIO ALERTS',
     badge: 'LIVE RADAR',
     tag: '🗺️ რადარების რუკა • LIVE RADAR',
     tagColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40',
@@ -194,12 +194,12 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     badgeBg: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40',
     imageUrl: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1920&q=85',
     carModelHint: 'EXOTIC SUPERCAR ON SCENIC PANORAMIC HIGHWAY',
-    description: 'საქართველოს გზების ცოცხალი ინტერაქტიული რუკა: სტაციონარული და სექციური სიჩქარის რადარები, ავტობუსის ზოლის (Bus Lane) მაკონტროლებელი კამერები, საპატრულო ეკიპაჟების ლოკაციები, საგზაო შეფერხებები და საცობების რეალური სიტუაცია რეალურ დროში.',
+    description: 'საქართველოს გზების ცოცხალი რუკა: სიჩქარის სტაციონარული და სექციური რადარები, Bus Lane კამერები, საცობები და 300მ წინასწარი ხმოვანი გაფრთხილება.',
     highlights: [
-      'სიჩქარის სტაციონარული & სექციური რადარები',
+      'სტაციონარული & სექციური რადარები',
       'Bus Lane ავტობუსის ზოლის კამერები',
-      'საგზაო საცობები & სარემონტო მონაკვეთები',
-      'ხმოვანი გაფრთხილება მოახლოებულ რადარზე'
+      'საგზაო საცობები & რემონტები LIVE',
+      '300მ წინასწარი ხმოვანი გაფრთხილება'
     ],
     specs: [
       { label: 'რადარები', value: 'საქართველოს ყველა წერტილი' },
@@ -218,8 +218,8 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     id: 'driving_test',
     shortName: 'მართვის ტესტები',
     category: 'მართვის მოწმობა',
-    title: 'მართვის მოწმობის თეორიული საგამოცდო ბილეთები 2026',
-    subtitle: 'OFFICIAL DRIVING LICENSE THEORY EXAM SIMULATOR 2026',
+    title: 'მართვის მოწმობის თეორიული გამოცდა 2026',
+    subtitle: 'OFFICIAL THEORY EXAM SIMULATOR • 2026 TICKETS',
     badge: 'EXAM 2026',
     tag: '🚦 მართვის მოწმობა • DRIVING EXAM',
     tagColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40',
@@ -227,12 +227,12 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     badgeBg: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40',
     imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1920&q=85',
     carModelHint: 'PURE DRIVING PLEASURE & FREEDOM OF THE OPEN ROAD',
-    description: 'მომსახურების სააგენტოს 2026 წლის ოფიციალური თეორიული საგამოცდო ბილეთების სრული სიმულატორი. კატეგორიები A, B, C, D; რეალური საგამოცდო დროის ტაიმერი (30 წუთი, 30 კითხვა), შეცდომების დეტალური განხილვა საგზაო მოძრაობის წესების მიხედვით და მზადყოფნის პროცენტული ინდექსი.',
+    description: 'მომსახურების სააგენტოს 2026 წლის ოფიციალური საგამოცდო ბილეთები (A, B, C, D): 30-წუთიანი სიმულაცია, შეცდომების ანალიზი და მზადყოფნის ინდექსი.',
     highlights: [
-      '2026 წლის ოფიციალური ბილეთების ბაზა',
-      'რეალური გამოცდის ტაიმერი & სიმულაცია',
-      'საგზაო ნიშნების & სიტუაციების ილუსტრაციები',
-      'შეცდომების ანალიზი & გამეორების რეჟიმი'
+      '2026 წლის ოფიციალური ბილეთები',
+      'რეალური გამოცდის ტაიმერი (30 წთ)',
+      'A, B, C, D ყველა კატეგორია',
+      'შეცდომების ანალიზი & გამეორება'
     ],
     specs: [
       { label: 'ბაზა', value: '2026 წლის ოფიციალური ბილეთები' },
@@ -251,8 +251,8 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     id: 'vin_check',
     shortName: 'VIN შემოწმება',
     category: 'ისტორია & აუქციონი',
-    title: 'ავტომობილის ისტორიის სრული გადამოწმება VIN კოდით',
-    subtitle: 'INSTANT VIN CHECK, COPART/IAAI AUCTION & ACCIDENT REPORT',
+    title: 'ავტომობილის ისტორიის შემოწმება VIN კოდით',
+    subtitle: 'VIN DECODER • COPART & IAAI AUCTION • CARFAX DOSSIER',
     badge: 'VIN REPORT',
     tag: '🔍 VIN ისტორია • CARFAX & AUCTION',
     tagColor: 'bg-purple-500/20 text-purple-300 border-purple-400/40',
@@ -260,12 +260,12 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     badgeBg: 'bg-purple-500/20 text-purple-300 border-purple-400/40',
     imageUrl: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1920&q=85',
     carModelHint: 'MERCEDES-AMG GT SHOWROOM GLAMOUR & PROVENANCE',
-    description: 'ავტომობილის 17-ნიშნა VIN შასის კოდით სრული ისტორიის გაშიფვრა: ამერიკული აუქციონების (Copart, IAAI) საარქივო ფოტოები და დაზიანების ხარისხი, რეალური გარბენის გადამოწმება, აირბაგების გახსნის ისტორია, ქარხნული კომპლექტაცია და ტექნიკური მონაცემები.',
+    description: '17-ნიშნა VIN კოდით სრული დოსიე: Copart და IAAI აუქციონის რეალური ფოტოები, დაზიანებების ხარისხი, გარბენის ჩამოყრა (Rollback) და აირბაგების სტატუსი.',
     highlights: [
-      'Copart & IAAI აუქციონის რეალური ფოტოები',
-      'გარბენის ჩამოყრის (Rollback) გადამოწმება',
-      'ავარიებისა & აირბაგების ისტორია',
-      'ქარხნული OEM კომპლექტაციის გაშიფვრა'
+      'Copart & IAAI საარქივო ფოტოები',
+      'Rollback გარბენის გადამოწმება',
+      'ავარიებისა & აირბაგების სტატუსი',
+      'ქარხნული OEM კომპლექტაცია'
     ],
     specs: [
       { label: 'აუქციონები', value: 'Copart • IAAI • Manheim' },
