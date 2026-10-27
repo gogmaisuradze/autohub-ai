@@ -639,6 +639,11 @@ export const ParkingModule: React.FC<Props> = ({
   // Fallback vehicles list for the Parking Profile
   const vehiclesList = allVehicles && allVehicles.length > 0 ? allVehicles : [vehicle];
 
+  // Active / Detected Parked Lot and Parked Vehicle for 4G OBD Banner
+  const activeParkedLot = parkingSession?.lot || stopResult?.matchedLot || DELINEATED_PARKING_ZONES.find(z => z.lotCode === '005');
+  const parkedVehicleName = vehicle.brand && vehicle.model ? `${vehicle.brand} ${vehicle.model}` : 'Mercedes-Benz C300';
+  const parkedPlateNumber = vehicle.plate_number || activeSession.plateNumber || 'FR-282-EE';
+
   // Keep live parking stopwatch running
   useEffect(() => {
     let timer: any;
@@ -1002,6 +1007,84 @@ export const ParkingModule: React.FC<Props> = ({
                 <span className="text-[11px] font-bold text-slate-300 block mt-1">
                   {formatTbilisiTime(telemetry?.receivedAt || Date.now())}
                 </span>
+              </div>
+            </div>
+
+            {/* Parked Vehicle & Spot Location Grid (პარკინგის ადგილი, ნომერი, ქუჩის ნომერი და მანქანა) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs font-mono">
+              {/* 1. მანქანა სადაც დააპარკინგე */}
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+                  <Car size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] text-slate-400 block uppercase tracking-wider">მანქანა სადაც დააპარკინგე</span>
+                  <span className="text-sm font-black text-white block mt-0.5 truncate">
+                    {parkedVehicleName}
+                  </span>
+                  <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-md bg-white/10 text-amber-300 font-bold text-[10px] border border-white/10 tracking-wider">
+                      {parkedPlateNumber}
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      დაპარკინგებულია
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. პარკინგის ადგილი */}
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+                  <MapPin size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] text-slate-400 block uppercase tracking-wider">პარკინგის ადგილი</span>
+                  <span className="text-sm font-black text-gold block mt-0.5 truncate">
+                    {activeParkedLot?.district_ge || 'ვაკე'}
+                  </span>
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-white/10 text-slate-300 font-bold text-[10px] border border-white/10 truncate max-w-full">
+                    {activeParkedLot?.categoryLabel_ge || 'ზონა A (1.00 ₾/სთ)'}
+                  </span>
+                </div>
+              </div>
+
+              {/* 3. პარკინგის ნომერი */}
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+                  <ParkingSquare size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] text-slate-400 block uppercase tracking-wider">პარკინგის ნომერი</span>
+                  <span className="text-sm sm:text-base font-black text-white block mt-0.5">
+                    ლოტი #{activeParkedLot?.lotCode || '005'}
+                  </span>
+                  <span className="inline-block mt-1 text-[10px] text-slate-400">
+                    მუნიციპალური საპარკინგე ადგილი
+                  </span>
+                </div>
+              </div>
+
+              {/* 4. ქუჩის ნომერი */}
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+                  <Building size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] text-slate-400 block uppercase tracking-wider">ქუჩის ნომერი</span>
+                  <span className="text-sm font-black text-white block mt-0.5 truncate">
+                    {activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'}
+                  </span>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-400/30">
+                      #{activeParkedLot?.lotCode === '005' ? '34' : '34'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 truncate">
+                      (მზიურის მოპირდაპირედ)
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
