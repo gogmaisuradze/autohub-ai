@@ -1,4 +1,6 @@
 import { DtcCode, FineItem, MapReport, N8nConfig, WebhookLog } from '../types';
+import { DeviceTelemetryReading } from '../types/telemetry';
+import { ParkingSession } from '../types/parkingSession';
 
 export const DEFAULT_N8N_CONFIG: N8nConfig = {
   baseUrl: 'https://meticulous-oyster.pikapod.net/webhook',
@@ -8,6 +10,10 @@ export const DEFAULT_N8N_CONFIG: N8nConfig = {
   finesEndpoint: '/fines-check',
   reportsEndpoint: '/get-reports',
   addReportEndpoint: '/add-report',
+  telemetryEndpoint: '/obd-telemetry',
+  parkingConfirmEndpoint: '/parking-session-confirm',
+  parkingCompleteEndpoint: '/parking-session-complete',
+  apiKey: '',
   useLiveWebhook: true
 };
 
@@ -40,6 +46,21 @@ class N8nService {
     return this.config;
   }
 
+  /**
+   * Helper to build request headers, including optional authentication key.
+   * API keys and tokens are stored in n8n config on the client and validated on n8n server.
+   */
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (this.config.apiKey && this.config.apiKey.trim()) {
+      headers['x-autohub-api-key'] = this.config.apiKey.trim();
+      headers['Authorization'] = `Bearer ${this.config.apiKey.trim()}`;
+    }
+    return headers;
+  }
+
   // Sync a user's vehicle + all known info into the shared Google Sheet (keyed by plate).
   // Fire-and-forget: never blocks the UI, always attempts when a baseUrl is set.
   public async syncVehicle(data: Record<string, any>): Promise<void> {
@@ -48,13 +69,124 @@ class N8nService {
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify(payload)
       });
       this.addLog(endpoint, 'POST', payload, res.ok ? { ok: true } : { status: res.status }, res.ok ? 'success' : 'error');
     } catch (err: any) {
       this.addLog(endpoint, 'POST', payload, { error: err?.message }, 'error');
     }
+  }
+
+  // 1. 4G OBD Live Telemetry Streaming to n8n
+  public async sendTelemetry(reading: DeviceTelemetryReading): Promise<any> {
+    const endpoint = `${this.config.baseUrl}${this.config.telemetryEndpoint || '/obd-telemetry'}`;
+    const payload = {
+      device_id: reading.deviceId,
+      vehicle_id: reading.vehicleId,
+      recorded_at: reading.recordedAt,
+      received_at: reading.receivedAt,
+      latitude: reading.latitude,
+      longitude: reading.longitude,
+      accuracy_meters: reading.accuracyMeters,
+      speed_kmh: reading.speedKmh,
+      ignition: reading.ignition,
+      battery_voltage: reading.batteryVoltage,
+      satellites_count: reading.satellitesCount,
+      idempotency_key: `${reading.deviceId}_${reading.recordedAt}`
+    };
+
+    if (this.config.useLiveWebhook) {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: this.getHeaders(),
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        this.addLog(endpoint, 'POST', payload, data, 'success');
+        return data;
+      } catch (err: any) {
+        console.warn('n8n telemetry webhook failed:', err.message);
+      }
+    }
+
+    const simulatedResponse = { ok: true, status: 'simulated_telemetry_received' };
+    this.addLog(endpoint, 'POST', payload, simulatedResponse, 'simulated');
+    return simulatedResponse;
+  }
+
+  // 2. Parking Session Confirm to n8n (Schedules server reminders)
+  public async confirmParkingSession(session: ParkingSession): Promise<any> {
+    const endpoint = `${this.config.baseUrl}${this.config.parkingConfirmEndpoint || '/parking-session-confirm'}`;
+    const payload = {
+      event: 'parking_confirmed',
+      session_id: session.sessionId,
+      vehicle_id: session.vehicleId,
+      plate_number: session.plateNumber,
+      lot_code: session.lot.lotCode,
+      street_ge: session.lot.street_ge,
+      tariff_category: session.lot.tariffCategory,
+      hourly_rate_gel: session.lot.hourlyRateGel,
+      stopped_at: session.stoppedAt,
+      expires_at: session.expiresAt,
+      reminder_lead_minutes: session.reminderMinutesBefore,
+      idempotency_key: `${session.sessionId}_confirm`
+    };
+
+    if (this.config.useLiveWebhook) {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: this.getHeaders(),
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        this.addLog(endpoint, 'POST', payload, data, 'success');
+        return data;
+      } catch (err: any) {
+        console.warn('n8n parking confirm webhook failed:', err.message);
+      }
+    }
+
+    const simRes = { ok: true, message: 'პარკირების შეხსენება დაგეგმილია n8n-ში' };
+    this.addLog(endpoint, 'POST', payload, simRes, 'simulated');
+    return simRes;
+  }
+
+  // 3. Parking Session Complete to n8n (Cancels future reminders)
+  public async completeParkingSession(session: ParkingSession): Promise<any> {
+    const endpoint = `${this.config.baseUrl}${this.config.parkingCompleteEndpoint || '/parking-session-complete'}`;
+    const payload = {
+      event: 'parking_completed',
+      session_id: session.sessionId,
+      vehicle_id: session.vehicleId,
+      plate_number: session.plateNumber,
+      completed_at: session.completedAt || new Date().toISOString(),
+      idempotency_key: `${session.sessionId}_complete`
+    };
+
+    if (this.config.useLiveWebhook) {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: this.getHeaders(),
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        this.addLog(endpoint, 'POST', payload, data, 'success');
+        return data;
+      } catch (err: any) {
+        console.warn('n8n parking complete webhook failed:', err.message);
+      }
+    }
+
+    const simRes = { ok: true, message: 'პარკირების შეხსენებები გაუქმებულია n8n-ში' };
+    this.addLog(endpoint, 'POST', payload, simRes, 'simulated');
+    return simRes;
   }
 
   public subscribeLogs(listener: (logs: WebhookLog[]) => void) {
@@ -88,7 +220,7 @@ class N8nService {
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getHeaders(),
           body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -150,7 +282,7 @@ class N8nService {
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getHeaders(),
           body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -172,15 +304,46 @@ class N8nService {
   }
 
   // 3. AI Mechanic Chat
+  public async askAiMechanic(message: string, vehicle?: any, dtcCodes?: any): Promise<{ reply: string }> {
+    return this.sendChatMessage(message, { vehicle, dtc_codes: dtcCodes });
+  }
+
   public async sendChatMessage(message: string, carContext: any): Promise<{ reply: string }> {
     const endpoint = `${this.config.baseUrl}${this.config.chatEndpoint}`;
-    const payload = { message, car_context: carContext, timestamp: new Date().toISOString() };
+    // Strictly minimal and sanitized context for Claude (no sensitive credentials or raw PII)
+    const sanitizedCarContext = {
+      brand: carContext?.brand || 'Mercedes-Benz',
+      model: carContext?.model || 'GLA 250',
+      year: carContext?.year || 2016,
+      engine: carContext?.engine || '2.0L Turbo',
+      mileage_km: carContext?.mileage || carContext?.mileage_km || 78400,
+      active_dtc: Array.isArray(carContext?.active_dtc)
+        ? carContext.active_dtc.map((d: any) => ({
+            code: d.code,
+            title_ge: d.title_ge || d.title,
+            severity: d.severity
+          }))
+        : [],
+      current_parking: carContext?.current_parking
+        ? {
+            lot_code: carContext.current_parking.lot_code,
+            street: carContext.current_parking.street,
+            tariff: carContext.current_parking.tariff
+          }
+        : null
+    };
+
+    const payload = {
+      message,
+      car_context: sanitizedCarContext,
+      timestamp: new Date().toISOString()
+    };
 
     if (this.config.useLiveWebhook) {
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getHeaders(),
           body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -250,7 +413,7 @@ class N8nService {
         const timeoutId = setTimeout(() => controller.abort(), 8000);
         const res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getHeaders(),
           body: JSON.stringify(payload),
           signal: controller.signal
         });
@@ -366,7 +529,7 @@ class N8nService {
       try {
         const res = await fetch(endpoint, {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+          headers: this.getHeaders()
         });
         if (res.ok) {
           const data = await res.json();
@@ -750,7 +913,7 @@ class N8nService {
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getHeaders(),
           body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

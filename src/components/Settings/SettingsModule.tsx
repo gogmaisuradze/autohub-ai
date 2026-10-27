@@ -159,20 +159,36 @@ export const SettingsModule: React.FC<Props> = ({
             </div>
 
             <form onSubmit={handleSaveN8n} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-navy block mb-1">
-                  n8n Base URL (სერვერის მისამართი)
-                </label>
-                <input
-                  type="text"
-                  value={n8nConfig.baseUrl}
-                  onChange={(e) => setN8nConfig({ ...n8nConfig, baseUrl: e.target.value })}
-                  placeholder="https://n8n.your-domain.com/webhook"
-                  className="w-full px-4 py-2.5 rounded-xl neu-inset text-navy font-mono text-xs focus:outline-none"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-navy block mb-1">
+                    n8n Base URL (სერვერის მისამართი)
+                  </label>
+                  <input
+                    type="text"
+                    value={n8nConfig.baseUrl}
+                    onChange={(e) => setN8nConfig({ ...n8nConfig, baseUrl: e.target.value })}
+                    placeholder="https://n8n.your-domain.com/webhook"
+                    className="w-full px-4 py-2.5 rounded-xl neu-inset text-navy font-mono text-xs focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-navy block mb-1">
+                    n8n API Key / Token (ავთენტიფიკაცია)
+                  </label>
+                  <input
+                    type="password"
+                    value={n8nConfig.apiKey || ''}
+                    onChange={(e) => setN8nConfig({ ...n8nConfig, apiKey: e.target.value })}
+                    placeholder="Bearer token ან x-autohub-api-key..."
+                    className="w-full px-4 py-2.5 rounded-xl neu-inset text-navy font-mono text-xs focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 font-mono mt-1 block">უსაფრთხო ჰედერი: Authorization / x-autohub-api-key</span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="text-xs font-bold text-navy block mb-1">
                     1. OBD Scan Endpoint
@@ -201,7 +217,7 @@ export const SettingsModule: React.FC<Props> = ({
 
                 <div>
                   <label className="text-xs font-bold text-navy block mb-1">
-                    3. AI Mechanic Chat Endpoint
+                    3. AI Mechanic Chat Endpoint (Claude)
                   </label>
                   <input
                     type="text"
@@ -223,6 +239,32 @@ export const SettingsModule: React.FC<Props> = ({
                     className="w-full px-4 py-2 rounded-xl neu-inset text-navy font-mono text-xs focus:outline-none"
                   />
                   <span className="text-[10px] text-slate-400 font-mono mt-1 block">POST /webhook/fines-check</span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-navy block mb-1">
+                    5. 4G OBD Telemetry Endpoint
+                  </label>
+                  <input
+                    type="text"
+                    value={n8nConfig.telemetryEndpoint || '/obd-telemetry'}
+                    onChange={(e) => setN8nConfig({ ...n8nConfig, telemetryEndpoint: e.target.value })}
+                    className="w-full px-4 py-2 rounded-xl neu-inset text-navy font-mono text-xs focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 font-mono mt-1 block">POST /webhook/obd-telemetry</span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-navy block mb-1">
+                    6. Parking Confirm Endpoint
+                  </label>
+                  <input
+                    type="text"
+                    value={n8nConfig.parkingConfirmEndpoint || '/parking-session-confirm'}
+                    onChange={(e) => setN8nConfig({ ...n8nConfig, parkingConfirmEndpoint: e.target.value })}
+                    className="w-full px-4 py-2 rounded-xl neu-inset text-navy font-mono text-xs focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 font-mono mt-1 block">POST /webhook/parking-session-confirm</span>
                 </div>
               </div>
 
@@ -266,10 +308,13 @@ export const SettingsModule: React.FC<Props> = ({
               </p>
 
               <div className="mt-4 p-3 rounded-2xl neu-inset text-[11px] text-slate-600 font-mono space-y-1">
-                <div>• 4 Webhook ტრიგერი</div>
-                <div>• JavaScript კოდის პარსერები</div>
-                <div>• Georgian AI Mechanic ლოგიკა</div>
-                <div>• ჯარიმების რეესტრის ფორმატი</div>
+                <div>• 1. 4G OBD ტელემეტრიის მიღება & ავთენტიფიკაცია</div>
+                <div>• 2. მოწყობილობის მიბმა მანქანასა და მფლობელთან</div>
+                <div>• 3. დედუბლიკაცია & დაგვიანებული მოვლენების ფილტრი</div>
+                <div>• 4. სერვერული პარკინგის დეტექტორი (თბილისის ზონები)</div>
+                <div>• 5. დადასტურებული სესიის შენახვა & შეხსენებების დაგეგმვა</div>
+                <div>• 6. სესიის დასრულებისას შეხსენებების ავტო-გაუქმება</div>
+                <div>• 7. Claude (Anthropic LLM) გასუფთავებული კონტექსტით</div>
               </div>
             </div>
 

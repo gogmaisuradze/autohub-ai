@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DtcCode, VehicleProfile } from '../../types';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
@@ -135,66 +136,81 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
 
   return (
     <div data-tour="ai-floating-widget" className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-40 font-sans">
-      {/* 1. COLLAPSED FLOATING PILL BUTTON (ელავს - LIGHTNING FLASH, სუფთა სიყვითლის ფონის გარეშე) */}
-      {!isOpen && (
-        <div className="relative flex items-center gap-1.5">
-          <button
-            onClick={() => {
-              sounds.playSuccess();
-              setIsOpen(true);
-            }}
-            className="group relative overflow-hidden btn-stitch-ai px-4 py-3 shadow-xl border border-gold/70 z-10 ai-lightning-btn"
-            title={isGe ? 'AI მექანიკოსის ფანჯარა' : 'AI Mechanic Window'}
+      <AnimatePresence mode="wait">
+        {/* 1. COLLAPSED FLOATING PILL BUTTON */}
+        {!isOpen && (
+          <motion.div
+            key="collapsed-pill"
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="relative flex items-center gap-1.5"
           >
-            {/* Diagonal Sweeping Lightning Flash Layer */}
-            <div className="ai-lightning-flash" />
+            <button
+              onClick={() => {
+                sounds.playSuccess();
+                setIsOpen(true);
+              }}
+              className="group relative overflow-hidden btn-stitch-ai px-4 py-3 shadow-xl border border-gold/70 z-10 ai-lightning-btn"
+              title={isGe ? 'AI მექანიკოსის ფანჯარა' : 'AI Mechanic Window'}
+            >
+              {/* Soft Shimmer Layer */}
+              <div className="ai-lightning-flash" />
 
-            <div className="relative z-10 flex items-center gap-2">
-              <div className="relative">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-navy/90 flex items-center justify-center text-gold shadow-sm group-hover:scale-110 transition-transform border border-gold/40">
-                  <Bot size={18} className="drop-shadow-xs" />
+              <div className="relative z-10 flex items-center gap-2">
+                <div className="relative">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-navy/90 flex items-center justify-center text-gold shadow-sm group-hover:scale-110 transition-transform border border-gold/40">
+                    <Bot size={18} className="drop-shadow-xs" />
+                  </div>
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-navy animate-pulse"></span>
+                  <Zap size={10} className="absolute -bottom-1 -left-1 text-gold fill-gold" />
                 </div>
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-navy animate-pulse"></span>
-                <Zap size={10} className="absolute -bottom-1 -left-1 text-gold fill-gold animate-bounce" />
-              </div>
 
-              <div className="text-left hidden min-[360px]:block">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-black tracking-tight text-white group-hover:text-gold transition-colors flex items-center gap-1">
-                    <span>{isGe ? 'AI მექანიკოსი' : 'AI Mechanic'}</span>
-                    <Zap size={13} className="text-gold fill-gold animate-pulse" />
-                  </span>
-                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-gold/20 text-gold border border-gold/50 shadow-xs">
-                    24/7
-                  </span>
+                <div className="text-left hidden min-[360px]:block">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black tracking-tight text-white group-hover:text-gold transition-colors flex items-center gap-1">
+                      <span>{isGe ? 'AI მექანიკოსი' : 'AI Mechanic'}</span>
+                      <Zap size={13} className="text-gold fill-gold" />
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-gold/20 text-gold border border-gold/50 shadow-xs">
+                      24/7
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-200 font-bold">
+                    {dtcCodes.length > 0
+                      ? (isGe ? `${dtcCodes.length} ხარვეზი • ონლაინ` : `${dtcCodes.length} issues • Online`)
+                      : (isGe ? '⚡ ონლაინ AI კონსულტაცია' : '⚡ Live AI Advice')}
+                  </p>
                 </div>
-                <p className="text-[10px] text-slate-200 font-bold">
-                  {dtcCodes.length > 0
-                    ? (isGe ? `${dtcCodes.length} ხარვეზი • ონლაინ` : `${dtcCodes.length} issues • Online`)
-                    : (isGe ? '⚡ ონლაინ AI კონსულტაცია' : '⚡ Live AI Advice')}
-                </p>
               </div>
-            </div>
-          </button>
+            </button>
 
-          {/* Dismiss button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              sounds.playClick();
-              setIsDismissed(true);
-            }}
-            className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-400 hover:text-rose-600 shadow-md border border-slate-200/80 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-            title={isGe ? 'გათიშვა / დამალვა' : 'Close / Hide'}
+            {/* Dismiss button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                sounds.playClick();
+                setIsDismissed(true);
+              }}
+              className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-400 hover:text-rose-600 shadow-md border border-slate-200/80 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+              title={isGe ? 'გათიშვა / დამალვა' : 'Close / Hide'}
+            >
+              <X size={13} />
+            </button>
+          </motion.div>
+        )}
+
+        {/* 2. EXPANDED FLOATING CHAT WINDOW */}
+        {isOpen && (
+          <motion.div
+            key="expanded-chat"
+            initial={{ opacity: 0, scale: 0.94, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 10 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+            className="w-[310px] min-[400px]:w-[340px] sm:w-[370px] rounded-3xl neu-card bg-white shadow-2xl border border-slate-200/90 overflow-hidden flex flex-col max-h-[78vh]"
           >
-            <X size={13} />
-          </button>
-        </div>
-      )}
-
-      {/* 2. EXPANDED FLOATING CHAT WINDOW */}
-      {isOpen && (
-        <div className="w-[310px] min-[400px]:w-[340px] sm:w-[370px] rounded-3xl neu-card bg-white shadow-2xl border border-slate-200/90 overflow-hidden flex flex-col animate-scale-up max-h-[78vh]">
           {/* Header */}
           <div className="p-3.5 bg-gradient-to-r from-navy via-slate-900 to-navy text-white flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2.5">
@@ -338,8 +354,9 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
               <Send size={14} />
             </button>
           </form>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 };

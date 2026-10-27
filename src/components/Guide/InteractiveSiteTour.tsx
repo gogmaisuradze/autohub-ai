@@ -26,7 +26,7 @@ export interface TourStep {
   subtitle: string;
   badge: string;
   description: string;
-  icon: React.ComponentType<{ className?: string; size?: number }>;
+  icon: React.ComponentType<{ className?: string; size?: number | string }>;
   requiredTab?: TabType;
 }
 
@@ -143,6 +143,10 @@ export const InteractiveSiteTour: React.FC<Props> = ({
 
   const startTour = useCallback(() => {
     sounds.playSuccess();
+    const el = document.querySelector(TOUR_STEPS[0].targetSelector);
+    if (el) {
+      setTargetRect(el.getBoundingClientRect());
+    }
     setIsCloudPromptOpen(false);
     setIsCompletedModalOpen(false);
     setCurrentStepIndex(0);
@@ -175,13 +179,10 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     if (el) {
       const rect = el.getBoundingClientRect();
       setTargetRect(rect);
-    } else {
-      // If target element is not found on screen, fallback
-      setTargetRect(null);
     }
   }, [isTourActive, currentStepIndex]);
 
-  // Handle scroll to element when step changes
+  // Handle smooth element transitions when step changes
   useEffect(() => {
     if (!isTourActive) return;
 
@@ -192,23 +193,36 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       onNavigateTab(step.requiredTab);
     }
 
-    // Give DOM time to update before scrolling & bounding
-    const timeout = setTimeout(() => {
-      const el = document.querySelector(step.targetSelector);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Recalculate after scroll finishes
-        setTimeout(() => {
-          const rect = el.getBoundingClientRect();
-          setTargetRect(rect);
-        }, 350);
-      }
-    }, 100);
+    // Try measuring element immediately
+    const el = document.querySelector(step.targetSelector);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      setTargetRect(rect);
 
-    return () => clearTimeout(timeout);
+      const inView = rect.top >= 60 && rect.bottom <= (window.innerHeight - 60);
+      if (!inView) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Smoothly track while page scrolls
+        const interval = setInterval(() => {
+          const r = el.getBoundingClientRect();
+          setTargetRect(r);
+        }, 40);
+        setTimeout(() => clearInterval(interval), 450);
+      }
+    } else {
+      // Fallback if tab content needs a moment to mount
+      const timer = setTimeout(() => {
+        const delayedEl = document.querySelector(step.targetSelector);
+        if (delayedEl) {
+          setTargetRect(delayedEl.getBoundingClientRect());
+          delayedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 60);
+      return () => clearTimeout(timer);
+    }
   }, [isTourActive, currentStepIndex, onNavigateTab]);
 
-  // Recalculate position on scroll & resize
+  // Recalculate position on scroll & resize smoothly
   useEffect(() => {
     if (!isTourActive) return;
 
@@ -266,19 +280,17 @@ export const InteractiveSiteTour: React.FC<Props> = ({
   const currentStep = TOUR_STEPS[currentStepIndex];
   const StepIcon = currentStep?.icon || Sparkles;
 
-  // Calculate Popover Position (Google-style smart tooltip positioning)
-  const getPopoverStyle = (): React.CSSProperties => {
+  // Calculate Popover Position with smooth coordinates
+  const getPopoverCoords = () => {
+    const popoverWidth = Math.min(360, window.innerWidth - 32);
     if (!targetRect) {
       return {
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 9999
+        top: Math.max(20, window.innerHeight / 2 - 130),
+        left: Math.max(16, window.innerWidth / 2 - popoverWidth / 2),
+        width: popoverWidth
       };
     }
 
-    const popoverWidth = Math.min(360, window.innerWidth - 32);
     const popoverHeight = 260;
     const margin = 16;
 
@@ -293,13 +305,13 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     }
 
     return {
-      position: 'fixed',
-      top: `${top}px`,
-      left: `${left}px`,
-      width: `${popoverWidth}px`,
-      zIndex: 9999
+      top,
+      left,
+      width: popoverWidth
     };
   };
+
+  const popoverCoords = getPopoverCoords();
 
   return (
     <>
@@ -314,7 +326,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
             className="fixed bottom-24 sm:bottom-8 right-4 sm:right-8 z-50 max-w-sm sm:max-w-md w-[calc(100vw-2rem)] select-none"
           >
             {/* Cloud Speech Bubble Container */}
-            <div className="relative rounded-3xl p-5 sm:p-6 bg-white/98 backdrop-blur-2xl border-2 border-gold/50 shadow-[0_20px_50px_rgba(20,33,61,0.22)] text-navy">
+            <div className="relative rounded-3xl p-5 sm:p-6 bg-slate-900/90 backdrop-blur-2xl border-2 border-gold shadow-[0_20px_50px_rgba(0,0,0,0.5)] text-white">
               
               {/* Header with Bot Mascot & Close Button */}
               <div className="flex items-start justify-between gap-3 mb-3">
@@ -323,7 +335,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
                   <motion.div
                     animate={{ y: [0, -5, 0] }}
                     transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
-                    className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-navy to-navy-700 text-gold flex items-center justify-center shadow-md relative border border-gold/30 shrink-0"
+                    className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-navy to-navy-700 text-gold flex items-center justify-center shadow-md relative border border-gold/40 shrink-0"
                   >
                     <Bot size={26} />
                     <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
@@ -333,10 +345,10 @@ export const InteractiveSiteTour: React.FC<Props> = ({
                   </motion.div>
 
                   <div>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-gold/15 text-gold border border-gold/30">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-gold/20 text-gold border border-gold/40">
                       AutoHub AI გიდი
                     </span>
-                    <h4 className="text-base sm:text-lg font-black text-navy mt-0.5 tracking-tight flex items-center gap-1.5">
+                    <h4 className="text-base sm:text-lg font-black text-white mt-0.5 tracking-tight flex items-center gap-1.5">
                       <span>გამარჯობა!</span>
                       <span className="inline-block animate-bounce">👋</span>
                     </h4>
@@ -346,7 +358,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={dismissCloudPrompt}
-                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-navy flex items-center justify-center transition-colors border border-slate-200"
+                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors border border-white/20"
                   title="დახურვა"
                 >
                   <X size={14} />
@@ -354,16 +366,16 @@ export const InteractiveSiteTour: React.FC<Props> = ({
               </div>
 
               {/* Bot Question / Cloud Text */}
-              <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed mb-4">
+              <p className="text-xs sm:text-sm text-slate-100 font-medium leading-relaxed mb-4">
                 მე ვარ თქვენი პერსონალური ასისტენტი. გსურთ დაგეხმაროთ საიტში გარკვევაში და გაჩვენოთ ყველა სერვისი, ღილაკი და ფანჯარა?
               </p>
 
               {/* Action Buttons: "არა, მადლობა" vs "დიახ, დავიწყოთ!" */}
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center gap-2 pt-2 border-t border-white/15">
                 <button
                   type="button"
                   onClick={dismissCloudPrompt}
-                  className="flex-1 py-2.5 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-navy text-xs font-bold transition-all text-center"
+                  className="flex-1 py-2.5 px-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all text-center border border-white/15"
                 >
                   არა, მადლობა
                 </button>
@@ -379,7 +391,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
               </div>
 
               {/* Speech Cloud Pointer Tail (pointing downward right) */}
-              <div className="absolute -bottom-3 right-8 w-6 h-6 bg-white border-r-2 border-b-2 border-gold/50 transform rotate-45 shadow-sm"></div>
+              <div className="absolute -bottom-3 right-8 w-6 h-6 bg-slate-900 border-r-2 border-b-2 border-gold transform rotate-45 shadow-sm"></div>
             </div>
           </motion.div>
         )}
@@ -388,21 +400,29 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       {/* 2. GOOGLE-STYLE INTERACTIVE WALKTHROUGH OVERLAY */}
       {isTourActive && currentStep && (
         <>
-          {/* Full-Screen Darkened Spotlight Mask SVG */}
+          {/* Full-Screen Darkened Spotlight Mask SVG with Smooth Spring Transition */}
           <svg className="fixed inset-0 w-full h-full pointer-events-none z-[9985]">
             <defs>
               <mask id="spotlight-mask">
                 <rect width="100%" height="100%" fill="white" />
-                {targetRect && (
-                  <rect
-                    x={targetRect.left - 8}
-                    y={targetRect.top - 8}
-                    width={targetRect.width + 16}
-                    height={targetRect.height + 16}
-                    rx={18}
-                    fill="black"
-                  />
-                )}
+                <motion.rect
+                  initial={false}
+                  animate={{
+                    x: targetRect ? targetRect.left - 8 : window.innerWidth / 2 - 100,
+                    y: targetRect ? targetRect.top - 8 : window.innerHeight / 2 - 50,
+                    width: targetRect ? targetRect.width + 16 : 200,
+                    height: targetRect ? targetRect.height + 16 : 100,
+                    opacity: targetRect ? 1 : 0
+                  }}
+                  transition={{
+                    type: 'spring',
+                    damping: 32,
+                    stiffness: 240,
+                    mass: 0.8
+                  }}
+                  rx={18}
+                  fill="black"
+                />
               </mask>
             </defs>
             <rect
@@ -419,122 +439,150 @@ export const InteractiveSiteTour: React.FC<Props> = ({
             onClick={closeTour}
           />
 
-          {/* Glowing Animated Golden Laser Border Around Target Element */}
-          {targetRect && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.25 }}
-              style={{
-                position: 'fixed',
-                left: `${targetRect.left - 8}px`,
-                top: `${targetRect.top - 8}px`,
-                width: `${targetRect.width + 16}px`,
-                height: `${targetRect.height + 16}px`,
-                borderRadius: '18px',
-                zIndex: 9988
-              }}
-              className="border-2 border-gold shadow-[0_0_25px_rgba(252,163,17,0.85)] pointer-events-none animate-pulse"
-            />
-          )}
-
-          {/* Floating Explanation Card (Google-style Popover Card) */}
+          {/* Smooth Gliding Golden Halo Border Around Target Element */}
           <motion.div
-            key={currentStep.id}
-            initial={{ opacity: 0, y: 15, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ type: 'spring', damping: 24, stiffness: 320 }}
-            style={getPopoverStyle()}
-            className="rounded-3xl p-4 sm:p-5 bg-white/98 backdrop-blur-2xl border-2 border-gold shadow-2xl text-navy pointer-events-auto"
+            initial={false}
+            animate={{
+              x: targetRect ? targetRect.left - 8 : 0,
+              y: targetRect ? targetRect.top - 8 : 0,
+              width: targetRect ? targetRect.width + 16 : 0,
+              height: targetRect ? targetRect.height + 16 : 0,
+              opacity: targetRect ? 1 : 0
+            }}
+            transition={{
+              type: 'spring',
+              damping: 32,
+              stiffness: 240,
+              mass: 0.8
+            }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              borderRadius: '18px',
+              zIndex: 9988
+            }}
+            className="border-2 border-gold shadow-[0_0_20px_rgba(252,163,17,0.55)] pointer-events-none"
+          />
+
+          {/* Floating Explanation Card (Smoothly Gliding Card with Cross-Fading Content) */}
+          <motion.div
+            initial={false}
+            animate={{
+              top: popoverCoords.top,
+              left: popoverCoords.left,
+              width: popoverCoords.width,
+              opacity: targetRect ? 1 : 0
+            }}
+            transition={{
+              type: 'spring',
+              damping: 32,
+              stiffness: 240,
+              mass: 0.8
+            }}
+            style={{
+              position: 'fixed',
+              zIndex: 9999
+            }}
+            className="rounded-3xl p-5 bg-slate-900/90 backdrop-blur-2xl border-2 border-gold shadow-[0_25px_60px_rgba(0,0,0,0.65)] text-white pointer-events-auto"
           >
-            {/* Popover Header: Step Indicator, Category Badge & Skip Button */}
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black bg-gold text-slate-950 shadow-xs">
-                  {currentStep.badge}
-                </span>
-                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
-                  {currentStep.subtitle}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={closeTour}
-                className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-navy flex items-center justify-center transition-colors"
-                title="ტურიდან გასვლა"
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
               >
-                <X size={13} />
-              </button>
-            </div>
+                {/* Popover Header: Step Indicator, Category Badge & Skip Button */}
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black bg-gold text-slate-950 shadow-xs">
+                      {currentStep.badge}
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider">
+                      {currentStep.subtitle}
+                    </span>
+                  </div>
 
-            {/* Step Title with Icon */}
-            <div className="flex items-center gap-2 my-1.5">
-              <div className="w-8 h-8 rounded-xl bg-navy text-gold flex items-center justify-center shrink-0 shadow-xs">
-                <StepIcon size={16} />
-              </div>
-              <h3 className="text-sm sm:text-base font-black text-navy leading-snug">
-                {currentStep.title}
-              </h3>
-            </div>
+                  <button
+                    type="button"
+                    onClick={closeTour}
+                    className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors border border-white/20"
+                    title="ტურიდან გასვლა"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
 
-            {/* Step Explanation */}
-            <p className="text-xs sm:text-[13px] text-slate-600 font-medium leading-relaxed my-2.5">
-              {currentStep.description}
-            </p>
+                {/* Step Title with Icon */}
+                <div className="flex items-center gap-2.5 my-2">
+                  <div className="w-9 h-9 rounded-xl bg-gold/20 text-gold flex items-center justify-center shrink-0 border border-gold/40 shadow-xs">
+                    <StepIcon size={18} />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-white leading-snug drop-shadow-sm">
+                    {currentStep.title}
+                  </h3>
+                </div>
 
-            {/* Progress Dots Indicator */}
-            <div className="flex items-center justify-center gap-1.5 py-1 mb-2">
-              {TOUR_STEPS.map((s, idx) => (
-                <span
-                  key={s.id}
-                  className={`h-1.5 rounded-full transition-all ${
-                    idx === currentStepIndex
-                      ? 'w-6 bg-gold'
-                      : idx < currentStepIndex
-                      ? 'w-2 bg-navy/60'
-                      : 'w-1.5 bg-slate-200'
-                  }`}
-                />
-              ))}
-            </div>
+                {/* Step Explanation */}
+                <p className="text-xs sm:text-[13.5px] text-slate-100 font-medium leading-relaxed my-2.5 drop-shadow-sm">
+                  {currentStep.description}
+                </p>
 
-            {/* Navigation Buttons: [ Back ] & [ Next / Finish ] */}
-            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={handlePrev}
-                disabled={currentStepIndex === 0}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all ${
-                  currentStepIndex === 0
-                    ? 'opacity-30 cursor-not-allowed text-slate-400'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-navy'
-                }`}
-              >
-                <ArrowLeft size={13} />
-                <span>უკან</span>
-              </button>
+                {/* Progress Dots Indicator */}
+                <div className="flex items-center justify-center gap-1.5 py-1 mb-2">
+                  {TOUR_STEPS.map((s, idx) => (
+                    <span
+                      key={s.id}
+                      className={`h-1.5 rounded-full transition-all ${
+                        idx === currentStepIndex
+                          ? 'w-6 bg-gold shadow-[0_0_8px_rgba(252,163,17,0.7)]'
+                          : idx < currentStepIndex
+                          ? 'w-2 bg-gold/60'
+                          : 'w-1.5 bg-white/30'
+                      }`}
+                    />
+                  ))}
+                </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={closeTour}
-                  className="text-[11px] text-slate-400 hover:text-slate-600 font-bold px-2 py-1"
-                >
-                  გამოტოვება
-                </button>
+                {/* Navigation Buttons: [ Back ] & [ Next / Finish ] */}
+                <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-white/15">
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    disabled={currentStepIndex === 0}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all ${
+                      currentStepIndex === 0
+                        ? 'opacity-30 cursor-not-allowed text-slate-500'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/30'
+                    }`}
+                  >
+                    <ArrowLeft size={13} />
+                    <span>უკან</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-xs font-black shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
-                >
-                  <span>{currentStepIndex === TOUR_STEPS.length - 1 ? 'დასრულება 🎉' : 'შემდეგი'}</span>
-                  <ArrowRight size={13} />
-                </button>
-              </div>
-            </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={closeTour}
+                      className="text-xs text-slate-400 hover:text-white font-bold px-2 py-1 transition-colors"
+                    >
+                      გამოტოვება
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-xs font-black shadow-md hover:shadow-gold/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
+                    >
+                      <span>{currentStepIndex === TOUR_STEPS.length - 1 ? 'დასრულება 🎉' : 'შემდეგი'}</span>
+                      <ArrowRight size={13} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </motion.div>
         </>
       )}
@@ -542,26 +590,26 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       {/* 3. TOUR COMPLETED CELEBRATION MODAL */}
       <AnimatePresence>
         {isCompletedModalOpen && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="max-w-md w-full rounded-3xl p-6 bg-white text-navy shadow-2xl border-2 border-gold text-center relative"
+              className="max-w-md w-full rounded-3xl p-6 bg-slate-900/90 backdrop-blur-2xl text-white shadow-2xl border-2 border-gold text-center relative"
             >
               <div className="w-16 h-16 rounded-full bg-gold/20 text-gold flex items-center justify-center mx-auto mb-3 border border-gold/40 shadow-md">
                 <Sparkles size={32} />
               </div>
 
-              <span className="px-3 py-1 rounded-full text-xs font-mono font-black bg-emerald-100 text-emerald-800">
+              <span className="px-3 py-1 rounded-full text-xs font-mono font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 ტური წარმატებით დასრულდა
               </span>
 
-              <h3 className="text-xl font-black text-navy mt-2">
+              <h3 className="text-xl font-black text-white mt-2">
                 გილოცავთ! თქვენ მზად ხართ 🚀
               </h3>
 
-              <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed my-3">
+              <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed my-3">
                 თქვენ გაეცანით AutoHub-ის ყველა ძირითად ფუნქციას, ფანჯარასა და ღილაკს. ნებისმიერ დროს შეგიძლიათ ხელახლა ჩართოთ ტური საიტის ზედა მენიუდან.
               </p>
 

@@ -31,7 +31,7 @@ export interface PravaSubject {
   id: number;
   title: string;
   questionCount: number;
-  category: 'rules' | 'signs' | 'signals' | 'maneuver' | 'safety' | 'law';
+  category: 'rules' | 'signs' | 'signals' | 'maneuver' | 'safety' | 'law' | 'special';
 }
 
 export const PRAVA_SUBJECTS: PravaSubject[] = [
@@ -76,6 +76,7 @@ export interface ExamQuestion {
   options: string[];
   correct: number;
   exp: string;
+  imageUrl?: string;
 }
 
 export const EXAM_QUESTIONS: ExamQuestion[] = [
@@ -226,7 +227,7 @@ export const DrivingExamWidget: React.FC = () => {
   const [answers, setAnswers] = useState<{ [qIdx: number]: number }>({});
   const [activeQuestions, setActiveQuestions] = useState<ExamQuestion[]>(EXAM_QUESTIONS);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<any>(null);
 
   useEffect(() => {
     return () => {

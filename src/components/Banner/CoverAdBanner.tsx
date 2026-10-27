@@ -44,7 +44,7 @@ export interface DigitalServiceItem {
   secondaryCtaText?: string;
   actionTab?: TabType;
   actionType: 'tab' | 'obd_modal' | 'vin_modal' | 'booking_modal';
-  icon: React.ComponentType<{ className?: string; size?: number }>;
+  icon: React.ComponentType<{ className?: string; size?: number | string }>;
   previewType: 'obd_gauge' | 'fines_card' | 'parking_zone' | 'log_timeline' | 'radar_hud' | 'exam_badge' | 'vin_report';
 }
 
@@ -299,7 +299,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
   const [isDismissed, setIsDismissed] = useState(false);
   const [isCatalogExpanded, setIsCatalogExpanded] = useState(false);
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<any>(null);
 
   const totalServices = DIGITAL_SERVICES.length;
   const current = DIGITAL_SERVICES[currentIndex];
@@ -862,7 +862,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
       {/* Expandable Full Catalog Drawer (ყველა 7 ციფრული სერვისი თემატური ავტო ფოტოებით) */}
       {isCatalogExpanded && (
-        <div className="relative z-20 border-t border-slate-800 bg-slate-950/98 p-4 sm:p-6 animate-fade-in">
+        <div className="relative z-20 border-t border-slate-800 bg-slate-950 p-4 sm:p-6 animate-fade-in">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-gold/20 text-gold flex items-center justify-center font-bold">

@@ -411,7 +411,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     dracoLoader.setDecoderPath(`${cleanBase}draco/`);
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    gltfLoader.load(`${cleanBase}models/ghost_car.glb?v=18`, (gltf) => {
+    gltfLoader.load(`${cleanBase}models/ghost_car.glb?v=22`, (gltf) => {
       const root = gltf.scene;
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
       carMasterGroup.add(root);
@@ -853,7 +853,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       {/* 3A. LEFT HUD PANEL: რას აანალიზებს (სისტემები) */}
       <div className="absolute top-14 sm:top-16 left-2.5 sm:left-4 z-20 pointer-events-auto max-w-[230px] sm:max-w-[270px]">
         {leftHudOpen ? (
-          <div className="bg-white/92 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
+          <div className="bg-white/95 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
               <div className="flex items-center gap-1.5">
                 <Activity size={13} className="text-gold shrink-0" />
@@ -959,7 +959,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       {/* 3B. RIGHT HUD PANEL: რას ნახულობს და რა იპოვა */}
       <div className="absolute top-14 sm:top-16 right-2.5 sm:right-4 z-20 pointer-events-auto max-w-[240px] sm:max-w-[290px]">
         {rightHudOpen ? (
-          <div className="bg-white/92 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
+          <div className="bg-white/95 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
               <div className="flex items-center gap-1.5">
                 <Cpu size={13} className="text-gold shrink-0" />

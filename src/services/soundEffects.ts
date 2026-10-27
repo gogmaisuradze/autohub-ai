@@ -118,6 +118,10 @@ class SoundEffectsManager {
     } catch (e) {}
   }
 
+  public playWarning() {
+    this.playAlert();
+  }
+
   // Clear DTC confirmation sound
   public playClearChime() {
     if (!this.soundEnabled) return;

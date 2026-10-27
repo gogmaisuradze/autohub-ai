@@ -21,6 +21,9 @@ import { ServiceBookingModal } from './components/Booking/ServiceBookingModal';
 import { CoverAdBanner } from './components/Banner/CoverAdBanner';
 import { FloatingMechanicWidget } from './components/AiMechanic/FloatingMechanicWidget';
 import { InteractiveSiteTour } from './components/Guide/InteractiveSiteTour';
+import { ParkingConfirmationModal } from './components/Parking/ParkingConfirmationModal';
+import { parkingSessionService } from './services/parkingSessionService';
+import { ParkingSession } from './types/parkingSession';
 import { DtcCode, FineItem, ServiceBookingItem, ServiceItem, TelemetryData, VehicleProfile } from './types';
 import { n8nService } from './services/n8nService';
 import { sounds } from './services/soundEffects';
@@ -451,6 +454,16 @@ export const App: React.FC = () => {
       return INITIAL_FINES;
     }
   });
+
+  // Global 4G OBD Parking Session listener
+  const [globalParkingSession, setGlobalParkingSession] = useState<ParkingSession | null>(() => parkingSessionService.getSession());
+
+  useEffect(() => {
+    const unsub = parkingSessionService.subscribe((sess) => {
+      setGlobalParkingSession(sess);
+    });
+    return unsub;
+  }, []);
 
   const getServicesForVehicle = useCallback((v: VehicleProfile): ServiceItem[] => {
     try {
@@ -1058,6 +1071,7 @@ export const App: React.FC = () => {
         {(activeTab === 'garage' || activeTab === 'settings') && (
           <GarageModule
             vehicle={vehicle}
+            onNavigateTab={setActiveTab}
             onUpdateVehicle={setVehicle}
             onOpenAddModal={() => setIsAddVehicleModalOpen(true)}
             onDeleteVehicle={handleDeleteVehicle}
@@ -1188,6 +1202,25 @@ export const App: React.FC = () => {
         onNavigateTab={handleTabChange}
         externalTrigger={tourTrigger}
       />
+
+      {/* Global 4G OBD Parking Stop Confirmation Modal (when user is outside the Parking tab) */}
+      {activeTab !== 'parking' && globalParkingSession && globalParkingSession.status === 'probable_stop' && (
+        <ParkingConfirmationModal
+          session={globalParkingSession}
+          candidateLots={[globalParkingSession.lot]}
+          isOpen={globalParkingSession.status === 'probable_stop'}
+          onConfirm={(leadMin, customDuration) => {
+            parkingSessionService.confirmParking(leadMin, customDuration);
+            handleTabChange('parking');
+          }}
+          onDismiss={() => {
+            parkingSessionService.dismissProbableStop();
+          }}
+          onSelectDifferentLot={(lot) => {
+            parkingSessionService.updateSessionLot(lot);
+          }}
+        />
+      )}
 
       {/* PWA Install Banner - შენახულია და გამორთულია (საჭიროებისას ჩაირთვება ტელეფონზე) */}
       {/* <PwaInstallBanner /> */}

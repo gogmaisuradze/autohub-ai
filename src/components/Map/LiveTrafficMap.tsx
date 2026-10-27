@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { MapPointType, MapReport, VehicleProfile } from '../../types';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
+import { leafletLoader } from '../../services/leafletLoader';
 import AddReportModal from './AddReportModal';
 import {
   Navigation,
@@ -21,7 +22,8 @@ import {
   Layers,
   MapPin,
   Car,
-  ParkingSquare
+  ParkingSquare,
+  RotateCcw
 } from 'lucide-react';
 import { DELINEATED_PARKING_ZONES } from '../../constants/parkingZones';
 
@@ -49,32 +51,23 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [isLeafletReady, setIsLeafletReady] = useState(false);
   const [activeReportCount, setActiveReportCount] = useState(0);
   const [showParking, setShowParking] = useState(false);
+  const [activeMapView, setActiveMapView] = useState<'autohub_map' | 'waze_live'>('autohub_map');
+  const [mapLoadError, setMapLoadError] = useState<string | null>(null);
 
-  // 1. Ensure Leaflet is loaded
+  // 1. Ensure Leaflet is loaded independently and reliably
   useEffect(() => {
-    const checkLeaflet = () => {
-      if ((window as any).L) {
-        setIsLeafletReady(true);
-      } else {
-        // Dynamically inject if not loaded by index.html yet
-        const existingScript = document.querySelector('script[src*="leaflet.js"]');
-        if (!existingScript) {
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-          document.head.appendChild(link);
+    let isMounted = true;
+    leafletLoader.load()
+      .then(() => {
+        if (isMounted) setIsLeafletReady(true);
+      })
+      .catch((err) => {
+        if (isMounted) setMapLoadError(err?.message || 'რუკის ჩატვირთვა ვერ მოხერხდა.');
+      });
 
-          const script = document.createElement('script');
-          script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-          script.onload = () => setIsLeafletReady(true);
-          document.body.appendChild(script);
-        } else {
-          setTimeout(checkLeaflet, 200);
-        }
-      }
+    return () => {
+      isMounted = false;
     };
-
-    checkLeaflet();
   }, []);
 
   // 2. Fetch Reports on Mount
@@ -406,89 +399,96 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     if (showParking && (filterType === 'all' || filterType === 'parking')) {
       DELINEATED_PARKING_ZONES.forEach(zone => {
         if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase();
-          const matches = zone.zoneNumber.includes(q.replace('#', '')) ||
-            zone.title_ge.toLowerCase().includes(q) ||
-            zone.street_name_ge.toLowerCase().includes(q);
+          const q = searchQuery.toLowerCase().replace('#', '');
+          const matches = zone.lotCode.includes(q) ||
+            zone.zoneNumber.includes(q) ||
+            zone.street_ge.toLowerCase().includes(q) ||
+            zone.bounds_description_ge.toLowerCase().includes(q);
           if (!matches) return;
         }
 
-        // Draw delineated street polygon on map
-        const polygon = L.polygon(zone.polygon, {
-          color: zone.color,
-          fillColor: zone.fillColor,
-          fillOpacity: 0.35,
-          weight: 2.5,
-          dashArray: '4 3'
-        });
+        // Draw delineated street polygon on map if present
+        if (zone.geometry?.polygon && zone.geometry.polygon.length >= 3) {
+          const polygon = L.polygon(zone.geometry.polygon, {
+            color: zone.color,
+            fillColor: zone.fillColor,
+            fillOpacity: 0.35,
+            weight: 2.5,
+            dashArray: '4 3'
+          });
 
-        const freeSpots = Math.max(0, zone.total_spots - zone.occupied_spots);
-        const popupContent = `
-          <div class="w-64 font-sans text-slate-100 p-1">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-cyan-300 border border-blue-500/30 font-mono">
-                🅿️ დახაზული ზონა #${zone.zoneNumber}
-              </span>
-              <span class="text-xs font-mono font-black text-amber-400">${zone.hourly_rate_gel.toFixed(2)} ₾/სთ</span>
+          const wazeUrl = `https://waze.com/ul?ll=${zone.geometry.center[0]},${zone.geometry.center[1]}&navigate=yes`;
+          const popupContent = `
+            <div class="w-64 font-sans text-slate-100 p-1">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-cyan-300 border border-blue-500/30 font-mono">
+                  🅿️ ლოტი #${zone.lotCode}
+                </span>
+                <span class="text-xs font-mono font-black text-amber-400">
+                  ${zone.hourlyRateGel !== null ? `${zone.hourlyRateGel.toFixed(2)} ₾/სთ` : 'სტანდარტული'}
+                </span>
+              </div>
+              <h4 class="font-extrabold text-sm text-white mt-2 leading-tight">${zone.street_ge}</h4>
+              <p class="text-xs text-slate-300 mt-1 leading-snug font-mono">${zone.bounds_description_ge}</p>
+              <div class="mt-2 text-[11px] font-mono text-emerald-400">
+                ✔ 15 წთ უფასოა (დღეში 1-ხელ)
+              </div>
+              <div class="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] gap-2">
+                <a href="${wazeUrl}" target="_blank" rel="noreferrer" class="px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold flex items-center gap-1 transition-all hover:bg-cyan-500 shadow-sm">
+                  Waze მისვლა ➔
+                </a>
+                <a href="#parking" class="px-2.5 py-1 rounded-lg bg-gold text-navy font-black flex items-center gap-1 transition-all hover:bg-amber-400 shadow-sm">
+                  პარკინგი
+                </a>
+              </div>
             </div>
-            <h4 class="font-extrabold text-sm text-white mt-2 leading-tight">${zone.title_ge}</h4>
-            <p class="text-xs text-slate-300 mt-1 leading-snug font-mono">${zone.bounds_description_ge}</p>
-            <div class="mt-2 text-[11px] font-mono text-emerald-400">
-              ● ${freeSpots} / ${zone.total_spots} ადგილი თავისუფალია
-            </div>
-            <div class="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
-              <span class="text-amber-300 font-bold">15 წთ უფასო</span>
-              <a href="#parking" class="px-3 py-1.5 rounded-xl bg-gold text-navy font-black flex items-center gap-1 transition-all hover:bg-amber-400 shadow-sm">
-                🅿️ პარკირების დაწყება ➔
-              </a>
-            </div>
-          </div>
-        `;
+          `;
 
-        polygon.bindPopup(popupContent, {
-          className: 'dark-neon-popup',
-          maxWidth: 280
-        });
+          polygon.bindPopup(popupContent, {
+            className: 'dark-neon-popup',
+            maxWidth: 280
+          });
 
-        polygon.on('click', () => {
-          sounds.playClick();
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.flyTo(zone.center, 16, { duration: 0.8 });
-          }
-        });
+          polygon.on('click', () => {
+            sounds.playClick();
+            if (mapInstanceRef.current) {
+              mapInstanceRef.current.flyTo(zone.geometry.center, 16, { duration: 0.8 });
+            }
+          });
 
-        polygon.addTo(layer);
+          polygon.addTo(layer);
+        }
 
         // Circular Zone Number Marker Badge
         const zoneBadgeHtml = `
           <div class="relative flex items-center justify-center cursor-pointer group">
             <div class="w-8 h-8 rounded-xl bg-navy/95 border-2 border-gold text-gold font-mono font-black text-xs flex items-center justify-center shadow-[0_0_12px_rgba(255,200,0,0.6)] group-hover:scale-115 transition-transform">
-              #${zone.zoneNumber}
+              #${zone.lotCode}
             </div>
           </div>
         `;
 
-        const badgeIcon = L.divIcon({
-          className: 'custom-traffic-parking-badge',
+        const zoneIcon = L.divIcon({
+          className: 'custom-leaflet-marker',
           html: zoneBadgeHtml,
           iconSize: [32, 32],
           iconAnchor: [16, 16]
         });
 
-        const badgeMarker = L.marker(zone.center, { icon: badgeIcon });
-        badgeMarker.bindPopup(popupContent, {
-          className: 'dark-neon-popup',
-          maxWidth: 280
-        });
+        const zoneMarker = L.marker(zone.geometry.center, { icon: zoneIcon });
+        const wazeDeepLink = `https://waze.com/ul?ll=${zone.geometry.center[0]},${zone.geometry.center[1]}&navigate=yes`;
+        zoneMarker.bindPopup(`
+          <div class="p-2 text-xs text-white font-mono space-y-1">
+            <div class="font-black text-gold">საპარკინგე ლოტი #${zone.lotCode}</div>
+            <div class="text-slate-300">${zone.street_ge}</div>
+            <div class="text-amber-300 font-bold">${zone.hourlyRateGel !== null ? `${zone.hourlyRateGel.toFixed(2)} ₾/სთ` : ''} • 15 წთ უფასო</div>
+            <div class="pt-1.5 flex gap-2">
+              <a href="${wazeDeepLink}" target="_blank" rel="noreferrer" class="text-cyan-400 underline font-bold">Waze მისვლა</a>
+            </div>
+          </div>
+        `, { className: 'dark-neon-popup' });
 
-        badgeMarker.on('click', () => {
-          sounds.playClick();
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.flyTo(zone.center, 16, { duration: 0.8 });
-          }
-        });
-
-        badgeMarker.addTo(layer);
+        zoneMarker.addTo(layer);
       });
     }
   }, [reports, filterType, searchQuery, showParking]);
@@ -598,7 +598,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-extrabold text-navy tracking-tight">
-                  Waze ცოცხალი რუკა & ავტო-ჰაბი
+                  AutoHub ცოცხალი რუკა & პარკინგი
                 </h3>
                 <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -606,13 +606,39 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                რადარები, პატრულის ჩასაფრებები, საწვავის ფასები და ავტო სალონები თბილისში
+                რადარები, პატრულის ჩასაფრებები, საწვავის ფასები და საპარკინგე ლოტები
               </p>
             </div>
           </div>
 
           {/* Action buttons */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* View Mode Switcher: AutoHub Map vs Waze Live Map */}
+            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => { sounds.playClick(); setActiveMapView('autohub_map'); }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeMapView === 'autohub_map'
+                    ? 'bg-navy text-gold shadow-sm font-black'
+                    : 'text-slate-600 hover:text-navy'
+                }`}
+              >
+                <span>🗺️ AutoHub რუკა</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { sounds.playClick(); setActiveMapView('waze_live'); }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeMapView === 'waze_live'
+                    ? 'bg-cyan-600 text-white shadow-sm font-black'
+                    : 'text-slate-600 hover:text-navy'
+                }`}
+              >
+                <span>🚗 Waze Live Map</span>
+              </button>
+            </div>
+
             {/* Map Theme Toggle (Dark, Street, Satellite) */}
             <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl border border-slate-200 shadow-2xs">
               <button
@@ -624,7 +650,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
                   mapTheme === 'dark' ? 'bg-navy text-gold shadow-sm font-black' : 'text-slate-600 hover:text-navy hover:bg-white/60'
                 }`}
-                title="მუქი Waze რეჟიმი"
+                title="მუქი რუკის რეჟიმი"
               >
                 <span>🌙 მუქი</span>
               </button>
@@ -759,7 +785,54 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         </div>
       </div>
 
-      {/* 2. Interactive Map Canvas */}
+      {/* 2. Interactive Map Canvas OR Official Waze Live Map View */}
+      {activeMapView === 'waze_live' ? (
+        <div className="space-y-3 animate-fade-in">
+          {/* Waze Info & Deeplink Banner */}
+          <div className="p-4 rounded-3xl bg-cyan-950/90 text-white border border-cyan-500/40 shadow-lg flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                <Navigation size={22} />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
+                  <span>Waze Live Map — ოფიციალური საგზაო მოძრაობა</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
+                    Live Traffic
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  ცოცხალი საცობები, შეფერხებები და მოძრაობის სიჩქარეები თბილისში (Waze Iframe Embed).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href="https://www.waze.com/live-map/directions?to=ll.41.7151%2C44.8271"
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs shadow-sm flex items-center gap-1.5 transition-all"
+              >
+                <span>Waze-ში გახსნა</span>
+                <ExternalLink size={13} />
+              </a>
+            </div>
+          </div>
+
+          {/* Official Waze Iframe Embed */}
+          <div className="relative w-full h-[540px] rounded-3xl overflow-hidden neu-card border-2 border-white shadow-neu-card bg-slate-950">
+            <iframe
+              src="https://embed.waze.com/iframe?zoom=13&lat=41.7151&lon=44.7850&ct=livemap"
+              width="100%"
+              height="100%"
+              allowFullScreen
+              title="Waze Live Map თბილისი"
+              className="w-full h-full border-0"
+            />
+          </div>
+        </div>
+      ) : (
       <div className="relative w-full h-[540px] rounded-3xl overflow-hidden neu-card border-2 border-white shadow-neu-card">
         
         {/* Leaflet DOM Node */}
@@ -885,6 +958,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         </button>
 
       </div>
+      )}
 
       {/* 3. Bottom Legend & Fuel / Showrooms Quick Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

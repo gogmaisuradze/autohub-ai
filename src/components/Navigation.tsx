@@ -82,14 +82,14 @@ export const Navigation: React.FC<Props> = ({
   ];
 
   // Mobile Bottom Dock Tabs
-  const mobileDockTabs = [
-    { id: 'home' as TabType, label: isGe ? 'მთავარი' : 'Dashboard', icon: LayoutGrid, badge: null },
-    { id: 'obd' as TabType, label: 'OBD', icon: Activity, badge: dtcCount > 0 ? dtcCount : null },
-    { id: 'fines' as TabType, label: isGe ? 'ჯარიმები' : 'Fines', icon: ShieldAlert, badge: finesCount > 0 ? finesCount : null },
-    { id: 'parking' as TabType, label: isGe ? 'პარკინგი' : 'Parking', icon: ParkingSquare, badge: null },
-    { id: 'map' as TabType, label: isGe ? 'რუკა' : 'Map', icon: NavigationIcon, badge: null },
-    { id: 'service' as TabType, label: isGe ? 'სერვისი' : 'Service', icon: Wrench, badge: null },
-    { id: 'garage' as TabType, label: isGe ? 'მეტი' : 'More', icon: MoreHorizontal, badge: null }
+  const mobileDockTabs: { id: TabType; label: string; icon: any; badge: any; isSpecial?: boolean }[] = [
+    { id: 'home', label: isGe ? 'მთავარი' : 'Dashboard', icon: LayoutGrid, badge: null },
+    { id: 'obd', label: 'OBD', icon: Activity, badge: dtcCount > 0 ? dtcCount : null, isSpecial: true },
+    { id: 'fines', label: isGe ? 'ჯარიმები' : 'Fines', icon: ShieldAlert, badge: finesCount > 0 ? finesCount : null },
+    { id: 'parking', label: isGe ? 'პარკინგი' : 'Parking', icon: ParkingSquare, badge: null },
+    { id: 'map', label: isGe ? 'რუკა' : 'Map', icon: NavigationIcon, badge: null },
+    { id: 'service', label: isGe ? 'სერვისი' : 'Service', icon: Wrench, badge: null },
+    { id: 'garage', label: isGe ? 'მეტი' : 'More', icon: MoreHorizontal, badge: null }
   ];
 
   return (

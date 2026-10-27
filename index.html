@@ -9,19 +9,14 @@
     <title>AutoHub AI - All-in-One ჭკვიანი ავტო-ჰაბი & AI დიაგნოსტიკა</title>
     
     <script>
-      // Automatic Cache Clearer & Legacy Service Worker / Redirect Purger
+      // Production Service Worker Registration for Offline Cache & Web Push Reminders
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for (var reg of registrations) {
-            reg.unregister();
-          }
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          for (var name of names) {
-            caches.delete(name);
-          }
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            console.log('AutoHub ServiceWorker active:', reg.scope);
+          }).catch(function(err) {
+            console.warn('ServiceWorker registration optional warning:', err);
+          });
         });
       }
     </script>

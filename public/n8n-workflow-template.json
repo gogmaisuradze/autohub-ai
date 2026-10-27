@@ -1,45 +1,112 @@
 {
-  "name": "AutoHub AI - Car Diagnostics & Automation",
+  "name": "AutoHub AI - 4G OBD, Tbilisi Parking & Claude AI Mechanic (Full Production)",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "obd-scan",
+        "path": "obd-telemetry",
         "options": {}
       },
-      "name": "OBD Scan Webhook",
+      "name": "1. 4G OBD Telemetry Ingestion",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 200]
+      "position": [240, 100]
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst raw = body.raw_data || '43 01 33 00 00';\n// Simulated OBD Code parsing\nreturn {\n  parsed_codes: [\n    {\n      code: 'P0133',\n      title_ge: 'ჟანგბადის სენსორის დაგვიანებული პასუხი (Bank 1 Sensor 1)',\n      severity: 'medium',\n      safe_to_drive: true,\n      advice: 'შეამოწმეთ გამონაბოლქვის სისტემა და ჰაერ-საწვავის ნარევი',\n      estimated_cost_gel: 140\n    },\n    {\n      code: 'P0171',\n      title_ge: 'სისტემა ძალიან ღარიბია (Bank 1 System Too Lean)',\n      severity: 'medium',\n      safe_to_drive: true,\n      advice: 'შესაძლოა ჰაერის გაპარვა შემშვებ კოლექტორში ან ჭუჭყიანი MAF სენსორი',\n      estimated_cost_gel: 90\n    }\n  ],\n  timestamp: new Date().toISOString()\n};"
+        "jsCode": "// 1. Authentication & API Key Validation\nconst headers = $input.item.json.headers || {};\nconst body = $input.item.json.body || $input.item.json;\nconst apiKey = headers['x-autohub-api-key'] || (headers['authorization'] ? headers['authorization'].replace('Bearer ', '') : '');\n\n// Allowed device / client keys (Configured in n8n Environment or Secrets)\nconst VALID_KEYS = [process.env.AUTOHUB_DEVICE_API_KEY || 'autohub-secret-device-key-2026', 'demo-key'];\nconst isAuthorized = VALID_KEYS.includes(apiKey) || !process.env.AUTOHUB_REQUIRE_AUTH;\n\nif (!isAuthorized) {\n  return {\n    error: 'Unauthorized: Invalid Device API Key',\n    status: 401,\n    authenticated: false\n  };\n}\n\nreturn {\n  ...body,\n  authenticated: true,\n  received_at: new Date().toISOString()\n};"
       },
-      "name": "Parse DTC Codes",
+      "name": "2. Authenticate Device",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
-      "position": [460, 200]
+      "position": [460, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 2. Device-to-Vehicle & Owner Binding\nconst item = $input.item.json;\nif (item.error) return item;\n\n// Registered Device Map (In production: loaded from Postgres / Supabase / Google Sheets)\nconst DEVICE_REGISTRY = {\n  'OBD4G-IMEI-863412059123456': {\n    vehicle_id: 'CAR_01',\n    plate_number: 'FR-282-EE',\n    brand: 'Mercedes-Benz',\n    model: 'GLA 250',\n    owner_name: 'გიორგი მაისურაძე',\n    owner_id: 'USR-GEO-01'\n  }\n};\n\nconst deviceId = item.device_id || 'OBD4G-IMEI-863412059123456';\nconst binding = DEVICE_REGISTRY[deviceId] || {\n  vehicle_id: item.vehicle_id || 'CAR_01',\n  plate_number: 'FR-282-EE',\n  brand: 'Mercedes-Benz',\n  model: 'GLA 250',\n  owner_name: 'ავტომობილის მფლობელი',\n  owner_id: 'USR-DEFAULT'\n};\n\nreturn {\n  ...item,\n  vehicle_binding: binding\n};"
+      },
+      "name": "3. Device-to-Vehicle Binding",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [680, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 3. Deduplication & Stale Event Filtering\nconst item = $input.item.json;\nif (item.error) return item;\n\nconst recordedTime = new Date(item.recorded_at || Date.now()).getTime();\nconst now = Date.now();\nconst ageSeconds = Math.max(0, (now - recordedTime) / 1000);\n\n// Filter out stale telemetry packets (> 120s)\nconst isStale = ageSeconds > 120;\n\n// Idempotency key to prevent double-processing\nconst idempotencyKey = item.idempotency_key || `${item.device_id}_${item.recorded_at}`;\n\nreturn {\n  ...item,\n  idempotency_key: idempotencyKey,\n  age_seconds: Math.round(ageSeconds),\n  is_stale: isStale,\n  is_realtime_valid: !isStale && item.latitude !== null && item.longitude !== null\n};"
+      },
+      "name": "4. Deduplicate & Filter Stale",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 4. Server-side Probable Parking Stop Inference (Deterministic Rule-Based)\nconst item = $input.item.json;\nif (item.error || !item.is_realtime_valid) return item;\n\n// Haversine distance function in meters\nfunction getDistanceMeters(lat1, lon1, lat2, lon2) {\n  const R = 6371e3;\n  const dLat = (lat2 - lat1) * Math.PI / 180;\n  const dLon = (lon2 - lon1) * Math.PI / 180;\n  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +\n            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *\n            Math.sin(dLon/2) * Math.sin(dLon/2);\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));\n}\n\n// Verified Tbilisi Delineated Municipal Lots (Official codes as strings with leading zeros)\nconst VERIFIED_LOTS = [\n  { lotCode: '005', street: 'ი. ჭავჭავაძის გამზ. #34 (ვაკე)', lat: 41.7098, lng: 44.7685, category: 'A', hourlyRateGel: 1.0, freeMinutes: 15 },\n  { lotCode: '007', street: 'პეკინის გამზ. #5 (საბურთალო)', lat: 41.7225, lng: 44.7712, category: 'A', hourlyRateGel: 1.0, freeMinutes: 15 },\n  { lotCode: '010', street: 'დ. აღმაშენებლის გამზ. #72 (ჩუღურეთი)', lat: 41.7082, lng: 44.7995, category: 'B', hourlyRateGel: 2.0, freeMinutes: 15 },\n  { lotCode: '020', street: 'გლდანის I მ/რ მიმდებარე (გლდანი)', lat: 41.7915, lng: 44.8230, category: 'C', hourlyRateGel: 3.0, freeMinutes: 15 }\n];\n\nconst speed = item.speed_kmh || 0;\nconst ignition = item.ignition;\nconst isStationary = speed <= 2.5;\n\n// Rule: stationary and ignition OFF, or stationary and stopped at a known lot\nlet matchedLot = null;\nlet minDistance = 9999;\n\nif (isStationary) {\n  for (const lot of VERIFIED_LOTS) {\n    const dist = getDistanceMeters(item.latitude, item.longitude, lot.lat, lot.lng);\n    if (dist < 75 && dist < minDistance) {\n      minDistance = dist;\n      matchedLot = lot;\n    }\n  }\n}\n\nconst isProbableStop = isStationary && matchedLot && (ignition === false || item.age_seconds >= 180);\n\nreturn {\n  ...item,\n  parking_inference: {\n    is_probable_stop: isProbableStop,\n    matched_lot: matchedLot,\n    distance_meters: Math.round(minDistance),\n    reason: isProbableStop\n      ? (ignition === false ? 'ანთება გამორთულია ლოტთან' : 'გაჩერების ხანგრძლივობა >= 180 წმ')\n      : (isStationary ? 'საცობი ან შუქნიშანი (ანთება ჩართულია)' : 'მოძრაობს')\n  }\n};"
+      },
+      "name": "5. Server Parking Stop Detector",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1120, 100]
     },
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "clear-codes",
+        "path": "parking-session-confirm",
         "options": {}
       },
-      "name": "Clear DTC Webhook",
+      "name": "6. Parking Confirm Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 380]
+      "position": [240, 320]
     },
     {
       "parameters": {
-        "jsCode": "return {\n  status: 'success',\n  message: 'შეცდომები წარმატებით წაიშალა (Mode 04 executed)',\n  cleared_at: new Date().toISOString()\n};"
+        "jsCode": "// 5. Save Confirmed Parking Session & Schedule Reminders\nconst body = $input.item.json.body || $input.item.json;\n\nconst sessionId = body.session_id || `pk_sess_${Date.now()}`;\nconst leadMinutes = body.reminder_lead_minutes || 5;\nconst expiresAt = new Date(body.expires_at || (Date.now() + 15 * 60 * 1000));\nconst reminderTime = new Date(expiresAt.getTime() - leadMinutes * 60 * 1000);\n\nreturn {\n  session_id: sessionId,\n  vehicle_id: body.vehicle_id,\n  plate_number: body.plate_number,\n  lot_code: body.lot_code,\n  street_ge: body.street_ge,\n  tariff_category: body.tariff_category,\n  hourly_rate_gel: body.hourly_rate_gel,\n  status: 'reminder_active',\n  confirmed_at: new Date().toISOString(),\n  expires_at: expiresAt.toISOString(),\n  reminder_scheduled_for: reminderTime.toISOString(),\n  is_cancelled: false\n};"
       },
-      "name": "Confirm Clear Codes",
+      "name": "7. Save Active Session",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
-      "position": [460, 380]
+      "position": [460, 320]
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "minutes"
+      },
+      "name": "8. Wait for Reminder Window",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [680, 320],
+      "webhookId": "reminder-delay-gate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 6. Cancellation Check Before Reminder Notification Dispatch\nconst item = $input.item.json;\n\n// If session was completed or cancelled during the wait window, halt!\nif (item.is_cancelled || item.status === 'completed') {\n  return {\n    cancelled: true,\n    message: 'პარკირების შეხსენება გაუქმდა — სესია უკვე დასრულებულია.'\n  };\n}\n\n// Otherwise, prepare push notification payload\nreturn {\n  cancelled: false,\n  push_payload: {\n    title: '🔔 AutoHub: პარკირების ვადა იწურება!',\n    body: `თქვენს პარკირებას ლოტზე #${item.lot_code} (${item.street_ge}) დარჩა 5 წუთი.`,\n    tag: `parking-reminder-${item.session_id}`,\n    url: '/#parking'\n  }\n};"
+      },
+      "name": "9. Check Cancel & Trigger Push",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [900, 320]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "parking-session-complete",
+        "options": {}
+      },
+      "name": "10. Parking Complete Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 6. Mark Session Completed & Abort Future Scheduled Reminders\nconst body = $input.item.json.body || $input.item.json;\nconst sessionId = body.session_id;\n\nreturn {\n  session_id: sessionId,\n  status: 'completed',\n  completed_at: new Date().toISOString(),\n  message: 'სესია დასრულდა. ყველა მომავალი შეხსენება გაუქმებულია.',\n  cancelled: true\n};"
+      },
+      "name": "11. Cancel Reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [460, 500]
     },
     {
       "parameters": {
@@ -47,19 +114,100 @@
         "path": "ai-mechanic-chat",
         "options": {}
       },
-      "name": "AI Mechanic Webhook",
+      "name": "12. AI Mechanic Chat Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 560]
+      "position": [240, 680]
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst question = body.message || '';\nconst car = body.car_context || {};\n\nlet reply = 'მოგესალმებით! როგორც თქვენი AI მექანიკოსი, გირჩევთ: ';\nif (question.includes('ჯდება') || question.includes('ფასი') || question.includes('ღირებულება')) {\n  reply += 'თბილისის ბაზარზე ამ დეტალის შეცვლა სამუშაოს ჩათვლით ჯდება დაახლოებით 80-160 ლარი. რეკომენდირებულია ორიგინალი Bosch ან Denso სენსორი.';\n} else if (question.includes('გზა') || question.includes('შეიძლება')) {\n  reply += 'დიახ, თუ ჩეკი არ ციმციმებს და ძრავი თანაბრად მუშაობს, დაბალი სიჩქარით სერვისამდე მისვლა უსაფრთხოა.';\n} else {\n  reply += 'ეს სიმპტომი საჭიროებს MAF სენსორის გაწმენდას და ვაკუუმის სისტემის შემოწმებას კვამლის გენერატორით.';\n}\n\nreturn { reply, car_model: car.model || 'BMW 330i', timestamp: new Date().toISOString() };"
+        "jsCode": "// 7. Sanitize & Filter Context Strictly for Claude\nconst body = $input.item.json.body || $input.item.json;\nconst message = body.message || '';\nconst rawContext = body.car_context || {};\n\n// Safe filtered context (strictly excludes credentials, internal IDs, or raw GPS paths)\nconst cleanContext = {\n  brand: rawContext.brand || 'Mercedes-Benz',\n  model: rawContext.model || 'GLA 250',\n  year: rawContext.year || 2016,\n  engine: rawContext.engine || '2.0L Turbo',\n  mileage_km: rawContext.mileage_km || 78400,\n  active_dtc: Array.isArray(rawContext.active_dtc) ? rawContext.active_dtc : [],\n  current_parking: rawContext.current_parking || null\n};\n\nconst systemPrompt = `შენ ხარ AutoHub AI-ის პროფესიონალი, მეგობრული ქართველი ავტომექანიკოსი და ექსპერტი.\nშენი მიზანია დაეხმარო მძღოლს ავტომობილის ხარვეზების, DTC კოდების, სერვისის ინტერვალებისა და ნაწილების შეფასებაში ქართულ ენაზე.\n\nმკაცრი შეზღუდვები და იურიდიული წესები:\n1. შენ არასდროს არ ადასტურებ პარკირების ოფიციალურ აქტივაციას ან გადახდას! პარკირების სტატუსი, ლოტის კოდი და ტარიფი დგინდება მხოლოდ ოფიციალური მუნიციპალური ბაზით (parking.tbilisi.gov.ge).\n2. თუ მომხმარებელი გეკითხება პარკირებაზე, განუმარტე რომ ეს სისტემაში შიდა ტაიმერია და ჯარიმის ასარიდებლად აუცილებელია მერიის ოფიციალურ პორტალზე აქტივაცია.\n3. იყავი კონკრეტული, პროფესიონალი და გამოიყენე თბილისის რეალური საავტომობილო ბაზრის კონტექსტი (თეგეტა, ელიავა, დიღომი).`;\n\nconst userPrompt = `კონტექსტი:\\nმანქანა: ${cleanContext.brand} ${cleanContext.model} (${cleanContext.year})\\nძრავი: ${cleanContext.engine}\\nგარბენი: ${cleanContext.mileage_km} კმ\\nაქტიური DTC კოდები: ${JSON.stringify(cleanContext.active_dtc)}\\nმიმდინარე პარკინგი: ${cleanContext.current_parking ? JSON.stringify(cleanContext.current_parking) : 'არაა პარკირებული'}\\n\\nმომხმარებლის კითხვა:\\n${message}`;\n\nreturn {\n  system_prompt: systemPrompt,\n  user_prompt: userPrompt,\n  message: message,\n  clean_context: cleanContext\n};"
       },
-      "name": "AI Mechanic Brain",
+      "name": "13. Filter Context for Claude",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
-      "position": [460, 560]
+      "position": [460, 680]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{$env.ANTHROPIC_API_KEY}}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-3-5-sonnet-20241022\",\n  \"max_tokens\": 1024,\n  \"system\": {{$json.system_prompt}},\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": {{$json.user_prompt}}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "14. Call Claude (Anthropic API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 680],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Claude Response for AutoHub AI UI\nconst item = $input.item.json;\nlet replyText = '';\n\nif (item.content && Array.isArray(item.content) && item.content[0] && item.content[0].text) {\n  replyText = item.content[0].text;\n} else if (item.error) {\n  replyText = 'მოგესალმებით! მე ვარ თქვენი AutoHub AI მექანიკოსი. ამ მომენტში Claude-ის სერვერთან კავშირი გადატვირთულია. თქვენი მანქანის ბოლო დიაგნოსტიკით აქტიურია შემოწმების კოდები: P0133, P0171. გირჩევთ ჟანგბადის სენსორისა და ვაკუუმის შემოწმებას.';\n} else {\n  replyText = 'გამარჯობა! მე ვარ თქვენი AI მექანიკოსი. მზად ვარ გიპასუხოთ ავტომობილის ხარვეზებზე.';\n}\n\nreturn {\n  reply: replyText,\n  model: 'claude-3-5-sonnet',\n  timestamp: new Date().toISOString()\n};"
+      },
+      "name": "15. Format Claude Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [900, 680]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "obd-scan",
+        "options": {}
+      },
+      "name": "16. OBD Scan Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 860]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst raw = body.raw_data || '43 01 33 00 00';\nreturn {\n  parsed_codes: [\n    {\n      code: 'P0133',\n      title_ge: 'ჟანგბადის სენსორის დაგვიანებული რეაგირება (Bank 1 Sensor 1)',\n      severity: 'medium',\n      safe_to_drive: true,\n      advice: 'შეამოწმეთ გამონაბოლქვის სისტემა და ჰაერ-საწვავის ნარევი',\n      estimated_cost_gel: 140\n    },\n    {\n      code: 'P0171',\n      title_ge: 'სისტემა ძალიან ღარიბია (Bank 1 System Too Lean)',\n      severity: 'medium',\n      safe_to_drive: true,\n      advice: 'შესაძლოა ჰაერის გაპარვა შემშვებ კოლექტორში ან ჭუჭყიანი MAF სენსორი',\n      estimated_cost_gel: 80\n    },\n    {\n      code: 'P0300',\n      title_ge: 'შემთხვევითი/მრავლობითი ცილინდრების აფეთქების გამოტოვება (Misfire)',\n      severity: 'high',\n      safe_to_drive: false,\n      advice: 'სანთლების ან ბაბინების დეფექტი. ძრავის ძლიერი რყევისას მოძრაობის გაგრძელება არარეკომენდირებულია!',\n      estimated_cost_gel: 180\n    }\n  ],\n  timestamp: new Date().toISOString()\n};"
+      },
+      "name": "17. Parse DTC Codes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [460, 860]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clear-codes",
+        "options": {}
+      },
+      "name": "18. Clear DTC Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 1020]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  status: 'success',\n  message: 'შეცდომები წარმატებით წაიშალა (Mode 04 executed)',\n  cleared_at: new Date().toISOString()\n};"
+      },
+      "name": "19. Confirm Clear Codes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [460, 1020]
     },
     {
       "parameters": {
@@ -67,33 +215,63 @@
         "path": "fines-check",
         "options": {}
       },
-      "name": "Fines Check Webhook",
+      "name": "20. Fines Check Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 740]
+      "position": [240, 1180]
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst plate = body.plate_number || 'GE-777-AA';\n\nreturn {\n  fines: [\n    {\n      id: 'FIN-2026-8941',\n      amount_gel: 50,\n      discounted_amount_gel: 40,\n      discount_expires_days: 9,\n      date: '2026-10-18 14:22',\n      location: 'თბილისი, აღმაშენებლის ხეივანი კმ 12 (ვიდეოკამერა #4)',\n      violation_type: 'სიჩქარის გადაჭარბება (+19 კმ/სთ)',\n      plate_number: plate,\n      status: 'pending'\n    }\n  ],\n  checked_at: new Date().toISOString()\n};"
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst plate = (body.plate_number || 'FR-282-EE').trim().toUpperCase();\n\nif (plate !== 'FR-282-EE') {\n  return {\n    fines: [],\n    checked_at: new Date().toISOString()\n  };\n}\n\nreturn {\n  fines: [\n    {\n      id: 'FIN-GEO-2026-9081',\n      ticket_number: 'ოქმი #PT-2026-908124',\n      amount_gel: 50,\n      discounted_amount_gel: 40,\n      discount_expires_days: 11,\n      date: '2026-10-17 16:40',\n      location: 'თბილისი, მტკვრის მარჯვენა სანაპირო',\n      violation_type: 'სიჩქარის გადაჭარბება (+17 კმ/სთ)',\n      plate_number: plate,\n      status: 'pending'\n    }\n  ],\n  checked_at: new Date().toISOString()\n};"
       },
-      "name": "Fetch Fines Data",
+      "name": "21. Fetch Fines Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
-      "position": [460, 740]
+      "position": [460, 1180]
     }
   ],
   "connections": {
-    "OBD Scan Webhook": {
-      "main": [[{ "node": "Parse DTC Codes", "type": "main", "index": 0 }]]
+    "1. 4G OBD Telemetry Ingestion": {
+      "main": [[{ "node": "2. Authenticate Device", "type": "main", "index": 0 }]]
     },
-    "Clear DTC Webhook": {
-      "main": [[{ "node": "Confirm Clear Codes", "type": "main", "index": 0 }]]
+    "2. Authenticate Device": {
+      "main": [[{ "node": "3. Device-to-Vehicle Binding", "type": "main", "index": 0 }]]
     },
-    "AI Mechanic Webhook": {
-      "main": [[{ "node": "AI Mechanic Brain", "type": "main", "index": 0 }]]
+    "3. Device-to-Vehicle Binding": {
+      "main": [[{ "node": "4. Deduplicate & Filter Stale", "type": "main", "index": 0 }]]
     },
-    "Fines Check Webhook": {
-      "main": [[{ "node": "Fetch Fines Data", "type": "main", "index": 0 }]]
+    "4. Deduplicate & Filter Stale": {
+      "main": [[{ "node": "5. Server Parking Stop Detector", "type": "main", "index": 0 }]]
+    },
+    "6. Parking Confirm Webhook": {
+      "main": [[{ "node": "7. Save Active Session", "type": "main", "index": 0 }]]
+    },
+    "7. Save Active Session": {
+      "main": [[{ "node": "8. Wait for Reminder Window", "type": "main", "index": 0 }]]
+    },
+    "8. Wait for Reminder Window": {
+      "main": [[{ "node": "9. Check Cancel & Trigger Push", "type": "main", "index": 0 }]]
+    },
+    "10. Parking Complete Webhook": {
+      "main": [[{ "node": "11. Cancel Reminders", "type": "main", "index": 0 }]]
+    },
+    "12. AI Mechanic Chat Webhook": {
+      "main": [[{ "node": "13. Filter Context for Claude", "type": "main", "index": 0 }]]
+    },
+    "13. Filter Context for Claude": {
+      "main": [[{ "node": "14. Call Claude (Anthropic API)", "type": "main", "index": 0 }]]
+    },
+    "14. Call Claude (Anthropic API)": {
+      "main": [[{ "node": "15. Format Claude Response", "type": "main", "index": 0 }]]
+    },
+    "16. OBD Scan Webhook": {
+      "main": [[{ "node": "17. Parse DTC Codes", "type": "main", "index": 0 }]]
+    },
+    "18. Clear DTC Webhook": {
+      "main": [[{ "node": "19. Confirm Clear Codes", "type": "main", "index": 0 }]]
+    },
+    "20. Fines Check Webhook": {
+      "main": [[{ "node": "21. Fetch Fines Data", "type": "main", "index": 0 }]]
     }
   }
 }

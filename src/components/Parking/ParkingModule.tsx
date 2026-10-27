@@ -23,10 +23,36 @@ import {
   CheckCircle2,
   ChevronRight,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  Radio,
+  Signal,
+  Cpu,
+  ExternalLink,
+  Copy,
+  ChevronDown,
+  ChevronUp,
+  Sliders,
+  ShieldCheck
 } from 'lucide-react';
 import { ParkingZonesMap } from './ParkingZonesMap';
-import { DelineatedParkingZone, DELINEATED_PARKING_ZONES } from '../../constants/parkingZones';
+import { DelineatedParkingZone, DELINEATED_PARKING_ZONES, createManualParkingLot } from '../../constants/parkingZones';
+import {
+  ParkingLocationLot,
+  TBILISI_OPERATOR_REQUIREMENTS
+} from '../../types/parking';
+import {
+  ParkingSession,
+  ParkingSessionStatus
+} from '../../types/parkingSession';
+import { DeviceTelemetryReading } from '../../types/telemetry';
+import { StopDetectionResult } from '../../services/parkingStopDetector';
+import { obd4gService } from '../../services/obd4gService';
+import {
+  parkingSessionService,
+  formatTbilisiTime,
+  formatTbilisiDateTime
+} from '../../services/parkingSessionService';
+import { ParkingConfirmationModal } from './ParkingConfirmationModal';
 import {
   TbilisiCoatOfArms,
   BatumiCoatOfArms,
@@ -557,6 +583,59 @@ export const ParkingModule: React.FC<Props> = ({
   const [searchTicketNumber, setSearchTicketNumber] = useState('');
   const [ticketSearchSuccess, setTicketSearchSuccess] = useState<string | null>(null);
 
+  // 4G OBD Telemetry & Device State
+  const [telemetry, setTelemetry] = useState<DeviceTelemetryReading | null>(null);
+  const [stopResult, setStopResult] = useState<StopDetectionResult | null>(null);
+  const [obdMode, setObdMode] = useState<'real' | 'demo'>(() => obd4gService.getMode());
+  const [activeDevice, setActiveDevice] = useState(() => obd4gService.getActiveDevice());
+
+  // Strict Parking Session State from parkingSessionService
+  const [parkingSession, setParkingSession] = useState<ParkingSession | null>(() => parkingSessionService.getSession());
+  const [showOperatorReqs, setShowOperatorReqs] = useState(false);
+  const [copiedLotCode, setCopiedLotCode] = useState(false);
+  const [nowTimestamp, setNowTimestamp] = useState(Date.now());
+
+  // Subscriptions to 4G OBD & Parking Session Lifecycle
+  useEffect(() => {
+    const unsubObd = obd4gService.subscribeTelemetry((reading, stopRes) => {
+      setTelemetry(reading);
+      setStopResult(stopRes);
+    });
+    return unsubObd;
+  }, []);
+
+  useEffect(() => {
+    const unsubSession = parkingSessionService.subscribe((sess) => {
+      setParkingSession(sess);
+      if (sess && sess.status !== 'completed' && sess.status !== 'probable_stop') {
+        setActiveSession(prev => ({
+          ...prev,
+          isActive: true,
+          zoneName_ge: `ზონა #${sess.lot.lotCode} — ${sess.lot.street_ge}`,
+          hourlyRateGel: sess.lot.hourlyRateGel || 1.0,
+          startTime: new Date(sess.stoppedAt).getTime(),
+          plateNumber: sess.plateNumber
+        }));
+      } else if (!sess || sess.status === 'completed') {
+        setActiveSession(prev => ({
+          ...prev,
+          isActive: false,
+          startTime: 0,
+          elapsedSeconds: 0
+        }));
+      }
+    });
+    return unsubSession;
+  }, []);
+
+  // Live seconds ticker for countdown calculations
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNowTimestamp(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Fallback vehicles list for the Parking Profile
   const vehiclesList = allVehicles && allVehicles.length > 0 ? allVehicles : [vehicle];
 
@@ -668,6 +747,15 @@ export const ParkingModule: React.FC<Props> = ({
     setParkingLocationInput(`ზონა #${zone.zoneNumber} — ${zone.street_name_ge}`);
   };
 
+  const handleCopyLotCode = (code: string) => {
+    sounds.playClick();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code);
+      setCopiedLotCode(true);
+      setTimeout(() => setCopiedLotCode(false), 2000);
+    }
+  };
+
   const handleStartParkingFromMap = (zone: DelineatedParkingZone) => {
     sounds.playScanSweep();
     setSelectedCity(zone.city);
@@ -675,6 +763,10 @@ export const ParkingModule: React.FC<Props> = ({
     setSelectedZone(catId);
     const locName = `ზონა #${zone.zoneNumber} — ${zone.street_name_ge}`;
     setParkingLocationInput(locName);
+
+    // Trigger state in parkingSessionService
+    parkingSessionService.createProbableStopSession(zone, vehicle);
+    parkingSessionService.confirmParking(5);
 
     const newSession: ActiveParkingSession = {
       isActive: true,
@@ -701,6 +793,14 @@ export const ParkingModule: React.FC<Props> = ({
     const cityZones = CITY_ZONES[selectedCity] || CITY_ZONES.tbilisi;
     const currentZoneConfig = cityZones.find(z => z.id === selectedZone) || cityZones[0];
 
+    // Find or create matching lot
+    const cleanCode = parkingLocationInput.match(/#(\d+)/)?.[1] || '001';
+    const foundLot = DELINEATED_PARKING_ZONES.find(z => z.lotCode === cleanCode || z.zoneNumber === cleanCode) ||
+      createManualParkingLot(cleanCode, parkingLocationInput, selectedCity);
+
+    parkingSessionService.createProbableStopSession(foundLot, vehicle);
+    parkingSessionService.confirmParking(5);
+
     const newSession: ActiveParkingSession = {
       isActive: true,
       city: selectedCity,
@@ -723,10 +823,12 @@ export const ParkingModule: React.FC<Props> = ({
 
   const handleStopParking = () => {
     sounds.playSuccess();
+    parkingSessionService.completeSession();
+
     const finalCost = activeSession.accumulatedCostGel;
     const finalElapsedMin = Math.ceil(activeSession.elapsedSeconds / 60);
 
-    alert(`პარკირების სესია დასრულებულია!\nავტომობილი: ${vehicle.plate_number || activeSession.plateNumber}\nქალაქი: ${selectedCity.toUpperCase()}\nხანგრძლივობა: ${finalElapsedMin} წთ.\nგადასახდელი თანხა: ${finalCost.toFixed(2)} ₾.\nსაფასური წარმატებით გადახდილია!`);
+    alert(`პარკირების სესია დასრულებულია!\nავტომობილი: ${vehicle.plate_number || activeSession.plateNumber}\nქალაქი: ${selectedCity.toUpperCase()}\nხანგრძლივობა: ${finalElapsedMin} წთ.\nშეხსენების ტაიმერი შეჩერებულია!`);
 
     const resetSession: ActiveParkingSession = {
       ...activeSession,
@@ -774,6 +876,196 @@ export const ParkingModule: React.FC<Props> = ({
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       
+      {/* ======================================================== */}
+      {/* 0. 4G OBD TELEMETRY & REAL/DEMO HARDWARE BANNER          */}
+      {/* ======================================================== */}
+      <div className={`p-5 sm:p-6 rounded-3xl border transition-all ${
+        obdMode === 'demo'
+          ? 'bg-gradient-to-br from-slate-900 via-navy to-slate-950 text-white border-gold/40 shadow-xl'
+          : 'bg-white text-navy border-slate-200 shadow-neu-card'
+      }`}>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-200/20">
+          <div className="flex items-center gap-3">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+              obdMode === 'demo'
+                ? 'bg-gold/15 text-gold border-gold/30'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }`}>
+              <Radio className={`w-6 h-6 ${obdMode === 'demo' ? 'animate-pulse text-gold' : 'text-emerald-600'}`} />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider ${
+                  obdMode === 'demo'
+                    ? 'bg-amber-400 text-slate-950 shadow-xs'
+                    : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                }`}>
+                  {obdMode === 'demo' ? '🔶 DEMO რეჟიმი' : '🟢 REAL რეჟიმი'}
+                </span>
+                <span className="text-xs font-mono text-slate-400">
+                  IMEI: {activeDevice?.imei || '863412059123456'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-slate-300">
+                  {obdMode === 'demo' ? 'სიმულაცია' : '4G LTE-M / NB-IoT'}
+                </span>
+              </div>
+              <h3 className={`text-base font-black mt-1 ${obdMode === 'demo' ? 'text-white' : 'text-navy'}`}>
+                AutoHub 4G OBD სმარტ-დონგლი & პარკირების დეტექტორი
+              </h3>
+            </div>
+          </div>
+
+          {/* Mode Switcher Toggle Pill */}
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-800/60 border border-white/10 shrink-0 self-end md:self-auto">
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setObdMode('demo');
+                obd4gService.setMode('demo');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                obdMode === 'demo'
+                  ? 'bg-gold text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>🔶 DEMO</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setObdMode('real');
+                obd4gService.setMode('real');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                obdMode === 'real'
+                  ? 'bg-emerald-500 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>🟢 REAL (აპარატურა)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mode Specific Body */}
+        {obdMode === 'demo' ? (
+          <div className="mt-4 space-y-4">
+            {/* Live Telemetry Sensor Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs font-mono">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-slate-400 block uppercase">სიჩქარე</span>
+                <span className="text-base font-black text-gold">
+                  {telemetry?.speedKmh?.toFixed(0) ?? 0} კმ/სთ
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-slate-400 block uppercase">ანთება (Ignition)</span>
+                <span className={`text-xs font-bold block mt-1 ${
+                  telemetry?.ignition ? 'text-emerald-400' : 'text-amber-300'
+                }`}>
+                  {telemetry?.ignition ? '🔥 ჩართულია' : '⚪ გამორთულია'}
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-slate-400 block uppercase">GNSS თანამგზავრები</span>
+                <span className="text-xs font-bold text-white block mt-1">
+                  🛰️ {telemetry?.satellitesCount ?? 14} (±{telemetry?.accuracyMeters?.toFixed(1) ?? '6.5'}მ)
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-slate-400 block uppercase">OBD ძაბვა</span>
+                <span className="text-xs font-bold text-emerald-400 block mt-1">
+                  🔋 {telemetry?.batteryVoltage?.toFixed(1) ?? '12.6'} V
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-slate-400 block uppercase">დეტექტორი</span>
+                <span className={`text-[11px] font-bold block mt-1 truncate ${
+                  stopResult?.status === 'probable_stop'
+                    ? 'text-gold animate-pulse'
+                    : stopResult?.status === 'traffic_stop'
+                    ? 'text-amber-400'
+                    : 'text-slate-300'
+                }`}>
+                  {stopResult?.status === 'probable_stop'
+                    ? '● გაჩერება #005'
+                    : stopResult?.status === 'traffic_stop'
+                    ? 'საცობი/შუქნიშანი'
+                    : 'მოძრაობს'}
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-slate-400 block uppercase">ბოლო პაკეტი</span>
+                <span className="text-[11px] font-bold text-slate-300 block mt-1">
+                  {formatTbilisiTime(telemetry?.receivedAt || Date.now())}
+                </span>
+              </div>
+            </div>
+
+            {/* Demo Explainer & Restart Cycle Button */}
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="text-slate-300 text-[11px] leading-relaxed">
+                ℹ️ <strong>დემო მარშრუტი:</strong> მანქანა მოძრაობს ი. ჭავჭავაძის გამზირზე, ანელებს და ჩერდება <strong>#005 ლოტთან (#34-თან)</strong>, თიშავს ანთებას, რის შემდეგაც სისტემა გთავაზობთ პარკირების დადასტურებას.
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playScanSweep();
+                  obd4gService.restartDemoDriveCycle();
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-black bg-gold hover:bg-gold/90 text-slate-950 transition-all shadow-md shrink-0 flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={13} className="animate-spin-slow" />
+                <span>სიმულაციის ხელახლა გაშვება</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* REAL MODE STATUS */
+          <div className="mt-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-300/40 text-xs text-navy space-y-3">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-amber-950 font-bold mb-1">
+                  აპარატურული მზადყოფნა — ფიზიკური 4G OBD მოწყობილობის მოლოდინში
+                </strong>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  პროექტის მიზნის შესაბამისად, 4G OBD მოწყობილობა ჯერ არ არის ფიზიკურად ხელმისაწვდომი. სისტემაში გამზადებულია რეალური სერვერული ვებჰუკი (<code className="px-1.5 py-0.5 bg-white rounded border border-slate-300 font-mono text-[10px]">POST /api/telemetry</code>), მონაცემთა მოდელი (GPS + GNSS + სიჩქარე + ანთების სტატუსი) და დეტექტორი.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-amber-200/50 text-[11px] font-mono">
+              <div className="p-2.5 rounded-xl bg-white border border-slate-200">
+                <span className="text-slate-400 block text-[10px]">კავშირის სტატუსი:</span>
+                <span className="text-rose-600 font-bold">🔴 ოფლაინ (სერვერის მოლოდინი)</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white border border-slate-200">
+                <span className="text-slate-400 block text-[10px]">ტექნიკური პროტოკოლი:</span>
+                <span className="text-navy font-bold">MQTT / HTTPS Webhook (ISO 15765-4)</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white border border-slate-200">
+                <span className="text-slate-400 block text-[10px]">რეკომენდაცია:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setObdMode('demo');
+                    obd4gService.setMode('demo');
+                  }}
+                  className="text-gold font-bold underline cursor-pointer"
+                >
+                  გადართეთ DEMO რეჟიმზე
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* ======================================================== */}
       {/* 1. DEDICATED PARKING PROFILE & ADDED VEHICLES CAROUSEL    */}
       {/* ======================================================== */}
@@ -1079,20 +1371,87 @@ export const ParkingModule: React.FC<Props> = ({
       {activeSubTab === 'zone_parking' && (
         <div className="space-y-5 animate-fade-in">
           
-          {/* Active Live Parking Stopwatch Card */}
-          {activeSession.isActive ? (
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-navy to-slate-900 text-white shadow-xl border-2 border-gold/40 relative overflow-hidden">
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+          {/* Active Live Parking Stopwatch Card with Strict Status Separation */}
+          {(activeSession.isActive || (parkingSession && parkingSession.status !== 'completed' && parkingSession.status !== 'probable_stop')) ? (
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-navy via-slate-900 to-slate-950 text-white shadow-xl border-2 border-gold/40 relative overflow-hidden space-y-5">
+              {/* Top: Status Badges and Plate */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></div>
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-400">
-                    აქტიური პარკირების სესია (LIVE)
-                  </span>
+                  <div className="w-3.5 h-3.5 rounded-full bg-emerald-400 animate-ping"></div>
+                  <div>
+                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-400 block">
+                      {parkingSession?.status === 'operator_activated'
+                        ? '🏛️ ოფიციალურად გააქტიურებულია ოპერატორთან'
+                        : parkingSession?.status === 'user_confirmed_parking'
+                        ? '🟡 მომხმარებლის მიერ დადასტურებული პარკირება'
+                        : '🔔 AutoHub შეხსენების ტაიმერი (შიდა სისტემა)'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      სესია #{parkingSession?.sessionId.slice(-6) || 'LIVE'}
+                    </span>
+                  </div>
                 </div>
-                <GeorgianLicensePlate plate={activeSession.plateNumber} size="sm" variant="white" />
+                <GeorgianLicensePlate plate={parkingSession?.plateNumber || activeSession.plateNumber} size="sm" variant="white" />
               </div>
 
-              <div className="my-6 grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
+              {/* Strict Legal Warning Notice */}
+              <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-400/40 text-rose-200 text-xs flex items-start gap-2.5">
+                <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-white font-bold block mb-0.5">
+                    ⚠️ ყურადღება: ეს არის AutoHub-ის შიდა შეხსენების ტაიმერი!
+                  </strong>
+                  <p className="text-slate-200 leading-relaxed text-[11px]">
+                    ადგილობრივი ტაიმერი <strong>არ წარმოადგენს</strong> მუნიციპალური პარკირების ოფიციალურ საფასურის გადახდას. მუნიციპალური ჯარიმის თავიდან ასაცილებლად, აუცილებელია პარკირების ოფიციალურად გააქტიურება მუნიციპალურ სერვისში.
+                  </p>
+                </div>
+              </div>
+
+              {/* Official Lot Code & Verification Provenance Bar */}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">
+                    პარკირების ოფიციალური ლოტის კოდი:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                    <span className="text-2xl font-black font-mono text-gold">
+                      #{parkingSession?.lot.lotCode || (parkingLocationInput.match(/#(\d+)/)?.[1] || '005')}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-white/10 text-white border border-white/20">
+                      ზონა {parkingSession?.lot.tariffCategory || 'A'} ({parkingSession?.lot.hourlyRateGel?.toFixed(2) || activeSession.hourlyRateGel.toFixed(2)} ₾/სთ)
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-300 block mt-1">
+                    {parkingSession?.lot.street_ge || activeSession.zoneName_ge}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                    მონაცემის წყარო: {parkingSession?.lot.dataSource || 'parking.tbilisi.gov.ge'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyLotCode(parkingSession?.lot.lotCode || '005')}
+                    className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-all flex items-center justify-center gap-1.5 border border-white/15"
+                  >
+                    <Copy size={13} />
+                    <span>{copiedLotCode ? '✓ დაკოპირდა!' : 'კოდის კოპირება'}</span>
+                  </button>
+                  <a
+                    href="https://parking.tbilisi.gov.ge/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold bg-gold text-slate-950 hover:bg-gold/90 transition-all flex items-center justify-center gap-1.5 shadow-md font-mono"
+                  >
+                    <ExternalLink size={13} />
+                    <span>parking.tbilisi.gov.ge</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Timer Display & Cost Breakdown */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
                 {/* Timer Display */}
                 <div>
                   <span className="text-[11px] font-mono text-slate-400 block mb-1 uppercase">
@@ -1101,6 +1460,11 @@ export const ParkingModule: React.FC<Props> = ({
                   <div className="text-4xl sm:text-5xl font-black font-mono tracking-widest text-gold drop-shadow-sm">
                     {formatTime(activeSession.elapsedSeconds)}
                   </div>
+                  {parkingSession && (
+                    <span className="text-[10px] font-mono text-slate-400 block mt-1">
+                      ვადა იწურება: <strong className="text-white">{formatTbilisiTime(parkingSession.expiresAt)}</strong>
+                    </span>
+                  )}
                 </div>
 
                 {/* Free Period Notice or Cost */}
@@ -1129,17 +1493,17 @@ export const ParkingModule: React.FC<Props> = ({
                   )}
                 </div>
 
-                {/* Stop & Pay Button */}
+                {/* Stop & Complete Button */}
                 <div className="flex flex-col justify-center">
                   <button
                     onClick={handleStopParking}
                     className="btn-stitch-rose w-full py-4 px-6 text-xs sm:text-sm font-black"
                   >
                     <Square size={16} className="fill-white" />
-                    <span>პარკირების შეჩერება & გადახდა</span>
+                    <span>სესიის დასრულება / შეჩერება</span>
                   </button>
                   <span className="text-[10px] text-slate-400 text-center mt-2 font-mono">
-                    {activeSession.zoneName_ge}
+                    შეხსენება და ტაიმერი გაითიშება
                   </span>
                 </div>
               </div>
@@ -1472,6 +1836,69 @@ export const ParkingModule: React.FC<Props> = ({
               </p>
             </div>
           </div>
+
+          {/* Official Municipal Operator Requirements Accordion */}
+          <div className="p-5 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-4">
+            <div
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => setShowOperatorReqs(!showOperatorReqs)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gold/15 text-gold flex items-center justify-center border border-gold/30 shrink-0">
+                  <Building size={20} />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h4 className="text-sm font-black text-white">
+                      {TBILISI_OPERATOR_REQUIREMENTS.title}
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-gold/20 text-gold border border-gold/30">
+                      TTC & მერია
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    ოფიციალური მონაცემთა წყაროების, API-ებისა და ლიცენზირების ჩამონათვალი
+                  </p>
+                </div>
+              </div>
+              <button type="button" className="text-slate-400 hover:text-white p-2">
+                {showOperatorReqs ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </button>
+            </div>
+
+            {showOperatorReqs && (
+              <div className="pt-3 border-t border-slate-800 space-y-3 animate-fade-in text-xs">
+                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-400/30 text-amber-200 text-[11px] leading-relaxed">
+                  ⚠️ <strong>იურიდიული დაცვა:</strong> მხოლოდ საიტზე (msmap / parking.tbilisi.gov.ge) ხილული ფენის არსებობა <strong>არ წარმოადგენს</strong> მონაცემთა კომერციული გამოყენების ნებართვას. AutoHub AI არ აჩვენებს დაუდასტურებელ „თავისუფალი ადგილების“ რაოდენობას და იყენებს მხოლოდ გადამოწმებულ ოფიციალურ ტარიფებს.
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {TBILISI_OPERATOR_REQUIREMENTS.items.map((req) => (
+                    <div key={req.code} className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-extrabold text-white text-xs">{req.label_ge}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-black uppercase ${
+                          req.priority === 'critical'
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            : req.priority === 'high'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                        }`}>
+                          {req.priority === 'critical' ? 'კრიტიკული' : req.priority === 'high' ? 'მაღალი' : 'საშუალო'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        {req.description_ge}
+                      </p>
+                      <span className="text-[9px] font-mono text-slate-500 block pt-1">
+                        კოდი: {req.code}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1762,6 +2189,24 @@ export const ParkingModule: React.FC<Props> = ({
             ))}
           </div>
         </div>
+      )}
+
+      {/* 4G OBD Real-time Stop Detection & Parking Confirmation Modal */}
+      {parkingSession && parkingSession.status === 'probable_stop' && (
+        <ParkingConfirmationModal
+          session={parkingSession}
+          candidateLots={stopResult?.candidateLots || [parkingSession.lot]}
+          isOpen={parkingSession.status === 'probable_stop'}
+          onConfirm={(leadMin, customDuration) => {
+            parkingSessionService.confirmParking(leadMin, customDuration);
+          }}
+          onDismiss={() => {
+            parkingSessionService.dismissProbableStop();
+          }}
+          onSelectDifferentLot={(lot) => {
+            parkingSessionService.updateSessionLot(lot);
+          }}
+        />
       )}
 
     </div>

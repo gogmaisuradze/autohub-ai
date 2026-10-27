@@ -139,7 +139,7 @@ export const ThematicServiceModal: React.FC<Props> = ({
 
   // Transmission Oil (ATF)
   const [transmissionFluidType, setTransmissionFluidType] = useState<'full' | 'partial'>('full');
-  const [transmissionType, setTransmissionType] = useState<'atf' | 'zf8hp' | 'dsg' | 'cvt' | 'manual'>('zf8hp');
+  const [transmissionType, setTransmissionType] = useState<ServiceItem['transmission_type']>('zf8hp');
   const [transmissionFilterReplaced, setTransmissionFilterReplaced] = useState(true);
   const [transmissionFluidBrand, setTransmissionFluidBrand] = useState('ZF Lifeguard 8');
 
@@ -585,7 +585,7 @@ export const ThematicServiceModal: React.FC<Props> = ({
       title_ge: title.trim() || 'ავტო სერვისი',
       category,
       variant_key: selectedVariant,
-      variant_name_ge: getVariantDefinition(selectedVariant)?.variant_name_ge || title,
+      variant_name_ge: getVariantDefinition(selectedVariant)?.title_ge || title,
       current_km: currentKm,
       last_service_date: today,
       last_service_km: currentKm,
@@ -706,7 +706,7 @@ export const ThematicServiceModal: React.FC<Props> = ({
       title_ge: title.trim() || fallbackTitle,
       category,
       variant_key: selectedVariant,
-      variant_name_ge: currentVariantDef?.variant_name_ge || currentVariantDef?.title_ge,
+      variant_name_ge: currentVariantDef?.title_ge || fallbackTitle,
       current_km: currentVehicleMileage,
       interval_km: intervalKm,
       remaining_km: remainingKm,
@@ -1002,7 +1002,7 @@ export const ThematicServiceModal: React.FC<Props> = ({
                       {title || getVariantDefinition(selectedVariant)?.title_ge}
                     </h2>
                     <p className="text-xs text-slate-300 font-mono mt-0.5">
-                      {vehicle?.brand} {vehicle?.model} • {getVariantDefinition(selectedVariant)?.variant_name_ge || selectedVariant}
+                      {vehicle?.brand} {vehicle?.model} • {getVariantDefinition(selectedVariant)?.title_ge || selectedVariant}
                     </p>
                   </div>
                 </div>

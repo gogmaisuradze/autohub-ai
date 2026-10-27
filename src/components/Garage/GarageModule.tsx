@@ -64,6 +64,7 @@ interface Props {
   services?: ServiceItem[];
   onAddBooking?: (booking: ServiceBookingItem) => void;
   onNavigateToAiClarification?: (initialPrompt?: string) => void;
+  onNavigateTab?: (tab: any) => void;
 }
 
 export const GarageModule: React.FC<Props> = ({
@@ -81,7 +82,8 @@ export const GarageModule: React.FC<Props> = ({
   onResetToVinSpecs,
   services = [],
   onAddBooking,
-  onNavigateToAiClarification
+  onNavigateToAiClarification,
+  onNavigateTab
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'profile' | 'license' | 'vin'>(initialSubTab);
   const [isVinSpecsExpanded, setIsVinSpecsExpanded] = useState(false);
@@ -751,7 +753,7 @@ export const GarageModule: React.FC<Props> = ({
           <div
             onClick={() => {
               sounds.playClick();
-              setActiveSubTab('map');
+              if (onNavigateTab) onNavigateTab('map');
             }}
             className="p-4 rounded-3xl neu-card shadow-neu-card border border-white flex flex-wrap items-center justify-between gap-4 cursor-pointer hover:border-gold/60 transition-all group"
           >

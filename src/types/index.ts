@@ -197,7 +197,7 @@ export interface ServiceItem {
   oil_liters?: number; // e.g. 5.2
   oil_filter_replaced?: boolean;
   transmission_fluid_type?: 'full' | 'partial';
-  transmission_type?: 'atf' | 'zf8hp' | 'dsg' | 'cvt' | 'manual';
+  transmission_type?: 'atf' | 'zf8hp' | 'dsg' | 'cvt' | 'manual' | '7g_dct' | 'ev_direct';
   transmission_filter_replaced?: boolean;
   transmission_fluid_brand?: string;
   coolant_freezing_point_c?: number; // e.g. -35°C
@@ -311,6 +311,10 @@ export interface N8nConfig {
   finesEndpoint: string;
   reportsEndpoint: string;
   addReportEndpoint: string;
+  telemetryEndpoint?: string;
+  parkingConfirmEndpoint?: string;
+  parkingCompleteEndpoint?: string;
+  apiKey?: string;
   useLiveWebhook: boolean;
 }
 
@@ -352,3 +356,6 @@ export interface WebhookLog {
   payload: any;
   response: any;
 }
+
+export type ObdAdapterType = 'wifi' | 'bluetooth' | 'cloud_4g';
+

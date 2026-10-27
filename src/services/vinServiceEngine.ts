@@ -167,7 +167,7 @@ export function decodeVin(vin: string, fallbackVehicle?: Partial<VehicleProfile>
   }
 
   // Default / Generic Decoded Vehicle
-  const fuelType = fallbackVehicle?.fuel_type || 'petrol';
+  const fuelType: 'petrol' | 'diesel' | 'hybrid' | 'electric' = (fallbackVehicle?.fuel_type as any) || 'petrol';
   return {
     vin: cleanVin,
     wmi,
