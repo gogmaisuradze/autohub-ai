@@ -5,6 +5,7 @@ import { sounds } from '../../services/soundEffects';
 import { TabType } from '../Navigation';
 import {
   Bot,
+  Zap,
   X,
   ArrowRight,
   ArrowLeft,
@@ -335,10 +336,12 @@ export const InteractiveSiteTour: React.FC<Props> = ({
                   <motion.div
                     animate={{ y: [0, -5, 0] }}
                     transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
-                    className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-navy to-navy-700 text-gold flex items-center justify-center shadow-md relative border border-gold/40 shrink-0"
+                    className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-navy to-navy-700 text-gold flex items-center justify-center shadow-md relative border border-gold/40 shrink-0 ai-lightning-btn overflow-hidden"
                   >
-                    <Bot size={26} />
-                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                    <div className="ai-lightning-flash" />
+                    <Bot size={26} className="relative z-10" />
+                    <Zap size={12} className="absolute -bottom-1 -left-1 text-gold fill-gold animate-bounce z-20" />
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 z-20">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-gold"></span>
                     </span>

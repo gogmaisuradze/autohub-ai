@@ -164,14 +164,14 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
                     <Bot size={18} className="drop-shadow-xs" />
                   </div>
                   <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-navy animate-pulse"></span>
-                  <Zap size={10} className="absolute -bottom-1 -left-1 text-gold fill-gold" />
+                  <Zap size={10} className="absolute -bottom-1 -left-1 text-gold fill-gold animate-bounce" />
                 </div>
 
                 <div className="text-left hidden min-[360px]:block">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-black tracking-tight text-white group-hover:text-gold transition-colors flex items-center gap-1">
                       <span>{isGe ? 'AI მექანიკოსი' : 'AI Mechanic'}</span>
-                      <Zap size={13} className="text-gold fill-gold" />
+                      <Zap size={13} className="text-gold fill-gold animate-pulse" />
                     </span>
                     <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-gold/20 text-gold border border-gold/50 shadow-xs">
                       24/7
