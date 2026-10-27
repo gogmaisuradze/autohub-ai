@@ -1039,6 +1039,7 @@ export const ObdModule: React.FC<Props> = ({
           dtcCodes={dtcCodes}
           onAskAiAboutCode={onAskAiAboutCode}
           vehicle={vehicle}
+          onStartScan={handleOneTouchScan}
         />
       </div>
 

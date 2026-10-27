@@ -19,14 +19,14 @@ import {
   ArrowRight,
   Sliders,
   Cpu,
-  Network,
   Activity,
   Search,
   ShieldAlert,
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Zap
 } from 'lucide-react';
 
 interface Props {
@@ -37,6 +37,7 @@ interface Props {
   dtcCodes?: DtcCode[];
   onAskAiAboutCode?: (code: DtcCode) => void;
   vehicle?: VehicleProfile;
+  onStartScan?: () => void;
 }
 
 interface ComponentDef {
@@ -93,7 +94,8 @@ export const ThreeCarScene: React.FC<Props> = ({
   hasErrors = false,
   dtcCodes = [],
   onAskAiAboutCode,
-  vehicle
+  vehicle,
+  onStartScan
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -101,8 +103,14 @@ export const ThreeCarScene: React.FC<Props> = ({
   const [activePin, setActivePin] = useState<string | null>(selectedComponent || null);
   const activePinRef = useRef<string | null>(selectedComponent || null);
   useEffect(() => { activePinRef.current = activePin; }, [activePin]);
+  const liveStateRef = useRef({ dtcCodes, isScanning, autoRotate: true });
+  liveStateRef.current.dtcCodes = dtcCodes;
+  liveStateRef.current.isScanning = isScanning;
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
+  liveStateRef.current.autoRotate = autoRotate;
+  const [modelError, setModelError] = useState(false);
   const [isGhostMode, setIsGhostMode] = useState<boolean>(true); // Ghost X-Ray Wireframe body vs Solid
+  const solidTargetRef = useRef(0);
   const [explodeFactor, setExplodeFactor] = useState<number>(0); // 0 to 1
   const [infoCardOpen, setInfoCardOpen] = useState<boolean>(false);
   const [leftHudOpen, setLeftHudOpen] = useState<boolean>(true);
@@ -195,9 +203,9 @@ export const ThreeCarScene: React.FC<Props> = ({
     {
       id: 'engine',
       name_ge: 'ძრავა & ტრანსმისია (Powertrain)',
-      sub_ge: 'ელექტრო/ჰიბრიდული ძრავი, შკივები, გენერატორი და ტურბინა',
+      sub_ge: 'ძრავის ილუსტრაციული აგრეგატი და აალების სისტემა',
       color: '#ff0033', // Neon Red
-      baseRestPos: new THREE.Vector3(0, 0.50, 1.08),
+      baseRestPos: new THREE.Vector3(0, 0.65, 1.50),
       explodeOffset: new THREE.Vector3(0, 0.55, 0.35),
       defaultError: 'P0300',
       matchingCodes: ['P0300', 'P0301', 'P0302', 'P0303', 'P0304', 'P0171'],
@@ -206,7 +214,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     },
     {
       id: 'ecu',
-      name_ge: 'ECU კომპიუტერები & გაყვანილობა',
+      name_ge: 'ECU კომპიუტერები',
       sub_ge: 'მთავარი მართვის ბლოკი, Gateway მოდული, რელეები და CAN სადენები',
       color: '#00e5ff', // Neon Cyan
       baseRestPos: new THREE.Vector3(0, 0.30, 0.05),
@@ -218,13 +226,12 @@ export const ThreeCarScene: React.FC<Props> = ({
     },
     {
       id: 'suspension',
-      name_ge: 'სავალი ნაწილი (MacPherson Struts)',
+      name_ge: 'საკიდარი და ამორტიზატორები',
       sub_ge: 'ზამბარიანი დგარები, საკიდარი, ბერკეტები (A-arms) და ყუმბარები',
       color: '#10b981', // Laser Green
       baseRestPos: new THREE.Vector3(0, 0.45, 0),
       explodeOffset: new THREE.Vector3(0, 0, 0),
-      defaultError: 'P0500',
-      matchingCodes: ['P0500', 'C0035', 'suspension'],
+      matchingCodes: [],
       focusCameraPos: new THREE.Vector3(1.9, 0.9, 1.7),
       focusTargetPos: new THREE.Vector3(0.9, 0.5, 1.15)
     },
@@ -234,7 +241,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       sub_ge: 'კატალიზატორი, O2 ლამბდა ზონდები, მაყუჩი და სენსორები',
       color: '#ff6600', // Neon Fiery Orange
       baseRestPos: new THREE.Vector3(0, 0.28, -0.4),
-      explodeOffset: new THREE.Vector3(0, -0.65, -0.7),
+      explodeOffset: new THREE.Vector3(0, -0.12, -0.55),
       defaultError: 'P0133',
       matchingCodes: ['P0133', 'P0420', 'P0130', 'P0135'],
       focusCameraPos: new THREE.Vector3(1.7, 0.7, -1.1),
@@ -245,7 +252,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       name_ge: 'გაგრილების რადიატორი & ვენტილატორი',
       sub_ge: 'ალუმინის რადიატორი, ორმაგი ვენტილატორები და მილები',
       color: '#00ccff', // Electric Cyan
-      baseRestPos: new THREE.Vector3(0, 0.48, 1.84),
+      baseRestPos: new THREE.Vector3(0, 0.60, 2.08),
       explodeOffset: new THREE.Vector3(0, 0.2, 0.95),
       defaultError: 'P0115',
       matchingCodes: ['P0115', 'P0128'],
@@ -255,15 +262,36 @@ export const ThreeCarScene: React.FC<Props> = ({
     {
       id: 'brakes',
       name_ge: 'სამუხრუჭე სისტემა & ხუნდები',
-      sub_ge: 'ვენტილირებადი სამუხრუჭე დისკები, Brembo კალიპერები და ABS',
+      sub_ge: 'BMW-ის საკუთარი დისკები და კალიპერები; ABS — მხოლოდ მხარდაჭერილი სკანერით',
       color: '#ffb703', // Electric Amber / Gold
       baseRestPos: new THREE.Vector3(0, 0.34, 0),
       explodeOffset: new THREE.Vector3(0, 0, 0),
-      defaultError: 'P0500',
-      matchingCodes: ['P0500', 'brakes'],
+      matchingCodes: ['C0035', 'C0040', 'C0045', 'C0050'],
       focusCameraPos: new THREE.Vector3(2.1, 0.75, 1.7),
       focusTargetPos: new THREE.Vector3(1.05, 0.35, 1.15)
-    }
+    },
+    {
+      id: 'battery', name_ge: 'აკუმულატორი და კვება',
+      sub_ge: 'სისტემის ძაბვა; დაბალი ძაბვა აკუმულატორის დაზიანებას თავისთავად არ ადასტურებს',
+      color: '#a78bfa', baseRestPos: new THREE.Vector3(.53, .55, 1.03),
+      explodeOffset: new THREE.Vector3(.60, .35, .15), matchingCodes: ['P0560', 'P0562', 'P0563'],
+      focusCameraPos: new THREE.Vector3(2, 1.4, 2.2), focusTargetPos: new THREE.Vector3(.53, .55, 1.03)
+    },
+    {
+      id: 'ignition_coil', name_ge: 'აალების სისტემა',
+      sub_ge: 'ანთების გამოტოვება — შესამოწმებელია კოჭა, სანთელი, ინჟექტორი და სხვა შესაძლო მიზეზები',
+      color: '#f472b6', baseRestPos: new THREE.Vector3(0, .60, 1.42),
+      explodeOffset: new THREE.Vector3(-.5, .65, .2), matchingCodes: ['P0300', 'P0301', 'P0302', 'P0303', 'P0304', 'P0351', 'P0352'],
+      focusCameraPos: new THREE.Vector3(-1.5, 1.5, 2.2), focusTargetPos: new THREE.Vector3(0, .60, 1.42)
+    },
+    { id: 'oxygen_sensor', name_ge: 'O₂ სენსორი', sub_ge: 'ჟანგბადის სენსორის წრედი; ზედა და ქვედა სენსორის მდებარეობა ილუსტრაციულია', color: '#fb923c', baseRestPos: new THREE.Vector3(-0.14,0.29,0.5), explodeOffset: new THREE.Vector3(0.65,0.15,-0.35), matchingCodes: ['P0130', 'P0131', 'P0132', 'P0133', 'P0134', 'P0135', 'P0136', 'P0137', 'P0138', 'P0139', 'P0140', 'P0141'], focusCameraPos: new THREE.Vector3(0.31,0.69,1.0), focusTargetPos: new THREE.Vector3(-0.14,0.29,0.5) },
+    { id: 'coolant_sensor', name_ge: 'ტემპერატურის სენსორი', sub_ge: 'გაგრილების სითხის ტემპერატურის სენსორი და მისი წრედი', color: '#38bdf8', baseRestPos: new THREE.Vector3(0.25,0.58,1.92), explodeOffset: new THREE.Vector3(-0.55,0.35,0.5), matchingCodes: ['P0115', 'P0116', 'P0117', 'P0118', 'P0119'], focusCameraPos: new THREE.Vector3(0.7,0.98,2.42), focusTargetPos: new THREE.Vector3(0.25,0.58,1.92) },
+    { id: 'throttle_sensor', name_ge: 'დროსელის სენსორი', sub_ge: 'დროსელის პოზიციის სენსორი; შესამოწმებელია კონექტორიც და გაყვანილობაც', color: '#22d3ee', baseRestPos: new THREE.Vector3(0.4,0.64,1.3), explodeOffset: new THREE.Vector3(0.65,0.4,0.25), matchingCodes: ['P0120', 'P0121', 'P0122', 'P0123', 'P0124', 'P0220', 'P0221'], focusCameraPos: new THREE.Vector3(0.8500000000000001,1.04,1.8), focusTargetPos: new THREE.Vector3(0.4,0.64,1.3) },
+    { id: 'fuel_injectors', name_ge: 'ინჟექტორები', sub_ge: 'საწვავის შეშხეფების წრედები; ვიზუალიზაცია დაზიანების საბოლოო დასკვნა არ არის', color: '#fbbf24', baseRestPos: new THREE.Vector3(0.2,0.66,1.4), explodeOffset: new THREE.Vector3(-0.65,0.5,0.15), matchingCodes: ['P0200', 'P0201', 'P0202', 'P0203', 'P0204', 'P0205', 'P0206'], focusCameraPos: new THREE.Vector3(0.65,1.06,1.9), focusTargetPos: new THREE.Vector3(0.2,0.66,1.4) },
+    { id: 'fuel_pump', name_ge: 'საწვავის ტუმბო', sub_ge: 'საწვავის მიწოდების ტუმბო და ელექტრული მართვის წრედი', color: '#f59e0b', baseRestPos: new THREE.Vector3(0,0.32,-1), explodeOffset: new THREE.Vector3(0.55,0.25,-0.5), matchingCodes: ['P0230', 'P0231', 'P0232', 'P0233', 'P0087'], focusCameraPos: new THREE.Vector3(0.45,0.72,-0.5), focusTargetPos: new THREE.Vector3(0,0.32,-1) },
+    { id: 'intake_sensor', name_ge: 'ჰაერის სენსორი', sub_ge: 'შემავალი ჰაერის ტემპერატურის სენსორი', color: '#34d399', baseRestPos: new THREE.Vector3(0.54,0.6,1.72), explodeOffset: new THREE.Vector3(0.7,0.2,0.1), matchingCodes: ['P0110', 'P0111', 'P0112', 'P0113', 'P0114'], focusCameraPos: new THREE.Vector3(0.99,1.0,2.2199999999999998), focusTargetPos: new THREE.Vector3(0.54,0.6,1.72) },
+    { id: 'knock_sensor', name_ge: 'დეტონაციის სენსორი', sub_ge: 'ძრავის დეტონაციის სენსორისა და მისი წრედის შემოწმება', color: '#c084fc', baseRestPos: new THREE.Vector3(-0.28,0.51,1.45), explodeOffset: new THREE.Vector3(-0.65,0.25,0.3), matchingCodes: ['P0325', 'P0326', 'P0327', 'P0328', 'P0330'], focusCameraPos: new THREE.Vector3(0.16999999999999998,0.91,1.95), focusTargetPos: new THREE.Vector3(-0.28,0.51,1.45) },
+    { id: 'map_sensor', name_ge: 'წნევის სენსორი', sub_ge: 'შემშვები კოლექტორის წნევის სენსორი და ვაკუუმის სისტემა', color: '#a3e635', baseRestPos: new THREE.Vector3(0.26,0.7,1.18), explodeOffset: new THREE.Vector3(0.6,0.6,-0.2), matchingCodes: ['P0105', 'P0106', 'P0107', 'P0108', 'P0109'], focusCameraPos: new THREE.Vector3(0.71,1.1,1.68), focusTargetPos: new THREE.Vector3(0.26,0.7,1.18) },
   ], []);
 
   // Determine active fault for a component
@@ -291,8 +319,8 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     // 2. Camera Setup (Perspective angle matching the user's digital twin blueprint photo)
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(6.6, 4.4, 7.4);
-    const initialTarget = new THREE.Vector3(0, -0.35, 0);
+    camera.position.set(5.7, 3.6, 6.5);
+    const initialTarget = new THREE.Vector3(0, 0.85, 0);
     camera.lookAt(initialTarget);
     cameraRef.current = camera;
 
@@ -395,10 +423,10 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     // ბორბლების კუთხეები აპის კოორდინატებში (ციკლი ამ x-ებს სრიალებს გვერდზე)
     const wheelCorners = [
-      { id: 'fl', x: 0.94, z: 1.15, isRight: true },
-      { id: 'fr', x: -0.94, z: 1.15, isRight: false },
-      { id: 'rl', x: 0.94, z: -1.15, isRight: true },
-      { id: 'rr', x: -0.94, z: -1.15, isRight: false }
+      { id: 'fl', x: 0.80, z: 1.53, isRight: true },
+      { id: 'fr', x: -0.80, z: 1.53, isRight: false },
+      { id: 'rl', x: 0.80, z: -1.32, isRight: true },
+      { id: 'rr', x: -0.80, z: -1.32, isRight: false }
     ];
 
     const baseOf = (id: string): THREE.Vector3 =>
@@ -411,8 +439,49 @@ export const ThreeCarScene: React.FC<Props> = ({
     dracoLoader.setDecoderPath(`${cleanBase}draco/`);
     gltfLoader.setDRACOLoader(dracoLoader);
 
-    gltfLoader.load(`${cleanBase}models/ghost_car.glb?v=22`, (gltf) => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const visual = {
+      fill: { value: 0 }, lift: { value: 0 },
+      scanZ: { value: -2.6 }, scanStrength: { value: 0 },
+      carInverse: { value: new THREE.Matrix4() }
+    };
+    const ghostColor = new THREE.Color(0xaecbe6);
+    const applySurfaceEffects = (mat: THREE.MeshStandardMaterial, body: boolean) => {
+      const solidColor = new THREE.Color(mat.userData.solidColor ?? 0x91b6db);
+      mat.onBeforeCompile = shader => {
+        Object.assign(shader.uniforms, {
+          uFill: visual.fill, uLift: visual.lift, uScanZ: visual.scanZ,
+          uScanStrength: visual.scanStrength, uCarInverse: visual.carInverse,
+          uGhostColor: { value: ghostColor }, uPaintColor: { value: solidColor },
+          uGhostAlpha: { value: mat.userData.ghostOpacity ?? .26 }
+        });
+        shader.vertexShader = 'uniform mat4 uCarInverse; varying vec3 vCarSurface;\n' + shader.vertexShader;
+        shader.vertexShader = shader.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvCarSurface = (uCarInverse * modelMatrix * vec4(transformed, 1.0)).xyz;');
+        shader.fragmentShader = `uniform float uFill, uLift, uScanZ, uScanStrength, uGhostAlpha;
+          uniform vec3 uGhostColor, uPaintColor; varying vec3 vCarSurface;\n` + shader.fragmentShader;
+        if (body) {
+          shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+            // One shared blend for the entire shell: no late roof/cabin pieces.
+            float painted = uFill;
+            diffuseColor.rgb = mix(uGhostColor, uPaintColor, painted);
+            diffuseColor.a = mix(uGhostAlpha, 1.0, painted);`);
+          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(.13, .25, painted);');
+          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(.03, .58, painted);');
+        }
+        shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
+          float scanBand = exp(-pow((vCarSurface.z - uScanZ) / .075, 2.0));
+          float scanHalo = exp(-pow((vCarSurface.z - uScanZ) / .25, 2.0));
+          outgoingLight += (vec3(.48, .76, 1.0) * scanBand * 1.15 + vec3(.10, .30, .48) * scanHalo * .22) * uScanStrength;
+          #include <opaque_fragment>`);
+      };
+      mat.customProgramCacheKey = () => body ? 'autohub-paint-fill-v2' : 'autohub-surface-scan-v2';
+      mat.needsUpdate = true;
+    };
+    const engineParts: { node: THREE.Group; rest: THREE.Vector3; offset: THREE.Vector3 }[] = [];
+    let disposed = false;
+    gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=8`, (gltf) => {
       const root = gltf.scene;
+      if (disposed) return;
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
       carMasterGroup.add(root);
       root.updateWorldMatrix(true, true);
@@ -430,7 +499,17 @@ export const ThreeCarScene: React.FC<Props> = ({
         { id: 'ecu', src: ['ecu'] },
         { id: 'exhaust', src: ['exhaust'] },
         { id: 'cooling', src: ['cooling'] },
-        { id: 'suspension', src: ['Suspension'] }
+        { id: 'suspension', src: ['Suspension', 'drivetrain'] },
+        { id: 'battery', src: ['battery'] },
+        { id: 'ignition_coil', src: ['ignition_coil'] },
+        { id: 'oxygen_sensor', src: ['oxygen_sensor'] },
+        { id: 'coolant_sensor', src: ['coolant_sensor'] },
+        { id: 'throttle_sensor', src: ['throttle_sensor'] },
+        { id: 'fuel_injectors', src: ['fuel_injectors'] },
+        { id: 'fuel_pump', src: ['fuel_pump'] },
+        { id: 'intake_sensor', src: ['intake_sensor'] },
+        { id: 'knock_sensor', src: ['knock_sensor'] },
+        { id: 'map_sensor', src: ['map_sensor'] }
       ];
       subsystems.forEach(({ id, src }) => {
         const grp = new THREE.Group();
@@ -456,6 +535,34 @@ export const ThreeCarScene: React.FC<Props> = ({
         lightsRef.current[id] = light;
       });
 
+      // Keep the material surfaces of each downloaded physical part together.
+      const engineGroup = groupsRef.current.engine;
+      if (engineGroup) {
+        engineGroup.updateWorldMatrix(true, true);
+        const engineCenter = engineGroup.worldToLocal(new THREE.Box3().setFromObject(engineGroup).getCenter(new THREE.Vector3()));
+        const physicalParts = new Map<string, THREE.Group>();
+        [...engineGroup.children].forEach(node => {
+          if (!(node instanceof THREE.Mesh)) return;
+          const source = String(node.userData.source_object || node.name);
+          const key = source.replace(/_(?:Metall\d+|Trenie_C|Plastic\d+|plastic\d+|Collector|Metal_Paint|Filter|Ceramic|Procladka|Remen)_0(?:\.\d+)?$/i, '');
+          let part = physicalParts.get(key);
+          if (!part) {
+            part = new THREE.Group();
+            part.name = `EnginePart_${key}`;
+            engineGroup.add(part);
+            physicalParts.set(key, part);
+          }
+          part.attach(node);
+        });
+        physicalParts.forEach(part => {
+          const center = engineGroup.worldToLocal(new THREE.Box3().setFromObject(part).getCenter(new THREE.Vector3()));
+          const offset = center.sub(engineCenter).multiply(new THREE.Vector3(2.2, 2.0, 1.4));
+          // Lift upper assemblies and lower the sump to reveal the engine block.
+          offset.y += offset.y >= 0 ? .18 : -.12;
+          engineParts.push({ node: part, rest: part.position.clone(), offset });
+        });
+      }
+
       // --- ბორბლები (გვერდზე სრიალებენ) ---
       const wheelNodeFor: { [k: string]: string } = { fl: 'Wheel_FL', fr: 'Wheel_FR', rl: 'Wheel_RL', rr: 'Wheel_RR' };
       wheelCorners.forEach(pos => {
@@ -468,45 +575,53 @@ export const ThreeCarScene: React.FC<Props> = ({
         meshesOf('Tire_' + suf).forEach(m => { m.castShadow = true; wg.attach(m); });
       });
 
-      // --- მუხრუჭები: ინთება და ბორბლებთან ერთად მოძრაობენ ---
-      const brakeMat = new THREE.MeshStandardMaterial({ color: 0x8a909a, metalness: 0.85, roughness: 0.3 });
-      materialsRef.current['brakes'] = brakeMat;
-      const brakesLight = new THREE.PointLight(new THREE.Color(0xffb703), 0, 2.6);
-      brakesLight.position.copy(baseOf('brakes'));
-      carMasterGroup.add(brakesLight);
-      lightsRef.current['brakes'] = brakesLight;
-
-      const cornerSwap: { [k: string]: string } = { FL: 'fr', FR: 'fl', RL: 'rr', RR: 'rl' };
-      ['Brakes_Front', 'Brakes_Rear'].forEach(bn => {
-        meshesOf(bn).forEach(m => {
-          const suffix = m.name.slice(-2).toUpperCase();
-          const corner = cornerSwap[suffix];
-          const wg = corner ? groupsRef.current[`wheel_${corner}`] : null;
-          m.material = brakeMat;
-          if (wg) wg.attach(m);
+      // Keep the BMW's native brake materials and use the same animation/highlight path.
+      const brakeMats: THREE.MeshStandardMaterial[] = [];
+      wheelCorners.forEach(pos => {
+        const wg = groupsRef.current[`wheel_${pos.id}`];
+        meshesOf('Brakes_' + pos.id.toUpperCase()).forEach(m => {
+          const materials = (Array.isArray(m.material) ? m.material : [m.material])
+            .map(mat => (mat as THREE.MeshStandardMaterial).clone());
+          m.material = Array.isArray(m.material) ? materials : materials[0];
+          brakeMats.push(...materials);
+          wg.attach(m);
         });
       });
+      glowMatsRef.current.brakes = brakeMats;
+      const brakesLight = new THREE.PointLight(0xffb703, 0, 2.6);
+      brakesLight.position.copy(baseOf('brakes'));
+      carMasterGroup.add(brakesLight);
+      lightsRef.current.brakes = brakesLight;
 
       // --- გამჭვირვალე მინის კორპუსი ---
       const bodyGrp = new THREE.Group();
       carMasterGroup.add(bodyGrp);
       groupsRef.current['body'] = bodyGrp;
       const ghostGlassMat = new THREE.MeshPhysicalMaterial({
-        color: 0xaecbe6, transmission: 0.5, opacity: 0.55, transparent: true,
+        color: 0xaecbe6, transmission: 0.0, opacity: 0.26, transparent: true,
         roughness: 0.14, ior: 1.45, metalness: 0.05, clearcoat: 1.0, depthWrite: false
       });
+      ghostGlassMat.userData.ghostOpacity = 0.26;
       bodyMaterialsRef.current = [ghostGlassMat];
       meshesOf('Body_Paint').forEach(m => { m.material = ghostGlassMat; bodyGrp.attach(m); });
 
       // მინები — ყოველთვის გამჭვირვ. (საქარე მინა/ფანჯრები)
       const windowMat = new THREE.MeshPhysicalMaterial({
-        color: 0x0e141b, transmission: 0.82, opacity: 0.45, transparent: true,
+        color: 0xaecbe6, transmission: 0.0, opacity: 0.10, transparent: true,
         roughness: 0.05, ior: 1.5, metalness: 0.0, clearcoat: 1.0, depthWrite: false
       });
       meshesOf('Body_Glass').forEach(m => { m.material = windowMat; bodyGrp.attach(m); });
 
+      const headLensMat = new THREE.MeshPhysicalMaterial({color: 0xc5dfed, transparent: true, opacity: .24, roughness: .08, metalness: 0, clearcoat: 1, ior: 1.49, depthWrite: false});
+      const tailLensMat = new THREE.MeshPhysicalMaterial({color: 0x9e101c, transparent: true, opacity: .55, roughness: .13, metalness: 0, clearcoat: 1, ior: 1.49, depthWrite: false});
+      meshesOf('Headlight_Lenses').forEach(m => {m.material = headLensMat; bodyGrp.attach(m);});
+      meshesOf('Taillight_Lenses').forEach(m => {m.material = tailLensMat; bodyGrp.attach(m);});
+
       // სალონი — მუქი (მინაში ჩანს)
-      const interiorMat = new THREE.MeshStandardMaterial({ color: 0x1a1d22, roughness: 0.6, metalness: 0.1 });
+      const interiorMat = new THREE.MeshPhysicalMaterial({ color: 0xb8daee, transparent: true, opacity: 0.10, transmission: 0, roughness: 0.08, metalness: 0.02, clearcoat: 1, depthWrite: false });
+      interiorMat.userData.ghostOpacity = 0.10;
+      interiorMat.userData.solidColor = 0x17202a;
+      bodyMaterialsRef.current.push(interiorMat);
       meshesOf('Body_Interior').forEach(m => { m.material = interiorMat; m.castShadow = true; bodyGrp.attach(m); });
 
       // თავფარები — ანათებს თეთრ-ცისფრად
@@ -523,42 +638,60 @@ export const ThreeCarScene: React.FC<Props> = ({
       plateTex.anisotropy = 4;
       plateTextureRef.current = plateTex;
 
-      updateLicensePlateTexture(vehicle?.plate_number || 'FR-282-EE', vehicle?.brand || 'Mercedes-Benz');
+      updateLicensePlateTexture(vehicle?.plate_number || 'FR-282-EE', vehicle?.brand || 'BMW');
 
       const plateMat = new THREE.MeshStandardMaterial({
         map: plateTex, emissive: 0xffffff, emissiveMap: plateTex, emissiveIntensity: 0.35,
         roughness: 0.5, metalness: 0.0, side: THREE.DoubleSide
       });
-      const plateGeo = new THREE.PlaneGeometry(0.40, 0.13);
-      const frontPlate = new THREE.Mesh(plateGeo, plateMat);
-      frontPlate.position.set(0, 0.34, 2.30);
-      bodyGrp.add(frontPlate);
-      const rearPlate = new THREE.Mesh(plateGeo, plateMat);
-      rearPlate.position.set(0, 0.42, -2.30);
-      rearPlate.rotation.y = Math.PI;
-      bodyGrp.add(rearPlate);
+      const plateGeo = new THREE.PlaneGeometry(0.52, 0.11);
+      const attachPlate = (anchorName: string, fallback: THREE.Vector3, rear: boolean) => {
+        const mesh = new THREE.Mesh(plateGeo, plateMat);
+        mesh.name = anchorName === 'Plate_Front_Anchor' ? 'LicensePlate_Front' : 'LicensePlate_Rear';
+        const anchor = root.getObjectByName(anchorName);
+        if (anchor) {
+          anchor.getWorldPosition(mesh.position);
+          anchor.getWorldQuaternion(mesh.quaternion);
+          // Blender's plate plane is XY; glTF converts it to XZ.
+          // Three.PlaneGeometry uses XY, so correct its local basis before attachment.
+          mesh.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2));
+          scene.add(mesh);
+          bodyGrp.attach(mesh);
+        } else {
+          mesh.position.copy(fallback);
+          if (rear) mesh.rotation.set(.254, Math.PI, 0);
+          bodyGrp.add(mesh);
+        }
+      };
+      attachPlate('Plate_Front_Anchor', new THREE.Vector3(0, .54, 2.418), false);
+      attachPlate('Plate_Rear_Anchor', new THREE.Vector3(0, .78, -2.263), true);
 
       // --- სტატიკური ჩასი / აკუმულატორი ---
-      meshesOf('chassis').forEach(m => { m.material = steelDarkMat; m.receiveShadow = true; carMasterGroup.attach(m); });
+      const chassisGlassMat = new THREE.MeshPhysicalMaterial({ color: 0xaecbe6, transparent: true, opacity: 0.12, roughness: 0.14, metalness: 0.04, depthWrite: false });
+      chassisGlassMat.userData.ghostOpacity = 0.12;
+      chassisGlassMat.userData.solidColor = 0x334155;
+      bodyMaterialsRef.current.push(chassisGlassMat);
+      meshesOf('chassis').forEach(m => { m.material = chassisGlassMat; carMasterGroup.attach(m); });
 
-      // დაცლილი root-ის მოშორება
+      // Never discard unclaimed native detail when removing the loader root.
+      const remaining: THREE.Mesh[] = [];
+      root.traverse((o: any) => { if (o.isMesh) remaining.push(o); });
+      remaining.forEach(m => { m.material = interiorMat; bodyGrp.attach(m); });
+      const bodyMaterials = new Set<THREE.Material>(bodyMaterialsRef.current);
+      const processedMaterials = new Set<THREE.Material>();
+      carMasterGroup.traverse(node => {
+        if (!(node instanceof THREE.Mesh) || node.name.startsWith('LicensePlate_')) return;
+        (Array.isArray(node.material) ? node.material : [node.material]).forEach(mat => {
+          if (mat instanceof THREE.MeshStandardMaterial && !processedMaterials.has(mat)) {
+            processedMaterials.add(mat);
+            applySurfaceEffects(mat, bodyMaterials.has(mat));
+          }
+        });
+      });
       carMasterGroup.remove(root);
-    }, undefined, (err) => { console.error('ghost_car.glb load error', err); });
+    }, undefined, (err) => { if (!disposed) setModelError(true); console.error('BMW model load error', err); });
 
     // 3D hotspot pins removed — components light up in their own colour instead
-
-    // Holographic Laser Scan Plane
-    const scanGeo = new THREE.PlaneGeometry(3.2, 2.2);
-    const scanMat = new THREE.MeshBasicMaterial({
-      color: 0xFCA311,
-      transparent: true,
-      opacity: 0,
-      side: THREE.DoubleSide
-    });
-    const scanMesh = new THREE.Mesh(scanGeo, scanMat);
-    scanMesh.rotation.x = Math.PI / 2;
-    scanMesh.position.y = 0.55;
-    carMasterGroup.add(scanMesh);
 
     // Initial beauty perspective angle matching user's photo
     carMasterGroup.rotation.y = 0.45;
@@ -568,12 +701,25 @@ export const ThreeCarScene: React.FC<Props> = ({
     // =========================================================================
     let animId: number;
     const clock = new THREE.Clock();
-    let scanZ = -1.9;
-    let scanDir = 1;
+    const idlePodium = new THREE.Color(0xf1f5f9);
+    const scanPodium = new THREE.Color(0x101e30);
+    const idleRing = new THREE.Color(0xfca311);
+    const scanRing = new THREE.Color(0x477da3);
+    let fillProgress = 0;
+    let scanPhase = 0;
+    let previousTime = 0;
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
+      const delta = Math.min(elapsedTime - previousTime, .05);
+      previousTime = elapsedTime;
+      const fillStep = delta / (reducedMotion ? .15 : 2.8);
+      fillProgress = THREE.MathUtils.clamp(fillProgress + Math.sign(solidTargetRef.current - fillProgress) * Math.min(Math.abs(solidTargetRef.current - fillProgress), fillStep), 0, 1);
+      visual.fill.value = fillProgress * fillProgress * (3 - 2 * fillProgress);
+      visual.lift.value = currentExplodeRef.current * 1.10;
+      // All surfaces finish together and restore normal solid-body occlusion.
+      bodyMaterialsRef.current.forEach(mat => { mat.depthWrite = fillProgress > .995; });
 
       // Smooth interpolation for Exploded View separation
       currentExplodeRef.current += (targetExplodeRef.current - currentExplodeRef.current) * 0.08;
@@ -581,7 +727,7 @@ export const ThreeCarScene: React.FC<Props> = ({
 
       // Displace Unibody Cage & Ghost Body (Lifts high UP)
       if (groupsRef.current['body']) {
-        groupsRef.current['body'].position.y = curExp * 1.55;
+        groupsRef.current['body'].position.y = curExp * 1.10;
       }
 
       // Displace Internal Aggregates according to their explosion vectors
@@ -602,6 +748,11 @@ export const ThreeCarScene: React.FC<Props> = ({
         }
       });
 
+      // Use the same smooth slider value; returning to zero restores exact rest transforms.
+      engineParts.forEach(({ node, rest, offset }) => {
+        node.position.copy(rest).addScaledVector(offset, curExp);
+      });
+
       // Displace Wheels (Slide outwards laterally)
       wheelCorners.forEach(pos => {
         const whl = groupsRef.current[`wheel_${pos.id}`];
@@ -617,12 +768,12 @@ export const ThreeCarScene: React.FC<Props> = ({
       componentsList.forEach(comp => {
         const mats = glowMatsRef.current[comp.id];
         const light = lightsRef.current[comp.id];
-        const hasFault = dtcCodes.some(c =>
+        const hasFault = liveStateRef.current.dtcCodes.some(c =>
           comp.matchingCodes.some(m => c.code.toUpperCase().includes(m.toUpperCase()))
         );
         const isSelected = activePinRef.current === comp.id;
         // Only components with active DTC faults pulse/blink. Selected components without faults have a steady calm glow.
-        const intensity = hasFault ? (1.3 + pulse * 1.7) : isSelected ? 0.45 : 0;
+        const intensity = hasFault ? (.7 + pulse * .45) : isSelected ? 0.45 : 0;
 
         if (mats) {
           mats.forEach(mat => {
@@ -635,7 +786,7 @@ export const ThreeCarScene: React.FC<Props> = ({
             }
           });
         }
-        if (light) light.intensity = hasFault ? (0.9 + pulse * 1.6) : isSelected ? 0.35 : 0;
+        if (light) light.intensity = hasFault ? (.45 + pulse * .35) : isSelected ? 0.35 : 0;
       });
 
       // Smooth Camera & Target Gliding
@@ -653,21 +804,21 @@ export const ThreeCarScene: React.FC<Props> = ({
       }
 
       // Auto-turntable spin when not manually interacting
-      if (autoRotate && !targetCamPosRef.current && curExp < 0.05) {
+      if (liveStateRef.current.autoRotate && !targetCamPosRef.current && curExp < 0.05) {
         carMasterGroup.rotation.y += 0.0018;
       }
 
-      // Holographic Laser Scan Sweep
-      if (isScanning) {
-        scanMesh.visible = true;
-        (scanMesh.material as THREE.MeshBasicMaterial).opacity = 0.35 + Math.sin(elapsedTime * 14) * 0.2;
-        scanZ += 0.06 * scanDir;
-        if (scanZ > 1.9) scanDir = -1;
-        if (scanZ < -1.9) scanDir = 1;
-        scanMesh.position.z = scanZ;
-      } else {
-        scanMesh.visible = false;
-      }
+      // A calm surface-following sweep, independent of frame rate, with a soft exit.
+      const scanning = liveStateRef.current.isScanning;
+      visual.scanStrength.value = THREE.MathUtils.damp(visual.scanStrength.value, scanning ? 1 : 0, 4, delta);
+      const focus = visual.scanStrength.value;
+      podiumMat.color.copy(idlePodium).lerp(scanPodium, focus);
+      goldRingMat.color.copy(idleRing).lerp(scanRing, focus);
+      (gridHelper.material as THREE.Material).opacity = THREE.MathUtils.lerp(.35, .10, focus);
+      if (scanning && !reducedMotion) scanPhase = (scanPhase + delta / 4.8) % 1;
+      visual.scanZ.value = reducedMotion ? 0 : THREE.MathUtils.lerp(-2.65, 2.65, .5 - .5 * Math.cos(scanPhase * Math.PI * 2));
+      carMasterGroup.updateWorldMatrix(true, false);
+      visual.carInverse.value.copy(carMasterGroup.matrixWorld).invert();
 
       controls.update();
       renderer.render(scene, camera);
@@ -688,7 +839,12 @@ export const ThreeCarScene: React.FC<Props> = ({
     window.addEventListener('resize', handleResize);
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(animId);
+      dracoLoader.dispose();
+      scene.traverse((o: any) => {
+        if (o.isMesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: THREE.Material) => m.dispose()); }
+      });
       window.removeEventListener('resize', handleResize);
       controls.dispose();
       renderer.dispose();
@@ -701,32 +857,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     const newMode = !isGhostMode;
     setIsGhostMode(newMode);
 
-    bodyMaterialsRef.current.forEach(mat => {
-      if (newMode) {
-        // Ghost Crystal Glass (Matching User Image)
-        mat.transmission = 0.55;
-        mat.opacity = 0.50;
-        mat.color.set(0xaecbe6);
-        mat.roughness = 0.16;
-        mat.metalness = 0.0;
-        mat.depthWrite = false;
-      } else {
-        // Solid Deep Metallic Obsidian Black (Mercedes-Benz GLA 250 Black)
-        mat.transmission = 0.0;
-        mat.opacity = 1.0;
-        mat.color.set(0x111111);
-        mat.roughness = 0.20;
-        mat.metalness = 0.85;
-        mat.depthWrite = true;
-      }
-      mat.needsUpdate = true;
-    });
-
-    // მყარ რეჟიმში შიდა აგრეგატები დავმალოთ (ხილული მხოლოდ ghost/x-ray-ში)
-    ['engine', 'ecu', 'exhaust', 'cooling', 'suspension'].forEach(id => {
-      const g = groupsRef.current[id];
-      if (g) g.visible = newMode;
-    });
+    solidTargetRef.current = newMode ? 0 : 1;
   };
 
   // Focus and Zoom Camera onto Selected Component
@@ -745,8 +876,8 @@ export const ThreeCarScene: React.FC<Props> = ({
     sounds.playClick();
     setActivePin(null);
     setInfoCardOpen(false);
-    targetCamPosRef.current = new THREE.Vector3(3.9, 2.3, 4.0);
-    targetCamLookRef.current = new THREE.Vector3(0, 0.48, 0);
+    targetCamPosRef.current = new THREE.Vector3(5.7, 3.6, 6.5);
+    targetCamLookRef.current = new THREE.Vector3(0, 0.85, 0);
   };
 
   // Selected Component info for detail card
@@ -756,6 +887,11 @@ export const ThreeCarScene: React.FC<Props> = ({
   return (
     <div className="relative w-full h-[320px] sm:h-[450px] md:h-[530px] rounded-3xl overflow-hidden neu-surface border border-white shadow-neu-card bg-gradient-to-b from-[#FAFBFD] via-[#EEF3F8] to-[#E3EBF4] select-none touch-pan-y">
       
+      <div aria-hidden="true" className="absolute inset-0 pointer-events-none transition-opacity duration-1000" style={{ background: 'radial-gradient(ellipse at 50% 48%, #1a3047 0%, #0b1728 58%, #050b14 100%)', opacity: isScanning ? 1 : 0 }} />
+      <div className="absolute bottom-2 left-3 z-20 max-w-[65%] text-[9px] text-slate-500 pointer-events-auto">
+        BMW M4 • ილუსტრაციული აგებულება • შეცდომის კოდი დაზიანებულ ნაწილს საბოლოოდ არ ადგენს · <a className="underline" href={`${import.meta.env.BASE_URL}models/bmw-diagnostic-credits.json`} target="_blank" rel="noreferrer">3D ავტორები</a>
+      </div>
+      {modelError && <div role="alert" className="absolute inset-0 z-30 grid place-items-center bg-white/95 text-sm text-navy">3D მოდელი ვერ ჩაიტვირთა. განაახლეთ გვერდი.</div>}
       {/* 1. TOP FLOATING CONTROL HUD BAR */}
       <div className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pointer-events-none">
         
@@ -774,8 +910,28 @@ export const ThreeCarScene: React.FC<Props> = ({
           )}
         </div>
 
-        {/* Right HUD Controls: Ghost / Solid Toggle, Exploded View Slider & Reset */}
+        {/* Right HUD Controls: Scan Button, Ghost / Solid Toggle, Exploded View Slider & Reset */}
         <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+          {/* Quick Scan Button right on 3D Screen */}
+          {onStartScan && (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                onStartScan();
+              }}
+              disabled={isScanning}
+              className={`px-3 sm:px-4 py-1.5 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md active:scale-95 border ${
+                isScanning
+                  ? 'bg-amber-400 text-slate-950 border-amber-500 animate-pulse cursor-wait'
+                  : 'bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 hover:shadow-gold-soft hover:scale-105 border-gold shadow-sm'
+              }`}
+              title="3D დიაგნოსტიკური სკანირება"
+            >
+              <Zap size={13} className={isScanning ? 'animate-bounce' : 'fill-slate-950 text-slate-950'} />
+              <span>{isScanning ? 'სკანირება...' : 'სკანირება'}</span>
+            </button>
+          )}
           
           {/* Ghost Glass / Solid Body Toggle */}
           <button
@@ -848,10 +1004,10 @@ export const ThreeCarScene: React.FC<Props> = ({
       </div>
 
       {/* 3. 3D WEBGL CANVAS MOUNT */}
-      <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-pan-y" />
+      <div ref={containerRef} className="relative w-full h-full cursor-grab active:cursor-grabbing touch-pan-y" />
 
       {/* 3A. LEFT HUD PANEL: რას აანალიზებს (სისტემები) */}
-      <div className="absolute top-14 sm:top-16 left-2.5 sm:left-4 z-20 pointer-events-auto max-w-[230px] sm:max-w-[270px]">
+      <div style={{ opacity: isScanning ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute top-14 sm:top-16 left-2.5 sm:left-4 z-20 pointer-events-auto max-w-[230px] sm:max-w-[270px]">
         {leftHudOpen ? (
           <div className="bg-white/95 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
@@ -957,7 +1113,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       </div>
 
       {/* 3B. RIGHT HUD PANEL: რას ნახულობს და რა იპოვა */}
-      <div className="absolute top-14 sm:top-16 right-2.5 sm:right-4 z-20 pointer-events-auto max-w-[240px] sm:max-w-[290px]">
+      <div style={{ opacity: isScanning ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute top-14 sm:top-16 right-2.5 sm:right-4 z-20 pointer-events-auto max-w-[240px] sm:max-w-[290px]">
         {rightHudOpen ? (
           <div className="bg-white/95 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
@@ -1130,8 +1286,8 @@ export const ThreeCarScene: React.FC<Props> = ({
             <div className="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-2.5">
               <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
               <div>
-                <p className="text-xs font-black text-emerald-900">სისტემა ნორმაშია</p>
-                <p className="text-[10px] text-emerald-700">DTC შეცდომის კოდები ამ აგრეგატზე არ ფიქსირდება.</p>
+                <p className="text-xs font-black text-emerald-900">შესაბამისი DTC არ არის მოწოდებული</p>
+                <p className="text-[10px] text-emerald-700">ეს ნაწილის გამართულობას არ ადასტურებს; შესაძლებლობები სკანერზეა დამოკიდებული.</p>
               </div>
             </div>
           )}
@@ -1139,8 +1295,8 @@ export const ThreeCarScene: React.FC<Props> = ({
       )}
 
       {/* 5. FLOATING BOTTOM COMPONENT SELECTION PILLS */}
-      <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-        {componentsList.map(comp => {
+      {dtcCodes.length > 0 && <div className="absolute bottom-5 left-4 right-4 z-20 flex flex-nowrap overflow-x-auto items-center justify-start gap-1.5 sm:gap-2 pb-1">
+        {componentsList.filter(comp => getFaultForComponent(comp)).map(comp => {
           const isSelected = activePin === comp.id;
           const fault = getFaultForComponent(comp);
 
@@ -1148,7 +1304,7 @@ export const ThreeCarScene: React.FC<Props> = ({
             <button
               key={comp.id}
               onClick={() => handleSelectComponent(comp)}
-              className={`px-3 py-1.5 rounded-2xl text-xs font-bold backdrop-blur-md transition-all flex items-center gap-1.5 shadow-sm ${
+              className={`shrink-0 px-3 py-1.5 rounded-2xl text-xs font-bold backdrop-blur-md transition-all flex items-center gap-1.5 shadow-sm ${
                 isSelected
                   ? 'bg-navy text-white shadow-md scale-105 border border-gold font-black'
                   : 'neu-btn text-navy hover:text-gold'
@@ -1169,20 +1325,30 @@ export const ThreeCarScene: React.FC<Props> = ({
             </button>
           );
         })}
-      </div>
+      </div>}
 
-      {/* 6. HOLOGRAPHIC LASER SCAN OVERLAY */}
-      {isScanning && (
-        <div className="absolute inset-0 z-30 pointer-events-none flex flex-col items-center justify-center bg-white/40 backdrop-blur-[2px]">
-          <div className="w-52 h-52 rounded-full border-2 border-gold/50 animate-ping absolute"></div>
-          <div className="relative px-6 py-3 rounded-2xl neu-surface border border-gold shadow-gold-soft text-center">
-            <p className="text-navy font-black text-sm tracking-widest font-mono uppercase">
-              ⚡ OBD-II X-Ray ლაზერული სკანირება...
-            </p>
-            <p className="text-slate-500 text-xs mt-1">DTC კოდების ამოკითხვა n8n ვებჰუკით</p>
+      {isScanning ? (
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none" role="status" aria-live="polite">
+          <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/95 border border-sky-100 shadow-sm text-slate-700">
+            <Activity size={14} className="text-sky-500 motion-safe:animate-pulse" />
+            <span className="text-xs font-semibold tracking-wide">მიმდინარეობს სკანირება...</span>
           </div>
         </div>
-      )}
+      ) : onStartScan && dtcCodes.length === 0 ? (
+        <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              onStartScan();
+            }}
+            className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-xs sm:text-sm font-black shadow-lg hover:shadow-gold-soft hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border border-gold/40 group"
+          >
+            <Zap size={15} className="fill-slate-950 text-slate-950 group-hover:scale-110 transition-transform" />
+            <span>3D დიაგნოსტიკური სკანირება</span>
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 };
