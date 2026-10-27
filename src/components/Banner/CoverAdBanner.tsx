@@ -680,8 +680,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
           className="w-full h-full object-cover object-center lg:object-[68%_center] transform transition-all duration-1000 ease-out scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05]"
         />
 
-        {/* Targeted Left Gradient (Protects text contrast on left while leaving over 55% of the car photo wide open across the center and right) */}
-        <div className="absolute inset-y-0 left-0 w-full sm:w-3/5 lg:w-[48%] bg-gradient-to-r from-slate-950/95 via-slate-950/60 to-transparent pointer-events-none" />
+        {/* Targeted Left Gradient (Soft, localized text protection leaving over 60% of the car photo wide open and crystal clear) */}
+        <div className="absolute inset-y-0 left-0 w-full sm:w-1/2 lg:w-[44%] bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-transparent pointer-events-none" />
         
         {/* Subtle Top & Bottom Shadow for Controls Legibility */}
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent pointer-events-none" />
@@ -691,8 +691,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
       {/* Top Gold Laser Accent Line */}
       <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent opacity-85 z-20" />
 
-      {/* Main Content Container (Grand Panoramic Scale & Crystal Clear Effortless Reading) */}
-      <div className="relative z-10 px-4 sm:px-8 lg:px-12 py-5 sm:py-7 flex flex-col justify-between min-h-[340px] sm:min-h-[380px] md:min-h-[410px] lg:min-h-[430px]">
+      {/* Main Content Container (+25% Height Expansion so Car Photos Appear Grand, Complete and Uncropped) */}
+      <div className="relative z-10 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 flex flex-col justify-between min-h-[420px] sm:min-h-[480px] md:min-h-[520px] lg:min-h-[550px] xl:min-h-[570px]">
         
         {/* Top Header: Category Tag, Horizontal Service Selector Tabs & Drawer Toggle */}
         <div className="space-y-2.5">
@@ -770,7 +770,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
         </div>
 
         {/* Center: Two-Column Responsive Layout (Expanded, Highly Legible & Spacious) */}
-        <div className="my-2 sm:my-3 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center">
+        <div className="my-4 sm:my-6 lg:my-8 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center">
           {/* Left Column: Title, Subtitle, Full Explanation & Bullets (Expanded across 8 cols without narrow constraints) */}
           <div className="lg:col-span-8 xl:col-span-8 space-y-3 w-full">
             <div>
