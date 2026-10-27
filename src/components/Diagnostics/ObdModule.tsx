@@ -32,6 +32,9 @@ import {
   Bot,
   MapPin,
   Info,
+  HelpCircle,
+  ShoppingBag,
+  Smartphone,
   Building
 } from 'lucide-react';
 
@@ -83,9 +86,9 @@ export const ObdModule: React.FC<Props> = ({
   const [lastScanTime, setLastScanTime] = useState<string>('დღეს, 16:42');
   const [hasScanned, setHasScanned] = useState<boolean>(() => dtcCodes.length > 0);
 
-  // Embedded Adapter Instructions State (Closed by default to keep banner compact)
+  // Embedded Adapter Instructions State (Matches ObdAdapterConnectModal)
   const [selectedInstructionType, setSelectedInstructionType] = useState<string>(adapterType || 'cloud_4g');
-  const [isInstructionsOpen, setIsInstructionsOpen] = useState<boolean>(false);
+  const [showPortHint, setShowPortHint] = useState<boolean>(false);
 
   useEffect(() => {
     if (adapterType) {
@@ -237,89 +240,43 @@ export const ObdModule: React.FC<Props> = ({
     <div className="space-y-6">
       
       {/* 1. OBD Connection Bar (Master Telematics Deck) */}
-      {/* Unified Card — დიაგნოსტიკის ცნობის ბანერი (თეთრი ნეომორფული დიზაინი) */}
-      <div className="p-4 sm:p-5 lg:p-6 rounded-3xl neu-card shadow-neu-card border border-white text-navy space-y-4 transition-all">
+      {/* Unified Card — OBD-II ადაპტერთან დაკავშირება (ზუსტი სტილი და ფერები ObdAdapterConnectModal-იდან) */}
+      <div className="p-5 sm:p-6 lg:p-7 rounded-3xl neu-card shadow-neu-card border border-white/80 bg-[#ECEAE5] text-navy space-y-5 transition-all">
         
-        {/* Tier 1: Hardware Header & Action Buttons */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 pb-3.5 border-b border-slate-200/90">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-gold border border-amber-200/70 flex items-center justify-center shrink-0 shadow-xs">
-              {adapterType === 'bluetooth' ? (
-                <Bluetooth className={`w-5 h-5 ${isConnected ? 'animate-pulse text-blue-600' : 'text-gold'}`} />
-              ) : adapterType === 'cloud_4g' ? (
-                <Radio className={`w-5 h-5 ${isConnected ? 'animate-pulse text-emerald-600' : 'text-gold'}`} />
-              ) : (
-                <Wifi className={`w-5 h-5 ${isConnected ? 'animate-pulse text-emerald-600' : 'text-gold'}`} />
-              )}
+        {/* Header Bar */}
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl neu-circle flex items-center justify-center text-navy shadow-sm shrink-0 bg-white border border-white">
+              <Zap className="w-6 h-6 text-navy fill-navy" />
             </div>
-
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider shadow-2xs ${
-                  isConnected
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                    : 'bg-amber-100 text-amber-900 border border-amber-200'
-                }`}>
-                  {isConnected ? '🟢 LIVE კავშირი' : '🔶 DEMO რეჟიმი'}
-                </span>
-                <span className="text-[11px] font-mono text-slate-500 truncate">
-                  {adapterType === 'bluetooth' ? 'BLE 5.0' : adapterType === 'cloud_4g' ? 'IMEI: 863412059123456' : `IP: ${vehicle.obd_ip || 'Wi-Fi ELM327'}`}
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-100 text-slate-600 border border-slate-200 hidden sm:inline-block">
-                  {isConnected ? 'აქტიური ტელემეტრია' : 'სიმულაცია'}
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-black text-navy tracking-tight">
+                  OBD-II ადაპტერთან დაკავშირება
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-gold/15 text-navy border border-gold/30">
+                  {isConnected ? 'LIVE' : isHandshaking ? 'SYNC' : 'SETUP'}
                 </span>
               </div>
-              <h3 className="text-sm sm:text-base font-black mt-0.5 text-navy tracking-tight truncate">
-                AutoHub 4G OBD სმარტ-დონგლი & დიაგნოსტიკის ცენტრი
-              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {isConnected
+                  ? 'კავშირი წარმატებით დამყარდა! დაიწყეთ მანქანის დიაგნოსტიკა'
+                  : isHandshaking
+                  ? 'მიმდინარეობს ECU ბორტ-კომპიუტერთან სინქრონიზაცია...'
+                  : 'აირჩიეთ ადაპტერის ტიპი და დააჭირეთ დაკავშირებას'}
+              </p>
             </div>
           </div>
 
-          {/* Essential Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0 self-stretch sm:self-end lg:self-auto justify-end flex-wrap">
-            {/* Instructions Toggle Button */}
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                setIsInstructionsOpen(!isInstructionsOpen);
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
-                isInstructionsOpen
-                  ? 'bg-navy text-gold font-black border-navy shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-              }`}
-              title="ადაპტერის შეერთების ინსტრუქციის ნახვა"
-            >
-              <Info size={13} className={isInstructionsOpen ? 'text-gold' : 'text-slate-600'} />
-              <span>ინსტრუქცია</span>
-              <ChevronDown size={13} className={`transition-transform duration-200 ${isInstructionsOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {/* Adapter Settings Modal Trigger */}
-            {onOpenAdapterModal && (
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  onOpenAdapterModal();
-                }}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all flex items-center gap-1.5"
-                title="ადაპტერის ტიპის არჩევა და შეკვეთა"
-              >
-                <Settings size={13} className="text-slate-600" />
-                <span className="hidden sm:inline">პარამეტრები</span>
-              </button>
-            )}
-
-            {/* Connected ECU & Disconnect Actions */}
+          {/* Right Header Status Actions (NO instructions or settings buttons) */}
+          <div className="flex items-center gap-2 shrink-0">
             {isConnected && (
               <>
                 <button
                   type="button"
                   onClick={startEcuHandshakeAndDiscovery}
                   disabled={isHandshaking}
-                  className="px-3 py-1.5 rounded-xl text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-xl text-xs font-black bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition-all flex items-center gap-1 shadow-2xs"
                   title="OBD ECU-დან ავტომობილის მონაცემების ამოკითხვა"
                 >
                   <Sparkles size={13} className="text-gold" />
@@ -338,7 +295,6 @@ export const ObdModule: React.FC<Props> = ({
               </>
             )}
 
-            {/* Clear Check Engine Button (lights up when DTCs found) */}
             {isConnected && dtcCodes.length > 0 && (
               <button
                 type="button"
@@ -352,484 +308,373 @@ export const ObdModule: React.FC<Props> = ({
                 <span>ჩეკის ჩაქრობა ({dtcCodes.length})</span>
               </button>
             )}
-
-            {/* Header Action Button */}
-            {!isConnected ? (
-              <button
-                type="button"
-                onClick={handleToggleConnection}
-                disabled={isHandshaking}
-                className="px-4 py-1.5 rounded-xl text-xs font-black bg-gold hover:bg-gold/90 text-navy transition-all shadow-neu-button shrink-0 flex items-center justify-center gap-1.5 active:scale-95"
-              >
-                <Radio size={13} className="text-navy" />
-                <span>{isHandshaking ? 'მიერთება...' : 'ადაპტერის მიერთება'}</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleOneTouchScan}
-                disabled={isScanning || isHandshaking}
-                className="px-4 py-1.5 rounded-xl text-xs font-black bg-gold hover:bg-gold/90 text-navy transition-all shadow-neu-button shrink-0 flex items-center justify-center gap-1.5 active:scale-95"
-              >
-                <RefreshCw size={13} className={`text-navy ${isScanning ? 'animate-spin' : ''}`} />
-                <span>{isScanning ? 'სკანირება...' : hasScanned ? 'ხელახალი სკანირება' : 'სკანირება'}</span>
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Tier 2: 4 Interactive Adapter & Action Cards (4G Cloud, Wi-Fi, Bluetooth, ადაპტერის მიერთება) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
-          
-          {/* Card 1: 4G Cloud (LTE-M / SIM) */}
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              if (isInstructionsOpen && selectedInstructionType === 'cloud_4g') {
-                setIsInstructionsOpen(false);
-              } else {
+        {/* High-Tech Connection Animation during Handshake */}
+        {isHandshaking && (
+          <div className="p-5 sm:p-6 rounded-3xl bg-white border border-gold/40 shadow-xl space-y-4 animate-fade-in text-center">
+            <div className="relative py-3 flex items-center justify-around">
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-2xl bg-navy text-gold flex items-center justify-center shadow-md relative">
+                  <Smartphone className="w-6 h-6" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white absolute -top-1 -right-1 animate-ping"></span>
+                </div>
+                <span className="text-[10px] font-bold text-navy mt-1 font-mono">AutoHub AI</span>
+              </div>
+
+              <div className="flex-1 max-w-[180px] flex items-center justify-center relative px-2">
+                <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden relative">
+                  <div className="h-full bg-gradient-to-r from-gold via-amber-400 to-emerald-500 w-1/2 rounded-full animate-pulse mx-auto"></div>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-gold/20 flex items-center justify-center animate-ping">
+                    <Zap className="w-3.5 h-3.5 text-gold" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-2xl bg-gold text-navy flex items-center justify-center shadow-md relative">
+                  <Car className="w-6 h-6" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white absolute -top-1 -right-1 animate-pulse"></span>
+                </div>
+                <span className="text-[10px] font-bold text-navy mt-1 font-mono">{vehicle.brand} {vehicle.model}</span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-mono text-amber-950 font-bold flex items-center justify-center gap-2">
+              <RefreshCw size={13} className="animate-spin text-gold" />
+              <span>
+                {selectedInstructionType === 'wifi'
+                  ? 'Wi-Fi ELM327 სინქრონიზაცია...'
+                  : selectedInstructionType === 'bluetooth'
+                  ? 'Bluetooth BLE დაწყვილება...'
+                  : '4G LTE-M Cloud დაკავშირება...'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* 1. აირჩიეთ ადაპტერის ტიპი: */}
+        <div>
+          <label className="text-xs font-black text-navy uppercase tracking-wider block mb-2.5">
+            1. აირჩიეთ ადაპტერის ტიპი:
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* 4G / GPS Cloud */}
+            <div
+              onClick={() => {
+                sounds.playClick();
                 setSelectedInstructionType('cloud_4g');
-                setIsInstructionsOpen(true);
-              }
-            }}
-            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between group active:scale-[0.99] ${
-              isInstructionsOpen && selectedInstructionType === 'cloud_4g'
-                ? 'bg-amber-50/70 border-gold ring-2 ring-gold/40 shadow-md'
-                : 'bg-slate-50/80 hover:bg-slate-100/90 border-slate-200/90 shadow-2xs hover:shadow-xs'
-            }`}
-          >
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
-                  isInstructionsOpen && selectedInstructionType === 'cloud_4g'
-                    ? 'bg-gold text-navy border-gold'
-                    : 'bg-amber-100/70 text-amber-700 border-amber-200/80 group-hover:bg-amber-200/70'
-                }`}>
-                  <Radio size={16} />
+              }}
+              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+                selectedInstructionType === 'cloud_4g'
+                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
+                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+              } ${isHandshaking ? 'pointer-events-none opacity-80' : ''}`}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                    selectedInstructionType === 'cloud_4g' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  <Radio className="w-5 h-5" />
                 </div>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold font-sans bg-amber-100 text-amber-800 border border-amber-200">
-                  4G Cloud
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-amber-100 text-amber-950 border-amber-300 font-black ring-1 ring-amber-400/40">
+                  ★ რეკომენდებული
                 </span>
               </div>
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-sans">ადაპტერის ტიპი</span>
-              <strong className="text-xs sm:text-sm font-black text-navy block font-sans mt-0.5 truncate">
-                4G Cloud (LTE-M)
-              </strong>
-              <span className="text-[11px] text-slate-600 block font-sans mt-0.5 truncate">
-                SIM ბარათი • 24/7 Cloud
-              </span>
+
+              <div>
+                <h4 className="text-xs sm:text-sm font-black text-navy">4G / GPS Cloud</h4>
+                <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                  4G LTE Dongle / Teltonika / GPS ტრეკერი
+                </p>
+                <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
+                  ● 24/7 ონლაინ მონიტორინგი & GPS
+                </span>
+              </div>
+
+              {selectedInstructionType === 'cloud_4g' && (
+                <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
+                  <Check size={11} className="stroke-[3]" />
+                </div>
+              )}
             </div>
 
-            <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
-              isInstructionsOpen && selectedInstructionType === 'cloud_4g'
-                ? 'border-gold/30 text-navy'
-                : 'border-slate-200 text-slate-500 group-hover:text-navy'
-            }`}>
-              <span>ინსტრუქცია</span>
-              <ChevronDown size={13} className={`transition-transform duration-200 ${
-                isInstructionsOpen && selectedInstructionType === 'cloud_4g' ? 'rotate-180 text-navy' : ''
-              }`} />
-            </div>
-          </button>
-
-          {/* Card 2: Wi-Fi ადაპტერი (ELM327) */}
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              if (isInstructionsOpen && selectedInstructionType === 'wifi') {
-                setIsInstructionsOpen(false);
-              } else {
+            {/* Wi-Fi ადაპტერი */}
+            <div
+              onClick={() => {
+                sounds.playClick();
                 setSelectedInstructionType('wifi');
-                setIsInstructionsOpen(true);
-              }
-            }}
-            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between group active:scale-[0.99] ${
-              isInstructionsOpen && selectedInstructionType === 'wifi'
-                ? 'bg-amber-50/70 border-gold ring-2 ring-gold/40 shadow-md'
-                : 'bg-slate-50/80 hover:bg-slate-100/90 border-slate-200/90 shadow-2xs hover:shadow-xs'
-            }`}
-          >
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
-                  isInstructionsOpen && selectedInstructionType === 'wifi'
-                    ? 'bg-gold text-navy border-gold'
-                    : 'bg-blue-100/70 text-blue-700 border-blue-200/80 group-hover:bg-blue-200/70'
-                }`}>
-                  <Wifi size={16} />
+              }}
+              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+                selectedInstructionType === 'wifi'
+                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
+                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+              } ${isHandshaking ? 'pointer-events-none opacity-80' : ''}`}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                    selectedInstructionType === 'wifi' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  <Wifi className="w-5 h-5" />
                 </div>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold font-sans bg-blue-100 text-blue-800 border border-blue-200">
-                  Wi-Fi OBDII
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-200">
+                  სწრაფი (50 PID)
                 </span>
               </div>
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-sans">ადაპტერის ტიპი</span>
-              <strong className="text-xs sm:text-sm font-black text-navy block font-sans mt-0.5 truncate">
-                Wi-Fi ადაპტერი
-              </strong>
-              <span className="text-[11px] text-slate-600 block font-sans mt-0.5 truncate">
-                ELM327 • WiFi_OBDII
-              </span>
+
+              <div>
+                <h4 className="text-xs sm:text-sm font-black text-navy">Wi-Fi ადაპტერი</h4>
+                <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                  ELM327 Wi-Fi / vLinker / UniCarScan
+                </p>
+                <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
+                  ● მაღალი სიჩქარე (50 PID/წმ)
+                </span>
+              </div>
+
+              {selectedInstructionType === 'wifi' && (
+                <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
+                  <Check size={11} className="stroke-[3]" />
+                </div>
+              )}
             </div>
 
-            <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
-              isInstructionsOpen && selectedInstructionType === 'wifi'
-                ? 'border-gold/30 text-navy'
-                : 'border-slate-200 text-slate-500 group-hover:text-navy'
-            }`}>
-              <span>ინსტრუქცია</span>
-              <ChevronDown size={13} className={`transition-transform duration-200 ${
-                isInstructionsOpen && selectedInstructionType === 'wifi' ? 'rotate-180 text-navy' : ''
-              }`} />
-            </div>
-          </button>
-
-          {/* Card 3: Bluetooth ადაპტერი (BLE 5.0) */}
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              if (isInstructionsOpen && selectedInstructionType === 'bluetooth') {
-                setIsInstructionsOpen(false);
-              } else {
+            {/* Bluetooth ადაპტერი */}
+            <div
+              onClick={() => {
+                sounds.playClick();
                 setSelectedInstructionType('bluetooth');
-                setIsInstructionsOpen(true);
-              }
-            }}
-            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between group active:scale-[0.99] ${
-              isInstructionsOpen && selectedInstructionType === 'bluetooth'
-                ? 'bg-amber-50/70 border-gold ring-2 ring-gold/40 shadow-md'
-                : 'bg-slate-50/80 hover:bg-slate-100/90 border-slate-200/90 shadow-2xs hover:shadow-xs'
-            }`}
-          >
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
-                  isInstructionsOpen && selectedInstructionType === 'bluetooth'
-                    ? 'bg-gold text-navy border-gold'
-                    : 'bg-indigo-100/70 text-indigo-700 border-indigo-200/80 group-hover:bg-indigo-200/70'
-                }`}>
-                  <Bluetooth size={16} />
+              }}
+              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+                selectedInstructionType === 'bluetooth'
+                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
+                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+              } ${isHandshaking ? 'pointer-events-none opacity-80' : ''}`}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                    selectedInstructionType === 'bluetooth' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  <Bluetooth className="w-5 h-5" />
                 </div>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold font-sans bg-indigo-100 text-indigo-800 border border-indigo-200">
-                  BLE 5.0
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-blue-100 text-blue-800 border-blue-200">
+                  BLE 4.0 / 5.0
                 </span>
               </div>
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-sans">ადაპტერის ტიპი</span>
-              <strong className="text-xs sm:text-sm font-black text-navy block font-sans mt-0.5 truncate">
-                Bluetooth ადაპტერი
-              </strong>
-              <span className="text-[11px] text-slate-600 block font-sans mt-0.5 truncate">
-                BLE 5.0 • vLinker / OBDII
+
+              <div>
+                <h4 className="text-xs sm:text-sm font-black text-navy">Bluetooth ადაპტერი</h4>
+                <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                  ELM327 BT / Carista / OBDLink CX / vLinker MC+
+                </p>
+                <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
+                  ● დაბალი ენერგომოხმარება
+                </span>
+              </div>
+
+              {selectedInstructionType === 'bluetooth' && (
+                <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
+                  <Check size={11} className="stroke-[3]" />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 2. დამაკავშირებელი ინსტრუქცია */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border border-slate-200/80 shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <h4 className="text-xs font-black text-navy flex items-center gap-1.5 uppercase tracking-wide">
+              <span>2. დამაკავშირებელი ინსტრუქცია</span>
+              <span className="text-gold font-mono font-bold">
+                ({selectedInstructionType === 'wifi' ? 'Wi-Fi' : selectedInstructionType === 'bluetooth' ? 'Bluetooth' : '4G CLOUD'})
               </span>
-            </div>
+            </h4>
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setShowPortHint(!showPortHint);
+              }}
+              className="text-[11px] font-bold text-navy hover:text-gold flex items-center gap-1 transition-colors"
+            >
+              <HelpCircle size={13} className="text-gold" />
+              <span>სად არის OBD პორტი?</span>
+            </button>
+          </div>
 
-            <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
-              isInstructionsOpen && selectedInstructionType === 'bluetooth'
-                ? 'border-gold/30 text-navy'
-                : 'border-slate-200 text-slate-500 group-hover:text-navy'
-            }`}>
-              <span>ინსტრუქცია</span>
-              <ChevronDown size={13} className={`transition-transform duration-200 ${
-                isInstructionsOpen && selectedInstructionType === 'bluetooth' ? 'rotate-180 text-navy' : ''
-              }`} />
+          {/* Collapsible Port Location Hint */}
+          {showPortHint && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 animate-fade-in flex items-start gap-2.5">
+              <Info size={16} className="text-gold shrink-0 mt-0.5" />
+              <div className="leading-relaxed">
+                <strong>სად მდებარეობს OBD-II პორტი?</strong>
+                <p className="text-[11px] text-amber-800 mt-0.5">
+                  უმეტეს ავტომობილში (95%) პორტი მდებარეობს მძღოლის მხარეს, საჭის ქვემოთ, მუხლების დონეზე ან დაცვის პლასტმასის საფარის ქვეშ.
+                </p>
+              </div>
             </div>
-          </button>
+          )}
 
-          {/* Card 4: ადაპტერის მიერთება / სკანირება (Primary Action Card) */}
+          {/* Wi-Fi Steps */}
+          {selectedInstructionType === 'wifi' && (
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <div className="w-6 h-6 rounded-full bg-amber-500 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  1
+                </div>
+                <div>
+                  <strong className="text-navy font-bold">შეაერთეთ ადაპტერი მანქანაში:</strong>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    ჩასვით Wi-Fi ადაპტერი OBD-II პორტში (საჭის ქვეშ მარცხნივ). ინდიკატორი აინთება.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <div className="w-6 h-6 rounded-full bg-amber-500 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  2
+                </div>
+                <div>
+                  <strong className="text-navy font-bold">ჩართეთ მანქანის აალება (Ignition ON):</strong>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    გადაატრიალეთ გასაღები 2-ე პოზიციაზე (ისე რომ პანელი აინთოს) ან დაქოქეთ ავტომობილი.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <div className="w-6 h-6 rounded-full bg-amber-500 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  3
+                </div>
+                <div>
+                  <strong className="text-navy font-bold">დაუკავშირდით ადაპტერის Wi-Fi ქსელს:</strong>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    გახსენით ტელეფონის Wi-Fi, აირჩიეთ <code className="px-1.5 py-0.5 rounded bg-slate-200 font-mono font-bold text-navy">WiFi_OBDII</code> ან <code className="px-1.5 py-0.5 rounded bg-slate-200 font-mono font-bold text-navy">vLinker-WiFi</code>. პაროლი: <span className="font-mono font-bold text-gold">12345678</span> (ან პაროლის გარეშე).
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Bluetooth Steps */}
+          {selectedInstructionType === 'bluetooth' && (
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <div className="w-6 h-6 rounded-full bg-amber-500 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  1
+                </div>
+                <div>
+                  <strong className="text-navy font-bold">ჩასვით Bluetooth OBD ადაპტერი:</strong>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    შეაერთეთ Bluetooth ადაპტერი OBD პორტში (საჭის ქვეშ).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <div className="w-6 h-6 rounded-full bg-amber-500 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  2
+                </div>
+                <div>
+                  <strong className="text-navy font-bold">ჩართეთ აალება (Ignition ON):</strong>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    ჩართეთ მანქანის ელექტროენერგია გასაღებით ან Start/Stop ღილაკით.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <div className="w-6 h-6 rounded-full bg-amber-500 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  3
+                </div>
+                <div>
+                  <strong className="text-navy font-bold">Bluetooth დაწყვილება (Pairing):</strong>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    ტელეფონში მოძებნეთ <code className="px-1.5 py-0.5 rounded bg-slate-200 font-mono font-bold text-navy">OBDII</code> ან <code className="px-1.5 py-0.5 rounded bg-slate-200 font-mono font-bold text-navy">OBDLink CX</code> (პინი: <span className="font-mono font-bold">1234</span> ან <span className="font-mono font-bold">0000</span>).
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4G Steps */}
+          {selectedInstructionType === 'cloud_4g' && (
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <div className="w-6 h-6 rounded-full bg-amber-500 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  1
+                </div>
+                <div>
+                  <strong className="text-navy font-bold">აქტიური SIM ბარათი:</strong>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    ჩადეთ აქტიური 4G/LTE SIM ბარათი ინტერნეტის პაკეტით მოწყობილობაში.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <div className="w-6 h-6 rounded-full bg-amber-500 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  2
+                </div>
+                <div>
+                  <strong className="text-navy font-bold">შეაერთეთ OBD-II პორტში:</strong>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    მოწყობილობა იღებს 12V კვებას. დაელოდეთ LED ინდიკატორების განათებას.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 3. Action Footer Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+          {onOpenAdapterModal && (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                onOpenAdapterModal();
+              }}
+              className="btn-stitch-soft w-full sm:w-auto px-6 py-3.5 text-xs font-bold flex items-center justify-center gap-2 group transition-all"
+            >
+              <ShoppingBag className="w-4 h-4 text-gold group-hover:scale-110 transition-transform" />
+              <span>ადაპტერის შეკვეთა</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => {
               sounds.playClick();
               if (!isConnected) {
-                handleToggleConnection();
+                startEcuHandshakeAndDiscovery();
               } else {
                 handleOneTouchScan();
               }
             }}
             disabled={isHandshaking}
-            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between group active:scale-[0.98] shadow-md hover:shadow-lg ${
-              !isConnected
-                ? 'bg-gradient-to-br from-navy via-slate-900 to-navy text-white border-gold/60 hover:border-gold'
-                : 'bg-gradient-to-br from-emerald-700 via-emerald-800 to-slate-900 text-white border-emerald-400'
-            }`}
+            className="btn-stitch-primary w-full sm:flex-1 py-3.5 sm:py-4 px-8 text-sm sm:text-base font-black flex items-center justify-center gap-2 shadow-lg"
           >
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-bold shadow-xs ${
-                  !isConnected
-                    ? 'bg-gold text-slate-950'
-                    : 'bg-white text-emerald-800'
-                }`}>
-                  {!isConnected ? (
-                    <Radio size={16} className={isHandshaking ? 'animate-pulse' : ''} />
-                  ) : (
-                    <RefreshCw size={16} className={isScanning ? 'animate-spin' : ''} />
-                  )}
-                </div>
-                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold font-sans ${
-                  !isConnected
-                    ? 'bg-gold text-slate-950 font-black'
-                    : 'bg-emerald-400 text-slate-950 font-black'
-                }`}>
-                  {!isConnected ? 'მოქმედება' : 'LIVE აქტიურია'}
-                </span>
-              </div>
-              <span className={`text-[10px] uppercase tracking-wider block font-sans font-bold ${
-                !isConnected ? 'text-amber-300' : 'text-emerald-200'
-              }`}>
-                {!isConnected ? 'სწრაფი კავშირი' : 'დიაგნოსტიკა'}
-              </span>
-              <strong className="text-xs sm:text-sm font-black text-white block font-sans mt-0.5 truncate">
-                {!isConnected
-                  ? (isHandshaking ? 'მიერთება...' : 'ადაპტერის მიერთება')
-                  : (isScanning ? 'სკანირება...' : hasScanned ? 'ხელახალი სკანირება' : 'სკანირების დაწყება')}
-              </strong>
-              <span className={`text-[11px] block font-sans mt-0.5 truncate ${
-                !isConnected ? 'text-slate-300' : 'text-emerald-100'
-              }`}>
-                {!isConnected ? 'დააჭირეთ დასაკავშირებლად' : 'ECU მზადაა • დააჭირეთ'}
-              </span>
-            </div>
-
-            <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold ${
-              !isConnected ? 'border-white/15 text-gold' : 'border-white/15 text-emerald-200'
-            }`}>
-              <span>{!isConnected ? 'დაკავშირება' : 'სკანირება'}</span>
-              <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
-            </div>
+            <Zap className="w-5 h-5 text-navy fill-navy" />
+            <span>
+              {isConnected
+                ? (isScanning ? 'სკანირება...' : hasScanned ? 'ხელახალი სკანირება' : 'სკანირების დაწყება')
+                : (isHandshaking ? 'მიერთება მიმდინარეობს...' : 'დაკავშირება')}
+            </span>
+            <ArrowRight size={17} />
           </button>
         </div>
-
-        {/* Tier 3: Direct Embedded Adapter Instructions (ადაპტერის დაერთების ინსტრუქცია) */}
-        {isInstructionsOpen && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/90 border border-slate-200 shadow-inner space-y-3.5 animate-fade-in text-navy">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-gold/20 text-navy flex items-center justify-center shrink-0">
-                  <Zap size={14} className="text-navy" />
-                </div>
-                <div>
-                  <span className="text-xs sm:text-sm font-black text-navy uppercase tracking-wider flex items-center gap-1.5">
-                    {selectedInstructionType === 'cloud_4g'
-                      ? '4G Cloud ადაპტერის შეერთების ინსტრუქცია'
-                      : selectedInstructionType === 'wifi'
-                      ? 'Wi-Fi ადაპტერის შეერთების ინსტრუქცია'
-                      : 'Bluetooth ადაპტერის შეერთების ინსტრუქცია'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Adapter Type Selector Tabs & Close Button */}
-              <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-1 p-0.5 rounded-xl bg-slate-200/80 border border-slate-300 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setSelectedInstructionType('cloud_4g');
-                    }}
-                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 ${
-                      selectedInstructionType === 'cloud_4g'
-                        ? 'bg-navy text-gold font-black shadow-xs'
-                        : 'text-slate-600 hover:text-navy'
-                    }`}
-                  >
-                    <Radio size={12} />
-                    <span>4G Cloud</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setSelectedInstructionType('wifi');
-                    }}
-                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 ${
-                      selectedInstructionType === 'wifi'
-                        ? 'bg-navy text-gold font-black shadow-xs'
-                        : 'text-slate-600 hover:text-navy'
-                    }`}
-                  >
-                    <Wifi size={12} />
-                    <span>Wi-Fi</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setSelectedInstructionType('bluetooth');
-                    }}
-                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 ${
-                      selectedInstructionType === 'bluetooth'
-                        ? 'bg-navy text-gold font-black shadow-xs'
-                        : 'text-slate-600 hover:text-navy'
-                    }`}
-                  >
-                    <Bluetooth size={12} />
-                    <span>Bluetooth</span>
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setIsInstructionsOpen(false);
-                  }}
-                  className="p-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-600 hover:text-navy transition-all"
-                  title="დახურვა"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            </div>
-
-            {/* Instructions Body: 3 Step Cards */}
-            {selectedInstructionType === 'cloud_4g' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs font-mono">
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-navy text-gold font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    1
-                  </div>
-                  <div>
-                    <strong className="text-navy block font-bold font-sans">1. აქტიური SIM ბარათი</strong>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans">
-                      მოათავსეთ 4G LTE/M SIM ბარათი მოწყობილობაში.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-navy text-gold font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    2
-                  </div>
-                  <div>
-                    <strong className="text-navy block font-bold font-sans">2. შეაერთეთ OBD პორტში</strong>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans">
-                      ჩასვით საჭის ქვემოთ (16-Pin DLC). LED აინთება მწვანედ.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-navy text-gold font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    3
-                  </div>
-                  <div>
-                    <strong className="text-navy block font-bold font-sans">3. სინქრონიზაცია & დაკავშირება</strong>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans">
-                      დააჭირეთ „ადაპტერის მიერთებას“ და სისტემა დაუკავშირდება.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {selectedInstructionType === 'wifi' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs font-mono">
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-navy text-gold font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    1
-                  </div>
-                  <div>
-                    <strong className="text-navy block font-bold font-sans">1. შეაერთეთ & ანთება ჩართეთ</strong>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans">
-                      ჩასვით Wi-Fi ადაპტერი OBD პორტში და ჩართეთ Ignition ON (2-ე პოზიცია).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-navy text-gold font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    2
-                  </div>
-                  <div>
-                    <strong className="text-navy block font-bold font-sans">2. დაუკავშირდით Wi-Fi-ს</strong>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans">
-                      ტელეფონში აირჩიეთ <code className="text-navy font-bold">WiFi_OBDII</code> (პაროლი: <span className="text-navy font-mono font-bold">12345678</span>).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-navy text-gold font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    3
-                  </div>
-                  <div>
-                    <strong className="text-navy block font-bold font-sans">3. დააჭირეთ დაკავშირებას</strong>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans">
-                      დააჭირეთ „ადაპტერის მიერთებას“ ECU-დან მონაცემების წასაკითხად.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {selectedInstructionType === 'bluetooth' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs font-mono">
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-navy text-gold font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    1
-                  </div>
-                  <div>
-                    <strong className="text-navy block font-bold font-sans">1. ჩასვით BT ადაპტერი</strong>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans">
-                      შეაერთეთ Bluetooth ELM327 ან vLinker ადაპტერი OBD პორტში.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-navy text-gold font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    2
-                  </div>
-                  <div>
-                    <strong className="text-navy block font-bold font-sans">2. Bluetooth დაწყვილება</strong>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans">
-                      მოძებნეთ <code className="text-navy font-bold">OBDII</code> (PIN: <span className="text-navy font-mono font-bold">1234</span> ან <span className="text-navy font-mono font-bold">0000</span>).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-navy text-gold font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    3
-                  </div>
-                  <div>
-                    <strong className="text-navy block font-bold font-sans">3. სკანირების დაწყება</strong>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans">
-                      დააჭირეთ „ადაპტერის მიერთებას“ და დაიწყეთ დიაგნოსტიკა.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Helpful Port Location Tip */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-200 text-[11px] text-slate-600 font-sans">
-              <div className="flex items-center gap-1.5">
-                <Info size={14} className="text-navy shrink-0" />
-                <span><strong>სად არის პორტი?</strong> 95% მანქანებში პორტი მდებარეობს საჭის ქვემოთ მარცხნივ, მუხლების დონეზე.</span>
-              </div>
-              {onOpenAdapterModal && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    onOpenAdapterModal();
-                  }}
-                  className="text-navy hover:text-gold font-bold shrink-0 flex items-center gap-1 transition-colors"
-                >
-                  <span>დეტალური პარამეტრები & შეკვეთა</span>
-                  <ChevronRight size={12} />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Missing Vehicle Info Notice */}
