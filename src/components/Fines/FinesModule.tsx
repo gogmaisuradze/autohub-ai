@@ -664,101 +664,6 @@ export const FinesModule: React.FC<Props> = ({
       />
 
       {/* ======================================================== */}
-      {/* 0. TOP COMPLETION INDICATOR: FILLED & REMAINING CHIPS     */}
-      {/* ======================================================== */}
-      <div className={`p-4 sm:p-5 rounded-3xl neu-card border transition-all ${
-        hasMissingRequirements
-          ? 'border-amber-300/80 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 shadow-sm'
-          : 'border-emerald-300/80 bg-gradient-to-r from-emerald-500/10 via-emerald-400/5 to-emerald-500/10 shadow-sm'
-      }`}>
-        {/* Progress Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5">
-          <div className="flex items-center gap-2.5">
-            {hasMissingRequirements ? (
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0 border border-amber-300">
-                <AlertTriangle size={18} className="animate-pulse" />
-              </div>
-            ) : (
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-300">
-                <CheckCircle size={18} />
-              </div>
-            )}
-            <div>
-              <div className="text-xs sm:text-sm font-black text-navy flex items-center gap-2">
-                <span>პროფილის შევსების სტატუსი:</span>
-                <span className={`font-mono text-sm sm:text-base font-extrabold ${
-                  hasMissingRequirements ? 'text-amber-800' : 'text-emerald-700'
-                }`}>
-                  {completionPercentage}%
-                </span>
-                <span className="text-[11px] font-bold text-slate-500">
-                  ({filledCount} / {totalCount} შევსებულია)
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-600">
-                {hasMissingRequirements
-                  ? 'დარჩენილი ველები მონიშნულია მნათობი ინდიკატორით. დააჭირეთ შესავსებად:'
-                  : 'ავტო-პასპორტის ყველა რეკვიზიტი სრულად არის შევსებული და სინქრონიზებული.'}
-              </p>
-            </div>
-          </div>
-
-          {onNavigateToAiClarification && hasMissingRequirements && (
-            <button
-              onClick={() => onNavigateToAiClarification('გამარჯობა AI მექანიკოსო, როგორ შევავსო მართვის მოწმობისა და ავტო-პასპორტის მონაცემები ვიდეოჯარიმების გადასამოწმებლად?')}
-              className="px-3 py-1.5 rounded-xl bg-white text-navy border border-slate-200 text-xs font-bold flex items-center gap-1.5 shadow-xs hover:bg-slate-50 transition-all shrink-0"
-            >
-              <Bot size={14} className="text-gold" />
-              <span>AI დაზუსტება</span>
-            </button>
-          )}
-        </div>
-
-        {/* Dynamic Progress Bar */}
-        <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden mb-3.5">
-          <div
-            className={`h-full transition-all duration-700 ease-out ${
-              hasMissingRequirements
-                ? 'bg-gradient-to-r from-amber-400 to-amber-500'
-                : 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-            }`}
-            style={{ width: `${completionPercentage}%` }}
-          />
-        </div>
-
-        {/* 5 Chips: Filled (Check) or Missing (Glowing Pulse) */}
-        <div className="flex flex-wrap items-center gap-2">
-          {profileRequirements.map(item => (
-            item.isFilled ? (
-              <button
-                key={item.id}
-                onClick={item.onAction}
-                className="px-3 py-1.5 rounded-xl bg-white/95 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-1.5 shadow-xs hover:bg-emerald-50 transition-all group"
-                title={`${item.label}: ${item.value}`}
-              >
-                <Check size={14} className="text-emerald-600 group-hover:scale-110 transition-transform" />
-                <span className="text-slate-500 font-normal">{item.shortLabel}:</span>
-                <span className="font-mono text-navy font-black max-w-[120px] truncate">{item.value}</span>
-              </button>
-            ) : (
-              <button
-                key={item.id}
-                onClick={item.onAction}
-                className="relative px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-400/30 to-amber-500/20 border-2 border-amber-400 text-amber-950 text-xs font-black flex items-center gap-2 cursor-pointer animate-pulse shadow-[0_0_16px_rgba(245,158,11,0.65)] hover:scale-105 hover:bg-amber-400/40 transition-all"
-                title={`დარჩენილია: დააჭირეთ ${item.label}-ს შესაყვანად`}
-              >
-                <Sparkles size={14} className="text-amber-700 animate-spin" style={{ animationDuration: '4s' }} />
-                <span>+ {item.label}</span>
-                <span className="px-1.5 py-0.5 rounded bg-amber-400/80 text-[10px] text-amber-950 font-mono font-black uppercase">
-                  დარჩენილია
-                </span>
-              </button>
-            )
-          ))}
-        </div>
-      </div>
-
-      {/* ======================================================== */}
       {/* 1. AUTHENTIC PASSPORT & DRIVER PROFILE CARD (RECTANGULAR) */}
       {/* ======================================================== */}
       <div className="rounded-2xl neu-card shadow-neu-card border border-slate-200/90 overflow-hidden relative">
@@ -1306,6 +1211,101 @@ export const FinesModule: React.FC<Props> = ({
             <DrivingExamWidget />
           </div>
         )}
+      </div>
+
+      {/* ======================================================== */}
+      {/* 2.1 PROFILE COMPLETION INDICATOR (ბილეთების ქვემოთ)      */}
+      {/* ======================================================== */}
+      <div className={`p-4 sm:p-5 rounded-3xl neu-card border transition-all ${
+        hasMissingRequirements
+          ? 'border-amber-300/80 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 shadow-sm'
+          : 'border-emerald-300/80 bg-gradient-to-r from-emerald-500/10 via-emerald-400/5 to-emerald-500/10 shadow-sm'
+      }`}>
+        {/* Progress Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5">
+          <div className="flex items-center gap-2.5">
+            {hasMissingRequirements ? (
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0 border border-amber-300">
+                <AlertTriangle size={18} className="animate-pulse" />
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-300">
+                <CheckCircle size={18} />
+              </div>
+            )}
+            <div>
+              <div className="text-xs sm:text-sm font-black text-navy flex items-center gap-2">
+                <span>პროფილის შევსების სტატუსი:</span>
+                <span className={`font-mono text-sm sm:text-base font-extrabold ${
+                  hasMissingRequirements ? 'text-amber-800' : 'text-emerald-700'
+                }`}>
+                  {completionPercentage}%
+                </span>
+                <span className="text-[11px] font-bold text-slate-500">
+                  ({filledCount} / {totalCount} შევსებულია)
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600">
+                {hasMissingRequirements
+                  ? 'დარჩენილი ველები მონიშნულია მნათობი ინდიკატორით. დააჭირეთ შესავსებად:'
+                  : 'ავტო-პასპორტის ყველა რეკვიზიტი სრულად არის შევსებული და სინქრონიზებული.'}
+              </p>
+            </div>
+          </div>
+
+          {onNavigateToAiClarification && hasMissingRequirements && (
+            <button
+              onClick={() => onNavigateToAiClarification('გამარჯობა AI მექანიკოსო, როგორ შევავსო მართვის მოწმობისა და ავტო-პასპორტის მონაცემები ვიდეოჯარიმების გადასამოწმებლად?')}
+              className="px-3 py-1.5 rounded-xl bg-white text-navy border border-slate-200 text-xs font-bold flex items-center gap-1.5 shadow-xs hover:bg-slate-50 transition-all shrink-0"
+            >
+              <Bot size={14} className="text-gold" />
+              <span>AI დაზუსტება</span>
+            </button>
+          )}
+        </div>
+
+        {/* Dynamic Progress Bar */}
+        <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden mb-3.5">
+          <div
+            className={`h-full transition-all duration-700 ease-out ${
+              hasMissingRequirements
+                ? 'bg-gradient-to-r from-amber-400 to-amber-500'
+                : 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+            }`}
+            style={{ width: `${completionPercentage}%` }}
+          />
+        </div>
+
+        {/* 5 Chips: Filled (Check) or Missing (Glowing Pulse) */}
+        <div className="flex flex-wrap items-center gap-2">
+          {profileRequirements.map(item => (
+            item.isFilled ? (
+              <button
+                key={item.id}
+                onClick={item.onAction}
+                className="px-3 py-1.5 rounded-xl bg-white/95 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-1.5 shadow-xs hover:bg-emerald-50 transition-all group"
+                title={`${item.label}: ${item.value}`}
+              >
+                <Check size={14} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+                <span className="text-slate-500 font-normal">{item.shortLabel}:</span>
+                <span className="font-mono text-navy font-black max-w-[120px] truncate">{item.value}</span>
+              </button>
+            ) : (
+              <button
+                key={item.id}
+                onClick={item.onAction}
+                className="relative px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-400/30 to-amber-500/20 border-2 border-amber-400 text-amber-950 text-xs font-black flex items-center gap-2 cursor-pointer animate-pulse shadow-[0_0_16px_rgba(245,158,11,0.65)] hover:scale-105 hover:bg-amber-400/40 transition-all"
+                title={`დარჩენილია: დააჭირეთ ${item.label}-ს შესაყვანად`}
+              >
+                <Sparkles size={14} className="text-amber-700 animate-spin" style={{ animationDuration: '4s' }} />
+                <span>+ {item.label}</span>
+                <span className="px-1.5 py-0.5 rounded bg-amber-400/80 text-[10px] text-amber-950 font-mono font-black uppercase">
+                  დარჩენილია
+                </span>
+              </button>
+            )
+          ))}
+        </div>
       </div>
 
       {/* Live Auto-sync Toast Notice */}
