@@ -171,6 +171,8 @@ export interface ServiceItem {
   custom_brand?: string; // ბრენდი/მწარმოებელი
   custom_part_number?: string; // არტიკული / ნაწილის კოდი
   is_custom_built?: boolean; // ინდივიდუალურად აწყობილი სერვისი
+  is_disabled?: boolean; // ფანჯრის/სერვისის გათიშვა
+  dismiss_warning?: boolean; // გაფრთხილების დამალვა
   notes?: string;
 
   // 1. Chassis & Wheels (სავალი ნაწილი და ბორბლები)

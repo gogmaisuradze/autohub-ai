@@ -42,7 +42,11 @@ import {
   ShieldAlert,
   Check,
   ArrowRight,
-  X
+  X,
+  EyeOff,
+  Eye,
+  Power,
+  RotateCcw
 } from 'lucide-react';
 
 interface Props {
@@ -100,6 +104,61 @@ export const ServiceLogModule: React.FC<Props> = ({
     }
   });
   const [expandedCardDetails, setExpandedCardDetails] = useState<Record<string, boolean>>({});
+
+  // Filter mode: 'active' or 'disabled' (to see turned-off windows)
+  const [showOnlyDisabled, setShowOnlyDisabled] = useState(false);
+
+  // Per-card hidden details (allows hiding/closing details on individual cards)
+  const [hiddenCardDetails, setHiddenCardDetails] = useState<Record<string, boolean>>({});
+
+  // Dismissed warning badges per card
+  const [dismissedWarnings, setDismissedWarnings] = useState<Record<string, boolean>>({});
+
+  // Toast feedback when a window is turned off
+  const [toastMessage, setToastMessage] = useState<{ text: string; restoredItem?: ServiceItem } | null>(null);
+
+  const toggleHideCardDetails = (id: string) => {
+    sounds.playClick();
+    setHiddenCardDetails(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const handleToggleDisable = (item: ServiceItem) => {
+    sounds.playClick();
+    const willDisable = !item.is_disabled;
+    const updated: ServiceItem = { ...item, is_disabled: willDisable };
+    onUpdateService(updated);
+
+    if (willDisable) {
+      setToastMessage({
+        text: `ფანჯარა "${item.title_ge}" გაითიშა`,
+        restoredItem: item
+      });
+      setTimeout(() => {
+        setToastMessage(prev => prev?.restoredItem?.id === item.id ? null : prev);
+      }, 4500);
+    } else {
+      sounds.playSuccess();
+      setToastMessage({
+        text: `ფანჯარა "${item.title_ge}" ჩაირთო`
+      });
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 3000);
+    }
+  };
+
+  const handleEnableAllServices = () => {
+    sounds.playSuccess();
+    services.forEach(s => {
+      if (s.is_disabled) {
+        onUpdateService({ ...s, is_disabled: false });
+      }
+    });
+    setShowOnlyDisabled(false);
+  };
 
   const toggleCardDetails = (id: string) => {
     sounds.playClick();
@@ -195,15 +254,31 @@ export const ServiceLogModule: React.FC<Props> = ({
   const ptiDaysLeft = ptiService ? ptiService.remaining_days : null;
   const isPtiUrgent = ptiDaysLeft !== null && ptiDaysLeft <= 30;
 
+  // Count active and disabled services
+  const disabledCount = services.filter(s => !!s.is_disabled).length;
+  const activeCount = services.filter(s => !s.is_disabled).length;
+
   // Filtered services
   const filteredServices = services.filter(item => {
+    if (showOnlyDisabled) {
+      if (!item.is_disabled) return false;
+    } else {
+      if (item.is_disabled) return false;
+    }
     if (activeCategoryFilter === 'all') return true;
     return normalizeCategory(item.category) === activeCategoryFilter;
   });
 
   // Calculate counts per category
   const categoryCounts = SERVICE_CATEGORIES.reduce((acc, cat) => {
-    acc[cat.id] = services.filter(s => normalizeCategory(s.category) === cat.id).length;
+    acc[cat.id] = services.filter(s => {
+      if (showOnlyDisabled) {
+        if (!s.is_disabled) return false;
+      } else {
+        if (s.is_disabled) return false;
+      }
+      return normalizeCategory(s.category) === cat.id;
+    }).length;
     return acc;
   }, {} as Record<ServiceCategory, number>);
 
@@ -804,7 +879,7 @@ export const ServiceLogModule: React.FC<Props> = ({
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
               activeCategoryFilter === 'all' ? 'bg-gold text-navy font-black' : 'bg-slate-100 text-slate-600'
             }`}>
-              {services.length}
+              {showOnlyDisabled ? disabledCount : activeCount}
             </span>
           </button>
 
@@ -835,35 +910,117 @@ export const ServiceLogModule: React.FC<Props> = ({
           })}
         </div>
 
-        {/* Ready-made answers toggle */}
-        <button
-          type="button"
-          onClick={() => {
-            sounds.playClick();
-            const nextVal = !showPresetAnswers;
-            setShowPresetAnswers(nextVal);
-            try {
-              localStorage.setItem('autohub_show_service_presets', String(nextVal));
-            } catch {}
-          }}
-          className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 border shadow-2xs ${
-            showPresetAnswers
-              ? 'bg-white hover:bg-slate-50 text-navy border-slate-200/90'
-              : 'bg-navy text-gold border-navy shadow-sm font-black'
-          }`}
-          title={showPresetAnswers ? 'მზა პასუხების & დეტალების გამორთვა' : 'მზა პასუხების & დეტალების ჩართვა'}
-        >
-          <Sparkles size={13} className={showPresetAnswers ? 'text-gold' : 'text-slate-400'} />
-          <span>მზა პასუხები:</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black border ${
-            showPresetAnswers
-              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-              : 'bg-gold text-navy border-gold'
-          }`}>
-            {showPresetAnswers ? 'ჩართულია' : 'გამორთულია'}
-          </span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Ready-made answers toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              const nextVal = !showPresetAnswers;
+              setShowPresetAnswers(nextVal);
+              try {
+                localStorage.setItem('autohub_show_service_presets', String(nextVal));
+              } catch {}
+            }}
+            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 border shadow-2xs ${
+              showPresetAnswers
+                ? 'bg-white hover:bg-slate-50 text-navy border-slate-200/90'
+                : 'bg-navy text-gold border-navy shadow-sm font-black'
+            }`}
+            title={showPresetAnswers ? 'მზა პასუხების & დეტალების გამორთვა' : 'მზა პასუხების & დეტალების ჩართვა'}
+          >
+            <Sparkles size={13} className={showPresetAnswers ? 'text-gold' : 'text-slate-400'} />
+            <span>მზა პასუხები:</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black border ${
+              showPresetAnswers
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                : 'bg-gold text-navy border-gold'
+            }`}>
+              {showPresetAnswers ? 'ჩართულია' : 'გამორთულია'}
+            </span>
+          </button>
+
+          {/* Turned-off Windows filter button */}
+          {disabledCount > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setShowOnlyDisabled(!showOnlyDisabled);
+              }}
+              className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 border shadow-2xs ${
+                showOnlyDisabled
+                  ? 'bg-rose-600 text-white border-rose-600 shadow-sm font-black'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/90'
+              }`}
+              title={showOnlyDisabled ? 'აქტიურ სერვისებზე დაბრუნება' : 'გათიშული ფანჯრების ნახვა და ჩართვა'}
+            >
+              <EyeOff size={13} className={showOnlyDisabled ? 'text-white' : 'text-rose-500'} />
+              <span>გათიშული:</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black border ${
+                showOnlyDisabled
+                  ? 'bg-white text-rose-700 border-white'
+                  : 'bg-rose-100 text-rose-800 border-rose-200'
+              }`}>
+                {disabledCount}
+              </span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Disabled services notification banner */}
+      {showOnlyDisabled && (
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-50 border border-rose-200 flex flex-wrap items-center justify-between gap-3 text-xs text-rose-950 shadow-xs animate-fade-in">
+          <div className="flex items-center gap-2">
+            <EyeOff size={16} className="text-rose-600 shrink-0" />
+            <span>
+              <strong>გათიშული ფანჯრები ({disabledCount})</strong> — სერვისის დასაბრუნებლად დააწკაპუნეთ <strong>„ჩართვა“</strong>-ს.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleEnableAllServices}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1"
+            >
+              <Check size={12} />
+              <span>ყველას ჩართვა</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setShowOnlyDisabled(false);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-navy font-bold text-xs border border-slate-200 shadow-xs transition-all"
+            >
+              ← აქტიურებზე დაბრუნება
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!showOnlyDisabled && disabledCount > 0 && (
+        <div className="px-4 py-2.5 rounded-2xl bg-amber-50/80 border border-amber-200/70 flex items-center justify-between text-xs text-amber-900 shadow-2xs animate-fade-in">
+          <div className="flex items-center gap-2">
+            <EyeOff size={14} className="text-amber-700 shrink-0" />
+            <span>
+              <strong>{disabledCount}</strong> სერვისის ფანჯარა გათიშულია
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              setShowOnlyDisabled(true);
+            }}
+            className="text-xs font-bold text-navy hover:text-gold underline transition-colors"
+          >
+            გათიშულების ნახვა ({disabledCount})
+          </button>
+        </div>
+      )}
 
       {/* 4. Service Cards Grid */}
       {filteredServices.length === 0 ? (
@@ -891,24 +1048,36 @@ export const ServiceLogModule: React.FC<Props> = ({
             const isWarning = item.health_percentage <= 45 && !isCritical;
             const normCat = normalizeCategory(item.category);
             const variantDef = getVariantDefinition(item.variant_key);
-            const shouldShowDetails = showPresetAnswers || !!expandedCardDetails[item.id];
+            const isDetailsHidden = !!hiddenCardDetails[item.id];
+            const shouldShowDetails = !isDetailsHidden && (showPresetAnswers || !!expandedCardDetails[item.id]);
 
             return (
               <div
                 key={item.id}
-                className="rounded-3xl neu-card shadow-neu-card p-5 flex flex-col justify-between transition-all border border-white hover:border-slate-200 relative overflow-hidden group"
+                className={`rounded-3xl neu-card shadow-neu-card p-5 flex flex-col justify-between transition-all border relative overflow-hidden group ${
+                  item.is_disabled
+                    ? 'bg-slate-50/80 border-slate-300/80 opacity-75'
+                    : 'border-white hover:border-slate-200'
+                }`}
               >
                 <div>
-                  {/* Header: Icon, Title, Status Badge */}
+                  {/* Header: Icon, Title, Status Badge & Close/Turn Off Button */}
                   <div className="flex items-start justify-between mb-3 gap-2">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-11 h-11 rounded-2xl neu-circle flex items-center justify-center shrink-0 shadow-sm">
                         {getCategoryIcon(item.category)}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-extrabold text-navy leading-tight truncate">
-                          {item.title_ge}
-                        </h3>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3 className="text-sm font-extrabold text-navy leading-tight truncate">
+                            {item.title_ge}
+                          </h3>
+                          {item.is_disabled && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                              გათიშულია
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
                           <Calendar className="w-3 h-3 text-gold" />
                           ბოლო: {item.last_service_date}
@@ -916,19 +1085,45 @@ export const ServiceLogModule: React.FC<Props> = ({
                       </div>
                     </div>
 
-                    <span className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full shrink-0 ${
-                      isCritical
-                        ? 'bg-rose-100 text-rose-700 border border-rose-300'
-                        : isWarning
-                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                        : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
-                    }`}>
-                      {item.health_percentage}%
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full shrink-0 ${
+                        item.is_disabled
+                          ? 'bg-slate-200 text-slate-600 border border-slate-300'
+                          : isCritical
+                          ? 'bg-rose-100 text-rose-700 border border-rose-300'
+                          : isWarning
+                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                          : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                      }`}>
+                        {item.health_percentage}%
+                      </span>
+
+                      {/* Turn Off / Dismiss Window Button (ფანჯრის გათიშვა) */}
+                      {item.is_disabled ? (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleDisable(item)}
+                          className="px-2.5 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black flex items-center gap-1 shadow-xs transition-all hover:scale-105 active:scale-95"
+                          title="სერვისის ჩართვა"
+                        >
+                          <Check size={12} />
+                          <span>ჩართვა</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleDisable(item)}
+                          className="w-7 h-7 rounded-full bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/80 flex items-center justify-center transition-all shadow-2xs hover:scale-105 active:scale-95 group/close"
+                          title="ფანჯრის გათიშვა / დამალვა"
+                        >
+                          <X size={13} className="group-hover/close:rotate-90 transition-transform" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Urgent / Warning Service Comparison CTA */}
-                  {(isCritical || isWarning) && shouldShowDetails && (
+                  {(isCritical || isWarning) && shouldShowDetails && !dismissedWarnings[item.id] && (
                     <div className={`my-2 p-2.5 rounded-2xl flex items-center justify-between gap-2 border text-xs animate-fade-in ${
                       isCritical 
                         ? 'bg-rose-50/90 border-rose-200 text-rose-900' 
@@ -945,13 +1140,26 @@ export const ServiceLogModule: React.FC<Props> = ({
                           </p>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleOpenComparison(item)}
-                        className="shrink-0 px-2.5 py-1.5 rounded-xl bg-navy text-gold text-[10px] font-black hover:bg-slate-800 transition-all shadow-xs flex items-center gap-1 hover:scale-105 active:scale-95"
-                      >
-                        <Scale size={11} />
-                        <span>შედარება</span>
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleOpenComparison(item)}
+                          className="shrink-0 px-2.5 py-1.5 rounded-xl bg-navy text-gold text-[10px] font-black hover:bg-slate-800 transition-all shadow-xs flex items-center gap-1 hover:scale-105 active:scale-95"
+                        >
+                          <Scale size={11} />
+                          <span>შედარება</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sounds.playClick();
+                            setDismissedWarnings(prev => ({ ...prev, [item.id]: true }));
+                          }}
+                          className="w-5 h-5 rounded-md hover:bg-black/10 text-slate-400 hover:text-navy flex items-center justify-center transition-colors"
+                          title="გაფრთხილების გათიშვა"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -1247,29 +1455,35 @@ export const ServiceLogModule: React.FC<Props> = ({
                     </div>
                   )}
 
-                  {!showPresetAnswers && (
-                    <div className="flex justify-end pt-1">
-                      <button
-                        type="button"
-                        onClick={() => toggleCardDetails(item.id)}
-                        className="text-[10px] text-slate-400 hover:text-navy font-bold transition-colors"
-                      >
-                        დეტალების დამალვა ✕
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleHideCardDetails(item.id)}
+                      className="text-[10px] text-slate-400 hover:text-rose-600 font-bold transition-colors flex items-center gap-1"
+                      title="ამ ფანჯრის დეტალების გათიშვა"
+                    >
+                      <span>დეტალების გათიშვა</span>
+                      <X size={11} />
+                    </button>
+                  </div>
                 </>
               ) : (
-                <div className="my-2.5 p-2.5 rounded-2xl bg-slate-50/80 border border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
-                  <span className="text-[11px] font-medium truncate max-w-[200px]">
-                    {item.notes || 'მზა პასუხები გამორთულია'}
+                <div className="my-2.5 p-2 rounded-2xl bg-slate-50/80 border border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+                  <span className="text-[11px] font-medium text-slate-400 truncate max-w-[200px]">
+                    {item.notes || 'დეტალები გათიშულია'}
                   </span>
                   <button
                     type="button"
-                    onClick={() => toggleCardDetails(item.id)}
+                    onClick={() => {
+                      if (isDetailsHidden) {
+                        toggleHideCardDetails(item.id);
+                      } else {
+                        toggleCardDetails(item.id);
+                      }
+                    }}
                     className="text-[11px] font-bold text-navy hover:text-gold flex items-center gap-1 transition-colors"
                   >
-                    <span>+ დეტალების ნახვა</span>
+                    <span>+ დეტალების ჩართვა</span>
                   </button>
                 </div>
               )}
@@ -1414,6 +1628,33 @@ export const ServiceLogModule: React.FC<Props> = ({
           }
         }}
       />
+
+      {/* Toast Notification for Turned-off Windows */}
+      {toastMessage && (
+        <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900/95 text-white shadow-2xl border border-gold/40 flex items-center gap-3 animate-fade-in backdrop-blur-md">
+          <EyeOff size={16} className="text-gold shrink-0" />
+          <span className="text-xs font-bold">{toastMessage.text}</span>
+          {toastMessage.restoredItem && (
+            <button
+              type="button"
+              onClick={() => {
+                handleToggleDisable(toastMessage.restoredItem!);
+                setToastMessage(null);
+              }}
+              className="px-2.5 py-1 rounded-lg bg-gold text-slate-950 text-xs font-black hover:bg-amber-300 transition-colors shadow-xs"
+            >
+              გაუქმება
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="text-slate-400 hover:text-white p-1 ml-1"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
 
     </div>
   );
