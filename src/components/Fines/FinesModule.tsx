@@ -40,8 +40,12 @@ import {
   Eye,
   Download,
   Trash2,
-  Crown
+  Crown,
+  GraduationCap,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
+import DrivingExamWidget from '../Garage/DrivingExamWidget';
 
 interface Props {
   vehicle: VehicleProfile;
@@ -166,6 +170,7 @@ export const FinesModule: React.FC<Props> = ({
   const [personalNumberInput, setPersonalNumberInput] = useState(vehicle.driver_personal_number || '');
   const [driverNameInput, setDriverNameInput] = useState(vehicle.driver_name || '');
   const [showPointsGuide, setShowPointsGuide] = useState(false);
+  const [isExamSectionOpen, setIsExamSectionOpen] = useState(false);
 
   // Direct Ticket Search & Pay State
   const [ticketSearchInput, setTicketSearchInput] = useState('');
@@ -919,11 +924,30 @@ export const FinesModule: React.FC<Props> = ({
                   </div>
                 </div>
 
-                {/* 9. License Categories */}
-                <div className="pt-1 flex items-center justify-between text-[10px]">
-                  <span className="font-bold text-slate-500">
-                    კატეგორია: <span className="font-mono text-navy font-black">B, B1</span>
-                  </span>
+                {/* 9. License Categories & Exam Tickets Shortcut */}
+                <div className="pt-1 flex items-center justify-between text-[10px] flex-wrap gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-slate-500">
+                      კატეგორია: <span className="font-mono text-navy font-black">B, B1</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setIsExamSectionOpen(!isExamSectionOpen);
+                        if (!isExamSectionOpen) {
+                          setTimeout(() => {
+                            document.getElementById('driving-exam-section')?.scrollIntoView({ behavior: 'smooth' });
+                          }, 100);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-full border border-amber-300 transition-all cursor-pointer text-[9px] shadow-2xs"
+                      title="საგამოცდო ბილეთების გახსნა"
+                    >
+                      <GraduationCap size={11} className="text-amber-700" />
+                      <span>921 ბილეთი 2026</span>
+                    </button>
+                  </div>
                   <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                     <ShieldCheck size={11} />
                     <span>მართვის უფლება: აქტიური</span>
@@ -1210,6 +1234,78 @@ export const FinesModule: React.FC<Props> = ({
           </div>
 
         </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* 1.5 DRIVING EXAM TICKETS & THEORY PLATFORM (ბილეთები 2026) */}
+      {/* ======================================================== */}
+      <div id="driving-exam-section" className="p-4 sm:p-5 rounded-3xl border transition-all bg-gradient-to-br from-slate-900 via-navy to-slate-950 text-white border-gold/40 shadow-xl space-y-3.5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border bg-gold/15 text-gold border-gold/30">
+              <GraduationCap className="w-6 h-6 text-gold" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-xs">
+                  🎓 საგამოცდო ბილეთები 2026
+                </span>
+                <span className="text-xs font-mono text-slate-300">
+                  921 ოფიციალური ბილეთი
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-slate-300">
+                  32 თემა • prava.ge
+                </span>
+              </div>
+              <h3 className="text-sm sm:text-base font-black mt-1 text-white tracking-tight">
+                მართვის მოწმობის თეორიული გამოცდის სიმულატორი
+              </h3>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              setIsExamSectionOpen(!isExamSectionOpen);
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md shrink-0 flex items-center justify-center gap-2 ${
+              isExamSectionOpen
+                ? 'bg-white/15 text-white border border-white/20'
+                : 'bg-gold hover:bg-gold/90 text-slate-950 shadow-gold/20'
+            }`}
+          >
+            <span>{isExamSectionOpen ? 'ბილეთების ჩაკეცვა' : 'ბილეთების გახსნა & ტესტირება'}</span>
+            {isExamSectionOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
+
+        {/* Quick 4-Item Theory & License Categories Overview */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-slate-400 block uppercase">B კატეგორია</span>
+            <span className="text-xs sm:text-sm font-black text-gold block mt-0.5">921 ბილეთი</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-slate-400 block uppercase">გამოცდის დრო</span>
+            <span className="text-xs sm:text-sm font-black text-white block mt-0.5">30 წთ / 30 კითხვა</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-slate-400 block uppercase">შეცდომის ლიმიტი</span>
+            <span className="text-xs sm:text-sm font-black text-emerald-400 block mt-0.5">მაქს. 3 შეცდომა</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-slate-400 block uppercase">სტატუსი</span>
+            <span className="text-xs sm:text-sm font-black text-amber-300 block mt-0.5">2026 წლის ბაზა</span>
+          </div>
+        </div>
+
+        {/* Embedded Full Driving Exam Widget */}
+        {isExamSectionOpen && (
+          <div className="pt-2 animate-fade-in">
+            <DrivingExamWidget />
+          </div>
+        )}
       </div>
 
       {/* Live Auto-sync Toast Notice */}

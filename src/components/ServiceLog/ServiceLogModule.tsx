@@ -37,7 +37,9 @@ import {
   Bot,
   Cpu,
   History,
-  Scale
+  Scale,
+  Car,
+  ShieldAlert
 } from 'lucide-react';
 
 interface Props {
@@ -185,71 +187,180 @@ export const ServiceLogModule: React.FC<Props> = ({
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       
-      {/* 1. Header Bar */}
-      <div className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card flex flex-wrap items-center justify-between gap-4 border border-white">
-        <div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <h2 className="text-base font-extrabold text-navy flex items-center gap-2 tracking-tight">
-              <Wrench className="w-5 h-5 text-gold" />
-              ავტომობილის ციფრული სერვის-წიგნაკი & რესურსი
-            </h2>
-            <div className="flex items-center gap-1.5">
-              <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-white text-navy border border-slate-200 shadow-sm">
-                გარბენი: {vehicle.mileage_km.toLocaleString()} კმ
+      {/* 1. Header Bar: Multi-Tier Dark Gold Service Deck (matching Parking & OBD style) */}
+      <div className="p-4 sm:p-6 rounded-3xl border transition-all bg-gradient-to-br from-slate-900 via-navy to-slate-950 text-white border-gold/40 shadow-xl space-y-4">
+        
+        {/* Tier 1: Hardware Header & Mode Switcher Row */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-200/20">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border bg-gold/15 text-gold border-gold/30">
+              <Wrench className="w-6 h-6 text-gold" />
+            </div>
+
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-xs">
+                  🔶 სერვის-რესურსი
+                </span>
+                <span className="text-xs font-mono text-slate-400">
+                  გარბენი: {vehicle.mileage_km.toLocaleString()} კმ
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-slate-300">
+                  6 კატეგორია • 23+ კომპონენტი
+                </span>
+              </div>
+              <h2 className="text-base sm:text-lg font-black mt-1 text-white tracking-tight">
+                ავტომობილის ციფრული სერვის-წიგნაკი & რესურსი
+              </h2>
+            </div>
+          </div>
+
+          {/* Action Buttons Row */}
+          <div className="flex items-center gap-2 flex-wrap shrink-0 w-full sm:w-auto justify-start sm:justify-end">
+            {onOpenBookingModal && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenBookingModal();
+                }}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-white border border-white/10 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                title="კალენდარში ჩაწერა ავტო-ექიმთან"
+              >
+                <Calendar className="w-4 h-4 text-gold shrink-0" />
+                <span>📅 ჩაწერა</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setIsCatalogOpen(!isCatalogOpen);
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-white border border-white/10 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+            >
+              <Layers className="w-4 h-4 text-gold shrink-0" />
+              <span>კატალოგი (23+)</span>
+              {isCatalogOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOpenAddModal()}
+              className="px-4 py-2 rounded-xl text-xs font-black bg-gold hover:bg-gold/90 text-slate-950 transition-all shadow-md shrink-0 flex items-center justify-center gap-1.5"
+            >
+              <Plus className="w-4 h-4 shrink-0" />
+              <span>+ სერვისის შექმნა</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tier 2: 4-Card Service Metrics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs font-mono">
+          {/* 1. სერვისის ავტომობილი */}
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+              <Car size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">სერვისის ავტომობილი</span>
+              <span className="text-sm font-black text-white block mt-0.5 truncate">
+                {vehicle.brand || 'Mercedes-Benz'} {vehicle.model || 'C300'}
+              </span>
+              <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                <span className="px-2 py-0.5 rounded-md bg-white/10 text-amber-300 font-bold text-[10px] border border-white/10 tracking-wider">
+                  {vehicle.plate_number || 'FR-282-EE'}
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {vehicle.year ? `${vehicle.year} წელი` : '2016'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. მიმდინარე გარბენი */}
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+              <Gauge size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">მიმდინარე გარბენი</span>
+              <span className="text-sm sm:text-base font-black text-white block mt-0.5">
+                {vehicle.mileage_km.toLocaleString()} კმ
               </span>
               {onOpenFieldPrompt && (
                 <button
+                  type="button"
                   onClick={() => {
                     sounds.playClick();
                     onOpenFieldPrompt('mileage_km');
                   }}
-                  className="px-2.5 py-1 rounded-full text-[11px] font-bold text-gold hover:text-amber-500 bg-amber-50 border border-amber-200 transition-all hover:scale-105"
-                  title="გარბენის განახლება"
+                  className="mt-1 text-gold hover:underline text-[10px] font-bold flex items-center gap-1"
                 >
-                  ✎ შეცვლა
+                  <Edit3 size={11} />
+                  <span>გარბენის განახლება</span>
                 </button>
               )}
             </div>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            6 ძირითადი კატეგორია & 23+ კომპონენტი: სავალი ნაწილი, ზეთები & ATF, ფილტრები, ძრავი & სვეჩები, აკუმულატორი & AC, იურიდიული & PTI.
-          </p>
+
+          {/* 3. რეგისტრირებული კომპონენტები */}
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+              <Layers size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">რეგისტრირებული ბაზა</span>
+              <span className="text-sm sm:text-base font-black text-white block mt-0.5">
+                {services.length} კომპონენტი
+              </span>
+              <span className="inline-block mt-1 text-[10px] text-slate-400">
+                23+ ქარხნული კატალოგი
+              </span>
+            </div>
+          </div>
+
+          {/* 4. სერვის-რესურსი და სტატუსი */}
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+              <ShieldCheck size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">სერვის-რესურსის სტატუსი</span>
+              <span className="text-sm font-black text-emerald-400 block mt-0.5 truncate">
+                {services.filter(s => s.health_percentage > 45).length} ოპტიმალური
+              </span>
+              <div className="mt-1 flex items-center gap-1.5">
+                <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] border ${
+                  services.filter(s => s.health_percentage <= 45).length > 0
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                }`}>
+                  {services.filter(s => s.health_percentage <= 45).length > 0
+                    ? `${services.filter(s => s.health_percentage <= 45).length} შესამოწმებელი`
+                    : 'ყველა ვალიდურია'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          {onOpenBookingModal && (
-            <button
-              onClick={() => {
-                sounds.playClick();
-                onOpenBookingModal();
-              }}
-              className="flex-1 sm:flex-none justify-center px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs font-black bg-navy text-gold hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-sm active:scale-95 whitespace-nowrap"
-              title="კალენდარში ჩაწერა ავტო-ექიმთან"
-            >
-              <Calendar className="w-4 h-4 text-gold shrink-0" />
-              <span>📅 ჩაწერა</span>
-            </button>
-          )}
+        {/* Tier 3: Category Guide Explainer Strip */}
+        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="text-slate-300 text-[11px] leading-relaxed flex items-center gap-1.5 flex-wrap">
+            <span>ℹ️ <strong>6 ძირითადი კატეგორია:</strong></span>
+            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">სავალი ნაწილი</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">ზეთები & ATF</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">ფილტრები</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">ძრავი & სვეჩები</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">აკუმულატორი & AC</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">იურიდიული & PTI</span>
+          </div>
 
-          <button
-            onClick={() => {
-              sounds.playClick();
-              setIsCatalogOpen(!isCatalogOpen);
-            }}
-            className="flex-1 sm:flex-none justify-center px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs font-bold bg-white hover:bg-slate-50 text-navy border border-slate-200 transition-all flex items-center gap-1.5 shadow-sm active:scale-95 whitespace-nowrap"
-          >
-            <Layers className="w-4 h-4 text-gold shrink-0" />
-            <span>კატალოგი (23+)</span>
-            {isCatalogOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          </button>
-
-          <button
-            onClick={() => handleOpenAddModal()}
-            className="w-full sm:w-auto justify-center px-4 sm:px-5 py-2.5 rounded-2xl text-xs font-black bg-gold hover:bg-amber-400 text-navy shadow-gold-soft hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
-          >
-            <Plus className="w-4 h-4 shrink-0" />
-            <span>+ სერვისის შექმნა</span>
-          </button>
+          <div className="text-[11px] text-slate-400 shrink-0 font-mono">
+            სულ {services.length} ჩანაწერი
+          </div>
         </div>
       </div>
 

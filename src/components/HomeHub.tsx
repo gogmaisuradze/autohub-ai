@@ -80,8 +80,8 @@ export const HomeHub: React.FC<Props> = ({
     },
     {
       id: 'fines' as TabType,
-      title: 'საპატრულო ჯარიმები & ვიდეოკამერები',
-      subtitle: 'ვიდეოჯარიმების მონიტორინგი და 20%-იანი ფასდაკლების ვადა',
+      title: 'საპატრულო ჯარიმები, მოწმობა & ბილეთები',
+      subtitle: 'ვიდეოჯარიმები, 100-ქულიანი მართვის მოწმობა & საგამოცდო ბილეთები 2026',
       icon: ShieldAlert,
       badgeText: pendingFines.length > 0 ? `${pendingFines.length}` : 'OK',
       badgeColor: pendingFines.length > 0 ? 'bg-gold text-navy font-bold shadow-gold-soft' : 'bg-emerald-500 text-white font-bold shadow-sm',
@@ -117,16 +117,6 @@ export const HomeHub: React.FC<Props> = ({
       badgeColor: 'bg-cyan-500 text-white font-black shadow-sm',
       badgeSubtext: 'Waze რეჟიმი',
       tag: 'საპატრულო რადარი'
-    },
-    {
-      id: 'garage' as TabType,
-      title: 'მეტი — გარაჟი, მოწმობა & პარამეტრები',
-      subtitle: 'მართვის მოწმობის კონსპექტი, OBD ადაპტერი და n8n ვებჰუკები',
-      icon: Car,
-      badgeText: `${vehicle.driver_license_points ?? 100} ქულა`,
-      badgeColor: (vehicle.driver_license_points ?? 100) >= 70 ? 'bg-emerald-500 text-white font-bold shadow-sm' : 'bg-amber-500 text-white font-bold shadow-sm',
-      badgeSubtext: `${vehicle.brand} ${vehicle.model}`,
-      tag: 'მართვის მოწმობა'
     },
     {
       id: 'ai' as TabType,

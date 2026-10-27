@@ -242,7 +242,7 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     ],
     ctaText: 'ტესტის დაწყება (2026)',
     secondaryCtaText: 'საგზაო ნიშნების განხილვა',
-    actionTab: 'garage',
+    actionTab: 'fines',
     actionType: 'tab',
     icon: GraduationCap,
     previewType: 'exam_badge'
@@ -342,7 +342,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
       if (onOpenVinHistory) {
         onOpenVinHistory();
       } else if (onNavigateTab) {
-        onNavigateTab('garage');
+        onNavigateTab('service');
       }
       return;
     }

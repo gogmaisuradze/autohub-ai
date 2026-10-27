@@ -393,11 +393,13 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     try {
       const hash = window.location.hash.replace('#', '') as TabType;
-      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'garage', 'settings'].includes(hash)) {
+      if (hash === 'garage') return 'fines';
+      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'settings'].includes(hash)) {
         return hash;
       }
       const saved = localStorage.getItem('autohub_active_tab') as TabType;
-      if (saved && ['home', 'obd', 'fines', 'parking', 'ai', 'service', 'garage', 'settings'].includes(saved)) {
+      if (saved === 'garage') return 'fines';
+      if (saved && ['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'settings'].includes(saved)) {
         return saved;
       }
       return 'obd'; // Default to OBD/3D Testing screen so user immediately sees the 3D car!

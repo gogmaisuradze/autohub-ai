@@ -15,7 +15,8 @@ import {
   ChevronRight,
   ArrowRight,
   Camera,
-  ParkingSquare
+  ParkingSquare,
+  Navigation as NavigationIcon
 } from "lucide-react";
 
 interface Props {
@@ -99,17 +100,17 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     },
     {
       id: 5,
-      tab: 'garage' as TabType,
-      title: isGe ? 'მეტი' : 'More',
-      name: isGe ? 'მეტი — გარაჟი, მოწმობა & რუკა' : 'Garage, License & Live Map',
-      role: isGe ? 'მართვის მოწმობა & რუკა' : 'Driver License & Live Map',
-      icon: Car,
-      badgeText: isGe ? `${vehicle?.driver_license_points ?? 100} ქულა` : `${vehicle?.driver_license_points ?? 100} Points`,
-      badgeColor: 'bg-emerald-500 text-white font-black',
+      tab: 'map' as TabType,
+      title: isGe ? 'რუკა' : 'Map',
+      name: isGe ? 'ცოცხალი რუკა & რადარები' : 'Live Map & Radars',
+      role: isGe ? 'რადარები & საცობები' : 'Radars & Traffic',
+      icon: NavigationIcon,
+      badgeText: 'LIVE',
+      badgeColor: 'bg-cyan-500 text-white font-black',
       desc: isGe
-        ? 'მართვის მოწმობის Google Notebook კონსპექტი, საგზაო წესები, Waze რუკა, რადარები და ბენზინის ფასები.'
-        : 'Google Notebook driving license study guide, rules, Waze map, radars and fuel prices.',
-      accent: '#10B981'
+        ? 'საქართველოს გზების რადარები, საპატრულო კამერები, საცობები და საწვავის ფასები.'
+        : 'Patrol radars, speed cameras, traffic hazards and fuel prices in Georgia.',
+      accent: '#06B6D4'
     },
     {
       id: 6,
