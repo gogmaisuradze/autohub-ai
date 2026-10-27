@@ -672,16 +672,16 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
       onMouseLeave={() => setIsPaused(false)}
       className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-700/50 transition-all bg-slate-950 group"
     >
-      {/* Background Thematic Car Photography - 100% Opacity, Vibrant & Crystal Clear */}
+      {/* Background Thematic Car Photography - 100% Opacity, Vibrant, Wide & Crystal Clear */}
       <div className="absolute inset-0 bg-slate-950 overflow-hidden">
         <img
           src={current.imageUrl}
           alt={current.title}
-          className="w-full h-full object-cover object-center transform transition-all duration-1000 ease-out scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05]"
+          className="w-full h-full object-cover object-center lg:object-[68%_center] transform transition-all duration-1000 ease-out scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05]"
         />
 
-        {/* Targeted Left Gradient (Protects text contrast on left while letting car show gracefully on right) */}
-        <div className="absolute inset-y-0 left-0 w-full sm:w-5/6 lg:w-3/4 xl:w-2/3 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-transparent pointer-events-none" />
+        {/* Targeted Left Gradient (Protects text contrast on left while leaving over 55% of the car photo wide open across the center and right) */}
+        <div className="absolute inset-y-0 left-0 w-full sm:w-3/5 lg:w-[48%] bg-gradient-to-r from-slate-950/95 via-slate-950/60 to-transparent pointer-events-none" />
         
         {/* Subtle Top & Bottom Shadow for Controls Legibility */}
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent pointer-events-none" />
@@ -691,8 +691,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
       {/* Top Gold Laser Accent Line */}
       <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent opacity-85 z-20" />
 
-      {/* Main Content Container (Spacious, Wide & Crystal Clear for Effortless Reading) */}
-      <div className="relative z-10 px-4 sm:px-8 lg:px-10 py-5 sm:py-6 flex flex-col justify-between min-h-[290px] sm:min-h-[330px] md:min-h-[350px]">
+      {/* Main Content Container (Grand Panoramic Scale & Crystal Clear Effortless Reading) */}
+      <div className="relative z-10 px-4 sm:px-8 lg:px-12 py-5 sm:py-7 flex flex-col justify-between min-h-[340px] sm:min-h-[380px] md:min-h-[410px] lg:min-h-[430px]">
         
         {/* Top Header: Category Tag, Horizontal Service Selector Tabs & Drawer Toggle */}
         <div className="space-y-2.5">
@@ -904,8 +904,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                       : 'border-slate-800 bg-slate-900/80 hover:border-slate-700 hover:bg-slate-900'
                   }`}
                 >
-                  {/* Thematic Car Thumbnail */}
-                  <div className="relative h-28 w-full overflow-hidden">
+                  {/* Thematic Car Thumbnail (Wide & Cinematic) */}
+                  <div className="relative h-40 sm:h-48 w-full overflow-hidden">
                     <img
                       src={srv.imageUrl}
                       alt={srv.title}

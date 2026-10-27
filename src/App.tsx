@@ -910,8 +910,8 @@ export const App: React.FC = () => {
         />
       </div>
 
-      {/* Cover Advertising Banner (Visible on all pages under menu, clean bright digital services) */}
-      <div data-tour="cover-banner" className="max-w-[1420px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
+      {/* Cover Advertising Banner (Wider panoramic layout for grand automotive photography) */}
+      <div data-tour="cover-banner" className="w-full max-w-[1640px] 2xl:max-w-[1780px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
         <CoverAdBanner
           onNavigateTab={handleTabChange}
           onOpenBookingModal={() => handleOpenBookingModal()}
@@ -920,8 +920,8 @@ export const App: React.FC = () => {
         />
       </div>
 
-      {/* 3. Main Content Container (Unified width matching CoverAdBanner) */}
-      <main className="max-w-[1420px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-28 sm:pb-24">
+      {/* 3. Main Content Container (Unified wide layout matching CoverAdBanner) */}
+      <main className="w-full max-w-[1640px] 2xl:max-w-[1780px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-28 sm:pb-24">
         {/* Home Hub View (Department Buttons on Screen) */}
         {activeTab === 'home' && (
           <HomeHub
