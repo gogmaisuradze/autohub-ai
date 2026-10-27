@@ -82,9 +82,9 @@ export const ObdModule: React.FC<Props> = ({
   const [lastScanTime, setLastScanTime] = useState<string>('დღეს, 16:42');
   const [hasScanned, setHasScanned] = useState<boolean>(() => dtcCodes.length > 0);
 
-  // Embedded Adapter Instructions State
+  // Embedded Adapter Instructions State (Closed by default to keep banner compact)
   const [selectedInstructionType, setSelectedInstructionType] = useState<string>(adapterType || 'cloud_4g');
-  const [isInstructionsOpen, setIsInstructionsOpen] = useState<boolean>(!isConnected);
+  const [isInstructionsOpen, setIsInstructionsOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (adapterType) {
@@ -238,60 +238,57 @@ export const ObdModule: React.FC<Props> = ({
       {/* 1. OBD Connection Bar (Master Telematics Deck) */}
 
       {/* 1. OBD Connection Bar (Master Telematics Deck) */}
-      {/* Unified 5-Tier Card matching Parking 4G OBD Banner & Screenshot Aesthetic */}
-      <div className="p-4 sm:p-6 rounded-3xl border transition-all bg-gradient-to-br from-slate-900 via-navy to-slate-950 text-white border-gold/40 shadow-xl space-y-4">
+      {/* Unified Compact Card — დიაგნოსტიკის ცნობის ბანერი (სტანდარტული კომპაქტური ზომა) */}
+      <div className="p-3.5 sm:p-5 rounded-3xl border transition-all bg-gradient-to-br from-slate-900 via-navy to-slate-950 text-white border-gold/40 shadow-xl space-y-3 sm:space-y-3.5">
         
-        {/* Tier 1: Hardware Header & Mode Switcher Row */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-200/20">
-          <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
-              isConnected
-                ? 'bg-gold/15 text-gold border-gold/30'
-                : 'bg-gold/15 text-gold border-gold/30'
-            }`}>
+        {/* Tier 1: Hardware Header & Essential Action Buttons */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 pb-3 border-b border-white/10">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-gold/15 text-gold border border-gold/30 flex items-center justify-center shrink-0">
               {adapterType === 'bluetooth' ? (
-                <Bluetooth className={`w-6 h-6 ${isConnected ? 'animate-pulse text-blue-400' : 'text-gold'}`} />
+                <Bluetooth className={`w-5 h-5 ${isConnected ? 'animate-pulse text-blue-400' : 'text-gold'}`} />
               ) : adapterType === 'cloud_4g' ? (
-                <Radio className={`w-6 h-6 ${isConnected ? 'animate-pulse text-emerald-400' : 'text-gold'}`} />
+                <Radio className={`w-5 h-5 ${isConnected ? 'animate-pulse text-emerald-400' : 'text-gold'}`} />
               ) : (
-                <Wifi className={`w-6 h-6 ${isConnected ? 'animate-pulse text-emerald-400' : 'text-gold'}`} />
+                <Wifi className={`w-5 h-5 ${isConnected ? 'animate-pulse text-emerald-400' : 'text-gold'}`} />
               )}
             </div>
 
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider shadow-xs ${
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider shadow-2xs ${
                   isConnected
-                    ? 'bg-emerald-400 text-slate-950 shadow-xs'
-                    : 'bg-amber-400 text-slate-950 shadow-xs'
+                    ? 'bg-emerald-400 text-slate-950'
+                    : 'bg-amber-400 text-slate-950'
                 }`}>
                   {isConnected ? '🟢 LIVE კავშირი' : '🔶 DEMO რეჟიმი'}
                 </span>
-                <span className="text-xs font-mono text-slate-400">
+                <span className="text-[11px] font-mono text-slate-400 truncate">
                   {adapterType === 'bluetooth' ? 'BLE 5.0' : adapterType === 'cloud_4g' ? 'IMEI: 863412059123456' : `IP: ${vehicle.obd_ip || 'Wi-Fi ELM327'}`}
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-slate-300">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-slate-300 hidden sm:inline-block">
                   {isConnected ? 'აქტიური ტელემეტრია' : 'სიმულაცია'}
                 </span>
               </div>
-              <h3 className="text-base sm:text-lg font-black mt-1 text-white tracking-tight">
+              <h3 className="text-sm sm:text-base font-black mt-0.5 text-white tracking-tight truncate">
                 AutoHub 4G OBD სმარტ-დონგლი & დიაგნოსტიკის ცენტრი
               </h3>
             </div>
           </div>
 
-          {/* Mode Switcher / Action Pill */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-800/60 border border-white/10 shrink-0 self-end md:self-auto flex-wrap">
+          {/* Essential Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0 self-stretch sm:self-end lg:self-auto justify-end flex-wrap">
+            {/* Instructions Toggle Button */}
             <button
               type="button"
               onClick={() => {
                 sounds.playClick();
                 setIsInstructionsOpen(!isInstructionsOpen);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
                 isInstructionsOpen
-                  ? 'bg-gold text-slate-950 font-black shadow-xs'
-                  : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  ? 'bg-gold text-slate-950 font-black border-gold shadow-xs'
+                  : 'bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 border-white/10'
               }`}
               title="ადაპტერის შეერთების ინსტრუქციის ნახვა"
             >
@@ -299,6 +296,7 @@ export const ObdModule: React.FC<Props> = ({
               <span>ინსტრუქცია</span>
             </button>
 
+            {/* Adapter Settings Modal Trigger */}
             {onOpenAdapterModal && (
               <button
                 type="button"
@@ -306,7 +304,7 @@ export const ObdModule: React.FC<Props> = ({
                   sounds.playClick();
                   onOpenAdapterModal();
                 }}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 border border-white/10 transition-all flex items-center gap-1.5"
                 title="ადაპტერის ტიპის არჩევა და შეკვეთა"
               >
                 <Settings size={13} className="text-gold" />
@@ -314,13 +312,14 @@ export const ObdModule: React.FC<Props> = ({
               </button>
             )}
 
+            {/* Connected ECU & Disconnect Actions */}
             {isConnected && (
               <>
                 <button
                   type="button"
                   onClick={startEcuHandshakeAndDiscovery}
                   disabled={isHandshaking}
-                  className="px-3 py-1.5 rounded-xl text-xs font-black text-slate-300 hover:text-white hover:bg-white/10 transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl text-xs font-black bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 border border-white/10 transition-all flex items-center gap-1"
                   title="OBD ECU-დან ავტომობილის მონაცემების ამოკითხვა"
                 >
                   <Sparkles size={13} className="text-gold" />
@@ -331,73 +330,64 @@ export const ObdModule: React.FC<Props> = ({
                   type="button"
                   onClick={handleToggleConnection}
                   disabled={isHandshaking}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-colors"
                   title="კავშირის გათიშვა"
                 >
                   <span>გათიშვა</span>
                 </button>
               </>
             )}
+
+            {/* Clear Check Engine Button (lights up when DTCs found) */}
+            {isConnected && dtcCodes.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenClearModal();
+                }}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white transition-all shadow-md shrink-0 flex items-center justify-center gap-1.5"
+              >
+                <Trash2 size={13} />
+                <span>ჩეკის ჩაქრობა ({dtcCodes.length})</span>
+              </button>
+            )}
+
+            {/* Primary Action Button: Clean Solid Gold */}
+            {!isConnected ? (
+              <button
+                type="button"
+                onClick={handleToggleConnection}
+                disabled={isHandshaking}
+                className="px-4 py-1.5 rounded-xl text-xs font-black bg-gold hover:bg-gold/90 text-slate-950 transition-all shadow-md shrink-0 flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <Radio size={13} className="text-slate-950" />
+                <span>{isHandshaking ? 'მიერთება...' : 'ადაპტერის მიერთება'}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleOneTouchScan}
+                disabled={isScanning || isHandshaking}
+                className="px-4 py-1.5 rounded-xl text-xs font-black bg-gold hover:bg-gold/90 text-slate-950 transition-all shadow-md shrink-0 flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <RefreshCw size={13} className={`text-slate-950 ${isScanning ? 'animate-spin' : ''}`} />
+                <span>{isScanning ? 'სკანირება...' : hasScanned ? 'ხელახალი სკანირება' : 'სკანირება'}</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Tier 2: 6-Card Telemetry Sensor Bar Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5 text-xs font-mono">
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <span className="text-[10px] text-slate-400 block uppercase">სტატუსი</span>
-            <span className={`text-sm sm:text-base font-black ${isConnected ? 'text-emerald-400' : 'text-gold'}`}>
-              {isConnected ? 'კავშირშია' : 'გათიშულია'}
-            </span>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <span className="text-[10px] text-slate-400 block uppercase">OBD ძაბვა</span>
-            <span className="text-xs font-bold text-emerald-400 block mt-1">
-              🔋 {isConnected ? '12.6' : '12.6'} V
-            </span>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <span className="text-[10px] text-slate-400 block uppercase">პროტოკოლი</span>
-            <span className="text-xs font-bold text-white block mt-1 truncate">
-              CAN 11/500
-            </span>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <span className="text-[10px] text-slate-400 block uppercase">DTC შეცდომები</span>
-            <span className={`text-xs font-bold block mt-1 ${
-              dtcCodes.length > 0 ? 'text-rose-400 animate-pulse' : 'text-emerald-400'
-            }`}>
-              {dtcCodes.length > 0 ? `🚨 ${dtcCodes.length} კოდი` : '✓ სუფთაა'}
-            </span>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <span className="text-[10px] text-slate-400 block uppercase">დიაგნოსტიკის ეტაპი</span>
-            <span className="text-[11px] font-bold block mt-1 text-gold">
-              {!isConnected ? '① მიერთება' : !hasScanned ? '② სკანირება' : '③ მზადაა'}
-            </span>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <span className="text-[10px] text-slate-400 block uppercase">ბოლო პაკეტი</span>
-            <span className="text-[11px] font-bold text-slate-300 block mt-1 truncate">
-              {lastScanTime || '17:06:07'}
-            </span>
-          </div>
-        </div>
-
-        {/* Tier 3: 4-Card Vehicle & Spot Details Grid */}
+        {/* Tier 2: Exactly 4 Essential Diagnostics Metrics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs font-mono">
           {/* 1. დიაგნოსტიკის ავტომობილი */}
-          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-              <Car size={18} />
+          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+              <Car size={16} />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">დიაგნოსტიკის ავტომობილი</span>
-              <span className="text-sm font-black text-white block mt-0.5 truncate">
+              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">ავტომობილი</span>
+              <span className="text-xs sm:text-sm font-black text-white block mt-0.5 truncate">
                 {vehicle.brand || 'Mercedes-Benz'} {vehicle.model || 'C300'}
               </span>
               <div className="mt-1 flex items-center gap-1.5 flex-wrap">
@@ -405,53 +395,59 @@ export const ObdModule: React.FC<Props> = ({
                   {vehicle.plate_number || 'FR-282-EE'}
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
-                  VIN: {vehicle.vin ? `${vehicle.vin.slice(0, 7)}...` : 'WDCTG4...'}
+                  {vehicle.engine ? `ძრავი: ${vehicle.engine}` : '2.0L'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* 2. OBD პორტის ლოკაცია */}
-          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-              <MapPin size={18} />
+          {/* 2. OBD პორტის ადგილი */}
+          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+              <MapPin size={16} />
             </div>
             <div className="min-w-0 flex-1">
               <span className="text-[10px] text-slate-400 block uppercase tracking-wider">OBD პორტის ადგილი</span>
-              <span className="text-sm font-black text-gold block mt-0.5 truncate">
+              <span className="text-xs sm:text-sm font-black text-gold block mt-0.5 truncate">
                 საჭის ქვეშ მარცხნივ
               </span>
               <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-white/10 text-slate-300 font-bold text-[10px] border border-white/10">
-                16-Pin DLC ინტერფეისი
+                16-Pin DLC • {adapterType === 'bluetooth' ? 'BLE 5.0' : adapterType === 'cloud_4g' ? '4G LTE-M' : 'Wi-Fi'}
               </span>
             </div>
           </div>
 
-          {/* 3. ადაპტერის ტიპი & კავშირი */}
-          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-              {adapterType === 'bluetooth' ? <Bluetooth size={18} /> : adapterType === 'cloud_4g' ? <Radio size={18} /> : <Wifi size={18} />}
+          {/* 3. ბორტ-ძაბვა & პროტოკოლი */}
+          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
+              <Gauge size={16} />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">ადაპტერის კავშირი</span>
-              <span className="text-sm sm:text-base font-black text-white block mt-0.5">
-                {adapterType === 'bluetooth' ? 'BLE 5.0' : adapterType === 'cloud_4g' ? '4G LTE-M' : 'Wi-Fi 2.4G'}
+              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">ძაბვა & პროტოკოლი</span>
+              <span className="text-xs sm:text-sm font-black text-emerald-400 block mt-0.5">
+                🔋 12.6 V
               </span>
-              <span className="inline-block mt-1 text-[10px] text-slate-400">
-                CAN 11/500 (ISO 15765-4)
+              <span className="inline-block mt-1 text-[10px] text-slate-400 truncate">
+                CAN 11/500 • {isConnected ? 'LIVE კავშირი' : 'სტაბილური'}
               </span>
             </div>
           </div>
 
-          {/* 4. ბორტ-კომპიუტერი (ECU) & ძრავი */}
-          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-              <Cpu size={18} />
+          {/* 4. DTC შეცდომები & ჩეკი */}
+          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
+              dtcCodes.length > 0
+                ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                : 'bg-emerald-500/15 text-emerald-400 border-emerald-400/30'
+            }`}>
+              <AlertTriangle size={16} />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">ბორტ-კომპიუტერი (ECU)</span>
-              <span className="text-sm font-black text-white block mt-0.5 truncate">
-                {vehicle.engine ? `ძრავი: ${vehicle.engine}` : 'ძრავი & ტრანსმისია'}
+              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">DTC შეცდომები</span>
+              <span className={`text-xs sm:text-sm font-black block mt-0.5 ${
+                dtcCodes.length > 0 ? 'text-rose-400 animate-pulse' : 'text-emerald-400'
+              }`}>
+                {dtcCodes.length > 0 ? `🚨 ${dtcCodes.length} ხარვეზი ნაპოვნია` : '✓ სისტემები სუფთაა'}
               </span>
               <div className="mt-1 flex items-center gap-1.5">
                 <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] border ${
@@ -459,7 +455,7 @@ export const ObdModule: React.FC<Props> = ({
                     ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                     : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
                 }`}>
-                  {dtcCodes.length > 0 ? `🚨 ${dtcCodes.length} DTC კოდი` : '✓ შეცდომები სუფთაა'}
+                  {dtcCodes.length > 0 ? 'Check Engine ანთია' : 'ჩეკი ჩამქრალია'}
                 </span>
               </div>
             </div>
@@ -675,78 +671,6 @@ export const ObdModule: React.FC<Props> = ({
             </div>
           </div>
         )}
-
-        {/* Tier 5: Workflow Explainer & Solid Gold Action Button (Exact match to screenshot) */}
-        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="text-slate-300 text-[11px] leading-relaxed flex items-center gap-2 flex-wrap">
-            <span>ℹ️ <strong>დიაგნოსტიკის ეტაპები:</strong></span>
-            <span className={`px-2 py-0.5 rounded-lg border font-mono text-[10px] transition-all ${
-              !isConnected
-                ? 'bg-amber-400 text-slate-950 font-black border-amber-300 shadow-xs'
-                : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40 font-bold'
-            }`}>
-              {isConnected ? '✓ 1. მიერთებულია' : '① 1. მიერთება'}
-            </span>
-            <span className="text-slate-500">→</span>
-            <span className={`px-2 py-0.5 rounded-lg border font-mono text-[10px] transition-all ${
-              isConnected && !hasScanned
-                ? 'bg-amber-400 text-slate-950 font-black animate-pulse border-amber-300 shadow-xs'
-                : hasScanned
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40 font-bold'
-                : 'text-slate-500 border-white/10'
-            }`}>
-              {hasScanned ? '✓ 2. დასკანირებულია' : '② 2. სკანირება'}
-            </span>
-            <span className="text-slate-500">→</span>
-            <span className={`px-2 py-0.5 rounded-lg border font-mono text-[10px] transition-all ${
-              dtcCodes.length > 0
-                ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 font-black animate-pulse shadow-xs'
-                : 'text-slate-500 border-white/10'
-            }`}>
-              {dtcCodes.length > 0 ? `③ 3. ჩეკის ჩაქრობა (${dtcCodes.length})` : '③ 3. ჩეკი სუფთაა'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-            {/* Clear Check Engine Button (lights up when DTCs found) */}
-            {isConnected && dtcCodes.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  onOpenClearModal();
-                }}
-                className="px-4 py-2 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white transition-all shadow-md shrink-0 flex items-center justify-center gap-2"
-              >
-                <Trash2 size={13} />
-                <span>ჩეკის ჩაქრობა ({dtcCodes.length})</span>
-              </button>
-            )}
-
-            {/* Hero Action Button: Clean solid gold without shining glitter */}
-            {!isConnected ? (
-              <button
-                type="button"
-                onClick={handleToggleConnection}
-                disabled={isHandshaking}
-                className="px-4 py-2 rounded-xl text-xs font-black bg-gold hover:bg-gold/90 text-slate-950 transition-all shadow-md shrink-0 flex items-center justify-center gap-2"
-              >
-                <Radio size={13} className="text-slate-950" />
-                <span>{isHandshaking ? 'მიერთება მიმდინარეობს...' : 'ადაპტერის მიერთება'}</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleOneTouchScan}
-                disabled={isScanning || isHandshaking}
-                className="px-4 py-2 rounded-xl text-xs font-black bg-gold hover:bg-gold/90 text-slate-950 transition-all shadow-md shrink-0 flex items-center justify-center gap-2"
-              >
-                <RefreshCw size={13} className={`text-slate-950 ${isScanning ? 'animate-spin' : ''}`} />
-                <span>{isScanning ? 'სკანირება მიმდინარეობს...' : hasScanned ? 'ხელახალი სკანირება' : 'ერთი შეხებით სკანირება'}</span>
-              </button>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Missing Vehicle Info Notice */}
