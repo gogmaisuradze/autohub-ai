@@ -773,46 +773,46 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
           </div>
         </div>
 
-        {/* Center: Two-Column Responsive Layout (Expanded, Highly Legible & Spacious) */}
-        <div className="my-4 sm:my-6 lg:my-8 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center">
-          {/* Left Column: Title, Subtitle, Full Explanation & Bullets (Expanded across 8 cols without narrow constraints) */}
-          <div className="lg:col-span-8 xl:col-span-8 space-y-3 w-full">
-            <div>
-              <div className="text-[11px] sm:text-xs font-mono tracking-widest text-gold font-bold uppercase drop-shadow-sm mb-1">
-                {current.subtitle}
-              </div>
-              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[32px] font-black text-white tracking-tight leading-snug drop-shadow-lg">
-                {current.title}
-              </h2>
+        {/* Top Content Zone: Subtitle, Title & Narrative + Top-Right HUD Widget */}
+        <div className="pt-2 sm:pt-3 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
+          <div className="lg:col-span-8 xl:col-span-8 space-y-1.5 sm:space-y-2 max-w-2xl">
+            <div className="text-[11px] sm:text-xs font-mono tracking-widest text-gold font-bold uppercase drop-shadow-sm">
+              {current.subtitle}
             </div>
-
-            {/* Detailed Explanation ("თავისი განმარტებით" - Spacious, Clear Font for Easy Reading) */}
-            <p className="text-sm sm:text-base text-slate-100 leading-relaxed font-medium drop-shadow-md max-w-3xl">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[32px] font-black text-white tracking-tight leading-snug drop-shadow-lg">
+              {current.title}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium drop-shadow-md max-w-2xl">
               {current.description}
             </p>
-
-            {/* Highlights Grid (Expanded Comfortable Cards without Truncation) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 pt-1 max-w-3xl">
-              {current.highlights.map((h, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl backdrop-blur-md bg-slate-950/80 border border-white/20 text-xs sm:text-sm font-semibold text-slate-100 shadow-sm transition-all hover:border-gold/50 hover:bg-slate-900/80"
-                >
-                  <CheckCircle2 size={16} className="text-gold shrink-0" />
-                  <span className="leading-snug">{h}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
-          {/* Right Column: Sleek Frosted Glass HUD Widget (Compact & aligned to right) */}
-          <div className="lg:col-span-4 xl:col-span-4 flex items-center justify-end">
+          {/* Right: Sleek Frosted Glass HUD Widget (Tucked neatly to top-right) */}
+          <div className="lg:col-span-4 xl:col-span-4 hidden lg:flex items-start justify-end pt-1">
             {renderVisualCard()}
           </div>
         </div>
 
-        {/* Bottom Bar: CTA Buttons, Secondary Quick Link, Carousel Navigation */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-800/80">
+        {/* Center Open Window: Clear Unobstructed Zone Showcasing the Car Photography */}
+        <div className="flex-1 min-h-[60px] sm:min-h-[90px] lg:min-h-[120px] pointer-events-none" />
+
+        {/* Bottom Zone: Highlights 4-Pill Strip + CTA Action Bar (Distributed Tastefully at Lower Section) */}
+        <div className="space-y-3 pt-2">
+          {/* Highlights Grid (Horizontal 4-Pill Strip, Never Obscuring the Vehicle) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5 max-w-4xl">
+            {current.highlights.map((h, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl backdrop-blur-md bg-slate-950/80 border border-white/20 text-[11px] sm:text-xs font-semibold text-slate-100 shadow-sm transition-all hover:border-gold/50 hover:bg-slate-900/80"
+              >
+                <CheckCircle2 size={15} className="text-gold shrink-0" />
+                <span className="truncate">{h}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom Bar: CTA Buttons, Secondary Quick Link, Carousel Navigation */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-800/80">
           {/* CTA Actions */}
           <div className="flex items-center gap-2">
             <button
@@ -862,6 +862,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Expandable Full Catalog Drawer (ყველა 7 ციფრული სერვისი თემატური ავტო ფოტოებით) */}

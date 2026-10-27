@@ -157,14 +157,14 @@ export const VinHistoryModal: React.FC<Props> = ({
           onClose();
         }
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy/60 backdrop-blur-md animate-fade-in overflow-y-auto cursor-pointer"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy/60 backdrop-blur-md animate-fade-in cursor-pointer"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-3xl rounded-3xl neu-card p-5 sm:p-7 shadow-2xl space-y-5 my-auto max-h-[92vh] overflow-y-auto border border-white/80 bg-[#ECEAE5] cursor-default"
+        className="w-full max-w-3xl rounded-3xl neu-card shadow-2xl my-auto max-h-[90vh] flex flex-col border border-white/80 bg-[#ECEAE5] cursor-default overflow-hidden relative"
       >
-        {/* Header Bar */}
-        <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
+        {/* Fixed Header Bar (Always inside rounded corners, never overflows or cuts border) */}
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 p-5 sm:p-7 pb-4 bg-[#ECEAE5] shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl neu-circle flex items-center justify-center text-navy shadow-sm shrink-0">
               <History className="w-6 h-6 text-gold" />
@@ -199,8 +199,10 @@ export const VinHistoryModal: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* VIN Search / Input Bar */}
-        <form onSubmit={handleSearchCustomVin} className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center gap-2.5">
+        {/* Scrollable Content Body with Organic Inset Scrollbar */}
+        <div className="p-5 sm:p-7 pt-4 overflow-y-auto space-y-5 flex-1 pr-3.5 sm:pr-6 custom-scrollbar-organic">
+          {/* VIN Search / Input Bar */}
+          <form onSubmit={handleSearchCustomVin} className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center gap-2.5">
           <div className="flex-1 w-full relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -343,8 +345,10 @@ export const VinHistoryModal: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="pt-3 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+        </div>
+
+        {/* Fixed Footer Bar (Always inside rounded bottom corners) */}
+        <div className="p-4 sm:p-5 pt-3 border-t border-slate-200/80 bg-[#ECEAE5] shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
             <ShieldCheck size={14} className="text-emerald-600" />
             <span>მონაცემები მოწმდება რეალურ დროში საერთაშორისო საავტომობილო ბაზებში</span>
