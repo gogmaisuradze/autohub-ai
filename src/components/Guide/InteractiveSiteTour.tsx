@@ -240,6 +240,38 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     };
   }, [isTourActive, updateTargetRect]);
 
+  // Global Keyboard ArrowLeft / ArrowRight Navigation for Tour Steps
+  useEffect(() => {
+    if (!isTourActive) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handlePrev();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeTour();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isTourActive, currentStepIndex]);
+
   const handleNext = () => {
     sounds.playClick();
     if (currentStepIndex < TOUR_STEPS.length - 1) {

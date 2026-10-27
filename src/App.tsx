@@ -417,6 +417,41 @@ export const App: React.FC = () => {
     } catch {}
   };
 
+  // Global Keyboard Navigation: Alt + ArrowLeft / Alt + ArrowRight for switching main tabs
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      // Alt/Option + ArrowLeft / ArrowRight switches top tabs
+      if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        const tabList: TabType[] = ['home', 'obd', 'fines', 'parking', 'service', 'map'];
+        const currentIdx = tabList.indexOf(activeTab);
+        if (currentIdx !== -1) {
+          e.preventDefault();
+          sounds.playClick();
+          if (e.key === 'ArrowLeft') {
+            const prevIdx = (currentIdx - 1 + tabList.length) % tabList.length;
+            handleTabChange(tabList[prevIdx]);
+          } else {
+            const nextIdx = (currentIdx + 1) % tabList.length;
+            handleTabChange(tabList[nextIdx]);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab]);
+
   const [vehicle, setVehicle] = useState<VehicleProfile>(() => {
     try {
       const saved = localStorage.getItem('autohub_vehicle_profile');

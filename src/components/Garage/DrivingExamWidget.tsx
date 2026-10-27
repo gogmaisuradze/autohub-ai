@@ -403,6 +403,38 @@ export const DrivingExamWidget: React.FC = () => {
   const currentAnswer = answers[currentIdx];
   const isAnswered = currentAnswer !== undefined;
 
+  // Keyboard ArrowLeft / ArrowRight navigation for exam questions
+  useEffect(() => {
+    if (viewMode !== 'practice' && viewMode !== 'exam') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === 'ArrowLeft') {
+        if (viewMode === 'practice' && currentIdx > 0) {
+          e.preventDefault();
+          handlePrev();
+        }
+      } else if (e.key === 'ArrowRight') {
+        if (isAnswered) {
+          e.preventDefault();
+          handleNext();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [viewMode, currentIdx, isAnswered, activeQuestions.length]);
+
   const minutes = Math.floor(timeLeft / 60);
   const seconds = (timeLeft % 60).toString().padStart(2, '0');
   const isPassed = errorsCount <= 3 && timeLeft > 0;

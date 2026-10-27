@@ -320,6 +320,44 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
     };
   }, [isPaused, isDismissed, isCatalogExpanded, totalServices]);
 
+  // Global Keyboard ArrowLeft / ArrowRight Navigation for Cover Slides
+  useEffect(() => {
+    if (isDismissed) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept when user is typing in form fields
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      // If a top modal dialog is open, let modal handle its own controls
+      const hasOpenModal = document.querySelector('.fixed.inset-0.z-50');
+      if (hasOpenModal) {
+        return;
+      }
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        sounds.playClick();
+        setCurrentIndex((prev) => (prev - 1 + totalServices) % totalServices);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        sounds.playClick();
+        setCurrentIndex((prev) => (prev + 1) % totalServices);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [totalServices, isDismissed]);
+
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
     sounds.playClick();

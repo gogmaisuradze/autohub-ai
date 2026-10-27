@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VehicleProfile } from '../../types';
 import { sounds } from '../../services/soundEffects';
 import {
@@ -132,6 +132,35 @@ export const AddVehicleWizardModal: React.FC<Props> = ({
     onSaveVehicle(formData);
     onClose();
   };
+
+  // Keyboard ArrowLeft / ArrowRight navigation for wizard steps
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === 'ArrowLeft' && step > 1) {
+        e.preventDefault();
+        handlePrev();
+      } else if (e.key === 'ArrowRight' && step < 4) {
+        e.preventDefault();
+        handleNext();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, step]);
 
   const stepsList = [
     { num: 1, title: 'იდენტიფიკაცია', icon: Car },

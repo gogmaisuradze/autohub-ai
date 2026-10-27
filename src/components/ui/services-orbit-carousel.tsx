@@ -196,6 +196,39 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   const activeService = hubServices[activeIndex];
   const ActiveIcon = activeService.icon;
 
+  // Keyboard Left / Right Navigation for Orbit Carousel when hovered/focused
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (document.querySelector('.fixed.inset-0.z-50')) return;
+
+      if (isHovering) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          prev();
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          next();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          sounds.playSuccess();
+          onSelectDepartment(activeService.tab);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isHovering, activeService, onSelectDepartment]);
+
   const handleNodeClick = (index: number, tab: TabType) => {
     sounds.playClick();
     if (index === activeIndex) {
