@@ -90,6 +90,25 @@ export const ServiceLogModule: React.FC<Props> = ({
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [selectedServiceDeckCard, setSelectedServiceDeckCard] = useState<'profile' | 'catalog' | null>(null);
 
+  // Toggle ready-made answers / preset thematic details
+  const [showPresetAnswers, setShowPresetAnswers] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('autohub_show_service_presets');
+      return stored !== null ? stored === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+  const [expandedCardDetails, setExpandedCardDetails] = useState<Record<string, boolean>>({});
+
+  const toggleCardDetails = (id: string) => {
+    sounds.playClick();
+    setExpandedCardDetails(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
   // Helper to render category icon
   const getCategoryIcon = (cat: ServiceCategory | string) => {
     const norm = normalizeCategory(cat);
@@ -767,52 +786,83 @@ export const ServiceLogModule: React.FC<Props> = ({
         </div>
       )}
 
-      {/* 3. Category Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+      {/* 3. Category Filter Chips & Pre-made Answers Toggle Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full sm:max-w-[70%] scrollbar-none">
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setActiveCategoryFilter('all');
+            }}
+            className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+              activeCategoryFilter === 'all'
+                ? 'bg-navy text-gold shadow-sm scale-105'
+                : 'bg-white hover:bg-slate-50 text-navy border border-slate-200'
+            }`}
+          >
+            <span>ყველა სერვისი</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+              activeCategoryFilter === 'all' ? 'bg-gold text-navy font-black' : 'bg-slate-100 text-slate-600'
+            }`}>
+              {services.length}
+            </span>
+          </button>
+
+          {SERVICE_CATEGORIES.map(cat => {
+            const isSelected = activeCategoryFilter === cat.id;
+            const count = categoryCounts[cat.id] || 0;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  sounds.playClick();
+                  setActiveCategoryFilter(cat.id);
+                }}
+                className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-navy text-gold shadow-sm scale-105'
+                    : 'bg-white hover:bg-slate-50 text-navy border border-slate-200'
+                }`}
+              >
+                <span className="truncate max-w-[150px]">{cat.name_ge}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                  isSelected ? 'bg-gold text-navy font-black' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Ready-made answers toggle */}
         <button
+          type="button"
           onClick={() => {
             sounds.playClick();
-            setActiveCategoryFilter('all');
+            const nextVal = !showPresetAnswers;
+            setShowPresetAnswers(nextVal);
+            try {
+              localStorage.setItem('autohub_show_service_presets', String(nextVal));
+            } catch {}
           }}
-          className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-            activeCategoryFilter === 'all'
-              ? 'bg-navy text-gold shadow-sm scale-105'
-              : 'bg-white hover:bg-slate-50 text-navy border border-slate-200'
+          className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 border shadow-2xs ${
+            showPresetAnswers
+              ? 'bg-white hover:bg-slate-50 text-navy border-slate-200/90'
+              : 'bg-navy text-gold border-navy shadow-sm font-black'
           }`}
+          title={showPresetAnswers ? 'მზა პასუხების & დეტალების გამორთვა' : 'მზა პასუხების & დეტალების ჩართვა'}
         >
-          <span>ყველა სერვისი</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-            activeCategoryFilter === 'all' ? 'bg-gold text-navy font-black' : 'bg-slate-100 text-slate-600'
+          <Sparkles size={13} className={showPresetAnswers ? 'text-gold' : 'text-slate-400'} />
+          <span>მზა პასუხები:</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black border ${
+            showPresetAnswers
+              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+              : 'bg-gold text-navy border-gold'
           }`}>
-            {services.length}
+            {showPresetAnswers ? 'ჩართულია' : 'გამორთულია'}
           </span>
         </button>
-
-        {SERVICE_CATEGORIES.map(cat => {
-          const isSelected = activeCategoryFilter === cat.id;
-          const count = categoryCounts[cat.id] || 0;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => {
-                sounds.playClick();
-                setActiveCategoryFilter(cat.id);
-              }}
-              className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
-                isSelected
-                  ? 'bg-navy text-gold shadow-sm scale-105'
-                  : 'bg-white hover:bg-slate-50 text-navy border border-slate-200'
-              }`}
-            >
-              <span className="truncate max-w-[150px]">{cat.name_ge}</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                isSelected ? 'bg-gold text-navy font-black' : 'bg-slate-100 text-slate-600'
-              }`}>
-                {count}
-              </span>
-            </button>
-          );
-        })}
       </div>
 
       {/* 4. Service Cards Grid */}
@@ -841,6 +891,7 @@ export const ServiceLogModule: React.FC<Props> = ({
             const isWarning = item.health_percentage <= 45 && !isCritical;
             const normCat = normalizeCategory(item.category);
             const variantDef = getVariantDefinition(item.variant_key);
+            const shouldShowDetails = showPresetAnswers || !!expandedCardDetails[item.id];
 
             return (
               <div
@@ -877,7 +928,7 @@ export const ServiceLogModule: React.FC<Props> = ({
                   </div>
 
                   {/* Urgent / Warning Service Comparison CTA */}
-                  {(isCritical || isWarning) && (
+                  {(isCritical || isWarning) && shouldShowDetails && (
                     <div className={`my-2 p-2.5 rounded-2xl flex items-center justify-between gap-2 border text-xs animate-fade-in ${
                       isCritical 
                         ? 'bg-rose-50/90 border-rose-200 text-rose-900' 
@@ -904,7 +955,9 @@ export const ServiceLogModule: React.FC<Props> = ({
                     </div>
                   )}
 
-                  {/* DEDICATED THEMATIC DETAILS BADGES & METRICS */}
+                  {/* DEDICATED THEMATIC DETAILS BADGES & METRICS (მზა პასუხები) */}
+                  {shouldShowDetails ? (
+                    <>
 
                   {/* 1. CHASSIS (Tires, Alignment, Brakes, Shocks, Arms) */}
                   {normCat === 'chassis' && (
@@ -1193,6 +1246,33 @@ export const ServiceLogModule: React.FC<Props> = ({
                       )}
                     </div>
                   )}
+
+                  {!showPresetAnswers && (
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="button"
+                        onClick={() => toggleCardDetails(item.id)}
+                        className="text-[10px] text-slate-400 hover:text-navy font-bold transition-colors"
+                      >
+                        დეტალების დამალვა ✕
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="my-2.5 p-2.5 rounded-2xl bg-slate-50/80 border border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+                  <span className="text-[11px] font-medium truncate max-w-[200px]">
+                    {item.notes || 'მზა პასუხები გამორთულია'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleCardDetails(item.id)}
+                    className="text-[11px] font-bold text-navy hover:text-gold flex items-center gap-1 transition-colors"
+                  >
+                    <span>+ დეტალების ნახვა</span>
+                  </button>
+                </div>
+              )}
 
                   {/* Resource Slider / Progress Bar */}
                   <div className="my-3 space-y-1.5">

@@ -206,6 +206,9 @@ export const ThematicServiceModal: React.FC<Props> = ({
   const [licenseCategories, setLicenseCategories] = useState('B, B1');
   const [licenseExpiryDate, setLicenseExpiryDate] = useState('');
 
+  // Toggle ready-made answers & presets
+  const [disableAutoFillPresets, setDisableAutoFillPresets] = useState<boolean>(false);
+
   // Helper to calculate 1 year expiry date (+365 days)
   const calculateDefaultExpiry = (baseDateStr: string, yearsToAdd = 1) => {
     try {
@@ -377,7 +380,7 @@ export const ThematicServiceModal: React.FC<Props> = ({
     setLaborCostGel(Math.round(defCost * 0.25));
 
     // Apply specific preset defaults
-    if (def.defaultValues) {
+    if (!disableAutoFillPresets && def.defaultValues) {
       const v = def.defaultValues;
       if (v.tire_size) setTireSize(v.tire_size);
       if (v.tire_season) setTireSeason(v.tire_season);
@@ -892,6 +895,23 @@ export const ThematicServiceModal: React.FC<Props> = ({
                 <span>✎ რედაქტირება</span>
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setDisableAutoFillPresets(!disableAutoFillPresets);
+              }}
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                disableAutoFillPresets
+                  ? 'bg-navy text-gold border-navy shadow-sm'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+              }`}
+              title="მზა პასუხების & ავტო-შევსების გამორთვა / ჩართვა"
+            >
+              <Sparkles size={13} className={disableAutoFillPresets ? 'text-gold' : 'text-slate-400'} />
+              <span>მზა პასუხები: {disableAutoFillPresets ? 'გამორთულია' : 'ჩართულია'}</span>
+            </button>
 
             <button
               type="button"
@@ -1444,22 +1464,24 @@ export const ThematicServiceModal: React.FC<Props> = ({
                   />
 
                   {/* Preset Suggestions */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <span className="text-[10px] text-slate-400 font-bold mr-1">რეკომენდებული:</span>
-                    {currentCategoryVariants.slice(0, 3).map(v => (
-                      <button
-                        key={v.key}
-                        type="button"
-                        onClick={() => {
-                          sounds.playClick();
-                          setTitle(v.title_ge);
-                        }}
-                        className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-medium text-slate-700 transition-all"
-                      >
-                        {v.title_ge}
-                      </button>
-                    ))}
-                  </div>
+                  {!disableAutoFillPresets && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[10px] text-slate-400 font-bold mr-1">რეკომენდებული:</span>
+                      {currentCategoryVariants.slice(0, 3).map(v => (
+                        <button
+                          key={v.key}
+                          type="button"
+                          onClick={() => {
+                            sounds.playClick();
+                            setTitle(v.title_ge);
+                          }}
+                          className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-medium text-slate-700 transition-all"
+                        >
+                          {v.title_ge}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -102,6 +102,7 @@ export const AiMechanicChat: React.FC<Props> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showQuickPrompts, setShowQuickPrompts] = useState<boolean>(true);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   const quickPrompts = [
@@ -610,18 +611,39 @@ export const AiMechanicChat: React.FC<Props> = ({
           <div ref={chatBottomRef} />
         </div>
 
-        {/* Quick Prompts Slider */}
-        <div className="px-4 py-2.5 bg-white border-t border-slate-100 overflow-x-auto flex items-center gap-2 no-scrollbar">
-          {quickPrompts.map((qp, index) => (
+        {/* Quick Prompts Slider / Pre-made answers */}
+        {showQuickPrompts ? (
+          <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2 animate-fade-in">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              <span className="text-[10px] text-slate-400 font-bold shrink-0">მზა კითხვები:</span>
+              {quickPrompts.map((qp, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSendMessage(qp.query)}
+                  className="px-3 py-1 rounded-full text-xs font-bold neu-btn text-navy hover:text-gold whitespace-nowrap transition-all shrink-0 shadow-2xs"
+                >
+                  {qp.label}
+                </button>
+              ))}
+            </div>
             <button
-              key={index}
-              onClick={() => handleSendMessage(qp.query)}
-              className="px-3.5 py-1.5 rounded-full text-xs font-bold neu-btn text-navy hover:text-gold whitespace-nowrap transition-all shrink-0"
+              onClick={() => setShowQuickPrompts(false)}
+              className="text-[10px] text-slate-400 hover:text-navy px-1.5 py-0.5 rounded-md hover:bg-slate-200 shrink-0 font-bold transition-all"
+              title="მზა კითხვების დამალვა"
             >
-              {qp.label}
+              ✕
             </button>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="px-4 py-1 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
+            <button
+              onClick={() => setShowQuickPrompts(true)}
+              className="text-[10px] text-slate-500 hover:text-gold font-bold transition-all flex items-center gap-1"
+            >
+              <span>+ მზა კითხვების გამოჩენა</span>
+            </button>
+          </div>
+        )}
 
         {/* Chat Input Box */}
         <div className="p-3 bg-white border-t border-slate-100 flex items-center gap-2">
