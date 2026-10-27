@@ -31,6 +31,8 @@ import {
 
 interface Props {
   isScanning: boolean;
+  scanOutcome?: 'success' | 'error' | null;
+  onSequenceBusyChange?: (busy: boolean) => void;
   selectedComponent: string | null;
   onSelectComponent: (componentId: string) => void;
   hasErrors?: boolean;
@@ -89,6 +91,8 @@ function createFrameTube(p1: THREE.Vector3, p2: THREE.Vector3, radius: number = 
 
 export const ThreeCarScene: React.FC<Props> = ({
   isScanning,
+  scanOutcome = null,
+  onSequenceBusyChange,
   selectedComponent,
   onSelectComponent,
   hasErrors = false,
@@ -98,6 +102,32 @@ export const ThreeCarScene: React.FC<Props> = ({
   onStartScan
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const [scanStage, setScanStage] = useState<'idle' | 'rotating' | 'waiting' | 'reveal' | 'fault' | 'clean' | 'error'>('idle');
+  const sequenceRef = useRef({ active: false, elapsed: 0, startAngle: NaN, revealing: false });
+  const sequenceCallbacks = useRef({ onSequenceBusyChange, onSelectComponent });
+  sequenceCallbacks.current = { onSequenceBusyChange, onSelectComponent };
+  const scanOutcomeRef = useRef(scanOutcome);
+  scanOutcomeRef.current = scanOutcome;
+  const modelReadyRef = useRef(false);
+  const scanVisualActive = isScanning || ['rotating', 'waiting', 'reveal'].includes(scanStage);
+  useEffect(() => {
+    if (!isScanning) return;
+    sequenceRef.current = { active: true, elapsed: 0, startAngle: NaN, revealing: false };
+    setScanStage('rotating');
+    setExplodeFactor(0);
+    targetExplodeRef.current = 0;
+    solidTargetRef.current = 0;
+    setIsGhostMode(true);
+    setAutoRotate(false);
+    setActivePin(null);
+    activePinRef.current = null;
+    setInfoCardOpen(false);
+    targetCamPosRef.current = new THREE.Vector3(5.7, 3.6, 6.5);
+    targetCamLookRef.current = new THREE.Vector3(0, .85, 0);
+    sequenceCallbacks.current.onSequenceBusyChange?.(true);
+    containerRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+  }, [isScanning]);
 
   // UI Interactive States
   const [activePin, setActivePin] = useState<string | null>(selectedComponent || null);
@@ -443,7 +473,10 @@ export const ThreeCarScene: React.FC<Props> = ({
     const visual = {
       fill: { value: 0 }, lift: { value: 0 },
       scanZ: { value: -2.6 }, scanStrength: { value: 0 },
-      carInverse: { value: new THREE.Matrix4() }
+      carInverse: { value: new THREE.Matrix4() },
+      // შევსება ცენტრიდან (ძრავიდან) გავრცელდება: წყარო, რადიუსი და მკვეთრი კიდე
+      fillOrigin: { value: new THREE.Vector3(0, 0.5, 1.0) },
+      fillReach: { value: 3.6 }, fillEdge: { value: 0.16 }
     };
     const ghostColor = new THREE.Color(0xaecbe6);
     const applySurfaceEffects = (mat: THREE.MeshStandardMaterial, body: boolean) => {
@@ -452,34 +485,44 @@ export const ThreeCarScene: React.FC<Props> = ({
         Object.assign(shader.uniforms, {
           uFill: visual.fill, uLift: visual.lift, uScanZ: visual.scanZ,
           uScanStrength: visual.scanStrength, uCarInverse: visual.carInverse,
+          uFillOrigin: visual.fillOrigin, uFillReach: visual.fillReach, uFillEdge: visual.fillEdge,
           uGhostColor: { value: ghostColor }, uPaintColor: { value: solidColor },
           uGhostAlpha: { value: mat.userData.ghostOpacity ?? .26 }
         });
         shader.vertexShader = 'uniform mat4 uCarInverse; varying vec3 vCarSurface;\n' + shader.vertexShader;
         shader.vertexShader = shader.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvCarSurface = (uCarInverse * modelMatrix * vec4(transformed, 1.0)).xyz;');
-        shader.fragmentShader = `uniform float uFill, uLift, uScanZ, uScanStrength, uGhostAlpha;
-          uniform vec3 uGhostColor, uPaintColor; varying vec3 vCarSurface;\n` + shader.fragmentShader;
+        shader.fragmentShader = `uniform float uFill, uLift, uScanZ, uScanStrength, uGhostAlpha, uFillReach, uFillEdge;
+          uniform vec3 uGhostColor, uPaintColor, uFillOrigin; varying vec3 vCarSurface;\n` + shader.fragmentShader;
         if (body) {
           shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-            // One shared blend for the entire shell: no late roof/cabin pieces.
-            float painted = uFill;
+            // შევსება ძრავის ცენტრიდან გარეთ, მკვეთრი ფრონტით
+            float pd = distance(vCarSurface, uFillOrigin);
+            float pR = uFill * uFillReach;
+            float painted = smoothstep(pR + uFillEdge, pR - uFillEdge, pd);
             diffuseColor.rgb = mix(uGhostColor, uPaintColor, painted);
             diffuseColor.a = mix(uGhostAlpha, 1.0, painted);`);
-          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(.13, .25, painted);');
-          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(.03, .58, painted);');
+          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(.12, .42, painted);');
+          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(.03, .14, painted);');
         }
         shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
           float scanBand = exp(-pow((vCarSurface.z - uScanZ) / .075, 2.0));
           float scanHalo = exp(-pow((vCarSurface.z - uScanZ) / .25, 2.0));
           outgoingLight += (vec3(.48, .76, 1.0) * scanBand * 1.15 + vec3(.10, .30, .48) * scanHalo * .22) * uScanStrength;
+          // ნათელი ფრონტი შევსების კიდეზე — ცენტრიდან (ძრავიდან) გავრცელებული ტალღა
+          float fd = distance(vCarSurface, uFillOrigin);
+          float fR = uFill * uFillReach;
+          float fillFront = exp(-pow((fd - fR) / max(uFillEdge, .001), 2.0)) * step(.02, uFill) * (1.0 - smoothstep(.9, 1.0, uFill));
+          outgoingLight += vec3(.55, .82, 1.0) * fillFront * 1.25;
           #include <opaque_fragment>`);
       };
       mat.customProgramCacheKey = () => body ? 'autohub-paint-fill-v2' : 'autohub-surface-scan-v2';
       mat.needsUpdate = true;
     };
     const engineParts: { node: THREE.Group; rest: THREE.Vector3; offset: THREE.Vector3 }[] = [];
+    let headlightMat: THREE.MeshStandardMaterial | null = null;
+    let taillightMat: THREE.MeshStandardMaterial | null = null;
     let disposed = false;
-    gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=8`, (gltf) => {
+    gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=9`, (gltf) => {
       const root = gltf.scene;
       if (disposed) return;
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
@@ -602,6 +645,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         roughness: 0.14, ior: 1.45, metalness: 0.05, clearcoat: 1.0, depthWrite: false
       });
       ghostGlassMat.userData.ghostOpacity = 0.26;
+      ghostGlassMat.userData.solidColor = 0x1746b0; // iPhone 17 ღრმა/გაჯერებული ლურჯი
       bodyMaterialsRef.current = [ghostGlassMat];
       meshesOf('Body_Paint').forEach(m => { m.material = ghostGlassMat; bodyGrp.attach(m); });
 
@@ -625,11 +669,13 @@ export const ThreeCarScene: React.FC<Props> = ({
       meshesOf('Body_Interior').forEach(m => { m.material = interiorMat; m.castShadow = true; bodyGrp.attach(m); });
 
       // თავფარები — ანათებს თეთრ-ცისფრად
-      const headMat = new THREE.MeshStandardMaterial({ color: 0xeaf2ff, emissive: 0xcfe2ff, emissiveIntensity: 1.8, roughness: 0.18, metalness: 0.0 });
+      const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xddeeff, emissiveIntensity: 0.3, roughness: 0.12, metalness: 0.0 });
       meshesOf('Body_LightsF').forEach(m => { m.material = headMat; bodyGrp.attach(m); });
+      headlightMat = headMat;
       // უკანა ფარები — წითელი
-      const tailMat = new THREE.MeshStandardMaterial({ color: 0xff2e2e, emissive: 0xff1818, emissiveIntensity: 1.3, roughness: 0.3, metalness: 0.0 });
+      const tailMat = new THREE.MeshStandardMaterial({ color: 0xff3b3b, emissive: 0xff1818, emissiveIntensity: 0.3, roughness: 0.28, metalness: 0.0 });
       meshesOf('Body_LightsR').forEach(m => { m.material = tailMat; bodyGrp.attach(m); });
+      taillightMat = tailMat;
 
       // --- ნომრის ფირფიტები (კორპუსთან ერთად მოძრაობენ, ნომერს აჩვენებენ) ---
       const plateCanvas = document.createElement('canvas');
@@ -688,7 +734,24 @@ export const ThreeCarScene: React.FC<Props> = ({
           }
         });
       });
+      // შევსების წყარო = ძრავის ცენტრი (მოდელ-ლოკალში), რადიუსი = კორპუსის მაქს. მანძილი
+      carMasterGroup.updateWorldMatrix(true, true);
+      const egrp = groupsRef.current['engine'];
+      if (egrp) {
+        const ec = new THREE.Box3().setFromObject(egrp).getCenter(new THREE.Vector3());
+        carMasterGroup.worldToLocal(ec);
+        visual.fillOrigin.value.copy(ec);
+      }
+      const fillBox = new THREE.Box3().setFromObject(bodyGrp);
+      let reach = 0.1;
+      for (let xi = 0; xi < 2; xi++) for (let yi = 0; yi < 2; yi++) for (let zi = 0; zi < 2; zi++) {
+        const corner = new THREE.Vector3(xi ? fillBox.max.x : fillBox.min.x, yi ? fillBox.max.y : fillBox.min.y, zi ? fillBox.max.z : fillBox.min.z);
+        carMasterGroup.worldToLocal(corner);
+        reach = Math.max(reach, corner.distanceTo(visual.fillOrigin.value));
+      }
+      visual.fillReach.value = reach + 0.12;
       carMasterGroup.remove(root);
+      modelReadyRef.current = true;
     }, undefined, (err) => { if (!disposed) setModelError(true); console.error('BMW model load error', err); });
 
     // 3D hotspot pins removed — components light up in their own colour instead
@@ -718,8 +781,69 @@ export const ThreeCarScene: React.FC<Props> = ({
       fillProgress = THREE.MathUtils.clamp(fillProgress + Math.sign(solidTargetRef.current - fillProgress) * Math.min(Math.abs(solidTargetRef.current - fillProgress), fillStep), 0, 1);
       visual.fill.value = fillProgress * fillProgress * (3 - 2 * fillProgress);
       visual.lift.value = currentExplodeRef.current * 1.10;
+      // ფარები ინთება როცა მანქანა მკაფიო/მყარი ხდება
+      if (headlightMat) headlightMat.emissiveIntensity = 0.22 + fillProgress * 3.0;
+      if (taillightMat) taillightMat.emissiveIntensity = 0.18 + fillProgress * 1.9;
+      // მყარ რეჟიმში შიდა აგრეგატები იმალება (კაპოტიდან ძრავა აღარ ამოდის)
+      const hideInternals = fillProgress > 0.9;
+      ['engine', 'ecu', 'exhaust', 'cooling', 'suspension', 'battery', 'ignition_coil', 'oxygen_sensor', 'coolant_sensor', 'throttle_sensor', 'fuel_injectors', 'fuel_pump', 'intake_sensor', 'knock_sensor', 'map_sensor'].forEach(id => {
+        const g = groupsRef.current[id];
+        if (g && g.visible === hideInternals) g.visible = !hideInternals;
+      });
       // All surfaces finish together and restore normal solid-body occlusion.
       bodyMaterialsRef.current.forEach(mat => { mat.depthWrite = fillProgress > .995; });
+
+      const sequence = sequenceRef.current;
+      if (sequence.active && modelReadyRef.current) {
+        controls.enabled = false;
+        if (Number.isNaN(sequence.startAngle)) sequence.startAngle = carMasterGroup.rotation.y;
+        if (!sequence.revealing) {
+          sequence.elapsed += delta;
+          const turn = Math.min(sequence.elapsed / 12, 1);
+          const eased = turn * turn * (3 - 2 * turn);
+          carMasterGroup.rotation.y = sequence.startAngle + Math.PI * 2 * eased;
+          if (turn >= 1 && !liveStateRef.current.isScanning) {
+            if (scanOutcomeRef.current === 'error') {
+              sequence.active = false;
+              setScanStage('error');
+              sequenceCallbacks.current.onSequenceBusyChange?.(false);
+            } else if (liveStateRef.current.dtcCodes.length > 0) {
+              sequence.revealing = true;
+              setScanStage('reveal');
+              targetExplodeRef.current = 1;
+              setExplodeFactor(1);
+            } else {
+              sequence.active = false;
+              solidTargetRef.current = 1;
+              setIsGhostMode(false);
+              setScanStage('clean');
+              sequenceCallbacks.current.onSequenceBusyChange?.(false);
+            }
+          } else if (turn >= 1) setScanStage(previous => previous === 'waiting' ? previous : 'waiting');
+        } else if (currentExplodeRef.current > .96) {
+          const matches = componentsList.filter(comp => liveStateRef.current.dtcCodes.some(code => comp.matchingCodes.some(prefix => code.code.toUpperCase().includes(prefix))));
+          const matched = matches.find(comp => comp.id.endsWith('_sensor') || comp.id === 'fuel_injectors') || matches[0];
+          if (matched) {
+            const group = groupsRef.current[matched.id];
+            if (group) {
+              group.updateWorldMatrix(true, true);
+              const box = new THREE.Box3().setFromObject(group);
+              const center = box.getCenter(new THREE.Vector3());
+              const distance = THREE.MathUtils.clamp(box.getSize(new THREE.Vector3()).length() / (2 * Math.sin(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.25, 2.0, 8.0);
+              targetCamLookRef.current = center;
+              targetCamPosRef.current = center.clone().add(new THREE.Vector3(.85, .6, 1).normalize().multiplyScalar(distance));
+            }
+            activePinRef.current = matched.id;
+            setActivePin(matched.id);
+            setInfoCardOpen(true);
+            sequenceCallbacks.current.onSelectComponent(matched.id);
+          }
+          sequence.active = false;
+          setScanStage('fault');
+          sequenceCallbacks.current.onSequenceBusyChange?.(false);
+        }
+      }
+      if (!sequence.active) controls.enabled = true;
 
       // Smooth interpolation for Exploded View separation
       currentExplodeRef.current += (targetExplodeRef.current - currentExplodeRef.current) * 0.08;
@@ -768,7 +892,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       componentsList.forEach(comp => {
         const mats = glowMatsRef.current[comp.id];
         const light = lightsRef.current[comp.id];
-        const hasFault = liveStateRef.current.dtcCodes.some(c =>
+        const hasFault = !(sequenceRef.current.active && liveStateRef.current.isScanning) && liveStateRef.current.dtcCodes.some(c =>
           comp.matchingCodes.some(m => c.code.toUpperCase().includes(m.toUpperCase()))
         );
         const isSelected = activePinRef.current === comp.id;
@@ -804,12 +928,12 @@ export const ThreeCarScene: React.FC<Props> = ({
       }
 
       // Auto-turntable spin when not manually interacting
-      if (liveStateRef.current.autoRotate && !targetCamPosRef.current && curExp < 0.05) {
+      if (!sequenceRef.current.active && liveStateRef.current.autoRotate && !targetCamPosRef.current && curExp < 0.05) {
         carMasterGroup.rotation.y += 0.0018;
       }
 
       // A calm surface-following sweep, independent of frame rate, with a soft exit.
-      const scanning = liveStateRef.current.isScanning;
+      const scanning = liveStateRef.current.isScanning || sequenceRef.current.active;
       visual.scanStrength.value = THREE.MathUtils.damp(visual.scanStrength.value, scanning ? 1 : 0, 4, delta);
       const focus = visual.scanStrength.value;
       podiumMat.color.copy(idlePodium).lerp(scanPodium, focus);
@@ -840,6 +964,8 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     return () => {
       disposed = true;
+      modelReadyRef.current = false;
+      sequenceCallbacks.current.onSequenceBusyChange?.(false);
       cancelAnimationFrame(animId);
       dracoLoader.dispose();
       scene.traverse((o: any) => {
@@ -887,7 +1013,7 @@ export const ThreeCarScene: React.FC<Props> = ({
   return (
     <div className="relative w-full h-[320px] sm:h-[450px] md:h-[530px] rounded-3xl overflow-hidden neu-surface border border-white shadow-neu-card bg-gradient-to-b from-[#FAFBFD] via-[#EEF3F8] to-[#E3EBF4] select-none touch-pan-y">
       
-      <div aria-hidden="true" className="absolute inset-0 pointer-events-none transition-opacity duration-1000" style={{ background: 'radial-gradient(ellipse at 50% 48%, #1a3047 0%, #0b1728 58%, #050b14 100%)', opacity: isScanning ? 1 : 0 }} />
+      <div aria-hidden="true" className="absolute inset-0 pointer-events-none transition-opacity duration-1000" style={{ background: 'radial-gradient(ellipse at 50% 48%, #1a3047 0%, #0b1728 58%, #050b14 100%)', opacity: scanVisualActive ? 1 : 0 }} />
       <div className="absolute bottom-2 left-3 z-20 max-w-[65%] text-[9px] text-slate-500 pointer-events-auto">
         BMW M4 • ილუსტრაციული აგებულება • შეცდომის კოდი დაზიანებულ ნაწილს საბოლოოდ არ ადგენს · <a className="underline" href={`${import.meta.env.BASE_URL}models/bmw-diagnostic-credits.json`} target="_blank" rel="noreferrer">3D ავტორები</a>
       </div>
@@ -910,8 +1036,9 @@ export const ThreeCarScene: React.FC<Props> = ({
           )}
         </div>
 
-        {/* Right HUD Controls: Scan Button, Ghost / Solid Toggle, Exploded View Slider & Reset */}
+        {/* Right HUD Controls: Ghost / Solid Toggle, Exploded View Slider & Reset */}
         <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+          
           {/* Quick Scan Button right on 3D Screen */}
           {onStartScan && (
             <button
@@ -920,16 +1047,16 @@ export const ThreeCarScene: React.FC<Props> = ({
                 sounds.playClick();
                 onStartScan();
               }}
-              disabled={isScanning}
+              disabled={scanVisualActive}
               className={`px-3 sm:px-4 py-1.5 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md active:scale-95 border ${
-                isScanning
+                scanVisualActive
                   ? 'bg-amber-400 text-slate-950 border-amber-500 animate-pulse cursor-wait'
                   : 'bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 hover:shadow-gold-soft hover:scale-105 border-gold shadow-sm'
               }`}
               title="3D დიაგნოსტიკური სკანირება"
             >
-              <Zap size={13} className={isScanning ? 'animate-bounce' : 'fill-slate-950 text-slate-950'} />
-              <span>{isScanning ? 'სკანირება...' : 'სკანირება'}</span>
+              <Zap size={13} className={scanVisualActive ? 'animate-bounce' : 'fill-slate-950 text-slate-950'} />
+              <span>{scanVisualActive ? 'სკანირება...' : 'სკანირება'}</span>
             </button>
           )}
           
@@ -1007,7 +1134,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       <div ref={containerRef} className="relative w-full h-full cursor-grab active:cursor-grabbing touch-pan-y" />
 
       {/* 3A. LEFT HUD PANEL: რას აანალიზებს (სისტემები) */}
-      <div style={{ opacity: isScanning ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute top-14 sm:top-16 left-2.5 sm:left-4 z-20 pointer-events-auto max-w-[230px] sm:max-w-[270px]">
+      <div style={{ opacity: scanVisualActive ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute top-14 sm:top-16 left-2.5 sm:left-4 z-20 pointer-events-auto max-w-[230px] sm:max-w-[270px]">
         {leftHudOpen ? (
           <div className="bg-white/95 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
@@ -1113,7 +1240,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       </div>
 
       {/* 3B. RIGHT HUD PANEL: რას ნახულობს და რა იპოვა */}
-      <div style={{ opacity: isScanning ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute top-14 sm:top-16 right-2.5 sm:right-4 z-20 pointer-events-auto max-w-[240px] sm:max-w-[290px]">
+      <div style={{ opacity: scanVisualActive ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute top-14 sm:top-16 right-2.5 sm:right-4 z-20 pointer-events-auto max-w-[240px] sm:max-w-[290px]">
         {rightHudOpen ? (
           <div className="bg-white/95 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
@@ -1327,28 +1454,22 @@ export const ThreeCarScene: React.FC<Props> = ({
         })}
       </div>}
 
-      {isScanning ? (
+      {['clean', 'fault', 'error'].includes(scanStage) && !scanVisualActive && (
+        <div role="status" aria-live="polite" className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 max-w-[90%] rounded-2xl bg-white/95 border border-slate-200 px-4 py-2 text-center shadow-sm">
+          <p className={`text-sm font-bold ${scanStage === 'clean' ? 'text-emerald-700' : scanStage === 'error' ? 'text-slate-700' : 'text-amber-700'}`}>
+            {scanStage === 'clean' ? 'ხარვეზი არ გამოვლენილა' : scanStage === 'error' ? 'სკანირება ვერ დასრულდა' : 'აღმოჩენილი სისტემის შემოწმება საჭიროა'}
+          </p>
+          <p className="text-[10px] text-slate-500 mt-1">{scanStage === 'clean' ? 'მიღებულ პასუხში DTC კოდები არ არის' : scanStage === 'error' ? 'კავშირი შეამოწმე და თავიდან სცადე' : 'შეცდომის კოდი საბოლოო დიაგნოზი არ არის'}</p>
+        </div>
+      )}
+      {scanVisualActive && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none" role="status" aria-live="polite">
           <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/95 border border-sky-100 shadow-sm text-slate-700">
             <Activity size={14} className="text-sky-500 motion-safe:animate-pulse" />
-            <span className="text-xs font-semibold tracking-wide">მიმდინარეობს სკანირება...</span>
+            <span className="text-xs font-semibold tracking-wide">{scanStage === 'waiting' ? 'ველოდებით სკანირების პასუხს' : scanStage === 'reveal' ? 'პრობლემური სისტემის გამოყოფა' : 'მიმდინარეობს სკანირება'}</span>
           </div>
         </div>
-      ) : onStartScan && dtcCodes.length === 0 ? (
-        <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              onStartScan();
-            }}
-            className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-xs sm:text-sm font-black shadow-lg hover:shadow-gold-soft hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border border-gold/40 group"
-          >
-            <Zap size={15} className="fill-slate-950 text-slate-950 group-hover:scale-110 transition-transform" />
-            <span>3D დიაგნოსტიკური სკანირება</span>
-          </button>
-        </div>
-      ) : null}
+      )}
     </div>
   );
 };

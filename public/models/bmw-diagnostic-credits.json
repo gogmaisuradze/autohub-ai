@@ -1,0 +1,101 @@
+{
+  "assembly": "AutoHub BMW illustrative diagnostic assembly",
+  "modifications": "Models scaled, regrouped, compressed and combined; body glass material; donor emblem replaced.",
+  "credits": [
+    {
+      "title": "2026 BMW M4 Competition",
+      "author": "Maroi Mister Let Me Think Official 3D Studio (https://sketchfab.com/homicivan53)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/2026-bmw-m4-competition-dcfe4bf7b03948eca9e6d7de382bb9eb"
+    },
+    {
+      "title": "Knock Sensor - Simplified",
+      "author": "Ryn.Works (https://sketchfab.com/reyn.ad)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/knock-sensor-simplified-01de9e09770b443c9796fadf6597b990"
+    },
+    {
+      "title": "Fuel Injector - Simplified",
+      "author": "Ryn.Works (https://sketchfab.com/reyn.ad)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/fuel-injector-simplified-5cb4820bb5ee44c28c903bc434742763"
+    },
+    {
+      "title": "Throttle Position Sensor - Simplified",
+      "author": "Ryn.Works (https://sketchfab.com/reyn.ad)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/throttle-position-sensor-simplified-2c1744252b8a4df6a653b7c9ae90ecae"
+    },
+    {
+      "title": "Water Temperature Sensor - Simplified",
+      "author": "Ryn.Works (https://sketchfab.com/reyn.ad)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/water-temperature-sensor-simplified-dbd9a38fffc0494e8b17bca2d81ef2e9"
+    },
+    {
+      "title": "Heated Oxygen Sensor - Simplified",
+      "author": "Ryn.Works (https://sketchfab.com/reyn.ad)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/heated-oxygen-sensor-simplified-ef26e6a2124549188d7dac7ef64ae17b"
+    },
+    {
+      "title": "Intake Air Temperature Sensor - Simplified",
+      "author": "Ryn.Works (https://sketchfab.com/reyn.ad)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/intake-air-temperature-sensor-simplified-782186847cda4c4587325f021cacc02b"
+    },
+    {
+      "title": "Fuel Pump - Simplified",
+      "author": "Ryn.Works (https://sketchfab.com/reyn.ad)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/fuel-pump-simplified-f36da5ed8f334b5b8d770a011e95f2f1"
+    },
+    {
+      "title": "Vacuum Sensor - Simplified",
+      "author": "Ryn.Works (https://sketchfab.com/reyn.ad)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/vacuum-sensor-simplified-e46809180acc43caa040fc1f17109ead"
+    },
+    {
+      "title": "Mercedes E Class W212",
+      "author": "Peter_D / better_peter",
+      "license": "CC-BY-4.0",
+      "source": "https://sketchfab.com/3d-models/mercedes-e-class-w212-119c5e10733142b197aa53b86f6aeb04",
+      "modification": "Underbody separated, fitted to BMW and engine badge replaced. Illustrative, not factory-correct BMW geometry."
+    },
+    {
+      "title": "Ignition Coil - Simplified",
+      "author": "Ryn.Works",
+      "license": "CC-BY-4.0",
+      "source": "https://sketchfab.com/3d-models/ignition-coil-simplified-58150c56900c4a81a6926f1a878c9e9d"
+    },
+    {
+      "author": "Ryn.Works (https://sketchfab.com/reyn.ad)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/engine-control-unit-simplified-6f5171b31435484a82c228b3bd7d21d5",
+      "title": "Engine Control Unit - Simplified"
+    },
+    {
+      "title": "Engine Radiator",
+      "author": "Terllok",
+      "license": "CC-BY-4.0",
+      "source": "https://sketchfab.com/3d-models/engine-radiator-590a29882e764c368c857ebaba4fd01b"
+    },
+    {
+      "title": "Car battery",
+      "source": "User supplied car-battery.glb; original file does not embed author/license metadata"
+    },
+    {
+      "title": "V6 car engine with engine [MoreThem]",
+      "author": "Blendoriano",
+      "license": "CC-BY-4.0",
+      "source": "https://sketchfab.com/3d-models/v6-car-engine-with-engine-morethem-7309cf5e6b07435c962f954513ca170e"
+    },
+    {
+      "title": "[Free] Coilover Shock Absorber Damper",
+      "author": "Robert Prispilović",
+      "license": "CC-BY-4.0",
+      "source": "https://sketchfab.com/3d-models/free-coilover-shock-absorber-damper-92e61757780840a683abdd38c4e8a700"
+    }
+  ]
+}

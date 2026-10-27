@@ -76,6 +76,8 @@ export const ObdModule: React.FC<Props> = ({
   onOpenFieldPrompt
 }) => {
   const [isScanning, setIsScanning] = useState(false);
+  const [sequenceBusy, setSequenceBusy] = useState(false);
+  const [scanOutcome, setScanOutcome] = useState<'success' | 'error' | null>(null);
   const [internalConnected, setInternalConnected] = useState(false);
   const isConnected = propIsConnected !== undefined ? propIsConnected : internalConnected;
   const setIsConnected = (val: boolean) => {
@@ -158,6 +160,7 @@ export const ObdModule: React.FC<Props> = ({
   };
 
   const handleOneTouchScan = async () => {
+    if (isScanning || sequenceBusy) return;
     if (!isConnected) {
       sounds.playAlert();
       if (onOpenAdapterModal) {
@@ -166,16 +169,21 @@ export const ObdModule: React.FC<Props> = ({
       return;
     }
     sounds.playScanSweep();
+    setScanOutcome(null);
     setIsScanning(true);
 
     try {
       const res = await n8nService.scanObd("43 01 33 00 00", vehicle.id);
-      if (res && res.parsed_codes) {
+      if (res && Array.isArray(res.parsed_codes)) {
         onUpdateDtcCodes(res.parsed_codes);
+        setScanOutcome('success');
         sounds.playSuccess();
         setHasScanned(true);
+      } else {
+        setScanOutcome('error');
       }
     } catch (e) {
+      setScanOutcome('error');
       sounds.playAlert();
     } finally {
       setIsScanning(false);
@@ -276,7 +284,7 @@ export const ObdModule: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={startEcuHandshakeAndDiscovery}
-                  disabled={isHandshaking}
+                  disabled={isHandshaking || isScanning || sequenceBusy}
                   className="px-3 py-1.5 rounded-xl text-xs font-black bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition-all flex items-center gap-1 shadow-2xs"
                   title="OBD ECU-დან ავტომობილის მონაცემების ამოკითხვა"
                 >
@@ -287,7 +295,7 @@ export const ObdModule: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={handleToggleConnection}
-                  disabled={isHandshaking}
+                  disabled={isHandshaking || isScanning || sequenceBusy}
                   className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
                   title="კავშირის გათიშვა"
                 >
@@ -587,7 +595,7 @@ export const ObdModule: React.FC<Props> = ({
                   <h4 className="text-xs sm:text-sm font-black text-navy">
                     {!isConnected
                       ? (isHandshaking ? 'მიერთება...' : 'დაკავშირება')
-                      : (isScanning ? 'სკანირება...' : hasScanned ? 'ხელახალი სკანირება' : 'სკანირება')}
+                      : ((isScanning || sequenceBusy) ? 'სკანირება...' : hasScanned ? 'ხელახალი სკანირება' : 'სკანირება')}
                   </h4>
                   <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
                     {!isConnected ? 'ECU სინქრონიზაცია' : 'ECU მზადაა • დააჭირეთ'}
@@ -794,13 +802,13 @@ export const ObdModule: React.FC<Props> = ({
                 handleOneTouchScan();
               }
             }}
-            disabled={isHandshaking}
+            disabled={isHandshaking || isScanning || sequenceBusy}
             className="btn-stitch-navy w-full sm:flex-1 py-3.5 sm:py-4 px-8 text-sm sm:text-base font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
           >
             <Zap className="w-5 h-5 text-gold fill-gold" />
             <span>
               {isConnected
-                ? (isScanning ? 'სკანირება...' : hasScanned ? 'ხელახალი სკანირება' : 'სკანირების დაწყება')
+                ? ((isScanning || sequenceBusy) ? 'სკანირება...' : hasScanned ? 'ხელახალი სკანირება' : 'სკანირების დაწყება')
                 : (isHandshaking ? 'მიერთება მიმდინარეობს...' : 'დაკავშირება')}
             </span>
             <ArrowRight size={17} className="text-gold" />
@@ -1032,14 +1040,16 @@ export const ObdModule: React.FC<Props> = ({
           </span>
         </div>
         <ThreeCarScene
+          onStartScan={handleOneTouchScan}
           isScanning={isScanning}
+          scanOutcome={scanOutcome}
+          onSequenceBusyChange={setSequenceBusy}
           selectedComponent={selectedComponent}
           onSelectComponent={(id) => setSelectedComponent(id)}
           hasErrors={dtcCodes.length > 0}
           dtcCodes={dtcCodes}
           onAskAiAboutCode={onAskAiAboutCode}
           vehicle={vehicle}
-          onStartScan={handleOneTouchScan}
         />
       </div>
 
