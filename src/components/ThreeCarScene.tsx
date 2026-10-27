@@ -561,6 +561,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     const engineParts: { node: THREE.Group; rest: THREE.Vector3; offset: THREE.Vector3 }[] = [];
     const wheelParts: { node: THREE.Group; rest: THREE.Vector3; offset: THREE.Vector3 }[] = [];
     let windowMaterial: THREE.MeshPhysicalMaterial | null = null;
+    let roofMaterial: THREE.MeshPhysicalMaterial | null = null;
     let headlightMat: THREE.MeshStandardMaterial | null = null;
     let taillightMat: THREE.MeshStandardMaterial | null = null;
     let disposed = false;
@@ -713,6 +714,11 @@ export const ThreeCarScene: React.FC<Props> = ({
         roughness: 0.05, ior: 1.5, metalness: 0.0, clearcoat: 1.0, depthWrite: false
       });
       windowMaterial = windowMat;
+      roofMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x101b28, transparent: true, opacity: .16,
+        roughness: .10, metalness: .12, clearcoat: 1, clearcoatRoughness: .06,
+        ior: 1.5, transmission: 0, depthWrite: false, side: THREE.DoubleSide
+      });
       meshesOf('Body_Glass').forEach(m => {
         // The downloaded model includes its panoramic roof in the glass mesh.
         // Separate the roof from the windows so solid mode has a complete shell.
@@ -740,7 +746,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           return out;
         };
         if (roof.length) {
-          const roofMesh = new THREE.Mesh(subset(roof), ghostGlassMat);
+          const roofMesh = new THREE.Mesh(subset(roof), roofMaterial!);
           roofMesh.name = 'BMW_Roof_Panel';
           roofMesh.matrix.copy(m.matrix); roofMesh.matrix.decompose(roofMesh.position, roofMesh.quaternion, roofMesh.scale);
           m.parent?.add(roofMesh); bodyGrp.attach(roofMesh);
@@ -883,6 +889,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       visual.fill.value = fillProgress * fillProgress * (3 - 2 * fillProgress);
       visual.lift.value = currentExplodeRef.current * 1.10;
       if (windowMaterial) windowMaterial.opacity = THREE.MathUtils.lerp(.10, .36, visual.fill.value);
+      if (roofMaterial) roofMaterial.opacity = THREE.MathUtils.lerp(.16, .94, visual.fill.value);
       // ფარები ინთება როცა მანქანა მკაფიო/მყარი ხდება
       if (headlightMat) headlightMat.emissiveIntensity = 0.22 + fillProgress * 3.0;
       if (taillightMat) taillightMat.emissiveIntensity = 0.18 + fillProgress * 1.9;
