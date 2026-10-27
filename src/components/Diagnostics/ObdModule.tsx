@@ -543,7 +543,7 @@ export const ObdModule: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Card 4: დაკავშირება (ცალკე მეოთხე ფანჯარა - ოქროსფერი/ქარვისფერი სტილით) */}
+            {/* Card 4: დაკავშირება (ცალკე მეოთხე ფანჯარა - მშვიდი და დახვეწილი სტილი) */}
             <div
               onClick={() => {
                 sounds.playClick();
@@ -554,51 +554,53 @@ export const ObdModule: React.FC<Props> = ({
                 }
               }}
               className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between group active:scale-[0.98] ${
-                !isConnected
-                  ? 'bg-gradient-to-br from-[#FFB703] via-[#FCA311] to-[#FB8500] text-navy border-white/80 shadow-md hover:shadow-lg hover:brightness-105'
-                  : 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 text-white border-white/80 shadow-md hover:shadow-lg hover:brightness-105'
+                isConnected
+                  ? 'bg-white shadow-md border-emerald-500 ring-2 ring-emerald-500/30'
+                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white hover:border-gold/70'
               } ${isHandshaking ? 'pointer-events-none opacity-80' : ''}`}
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shadow-xs ${
-                    !isConnected ? 'bg-white text-navy' : 'bg-white text-emerald-700'
-                  }`}>
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                      isConnected
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : 'bg-slate-100 text-navy group-hover:bg-gold/25'
+                    }`}
+                  >
                     {!isConnected ? (
-                      <Zap className={`w-5 h-5 ${isHandshaking ? 'animate-pulse' : 'fill-navy'}`} />
+                      <Zap className={`w-5 h-5 text-gold fill-gold ${isHandshaking ? 'animate-pulse' : ''}`} />
                     ) : (
-                      <RefreshCw className={`w-5 h-5 ${isScanning ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`w-5 h-5 text-emerald-600 ${isScanning ? 'animate-spin' : ''}`} />
                     )}
                   </div>
                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                    !isConnected
-                      ? 'bg-navy/15 text-navy border-navy/20 font-black'
-                      : 'bg-white/20 text-white border-white/30 font-black'
+                    isConnected
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                      : 'bg-amber-100 text-amber-900 border-amber-200 font-black'
                   }`}>
-                    {!isConnected ? '⚡ SETUP' : '🟢 LIVE'}
+                    {!isConnected ? '⚡ დაკავშირება' : '🟢 LIVE ECU'}
                   </span>
                 </div>
 
                 <div>
-                  <h4 className={`text-xs sm:text-sm font-black ${!isConnected ? 'text-navy' : 'text-white'}`}>
+                  <h4 className="text-xs sm:text-sm font-black text-navy">
                     {!isConnected
                       ? (isHandshaking ? 'მიერთება...' : 'დაკავშირება')
                       : (isScanning ? 'სკანირება...' : hasScanned ? 'ხელახალი სკანირება' : 'სკანირება')}
                   </h4>
-                  <p className={`text-[10px] font-medium line-clamp-1 mt-0.5 ${!isConnected ? 'text-navy/80' : 'text-emerald-100'}`}>
+                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
                     {!isConnected ? 'ECU სინქრონიზაცია' : 'ECU მზადაა • დააჭირეთ'}
                   </p>
-                  <span className={`text-[9px] font-mono block mt-1 font-semibold ${!isConnected ? 'text-navy' : 'text-white'}`}>
+                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
                     ● {!isConnected ? 'დააჭირეთ დაკავშირებას' : 'აქტიური ტელემეტრია'}
                   </span>
                 </div>
               </div>
 
-              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
-                !isConnected ? 'border-navy/15 text-navy' : 'border-white/20 text-white'
-              }`}>
+              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-sans font-bold text-slate-500 group-hover:text-navy transition-colors">
                 <span>{!isConnected ? 'მიერთება' : 'სკანირება'}</span>
-                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform text-gold" />
               </div>
             </div>
           </div>
@@ -793,15 +795,15 @@ export const ObdModule: React.FC<Props> = ({
               }
             }}
             disabled={isHandshaking}
-            className="btn-stitch-primary w-full sm:flex-1 py-3.5 sm:py-4 px-8 text-sm sm:text-base font-black flex items-center justify-center gap-2 shadow-lg"
+            className="btn-stitch-navy w-full sm:flex-1 py-3.5 sm:py-4 px-8 text-sm sm:text-base font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
           >
-            <Zap className="w-5 h-5 text-navy fill-navy" />
+            <Zap className="w-5 h-5 text-gold fill-gold" />
             <span>
               {isConnected
                 ? (isScanning ? 'სკანირება...' : hasScanned ? 'ხელახალი სკანირება' : 'სკანირების დაწყება')
                 : (isHandshaking ? 'მიერთება მიმდინარეობს...' : 'დაკავშირება')}
             </span>
-            <ArrowRight size={17} />
+            <ArrowRight size={17} className="text-gold" />
           </button>
         </div>
       </div>

@@ -1105,7 +1105,7 @@ export const ParkingModule: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Card 4: პარკირების დაწყება (მთავარი ოქროსფერი/ქარვისფერი მოქმედების ბარათი) */}
+            {/* Card 4: პარკირების დაწყება (ცალკე მეოთხე ფანჯარა - მშვიდი და დახვეწილი სტილი) */}
             <div
               onClick={() => {
                 sounds.playClick();
@@ -1116,49 +1116,49 @@ export const ParkingModule: React.FC<Props> = ({
                 }
               }}
               className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between group active:scale-[0.98] ${
-                !activeSession.isActive
-                  ? 'bg-gradient-to-br from-[#FFB703] via-[#FCA311] to-[#FB8500] text-navy border-white/80 shadow-md hover:shadow-lg hover:brightness-105'
-                  : 'bg-gradient-to-br from-rose-500 via-rose-600 to-rose-700 text-white border-white/80 shadow-md hover:shadow-lg hover:brightness-105'
+                activeSession.isActive
+                  ? 'bg-white shadow-md border-rose-500 ring-2 ring-rose-500/30'
+                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white hover:border-gold/70'
               }`}
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shadow-xs ${
-                    !activeSession.isActive ? 'bg-white text-navy' : 'bg-white text-rose-600'
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold transition-colors ${
+                    activeSession.isActive
+                      ? 'bg-rose-50 text-rose-600'
+                      : 'bg-slate-100 text-navy group-hover:bg-gold/25'
                   }`}>
                     {!activeSession.isActive ? (
-                      <Zap className="w-5 h-5 fill-navy" />
+                      <Zap className="w-5 h-5 text-gold fill-gold" />
                     ) : (
-                      <Square className="w-5 h-5 fill-rose-600" />
+                      <Square className="w-5 h-5 fill-rose-600 text-rose-600" />
                     )}
                   </div>
                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
                     !activeSession.isActive
-                      ? 'bg-navy/15 text-navy border-navy/20 font-black'
-                      : 'bg-white/20 text-white border-white/30 font-black'
+                      ? 'bg-amber-100 text-amber-900 border-amber-200 font-black'
+                      : 'bg-rose-100 text-rose-800 border-rose-200 font-black'
                   }`}>
-                    {!activeSession.isActive ? '⚡ START' : '🛑 STOP'}
+                    {!activeSession.isActive ? '⚡ დაწყება' : '🛑 STOP'}
                   </span>
                 </div>
 
                 <div>
-                  <h4 className={`text-xs sm:text-sm font-black ${!activeSession.isActive ? 'text-navy' : 'text-white'}`}>
+                  <h4 className="text-xs sm:text-sm font-black text-navy">
                     {!activeSession.isActive ? 'პარკირების დაწყება' : 'პარკირების შეწყვეტა'}
                   </h4>
-                  <p className={`text-[10px] font-medium line-clamp-1 mt-0.5 ${!activeSession.isActive ? 'text-navy/80' : 'text-rose-100'}`}>
+                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
                     {!activeSession.isActive ? 'დააჭირეთ დასაწყებად' : 'სესიის დასრულება'}
                   </p>
-                  <span className={`text-[9px] font-mono block mt-1 font-semibold ${!activeSession.isActive ? 'text-navy' : 'text-white'}`}>
+                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
                     ● {!activeSession.isActive ? '15 წთ უფასო • ზონა A' : `ხანგრძლივობა: ${formatTime(activeSession.elapsedSeconds)}`}
                   </span>
                 </div>
               </div>
 
-              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
-                !activeSession.isActive ? 'border-navy/15 text-navy' : 'border-white/20 text-white'
-              }`}>
+              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-sans font-bold text-slate-500 group-hover:text-navy transition-colors">
                 <span>{!activeSession.isActive ? 'დაწყება' : 'შეწყვეტა'}</span>
-                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform text-gold" />
               </div>
             </div>
           </div>
@@ -1222,9 +1222,9 @@ export const ParkingModule: React.FC<Props> = ({
                       handleStartParking();
                       setSelectedParkingAction(null);
                     }}
-                    className="px-4 py-2 rounded-xl bg-gold text-navy font-black text-xs hover:bg-gold/90 transition-all flex items-center gap-1.5 shadow-sm"
+                    className="px-4 py-2 rounded-xl bg-navy hover:bg-slate-800 text-gold font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
                   >
-                    <Zap size={14} className="fill-navy" />
+                    <Zap size={14} className="fill-gold text-gold" />
                     <span>ამ ლოკაციით პარკირების დაწყება</span>
                   </button>
                 </div>
@@ -1341,17 +1341,17 @@ export const ParkingModule: React.FC<Props> = ({
                 handleStopParking();
               }
             }}
-            className={`w-full sm:flex-1 py-3.5 sm:py-4 px-8 text-sm sm:text-base font-black flex items-center justify-center gap-2 shadow-lg ${
-              !activeSession.isActive ? 'btn-stitch-primary' : 'btn-stitch-rose text-white'
+            className={`w-full sm:flex-1 py-3.5 sm:py-4 px-8 text-sm sm:text-base font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all ${
+              !activeSession.isActive ? 'btn-stitch-navy' : 'btn-stitch-rose text-white'
             }`}
           >
-            <Zap className={`w-5 h-5 ${!activeSession.isActive ? 'text-navy fill-navy' : 'text-white'}`} />
+            <Zap className={`w-5 h-5 ${!activeSession.isActive ? 'text-gold fill-gold' : 'text-white fill-white'}`} />
             <span>
               {!activeSession.isActive
                 ? 'პარკირების დაწყება'
                 : `პარკირების შეწყვეტა (${formatTime(activeSession.elapsedSeconds)})`}
             </span>
-            <ArrowRight size={17} />
+            <ArrowRight size={17} className={!activeSession.isActive ? 'text-gold' : 'text-white'} />
           </button>
         </div>
       </div>
