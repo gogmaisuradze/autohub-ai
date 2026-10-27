@@ -587,25 +587,25 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   return (
     <div className="space-y-4">
       {/* 1. Map Top Control Bar (Search, Filters, Geo) — რუკის ცნობის ბანერი */}
-      <div className="p-4 sm:p-5 lg:p-6 rounded-3xl border bg-gradient-to-br from-slate-900 via-navy to-slate-950 text-white border-gold/40 shadow-xl space-y-4">
+      <div className="p-5 sm:p-6 lg:p-7 rounded-3xl neu-card shadow-neu-card border border-white/80 bg-[#ECEAE5] text-navy space-y-4 transition-all">
         <div className="flex flex-wrap items-center justify-between gap-3">
           
           {/* Title & Live indicator */}
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gold/15 text-gold border border-gold/30 flex items-center justify-center shrink-0">
-              <Navigation className="w-5 h-5 text-gold" />
+            <div className="w-11 h-11 rounded-2xl neu-circle flex items-center justify-center text-navy shadow-sm shrink-0 bg-white border border-white">
+              <Navigation className="w-5 h-5 text-navy" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base sm:text-lg font-black tracking-tight text-white">
+                <h3 className="text-base sm:text-lg font-black tracking-tight text-navy">
                   AutoHub ცოცხალი რუკა & პარკინგი
                 </h3>
-                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                   Live {reports.length}
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 რადარები, პატრულის ჩასაფრებები, საწვავის ფასები და საპარკინგე ლოტები
               </p>
             </div>
@@ -614,14 +614,14 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           {/* Action buttons */}
           <div className="flex flex-wrap items-center gap-2">
             {/* View Mode Switcher: AutoHub Map vs Waze Live Map */}
-            <div className="flex items-center gap-1 p-1 bg-white/10 rounded-2xl border border-white/15 backdrop-blur-xs">
+            <div className="flex items-center gap-1 p-1 bg-white/90 rounded-2xl border border-slate-200/90 shadow-2xs">
               <button
                 type="button"
                 onClick={() => { sounds.playClick(); setActiveMapView('autohub_map'); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                   activeMapView === 'autohub_map'
-                    ? 'bg-gold text-slate-950 shadow-sm font-black'
-                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    ? 'bg-navy text-gold shadow-sm font-black'
+                    : 'text-slate-600 hover:text-navy hover:bg-slate-100'
                 }`}
               >
                 <span>🗺️ AutoHub რუკა</span>
@@ -631,8 +631,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                 onClick={() => { sounds.playClick(); setActiveMapView('waze_live'); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                   activeMapView === 'waze_live'
-                    ? 'bg-cyan-500 text-slate-950 shadow-sm font-black'
-                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    ? 'bg-cyan-600 text-white shadow-sm font-black'
+                    : 'text-slate-600 hover:text-navy hover:bg-slate-100'
                 }`}
               >
                 <span>🚗 Waze Live Map</span>
@@ -640,7 +640,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             </div>
 
             {/* Map Theme Toggle (Dark, Street, Satellite) */}
-            <div className="flex items-center gap-1 p-1 bg-white/10 rounded-2xl border border-white/15 backdrop-blur-xs">
+            <div className="flex items-center gap-1 p-1 bg-white/90 rounded-2xl border border-slate-200/90 shadow-2xs">
               <button
                 type="button"
                 onClick={() => {
@@ -648,7 +648,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                   setMapTheme('dark');
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                  mapTheme === 'dark' ? 'bg-gold text-slate-950 shadow-sm font-black' : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  mapTheme === 'dark' ? 'bg-navy text-gold shadow-sm font-black' : 'text-slate-600 hover:text-navy hover:bg-slate-100'
                 }`}
                 title="მუქი რუკის რეჟიმი"
               >
@@ -661,7 +661,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                   setMapTheme('street');
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                  mapTheme === 'street' ? 'bg-gold text-slate-950 shadow-sm font-black' : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  mapTheme === 'street' ? 'bg-navy text-gold shadow-sm font-black' : 'text-slate-600 hover:text-navy hover:bg-slate-100'
                 }`}
                 title="სტანდარტული ქუჩების რუკა"
               >
@@ -674,7 +674,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                   setMapTheme('satellite');
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                  mapTheme === 'satellite' ? 'bg-gold text-slate-950 shadow-sm font-black' : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  mapTheme === 'satellite' ? 'bg-navy text-gold shadow-sm font-black' : 'text-slate-600 hover:text-navy hover:bg-slate-100'
                 }`}
                 title="Esri სატელიტური აეროფოტო"
               >
@@ -690,13 +690,13 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                 setShowParking(v => !v);
               }}
               title={showParking ? 'პარკინგის ზონების დამალვა' : 'პარკინგის ზონების ჩვენება და დაწყება'}
-              className={`px-3.5 py-2.5 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all active:scale-95 border ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all active:scale-95 border ${
                 showParking
-                  ? 'bg-cyan-500/25 text-cyan-200 border-cyan-400/50 shadow-sm ring-2 ring-cyan-400/40'
-                  : 'bg-white/10 text-slate-300 border-white/15 hover:text-white hover:bg-white/15'
+                  ? 'bg-navy text-gold border-navy shadow-sm ring-2 ring-gold/40'
+                  : 'bg-white text-slate-700 border-slate-200/80 hover:border-gold shadow-2xs'
               }`}
             >
-              <ParkingSquare size={16} className={showParking ? 'text-cyan-300' : 'text-slate-400'} />
+              <ParkingSquare size={15} className={showParking ? 'text-gold' : 'text-slate-500'} />
               <span>{showParking ? '🅿️ პარკინგი: ჩართულია' : '🅿️ პარკინგი: გამორთულია'}</span>
             </button>
 
@@ -708,18 +708,18 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
               }}
               disabled={isRefreshing}
               title="მონაცემების განახლება"
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white border border-white/15 transition-all active:scale-95 disabled:opacity-50"
+              className="p-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 hover:text-navy border border-slate-200/80 shadow-2xs transition-all active:scale-95 disabled:opacity-50"
             >
-              <RefreshCw size={16} className={isRefreshing ? 'animate-spin text-gold' : ''} />
+              <RefreshCw size={15} className={isRefreshing ? 'animate-spin text-gold' : ''} />
             </button>
 
             {/* Locate Me (GPS) */}
             <button
               onClick={handleLocateMe}
               disabled={isLocating}
-              className="px-3.5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white border border-white/15 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-navy border border-slate-200/80 shadow-2xs text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
             >
-              <Compass size={16} className={isLocating ? 'animate-spin text-gold' : 'text-gold'} />
+              <Compass size={15} className={isLocating ? 'animate-spin text-gold' : 'text-gold'} />
               <span>{isLocating ? 'GPS...' : 'ჩემი ლოკაცია'}</span>
             </button>
 
@@ -729,16 +729,16 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                 sounds.playClick();
                 setIsAddModalOpen(true);
               }}
-              className="px-4 py-2.5 rounded-2xl bg-gold hover:bg-gold/90 text-slate-950 font-black text-xs shadow-md flex items-center gap-2 transition-all active:scale-95 shrink-0"
+              className="btn-stitch-navy px-4 py-2 rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
             >
-              <Plus size={16} />
+              <Plus size={15} className="text-gold" />
               <span>+ შეტყობინება</span>
             </button>
           </div>
         </div>
 
         {/* Filter Chips Bar & Quick Search */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-white/10">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-200/80">
           <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             {filterOptions.map(opt => {
               const isActive = filterType === opt.key;
@@ -750,13 +750,13 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                     sounds.playClick();
                     setFilterType(opt.key);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
                     isActive
-                      ? 'bg-gold text-slate-950 shadow-md border border-gold font-black scale-105'
-                      : 'bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10'
+                      ? 'bg-navy text-gold shadow-sm border-navy font-black scale-105'
+                      : 'bg-white text-slate-600 hover:text-navy hover:bg-slate-50 border-slate-200/80'
                   }`}
                 >
-                  <Icon size={14} className={isActive ? 'text-slate-950' : opt.color || 'text-slate-400'} />
+                  <Icon size={14} className={isActive ? 'text-gold' : opt.color || 'text-slate-400'} />
                   <span>{opt.label}</span>
                 </button>
               );
@@ -771,12 +771,12 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
               placeholder="ძიება: Wissol, ვაკე, Porsche..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-7 py-2 rounded-xl bg-white/10 hover:bg-white/15 focus:bg-slate-950/80 border border-white/15 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all"
+              className="w-full pl-8 pr-7 py-2 rounded-xl bg-white border border-slate-200/90 text-xs text-navy placeholder-slate-400 focus:outline-hidden focus:border-gold focus:ring-1 focus:ring-gold shadow-2xs transition-all"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-navy"
               >
                 ✕
               </button>

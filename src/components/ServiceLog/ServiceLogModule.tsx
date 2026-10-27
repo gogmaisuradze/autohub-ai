@@ -39,7 +39,10 @@ import {
   History,
   Scale,
   Car,
-  ShieldAlert
+  ShieldAlert,
+  Check,
+  ArrowRight,
+  X
 } from 'lucide-react';
 
 interface Props {
@@ -85,6 +88,7 @@ export const ServiceLogModule: React.FC<Props> = ({
   // Active Category filter ('all' or one of the 6 canonical categories)
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<'all' | ServiceCategory>('all');
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [selectedServiceDeckCard, setSelectedServiceDeckCard] = useState<'profile' | 'catalog' | null>(null);
 
   // Helper to render category icon
   const getCategoryIcon = (cat: ServiceCategory | string) => {
@@ -187,108 +191,41 @@ export const ServiceLogModule: React.FC<Props> = ({
   return (
     <div className="space-y-6">
       
-      {/* 1. Header Bar: Multi-Tier Dark Gold Service Deck (matching Parking & OBD style) */}
-      <div className="p-4 sm:p-6 rounded-3xl border transition-all bg-gradient-to-br from-slate-900 via-navy to-slate-950 text-white border-gold/40 shadow-xl space-y-4">
+      {/* ======================================================== */}
+      {/* 0. SMART SERVICE DECK (ანალოგიური ნეომორფული სტილი)      */}
+      {/* ======================================================== */}
+      <div className="p-5 sm:p-6 lg:p-7 rounded-3xl neu-card shadow-neu-card border border-white/80 bg-[#ECEAE5] text-navy space-y-5 transition-all">
         
-        {/* Tier 1: Hardware Header & Mode Switcher Row */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-200/20">
+        {/* Header Bar */}
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border bg-gold/15 text-gold border-gold/30">
-              <Wrench className="w-6 h-6 text-gold" />
+            <div className="w-12 h-12 rounded-2xl neu-circle flex items-center justify-center text-navy shadow-sm shrink-0 bg-white border border-white">
+              <Wrench className="w-6 h-6 text-navy" />
             </div>
-
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-xs">
-                  🔶 სერვის-რესურსი
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-black text-navy tracking-tight">
+                  AutoHub ციფრული სერვის-წიგნაკი
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                  23+ კომპონენტი
                 </span>
-                <span className="text-xs font-mono text-slate-400">
-                  გარბენი: {vehicle.mileage_km.toLocaleString()} კმ
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-slate-300">
-                  6 კატეგორია • 23+ კომპონენტი
-                </span>
-              </div>
-              <h2 className="text-base sm:text-lg font-black mt-1 text-white tracking-tight">
-                ავტომობილის ციფრული სერვის-წიგნაკი & რესურსი
-              </h2>
-            </div>
-          </div>
-
-          {/* Action Buttons Row */}
-          <div className="flex items-center gap-2 flex-wrap shrink-0 w-full sm:w-auto justify-start sm:justify-end">
-            {onOpenBookingModal && (
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  onOpenBookingModal();
-                }}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-white border border-white/10 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
-                title="კალენდარში ჩაწერა ავტო-ექიმთან"
-              >
-                <Calendar className="w-4 h-4 text-gold shrink-0" />
-                <span>📅 ჩაწერა</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                setIsCatalogOpen(!isCatalogOpen);
-              }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-white border border-white/10 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
-            >
-              <Layers className="w-4 h-4 text-gold shrink-0" />
-              <span>კატალოგი (23+)</span>
-              {isCatalogOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleOpenAddModal()}
-              className="px-4 py-2 rounded-xl text-xs font-black bg-gold hover:bg-gold/90 text-slate-950 transition-all shadow-md shrink-0 flex items-center justify-center gap-1.5"
-            >
-              <Plus className="w-4 h-4 shrink-0" />
-              <span>+ სერვისის შექმნა</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tier 2: 4-Card Service Metrics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs font-mono">
-          {/* 1. სერვისის ავტომობილი */}
-          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-              <Car size={18} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">სერვისის ავტომობილი</span>
-              <span className="text-sm font-black text-white block mt-0.5 truncate">
-                {vehicle.brand || 'Mercedes-Benz'} {vehicle.model || 'C300'}
-              </span>
-              <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                <span className="px-2 py-0.5 rounded-md bg-white/10 text-amber-300 font-bold text-[10px] border border-white/10 tracking-wider">
-                  {vehicle.plate_number || 'FR-282-EE'}
-                </span>
-                <span className="text-[10px] text-slate-400 font-mono">
-                  {vehicle.year ? `${vehicle.year} წელი` : '2016'}
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  ● 6 კატეგორია
                 </span>
               </div>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                ავტომობილის გეგმიური მომსახურება, ქარხნული OEM ინტერვალები და კალენდარი
+              </p>
             </div>
           </div>
 
-          {/* 2. მიმდინარე გარბენი */}
-          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-              <Gauge size={18} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">მიმდინარე გარბენი</span>
-              <span className="text-sm sm:text-base font-black text-white block mt-0.5">
-                {vehicle.mileage_km.toLocaleString()} კმ
-              </span>
+          {/* Quick Mileage Pill */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs text-xs font-mono">
+              <Gauge size={14} className="text-gold" />
+              <span className="text-slate-600 font-medium">გარბენი:</span>
+              <strong className="text-navy font-black">{vehicle.mileage_km.toLocaleString()} კმ</strong>
               {onOpenFieldPrompt && (
                 <button
                   type="button"
@@ -296,71 +233,319 @@ export const ServiceLogModule: React.FC<Props> = ({
                     sounds.playClick();
                     onOpenFieldPrompt('mileage_km');
                   }}
-                  className="mt-1 text-gold hover:underline text-[10px] font-bold flex items-center gap-1"
+                  className="text-gold hover:text-navy transition-colors ml-1"
+                  title="გარბენის განახლება"
                 >
-                  <Edit3 size={11} />
-                  <span>გარბენის განახლება</span>
+                  <Edit3 size={12} />
                 </button>
               )}
             </div>
           </div>
+        </div>
 
-          {/* 3. რეგისტრირებული კომპონენტები */}
-          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-              <Layers size={18} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">რეგისტრირებული ბაზა</span>
-              <span className="text-sm sm:text-base font-black text-white block mt-0.5">
-                {services.length} კომპონენტი
-              </span>
-              <span className="inline-block mt-1 text-[10px] text-slate-400">
-                23+ ქარხნული კატალოგი
-              </span>
-            </div>
-          </div>
+        {/* 1. 4 Interactive Cards Grid */}
+        <div>
+          <label className="text-xs font-black text-navy uppercase tracking-wider block mb-2.5">
+            სერვისის მართვა & რესურსები:
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            
+            {/* Card 1: მანქანის პროფილი */}
+            <div
+              onClick={() => {
+                sounds.playClick();
+                setSelectedServiceDeckCard(selectedServiceDeckCard === 'profile' ? null : 'profile');
+              }}
+              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+                selectedServiceDeckCard === 'profile'
+                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
+                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                      selectedServiceDeckCard === 'profile' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Car className="w-5 h-5" />
+                  </div>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-amber-100 text-amber-950 border-amber-300 font-black">
+                    {vehicle.plate_number || 'FR-282-EE'}
+                  </span>
+                </div>
 
-          {/* 4. სერვის-რესურსი და სტატუსი */}
-          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-              <ShieldCheck size={18} />
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-navy">მანქანის პროფილი</h4>
+                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                    {vehicle.brand || 'Mercedes-Benz'} {vehicle.model || 'C300'} {vehicle.year ? `• ${vehicle.year}` : ''}
+                  </p>
+                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
+                    ● გარბენი: {vehicle.mileage_km.toLocaleString()} კმ
+                  </span>
+                </div>
+
+                {selectedServiceDeckCard === 'profile' && (
+                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
+                    <Check size={11} className="stroke-[3]" />
+                  </div>
+                )}
+              </div>
+
+              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
+                selectedServiceDeckCard === 'profile'
+                  ? 'border-gold/30 text-navy'
+                  : 'border-slate-100 text-slate-500 group-hover:text-navy'
+              }`}>
+                <span>პროფილის დეტალები</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 ${
+                  selectedServiceDeckCard === 'profile' ? 'rotate-180 text-navy' : ''
+                }`} />
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">სერვის-რესურსის სტატუსი</span>
-              <span className="text-sm font-black text-emerald-400 block mt-0.5 truncate">
-                {services.filter(s => s.health_percentage > 45).length} ოპტიმალური
-              </span>
-              <div className="mt-1 flex items-center gap-1.5">
-                <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] border ${
-                  services.filter(s => s.health_percentage <= 45).length > 0
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
-                }`}>
-                  {services.filter(s => s.health_percentage <= 45).length > 0
-                    ? `${services.filter(s => s.health_percentage <= 45).length} შესამოწმებელი`
-                    : 'ყველა ვალიდურია'}
-                </span>
+
+            {/* Card 2: სერვისის შექმნა */}
+            <div
+              onClick={() => {
+                sounds.playClick();
+                handleOpenAddModal();
+              }}
+              className="neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white hover:border-gold/70 p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all relative flex flex-col justify-between group active:scale-[0.98]"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 text-navy group-hover:bg-gold/20 transition-colors">
+                    <Plus className="w-5 h-5 text-gold stroke-[2.5]" />
+                  </div>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-200 font-bold">
+                    + ახალი
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-navy">სერვისის შექმნა</h4>
+                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                    ზეთი, ხუნდები, ფილტრი, PTI
+                  </p>
+                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
+                    ● {services.length} რეგისტრირებული
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-sans font-bold text-slate-500 group-hover:text-navy transition-colors">
+                <span>სერვისის დამატება</span>
+                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform text-gold" />
+              </div>
+            </div>
+
+            {/* Card 3: კატალოგი */}
+            <div
+              onClick={() => {
+                sounds.playClick();
+                setIsCatalogOpen(!isCatalogOpen);
+                setSelectedServiceDeckCard(selectedServiceDeckCard === 'catalog' ? null : 'catalog');
+              }}
+              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+                isCatalogOpen || selectedServiceDeckCard === 'catalog'
+                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
+                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                      isCatalogOpen || selectedServiceDeckCard === 'catalog' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-blue-100 text-blue-800 border-blue-200">
+                    23+ ქარხნული
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-navy">სერვის კატალოგი</h4>
+                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                    6 ძირითადი კატეგორია
+                  </p>
+                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
+                    ● OEM ინტერვალები
+                  </span>
+                </div>
+
+                {(isCatalogOpen || selectedServiceDeckCard === 'catalog') && (
+                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
+                    <Check size={11} className="stroke-[3]" />
+                  </div>
+                )}
+              </div>
+
+              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
+                isCatalogOpen || selectedServiceDeckCard === 'catalog'
+                  ? 'border-gold/30 text-navy'
+                  : 'border-slate-100 text-slate-500 group-hover:text-navy'
+              }`}>
+                <span>კატალოგის გაშლა</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 ${
+                  isCatalogOpen ? 'rotate-180 text-navy' : ''
+                }`} />
+              </div>
+            </div>
+
+            {/* Card 4: ჩაწერა */}
+            <div
+              onClick={() => {
+                sounds.playClick();
+                if (onOpenBookingModal) {
+                  onOpenBookingModal();
+                }
+              }}
+              className="neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white hover:border-gold/70 p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all relative flex flex-col justify-between group active:scale-[0.98]"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 text-navy group-hover:bg-gold/20 transition-colors">
+                    <Calendar className="w-5 h-5 text-gold" />
+                  </div>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-amber-100 text-amber-900 border-amber-200 font-black">
+                    📅 ონლაინ
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-navy">სერვისზე ჩაწერა</h4>
+                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                    ავტო-ექიმთან ვიზიტი & კალენდარი
+                  </p>
+                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
+                    ● {bookings.length > 0 ? `${bookings.length} აქტიური ჯავშანი` : 'კალენდარში ჩაწერა'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-sans font-bold text-slate-500 group-hover:text-navy transition-colors">
+                <span>ჩაწერა</span>
+                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform text-gold" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tier 3: Category Guide Explainer Strip */}
-        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="text-slate-300 text-[11px] leading-relaxed flex items-center gap-1.5 flex-wrap">
-            <span>ℹ️ <strong>6 ძირითადი კატეგორია:</strong></span>
-            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">სავალი ნაწილი</span>
-            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">ზეთები & ATF</span>
-            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">ფილტრები</span>
-            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">ძრავი & სვეჩები</span>
-            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">აკუმულატორი & AC</span>
-            <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-mono">იურიდიული & PTI</span>
-          </div>
+        {/* 2. Expandable Profile Drawer (when Card 1 is clicked) */}
+        {selectedServiceDeckCard === 'profile' && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border border-slate-200/80 shadow-xs space-y-3.5 animate-fade-in">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h4 className="text-xs font-black text-navy flex items-center gap-1.5 uppercase tracking-wide">
+                <span>ავტომობილის პროფილი & სპეციფიკაცია</span>
+              </h4>
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setSelectedServiceDeckCard(null);
+                }}
+                className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-navy transition-all"
+                title="დახურვა"
+              >
+                <X size={14} />
+              </button>
+            </div>
 
-          <div className="text-[11px] text-slate-400 shrink-0 font-mono">
-            სულ {services.length} ჩანაწერი
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <span className="text-[10px] text-slate-400 block font-bold">მოდელი & წელი:</span>
+                <strong className="text-navy font-bold">{vehicle.brand} {vehicle.model}</strong>
+                <span className="text-[11px] text-slate-500 block font-mono">{vehicle.year || '2016'} წ.</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <span className="text-[10px] text-slate-400 block font-bold">სახ. ნომერი & VIN:</span>
+                <strong className="text-navy font-bold font-mono">{vehicle.plate_number || 'FR-282-EE'}</strong>
+                <span className="text-[11px] text-slate-500 block font-mono truncate">{vehicle.vin || 'VIN მითითებული არ არის'}</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <span className="text-[10px] text-slate-400 block font-bold">ძრავი & საწვავი:</span>
+                <strong className="text-navy font-bold">{vehicle.engine || '2.0L Turbo'}</strong>
+                <span className="text-[11px] text-slate-500 block font-medium">{vehicle.fuel_type || 'ბენზინი'}</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                <span className="text-[10px] text-slate-400 block font-bold">მიმდინარე გარბენი:</span>
+                <strong className="text-navy font-bold font-mono">{vehicle.mileage_km.toLocaleString()} კმ</strong>
+                {onOpenFieldPrompt && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      onOpenFieldPrompt('mileage_km');
+                    }}
+                    className="text-[11px] text-gold font-bold hover:underline block mt-0.5"
+                  >
+                    შეცვლა ✎
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 justify-end">
+              {onOpenVinHistory && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    onOpenVinHistory();
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy font-bold text-xs transition-all flex items-center gap-1.5 shadow-2xs"
+                >
+                  <History size={13} className="text-gold" />
+                  <span>VIN ისტორია & Carfax</span>
+                </button>
+              )}
+              {onResetToVinSpecs && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    onResetToVinSpecs();
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all flex items-center gap-1.5 shadow-2xs"
+                >
+                  <Sparkles size={13} className="text-gold" />
+                  <span>ქარხნული OEM ინტერვალების განახლება</span>
+                </button>
+              )}
+            </div>
           </div>
+        )}
+
+        {/* 3. Action Footer Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              setIsCatalogOpen(!isCatalogOpen);
+            }}
+            className="btn-stitch-soft w-full sm:w-auto px-6 py-3.5 text-xs font-bold flex items-center justify-center gap-2 group transition-all"
+          >
+            <Layers className="w-4 h-4 text-gold group-hover:scale-110 transition-transform" />
+            <span>{isCatalogOpen ? 'კატალოგის დახურვა' : 'სრული კატალოგის ნახვა (23+)'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              handleOpenAddModal();
+            }}
+            className="btn-stitch-navy w-full sm:flex-1 py-3.5 sm:py-4 px-8 text-sm sm:text-base font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
+          >
+            <Plus className="w-5 h-5 text-gold stroke-[2.5]" />
+            <span>+ ახალი სერვისის შექმნა</span>
+            <ArrowRight size={17} className="text-gold" />
+          </button>
         </div>
       </div>
 
