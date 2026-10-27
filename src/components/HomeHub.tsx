@@ -131,7 +131,7 @@ export const HomeHub: React.FC<Props> = ({
   ];
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6">
       {/* 1. Missing Data & AI Clarification Banner (If any core vehicle parameters are unfulfilled) */}
       {missingFields.length > 0 && (
         <div className="p-4 sm:p-5 rounded-3xl neu-card border border-amber-300/80 bg-gradient-to-r from-amber-50/90 via-white to-amber-50/50 flex flex-wrap items-center justify-between gap-3 shadow-xs animate-fade-in">

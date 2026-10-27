@@ -920,8 +920,8 @@ export const App: React.FC = () => {
         />
       </div>
 
-      {/* 3. Main Content Container */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5 pb-28 sm:pb-24">
+      {/* 3. Main Content Container (Unified width matching CoverAdBanner) */}
+      <main className="max-w-[1420px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-28 sm:pb-24">
         {/* Home Hub View (Department Buttons on Screen) */}
         {activeTab === 'home' && (
           <HomeHub

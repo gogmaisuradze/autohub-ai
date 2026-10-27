@@ -185,7 +185,7 @@ export const ServiceLogModule: React.FC<Props> = ({
   }, {} as Record<ServiceCategory, number>);
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6">
       
       {/* 1. Header Bar: Multi-Tier Dark Gold Service Deck (matching Parking & OBD style) */}
       <div className="p-4 sm:p-6 rounded-3xl border transition-all bg-gradient-to-br from-slate-900 via-navy to-slate-950 text-white border-gold/40 shadow-xl space-y-4">

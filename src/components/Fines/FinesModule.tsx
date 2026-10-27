@@ -655,7 +655,7 @@ export const FinesModule: React.FC<Props> = ({
   const hasMissingRequirements = filledCount < totalCount;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 pb-12">
       {/* Hidden Biometric Photo Input */}
       <input
         ref={photoInputRef}

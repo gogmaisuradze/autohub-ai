@@ -329,7 +329,7 @@ export const GarageModule: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6">
       
       {/* 1. Header Bar with Sub-Tab Navigation */}
       <div className="p-5 rounded-3xl neu-card shadow-neu-card flex flex-wrap items-center justify-between gap-4">

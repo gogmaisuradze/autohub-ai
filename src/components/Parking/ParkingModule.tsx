@@ -885,7 +885,7 @@ export const ParkingModule: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6">
       
       {/* ======================================================== */}
       {/* 0. SMART PARKING DECK (იგივე სტილი და ფერები რაც OBD ბანერში) */}
