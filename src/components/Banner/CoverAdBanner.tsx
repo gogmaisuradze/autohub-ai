@@ -36,6 +36,7 @@ export interface DigitalServiceItem {
   accentColor: string;
   badgeBg: string;
   imageUrl: string;
+  imagePosition?: string;
   carModelHint: string;
   description: string;
   highlights: string[];
@@ -159,7 +160,8 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     tagColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
     accentColor: '#10B981',
     badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
-    imageUrl: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1920&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=2400&q=85',
+    imagePosition: 'object-[center_80%] lg:object-[68%_82%]',
     carModelHint: 'PORSCHE 911 GT PERFORMANCE & PRECISION SERVICE',
     description: 'ზეთის, ფილტრების, ხუნდებისა და სავალი ნაწილის გეგმიური აღრიცხვა, გარბენის მიხედვით შეხსენებები და ავტომობილის ხარჯების კონტროლი.',
     highlights: [
@@ -677,7 +679,9 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
         <img
           src={current.imageUrl}
           alt={current.title}
-          className="w-full h-full object-cover object-center lg:object-[68%_center] transform transition-all duration-1000 ease-out scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05]"
+          className={`w-full h-full object-cover transform transition-all duration-1000 ease-out scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05] ${
+            current.imagePosition || 'object-center lg:object-[68%_center]'
+          }`}
         />
 
         {/* Targeted Left Gradient (Soft, localized text protection leaving over 60% of the car photo wide open and crystal clear) */}
@@ -909,7 +913,9 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                     <img
                       src={srv.imageUrl}
                       alt={srv.title}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                      className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+                        srv.imagePosition || 'object-center'
+                      }`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-950/80 text-[10px] font-mono font-bold text-gold border border-gold/30">
