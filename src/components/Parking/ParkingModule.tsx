@@ -32,7 +32,11 @@ import {
   ChevronDown,
   ChevronUp,
   Sliders,
-  ShieldCheck
+  ShieldCheck,
+  Navigation,
+  Map,
+  Zap,
+  X
 } from 'lucide-react';
 import { ParkingZonesMap } from './ParkingZonesMap';
 import { DelineatedParkingZone, DELINEATED_PARKING_ZONES, createManualParkingLot } from '../../constants/parkingZones';
@@ -594,6 +598,8 @@ export const ParkingModule: React.FC<Props> = ({
   const [showOperatorReqs, setShowOperatorReqs] = useState(false);
   const [copiedLotCode, setCopiedLotCode] = useState(false);
   const [nowTimestamp, setNowTimestamp] = useState(Date.now());
+  const [selectedParkingAction, setSelectedParkingAction] = useState<'location' | 'map' | 'slot' | null>(null);
+  const [customSlotInput, setCustomSlotInput] = useState<string>('005');
 
   // Subscriptions to 4G OBD & Parking Session Lifecycle
   useEffect(() => {
@@ -882,271 +888,472 @@ export const ParkingModule: React.FC<Props> = ({
     <div className="space-y-6 max-w-5xl mx-auto">
       
       {/* ======================================================== */}
-      {/* 0. 4G OBD TELEMETRY & REAL/DEMO HARDWARE BANNER          */}
+      {/* 0. SMART PARKING DECK (იგივე სტილი და ფერები რაც OBD ბანერში) */}
       {/* ======================================================== */}
-      <div className={`p-5 sm:p-6 rounded-3xl border transition-all ${
-        obdMode === 'demo'
-          ? 'bg-gradient-to-br from-slate-900 via-navy to-slate-950 text-white border-gold/40 shadow-xl'
-          : 'bg-white text-navy border-slate-200 shadow-neu-card'
-      }`}>
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-200/20">
+      <div className="p-5 sm:p-6 lg:p-7 rounded-3xl neu-card shadow-neu-card border border-white/80 bg-[#ECEAE5] text-navy space-y-5 transition-all">
+        
+        {/* Header Bar */}
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
           <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
-              obdMode === 'demo'
-                ? 'bg-gold/15 text-gold border-gold/30'
-                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-            }`}>
-              <Radio className={`w-6 h-6 ${obdMode === 'demo' ? 'animate-pulse text-gold' : 'text-emerald-600'}`} />
+            <div className="w-12 h-12 rounded-2xl neu-circle flex items-center justify-center text-navy shadow-sm shrink-0 bg-white border border-white">
+              <ParkingSquare className="w-6 h-6 text-navy" />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider ${
-                  obdMode === 'demo'
-                    ? 'bg-amber-400 text-slate-950 shadow-xs'
-                    : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-black text-navy tracking-tight">
+                  AutoHub ჭკვიანი პარკინგი
+                </h3>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
+                  activeSession.isActive
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                    : 'bg-gold/15 text-navy border-gold/30'
                 }`}>
-                  {obdMode === 'demo' ? '🔶 DEMO რეჟიმი' : '🟢 REAL რეჟიმი'}
-                </span>
-                <span className="text-xs font-mono text-slate-400">
-                  IMEI: {activeDevice?.imei || '863412059123456'}
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-slate-300">
-                  {obdMode === 'demo' ? 'სიმულაცია' : '4G LTE-M / NB-IoT'}
+                  {activeSession.isActive ? '🟢 აქტიური' : '🅿️ მზადაა'}
                 </span>
               </div>
-              <h3 className={`text-base font-black mt-1 ${obdMode === 'demo' ? 'text-white' : 'text-navy'}`}>
-                AutoHub 4G OBD სმარტ-დონგლი & პარკირების დეტექტორი
-              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {activeSession.isActive
+                  ? `პარკირება აქტიურია • ${activeParkedLot?.street_ge || 'ჭავჭავაძის გამზ.'} (#${customSlotInput || activeParkedLot?.lotCode || '005'})`
+                  : 'აირჩიეთ პარკირების მეთოდი ან დაიწყეთ ავტომატურად'}
+              </p>
             </div>
           </div>
 
-          {/* Mode Switcher Toggle Pill */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-800/60 border border-white/10 shrink-0 self-end md:self-auto">
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                setObdMode('demo');
-                obd4gService.setMode('demo');
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
-                obdMode === 'demo'
-                  ? 'bg-gold text-slate-950 shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <span>🔶 DEMO</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                setObdMode('real');
-                obd4gService.setMode('real');
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
-                obdMode === 'real'
-                  ? 'bg-emerald-500 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <span>🟢 REAL (აპარატურა)</span>
-            </button>
+          {/* Right Header Status Pill / Plate */}
+          <div className="flex items-center gap-2 shrink-0">
+            {activeSession.isActive ? (
+              <div className="px-3.5 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono font-black text-xs flex items-center gap-2 shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span>{formatTime(activeSession.elapsedSeconds)}</span>
+              </div>
+            ) : (
+              <span className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-navy font-mono font-black text-xs shadow-2xs">
+                {parkedPlateNumber}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Mode Specific Body */}
-        {obdMode === 'demo' ? (
-          <div className="mt-4 space-y-4">
-            {/* Live Telemetry Sensor Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs font-mono">
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-[10px] text-slate-400 block uppercase">სიჩქარე</span>
-                <span className="text-base font-black text-gold">
-                  {telemetry?.speedKmh?.toFixed(0) ?? 0} კმ/სთ
-                </span>
+        {/* 1. ძირითადი 4 ფანჯარა (ლოკაციით დაწყება, ქუჩის ნახვა რუკაზე, სლოტის ნომრის ჩაწერა, პარკირების დაწყება) */}
+        <div>
+          <label className="text-xs font-black text-navy uppercase tracking-wider block mb-2.5">
+            1. აირჩიეთ პარკირების მოქმედება:
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Card 1: ლოკაციით პარკინგის დაწყება */}
+            <div
+              onClick={() => {
+                sounds.playClick();
+                setSelectedParkingAction(selectedParkingAction === 'location' ? null : 'location');
+              }}
+              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+                selectedParkingAction === 'location'
+                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
+                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                      selectedParkingAction === 'location' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Navigation className="w-5 h-5" />
+                  </div>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-amber-100 text-amber-950 border-amber-300 font-black ring-1 ring-amber-400/40">
+                    GPS დეტექცია
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-navy">ლოკაციით დაწყება</h4>
+                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                    {activeParkedLot?.district_ge || 'ვაკე'} • {activeParkedLot?.categoryLabel_ge || 'ზონა A (1.00 ₾/სთ)'}
+                  </p>
+                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
+                    ● GPS ავტომატური ამოცნობა
+                  </span>
+                </div>
+
+                {selectedParkingAction === 'location' && (
+                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
+                    <Check size={11} className="stroke-[3]" />
+                  </div>
+                )}
               </div>
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-[10px] text-slate-400 block uppercase">ანთება (Ignition)</span>
-                <span className={`text-xs font-bold block mt-1 ${
-                  telemetry?.ignition ? 'text-emerald-400' : 'text-amber-300'
-                }`}>
-                  {telemetry?.ignition ? '🔥 ჩართულია' : '⚪ გამორთულია'}
-                </span>
-              </div>
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-[10px] text-slate-400 block uppercase">GNSS თანამგზავრები</span>
-                <span className="text-xs font-bold text-white block mt-1">
-                  🛰️ {telemetry?.satellitesCount ?? 14} (±{telemetry?.accuracyMeters?.toFixed(1) ?? '6.5'}მ)
-                </span>
-              </div>
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-[10px] text-slate-400 block uppercase">OBD ძაბვა</span>
-                <span className="text-xs font-bold text-emerald-400 block mt-1">
-                  🔋 {telemetry?.batteryVoltage?.toFixed(1) ?? '12.6'} V
-                </span>
-              </div>
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-[10px] text-slate-400 block uppercase">დეტექტორი</span>
-                <span className={`text-[11px] font-bold block mt-1 truncate ${
-                  stopResult?.status === 'probable_stop'
-                    ? 'text-gold animate-pulse'
-                    : stopResult?.status === 'traffic_stop'
-                    ? 'text-amber-400'
-                    : 'text-slate-300'
-                }`}>
-                  {stopResult?.status === 'probable_stop'
-                    ? '● გაჩერება #005'
-                    : stopResult?.status === 'traffic_stop'
-                    ? 'საცობი/შუქნიშანი'
-                    : 'მოძრაობს'}
-                </span>
-              </div>
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-[10px] text-slate-400 block uppercase">ბოლო პაკეტი</span>
-                <span className="text-[11px] font-bold text-slate-300 block mt-1">
-                  {formatTbilisiTime(telemetry?.receivedAt || Date.now())}
-                </span>
+
+              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
+                selectedParkingAction === 'location'
+                  ? 'border-gold/30 text-navy'
+                  : 'border-slate-100 text-slate-500 group-hover:text-navy'
+              }`}>
+                <span>დეტალები</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 ${
+                  selectedParkingAction === 'location' ? 'rotate-180 text-navy' : ''
+                }`} />
               </div>
             </div>
 
-            {/* Parked Vehicle & Spot Location Grid (პარკინგის ადგილი, ნომერი, ქუჩის ნომერი და მანქანა) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs font-mono">
-              {/* 1. მანქანა სადაც დააპარკინგე */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-                  <Car size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] text-slate-400 block uppercase tracking-wider">მანქანა სადაც დააპარკინგე</span>
-                  <span className="text-sm font-black text-white block mt-0.5 truncate">
-                    {parkedVehicleName}
-                  </span>
-                  <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-md bg-white/10 text-amber-300 font-bold text-[10px] border border-white/10 tracking-wider">
-                      {parkedPlateNumber}
-                    </span>
-                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      დაპარკინგებულია
-                    </span>
+            {/* Card 2: ქუჩის ნახვა რუკაზე */}
+            <div
+              onClick={() => {
+                sounds.playClick();
+                setSelectedParkingAction(selectedParkingAction === 'map' ? null : 'map');
+              }}
+              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+                selectedParkingAction === 'map'
+                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
+                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                      selectedParkingAction === 'map' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Map className="w-5 h-5" />
                   </div>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-200">
+                    რუკა & ზონა
+                  </span>
                 </div>
-              </div>
 
-              {/* 2. პარკინგის ადგილი */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-                  <MapPin size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] text-slate-400 block uppercase tracking-wider">პარკინგის ადგილი</span>
-                  <span className="text-sm font-black text-gold block mt-0.5 truncate">
-                    {activeParkedLot?.district_ge || 'ვაკე'}
-                  </span>
-                  <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-white/10 text-slate-300 font-bold text-[10px] border border-white/10 truncate max-w-full">
-                    {activeParkedLot?.categoryLabel_ge || 'ზონა A (1.00 ₾/სთ)'}
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-navy">ქუჩის ნახვა რუკაზე</h4>
+                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                    {activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'} #{activeParkedLot?.lotCode === '005' ? '34' : '34'}
+                  </p>
+                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
+                    ● მზიურის მოპირდაპირედ
                   </span>
                 </div>
-              </div>
 
-              {/* 3. პარკინგის ნომერი */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-                  <ParkingSquare size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] text-slate-400 block uppercase tracking-wider">პარკინგის ნომერი</span>
-                  <span className="text-sm sm:text-base font-black text-white block mt-0.5">
-                    ლოტი #{activeParkedLot?.lotCode || '005'}
-                  </span>
-                  <span className="inline-block mt-1 text-[10px] text-slate-400">
-                    მუნიციპალური საპარკინგე ადგილი
-                  </span>
-                </div>
-              </div>
-
-              {/* 4. ქუჩის ნომერი */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-gold/30 transition-all flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gold/15 text-gold flex items-center justify-center shrink-0 border border-gold/30">
-                  <Building size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] text-slate-400 block uppercase tracking-wider">ქუჩის ნომერი</span>
-                  <span className="text-sm font-black text-white block mt-0.5 truncate">
-                    {activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'}
-                  </span>
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-400/30">
-                      #{activeParkedLot?.lotCode === '005' ? '34' : '34'}
-                    </span>
-                    <span className="text-[10px] text-slate-400 truncate">
-                      (მზიურის მოპირდაპირედ)
-                    </span>
+                {selectedParkingAction === 'map' && (
+                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
+                    <Check size={11} className="stroke-[3]" />
                   </div>
-                </div>
+                )}
+              </div>
+
+              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
+                selectedParkingAction === 'map'
+                  ? 'border-gold/30 text-navy'
+                  : 'border-slate-100 text-slate-500 group-hover:text-navy'
+              }`}>
+                <span>რუკის ნახვა</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 ${
+                  selectedParkingAction === 'map' ? 'rotate-180 text-navy' : ''
+                }`} />
               </div>
             </div>
 
-            {/* Demo Explainer & Restart Cycle Button */}
-            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="text-slate-300 text-[11px] leading-relaxed">
-                ℹ️ <strong>დემო მარშრუტი:</strong> მანქანა მოძრაობს ი. ჭავჭავაძის გამზირზე, ანელებს და ჩერდება <strong>#005 ლოტთან (#34-თან)</strong>, თიშავს ანთებას, რის შემდეგაც სისტემა გთავაზობთ პარკირების დადასტურებას.
+            {/* Card 3: სლოტის ნომრის ჩაწერა */}
+            <div
+              onClick={() => {
+                sounds.playClick();
+                setSelectedParkingAction(selectedParkingAction === 'slot' ? null : 'slot');
+              }}
+              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+                selectedParkingAction === 'slot'
+                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
+                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                      selectedParkingAction === 'slot' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <ParkingSquare className="w-5 h-5" />
+                  </div>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-blue-100 text-blue-800 border-blue-200">
+                    ლოტი #{customSlotInput || activeParkedLot?.lotCode || '005'}
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-navy">სლოტის ნომრის ჩაწერა</h4>
+                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                    მუნიციპალური ლოტი #{customSlotInput || '005'}
+                  </p>
+                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
+                    ● ჩაწერეთ ნომერი
+                  </span>
+                </div>
+
+                {selectedParkingAction === 'slot' && (
+                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
+                    <Check size={11} className="stroke-[3]" />
+                  </div>
+                )}
               </div>
+
+              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
+                selectedParkingAction === 'slot'
+                  ? 'border-gold/30 text-navy'
+                  : 'border-slate-100 text-slate-500 group-hover:text-navy'
+              }`}>
+                <span>ჩაწერა</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 ${
+                  selectedParkingAction === 'slot' ? 'rotate-180 text-navy' : ''
+                }`} />
+              </div>
+            </div>
+
+            {/* Card 4: პარკირების დაწყება (მთავარი ოქროსფერი/ქარვისფერი მოქმედების ბარათი) */}
+            <div
+              onClick={() => {
+                sounds.playClick();
+                if (!activeSession.isActive) {
+                  handleStartParking();
+                } else {
+                  handleStopParking();
+                }
+              }}
+              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between group active:scale-[0.98] ${
+                !activeSession.isActive
+                  ? 'bg-gradient-to-br from-[#FFB703] via-[#FCA311] to-[#FB8500] text-navy border-white/80 shadow-md hover:shadow-lg hover:brightness-105'
+                  : 'bg-gradient-to-br from-rose-500 via-rose-600 to-rose-700 text-white border-white/80 shadow-md hover:shadow-lg hover:brightness-105'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shadow-xs ${
+                    !activeSession.isActive ? 'bg-white text-navy' : 'bg-white text-rose-600'
+                  }`}>
+                    {!activeSession.isActive ? (
+                      <Zap className="w-5 h-5 fill-navy" />
+                    ) : (
+                      <Square className="w-5 h-5 fill-rose-600" />
+                    )}
+                  </div>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                    !activeSession.isActive
+                      ? 'bg-navy/15 text-navy border-navy/20 font-black'
+                      : 'bg-white/20 text-white border-white/30 font-black'
+                  }`}>
+                    {!activeSession.isActive ? '⚡ START' : '🛑 STOP'}
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className={`text-xs sm:text-sm font-black ${!activeSession.isActive ? 'text-navy' : 'text-white'}`}>
+                    {!activeSession.isActive ? 'პარკირების დაწყება' : 'პარკირების შეწყვეტა'}
+                  </h4>
+                  <p className={`text-[10px] font-medium line-clamp-1 mt-0.5 ${!activeSession.isActive ? 'text-navy/80' : 'text-rose-100'}`}>
+                    {!activeSession.isActive ? 'დააჭირეთ დასაწყებად' : 'სესიის დასრულება'}
+                  </p>
+                  <span className={`text-[9px] font-mono block mt-1 font-semibold ${!activeSession.isActive ? 'text-navy' : 'text-white'}`}>
+                    ● {!activeSession.isActive ? '15 წთ უფასო • ზონა A' : `ხანგრძლივობა: ${formatTime(activeSession.elapsedSeconds)}`}
+                  </span>
+                </div>
+              </div>
+
+              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
+                !activeSession.isActive ? 'border-navy/15 text-navy' : 'border-white/20 text-white'
+              }`}>
+                <span>{!activeSession.isActive ? 'დაწყება' : 'შეწყვეტა'}</span>
+                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. დეტალური ჩამოსაშლელი ინსტრუქცია/პარამეტრები (ჩნდება მხოლოდ დაჭერისას) */}
+        {selectedParkingAction && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border border-slate-200/80 shadow-xs space-y-3.5 animate-fade-in">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h4 className="text-xs font-black text-navy flex items-center gap-1.5 uppercase tracking-wide">
+                <span>
+                  {selectedParkingAction === 'location'
+                    ? '2. ლოკაციის მონაცემები'
+                    : selectedParkingAction === 'map'
+                    ? '2. ქუჩის ნახვა რუკაზე'
+                    : '2. საპარკინგე სლოტის ნომრის ჩაწერა'}
+                </span>
+                <span className="text-gold font-mono font-bold">
+                  ({activeParkedLot?.district_ge || 'ვაკე'})
+                </span>
+              </h4>
               <button
                 type="button"
                 onClick={() => {
-                  sounds.playScanSweep();
-                  obd4gService.restartDemoDriveCycle();
+                  sounds.playClick();
+                  setSelectedParkingAction(null);
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-black bg-gold hover:bg-gold/90 text-slate-950 transition-all shadow-md shrink-0 flex items-center justify-center gap-2"
+                className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-navy transition-all"
+                title="დახურვა"
               >
-                <RefreshCw size={13} className="animate-spin-slow" />
-                <span>სიმულაციის ხელახლა გაშვება</span>
+                <X size={14} />
               </button>
             </div>
-          </div>
-        ) : (
-          /* REAL MODE STATUS */
-          <div className="mt-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-300/40 text-xs text-navy space-y-3">
-            <div className="flex items-start gap-3">
-              <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <strong className="block text-amber-950 font-bold mb-1">
-                  აპარატურული მზადყოფნა — ფიზიკური 4G OBD მოწყობილობის მოლოდინში
-                </strong>
-                <p className="text-slate-600 leading-relaxed text-[11px]">
-                  პროექტის მიზნის შესაბამისად, 4G OBD მოწყობილობა ჯერ არ არის ფიზიკურად ხელმისაწვდომი. სისტემაში გამზადებულია რეალური სერვერული ვებჰუკი (<code className="px-1.5 py-0.5 bg-white rounded border border-slate-300 font-mono text-[10px]">POST /api/telemetry</code>), მონაცემთა მოდელი (GPS + GNSS + სიჩქარე + ანთების სტატუსი) და დეტექტორი.
-                </p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-amber-200/50 text-[11px] font-mono">
-              <div className="p-2.5 rounded-xl bg-white border border-slate-200">
-                <span className="text-slate-400 block text-[10px]">კავშირის სტატუსი:</span>
-                <span className="text-rose-600 font-bold">🔴 ოფლაინ (სერვერის მოლოდინი)</span>
+            {/* Content: Location */}
+            {selectedParkingAction === 'location' && (
+              <div className="space-y-2.5 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase">მდებარეობა</span>
+                    <strong className="text-navy text-xs block mt-0.5">{activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'} #{activeParkedLot?.lotCode === '005' ? '34' : '34'}</strong>
+                    <span className="text-[10px] text-slate-500 block mt-0.5">ვაკე • მზიურის მოპირდაპირედ</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase">სატარიფო ზონა</span>
+                    <strong className="text-gold text-xs block mt-0.5">{activeParkedLot?.categoryLabel_ge || 'ზონა A (1.00 ₾/სთ)'}</strong>
+                    <span className="text-[10px] text-emerald-600 font-bold block mt-0.5">✓ პირველი 15 წთ უფასო</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase">GPS სიზუსტე</span>
+                    <strong className="text-navy text-xs block mt-0.5">±6.5 მეტრი</strong>
+                    <span className="text-[10px] text-slate-500 block mt-0.5">14 თანამგზავრი აქტიურია</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      handleStartParking();
+                      setSelectedParkingAction(null);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-gold text-navy font-black text-xs hover:bg-gold/90 transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Zap size={14} className="fill-navy" />
+                    <span>ამ ლოკაციით პარკირების დაწყება</span>
+                  </button>
+                </div>
               </div>
-              <div className="p-2.5 rounded-xl bg-white border border-slate-200">
-                <span className="text-slate-400 block text-[10px]">ტექნიკური პროტოკოლი:</span>
-                <span className="text-navy font-bold">MQTT / HTTPS Webhook (ISO 15765-4)</span>
+            )}
+
+            {/* Content: Map */}
+            {selectedParkingAction === 'map' && (
+              <div className="space-y-2.5 text-xs">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <strong className="text-navy block font-bold text-xs sm:text-sm">
+                      {activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'} #{activeParkedLot?.lotCode === '005' ? '34' : '34'}
+                    </strong>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      კოორდინატები: 41.7118° N, 44.7745° E • ვაკის ზონალური საპარკინგე სექტორი
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      document.getElementById('parking-zones-map-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="px-4 py-2 rounded-xl bg-navy text-gold font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-1.5 shrink-0 shadow-sm"
+                  >
+                    <Map size={14} />
+                    <span>რუკაზე ნახვა ➔</span>
+                  </button>
+                </div>
               </div>
-              <div className="p-2.5 rounded-xl bg-white border border-slate-200">
-                <span className="text-slate-400 block text-[10px]">რეკომენდაცია:</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setObdMode('demo');
-                    obd4gService.setMode('demo');
-                  }}
-                  className="text-gold font-bold underline cursor-pointer"
-                >
-                  გადართეთ DEMO რეჟიმზე
-                </button>
+            )}
+
+            {/* Content: Slot Input */}
+            {selectedParkingAction === 'slot' && (
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-2.5">
+                  <label className="text-[11px] text-slate-600 block font-bold">
+                    ჩაწერეთ საგზაო ნიშანზე მითითებული საპარკინგე სლოტის/ლოტის ნომერი:
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-slate-400 text-sm">#</span>
+                      <input
+                        type="text"
+                        value={customSlotInput}
+                        onChange={(e) => setCustomSlotInput(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                        placeholder="005"
+                        className="pl-7 pr-3 py-2 rounded-xl border border-slate-300 font-mono font-black text-navy text-sm w-32 uppercase bg-white focus:outline-hidden focus:ring-2 focus:ring-gold focus:border-gold shadow-xs"
+                      />
+                    </div>
+
+                    {/* Quick Slot Preset Pills */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {['001', '005', '012', '034'].map((code) => (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => {
+                            sounds.playClick();
+                            setCustomSlotInput(code);
+                            setParkingLocationInput(`ზონა #${code} — ი. ჭავჭავაძის გამზირი`);
+                          }}
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all ${
+                            customSlotInput === code
+                              ? 'bg-gold text-navy border-gold shadow-xs font-black'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-gold'
+                          }`}
+                        >
+                          #{code}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playSuccess();
+                        setParkingLocationInput(`ზონა #${customSlotInput} — ი. ჭავჭავაძის გამზირი`);
+                        setSelectedParkingAction(null);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-navy text-gold font-bold text-xs hover:bg-slate-800 transition-all ml-auto shadow-sm"
+                    >
+                      დამახსოვრება
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
+
+        {/* 3. Action Footer Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              document.getElementById('parking-zones-map-section')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="btn-stitch-soft w-full sm:w-auto px-6 py-3.5 text-xs font-bold flex items-center justify-center gap-2 group transition-all"
+          >
+            <Map className="w-4 h-4 text-gold group-hover:scale-110 transition-transform" />
+            <span>სრული რუკის ნახვა</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              if (!activeSession.isActive) {
+                handleStartParking();
+              } else {
+                handleStopParking();
+              }
+            }}
+            className={`w-full sm:flex-1 py-3.5 sm:py-4 px-8 text-sm sm:text-base font-black flex items-center justify-center gap-2 shadow-lg ${
+              !activeSession.isActive ? 'btn-stitch-primary' : 'btn-stitch-rose text-white'
+            }`}
+          >
+            <Zap className={`w-5 h-5 ${!activeSession.isActive ? 'text-navy fill-navy' : 'text-white'}`} />
+            <span>
+              {!activeSession.isActive
+                ? 'პარკირების დაწყება'
+                : `პარკირების შეწყვეტა (${formatTime(activeSession.elapsedSeconds)})`}
+            </span>
+            <ArrowRight size={17} />
+          </button>
+        </div>
       </div>
 
       {/* ======================================================== */}
