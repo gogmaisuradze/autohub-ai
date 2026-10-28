@@ -3,7 +3,7 @@ import { Header } from './components/Header';
 import { VEHICLE_PRESETS, OWNER_VEHICLES, VISITOR_INITIAL_VEHICLE } from './constants/vehicles';
 import { Navigation, TabType } from './components/Navigation';
 import { HomeHub } from './components/HomeHub';
-import { ObdModule } from './components/Diagnostics/ObdModule';
+
 import { AiMechanicChat } from './components/AiMechanic/AiMechanicChat';
 import { FinesModule } from './components/Fines/FinesModule';
 import { ParkingModule } from './components/Parking/ParkingModule';
@@ -29,6 +29,8 @@ import { n8nService } from './services/n8nService';
 import { sounds } from './services/soundEffects';
 import { generateServicesForVehicle } from './services/vinServiceEngine';
 import { ArrowLeft } from 'lucide-react';
+
+const ObdModule = React.lazy(() => import('./components/Diagnostics/ObdModule'));
 
 const INITIAL_VEHICLE: VehicleProfile = {
   id: 'CAR_01',
@@ -1057,6 +1059,7 @@ export const App: React.FC = () => {
 
         {/* Sub-department Views */}
         {activeTab === 'obd' && (
+          <React.Suspense fallback={<div className="min-h-[430px] rounded-3xl bg-white/60 grid place-items-center text-slate-500" role="status">დიაგნოსტიკა იტვირთება…</div>}>
           <ObdModule
             vehicle={vehicle}
             telemetry={telemetry}
@@ -1078,6 +1081,7 @@ export const App: React.FC = () => {
             autoStartScanTrigger={autoStartScanTrigger}
             onOpenFieldPrompt={handleOpenFieldPrompt}
           />
+          </React.Suspense>
         )}
 
         {activeTab === 'fines' && (

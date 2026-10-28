@@ -299,6 +299,14 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
   onScrollPastBanner
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [loadedSlides, setLoadedSlides] = useState(() => new Set([0, 1]));
+  useEffect(() => {
+    setLoadedSlides(previous => {
+      const next = (currentIndex + 1) % DIGITAL_SERVICES.length;
+      if (previous.has(currentIndex) && previous.has(next)) return previous;
+      return new Set([...previous, currentIndex, next]);
+    });
+  }, [currentIndex]);
   const [isPaused, setIsPaused] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isCatalogExpanded, setIsCatalogExpanded] = useState(false);
@@ -722,7 +730,10 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
           return (
             <img
               key={srv.id}
-              src={srv.imageUrl}
+              src={loadedSlides.has(idx) ? srv.imageUrl : undefined}
+              srcSet={loadedSlides.has(idx) ? [640, 1280, 1920].map(width => `${srv.imageUrl.replace(/([?&])w=\d+/, `$1w=${width}`)} ${width}w`).join(', ') : undefined}
+              sizes="100vw"
+              decoding="async"
               alt={srv.title}
               className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out pointer-events-none transform scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05] ${
                 isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
@@ -974,7 +985,9 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                   {/* Thematic Car Thumbnail (Wide & Cinematic) */}
                   <div className="relative h-40 sm:h-48 w-full overflow-hidden">
                     <img
-                      src={srv.imageUrl}
+                      src={srv.imageUrl.replace(/([?&])w=\d+/, '$1w=640')}
+                      loading="lazy"
+                      decoding="async"
                       alt={srv.title}
                       className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
                         srv.imagePosition || 'object-center'

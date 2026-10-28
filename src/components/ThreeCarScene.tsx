@@ -117,16 +117,20 @@ export const ThreeCarScene: React.FC<Props> = ({
     setScanStage('rotating');
     setExplodeFactor(0);
     targetExplodeRef.current = 0;
-    solidTargetRef.current = 0;
-    setIsGhostMode(true);
+    solidTargetRef.current = 1;
+    setIsGhostMode(false);
     setAutoRotate(false);
     setActivePin(null);
     activePinRef.current = null;
     setInfoCardOpen(false);
-    targetCamPosRef.current = new THREE.Vector3(4.8, 2.9, 5.5);
+    targetCamPosRef.current = new THREE.Vector3(5.6, 3.8, 6.5);
     targetCamLookRef.current = new THREE.Vector3(0, .85, 0);
     sequenceCallbacks.current.onSequenceBusyChange?.(true);
-    containerRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+    const viewport = containerRef.current;
+    if (viewport) window.scrollTo({
+      top: window.scrollY + viewport.getBoundingClientRect().top - Math.max(132, (window.innerHeight - viewport.clientHeight) / 2),
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+    });
   }, [isScanning]);
 
   // UI Interactive States
@@ -139,6 +143,7 @@ export const ThreeCarScene: React.FC<Props> = ({
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
   liveStateRef.current.autoRotate = autoRotate;
   const [modelError, setModelError] = useState(false);
+  const [modelLoading, setModelLoading] = useState(true);
   const [isGhostMode, setIsGhostMode] = useState<boolean>(true); // Ghost X-Ray Wireframe body vs Solid
   const solidTargetRef = useRef(0);
   const [explodeFactor, setExplodeFactor] = useState<number>(0); // 0 to 1
@@ -349,7 +354,7 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     // 2. Camera Setup (Perspective angle matching the user's digital twin blueprint photo)
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(4.8, 2.9, 5.5);
+    camera.position.set(5.6, 3.8, 6.5);
     const initialTarget = new THREE.Vector3(0, 0.85, 0);
     camera.lookAt(initialTarget);
     cameraRef.current = camera;
@@ -361,7 +366,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       powerPreference: 'high-performance'
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, width < 640 ? 1.25 : 1.5));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -372,7 +377,11 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     // რეალისტური სტუდიური გარემოს ასახვა (PBR reflections მეტალზე/შუშაზე)
     const pmrem = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    const room = new RoomEnvironment();
+    const environmentTarget = pmrem.fromScene(room, 0.04);
+    scene.environment = environmentTarget.texture;
+    room.dispose();
+    pmrem.dispose();
 
     // 4. OrbitControls
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -413,15 +422,37 @@ export const ThreeCarScene: React.FC<Props> = ({
     const stageGroup = new THREE.Group();
 
     // Stage Base Disc
-    const podiumGeo = new THREE.PlaneGeometry(200, 200);
+    // A seamless white circular showroom: floor, rounded wall and ceiling.
+    const roomProfile: THREE.Vector2[] = [new THREE.Vector2(0, -.25), new THREE.Vector2(15.5, -.25)];
+    for (let i = 1; i <= 20; i++) {
+      const angle = i / 20 * Math.PI / 2;
+      roomProfile.push(new THREE.Vector2(15.5 + 2.5 * Math.sin(angle), -.25 + 2.5 * (1 - Math.cos(angle))));
+    }
+    roomProfile.push(new THREE.Vector2(18, 5.5));
+    for (let i = 1; i <= 16; i++) {
+      const angle = i / 16 * Math.PI / 2;
+      roomProfile.push(new THREE.Vector2(18 - 2.5 * (1 - Math.cos(angle)), 5.5 + 2.5 * Math.sin(angle)));
+    }
+    roomProfile.push(new THREE.Vector2(0, 8));
+    const backdropGeometry = new THREE.LatheGeometry(roomProfile, 96);
+    const backdropMaterial = new THREE.MeshStandardMaterial({ color: 0xf5f7fa, roughness: .86, metalness: 0, side: THREE.BackSide });
+    const backdrop = new THREE.Mesh(backdropGeometry, backdropMaterial);
+    backdrop.receiveShadow = true; scene.add(backdrop);
+    const showroomBeltMaterial = new THREE.MeshBasicMaterial({ color: 0xe0e5eb });
+    const showroomBelt = new THREE.Mesh(new THREE.TorusGeometry(17.98, .018, 6, 144), showroomBeltMaterial);
+    showroomBelt.rotation.x = Math.PI / 2; showroomBelt.position.y = 3.2;
+    scene.add(showroomBelt);
+
+    const podiumGeo = new THREE.CylinderGeometry(3.15, 3.28, .22, 72);
     const podiumMat = new THREE.MeshStandardMaterial({
       color: 0xF1F5F9,
       roughness: 0.28,
       metalness: 0.12
     });
-    const podium = new THREE.Mesh(podiumGeo, podiumMat);
-    podium.position.y = -0.03;
-    podium.rotation.x = -Math.PI / 2;
+    const podiumSide = new THREE.MeshStandardMaterial({ color: 0x293543, roughness: .30, metalness: .55 });
+    const podium = new THREE.Mesh(podiumGeo, [podiumSide, podiumMat, podiumSide]);
+    podium.position.y = -.14;
+    podium.castShadow = true;
     podium.receiveShadow = true;
     stageGroup.add(podium);
 
@@ -434,12 +465,12 @@ export const ThreeCarScene: React.FC<Props> = ({
     stageGroup.add(gridHelper);
 
     // Warm Gold Outer Ring
-    const goldRingGeo = new THREE.RingGeometry(2.84, 2.89, 64);
-    const goldRingMat = new THREE.MeshBasicMaterial({ color: 0xFCA311, side: THREE.DoubleSide });
+    const goldRingGeo = new THREE.RingGeometry(3.145, 3.17, 72);
+    const goldRingMat = new THREE.MeshBasicMaterial({ color: 0xc2cbd5, side: THREE.DoubleSide });
     const goldRing = new THREE.Mesh(goldRingGeo, goldRingMat);
     goldRing.rotation.x = -Math.PI / 2;
-    goldRing.position.y = 0.002;
-    goldRing.visible = false;
+    goldRing.position.y = -.025;
+    goldRing.visible = true;
     stageGroup.add(goldRing);
 
     scene.add(stageGroup);
@@ -496,7 +527,8 @@ export const ThreeCarScene: React.FC<Props> = ({
     const visual = {
       fill: { value: 0 }, lift: { value: 0 },
       scanZ: { value: -2.6 }, scanStrength: { value: 0 },
-      carInverse: { value: new THREE.Matrix4() }
+      carInverse: { value: new THREE.Matrix4() },
+      fillOrigin: { value: new THREE.Vector3(0, .5, 1.1) }, fillReach: { value: 4.0 }
 
     };
     const ghostColor = new THREE.Color(0xaecbe6);
@@ -505,6 +537,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       mat.onBeforeCompile = shader => {
         Object.assign(shader.uniforms, {
           uFill: visual.fill, uLift: visual.lift, uScanZ: visual.scanZ,
+          uFillOrigin: visual.fillOrigin, uFillReach: visual.fillReach,
           uScanStrength: visual.scanStrength, uCarInverse: visual.carInverse,
           uGhostColor: { value: ghostColor }, uPaintColor: { value: solidColor },
           uGhostAlpha: { value: mat.userData.ghostOpacity ?? .26 },
@@ -513,13 +546,20 @@ export const ThreeCarScene: React.FC<Props> = ({
         });
         shader.vertexShader = 'uniform mat4 uCarInverse; varying vec3 vCarSurface;\n' + shader.vertexShader;
         shader.vertexShader = shader.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvCarSurface = (uCarInverse * modelMatrix * vec4(transformed, 1.0)).xyz;');
-        shader.fragmentShader = `uniform float uFill, uLift, uScanZ, uScanStrength, uGhostAlpha, uSolidRoughness, uSolidMetalness;
-          uniform vec3 uGhostColor, uPaintColor; varying vec3 vCarSurface;\n` + shader.fragmentShader;
+        shader.fragmentShader = `uniform float uFill, uLift, uScanZ, uScanStrength, uGhostAlpha, uSolidRoughness, uSolidMetalness, uFillReach;
+          uniform vec3 uGhostColor, uPaintColor, uFillOrigin; varying vec3 vCarSurface;\n` + shader.fragmentShader;
         if (body) {
           shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+            vec3 fillPoint = vCarSurface - vec3(0.0, uLift, 0.0);
+            float waveDistance = distance(fillPoint, uFillOrigin);
+            float waveRadius = uFill * (uFillReach + .18);
+            float painted = 1.0 - smoothstep(waveRadius - .12, waveRadius + .12, waveDistance);
+            if (uFill <= .001) painted = 0.0;
+            if (uFill >= .999) painted = 1.0;
             float surfaceAlpha = clamp(diffuseColor.a / max(opacity, .001), 0.0, 1.0);
             diffuseColor.rgb ${paintLayer && mat.userData.keepSurfaceColor ? '*=' : '='} ${paintLayer ? 'uPaintColor' : 'uGhostColor'};
-            diffuseColor.a = surfaceAlpha * ${paintLayer ? 'uFill' : 'uGhostAlpha * (1.0 - uFill)'};
+            diffuseColor.a = surfaceAlpha * ${paintLayer ? 'painted' : 'uGhostAlpha * (1.0 - painted)'};
+            ${!paintLayer ? 'diffuseColor.a *= 1.0 - exp(-pow((vCarSurface.z - uScanZ) / .18, 2.0)) * uScanStrength * .85;' : ''}
             ${paintLayer ? `
               float frontGrille = smoothstep(2.20, 2.28, vCarSurface.z) * (1.0 - smoothstep(.40, .48, abs(vCarSurface.x))) * step(.17, vCarSurface.y - uLift) * (1.0 - smoothstep(.66, .69, vCarSurface.y - uLift));
               diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.006, .008, .012), frontGrille);` : ''}`);
@@ -532,7 +572,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           outgoingLight += (vec3(.72, .93, 1.0) * scanBand * 1.6 + vec3(.06, .32, .60) * scanHalo * .32) * uScanStrength;
           #include <opaque_fragment>`);
       };
-      mat.customProgramCacheKey = () => body ? (paintLayer ? (mat.userData.keepSurfaceColor ? 'autohub-native-trim-v5' : 'autohub-opaque-paint-v5') : 'autohub-glass-fade-v4') : 'autohub-surface-scan-v3';
+      mat.customProgramCacheKey = () => body ? (paintLayer ? (mat.userData.keepSurfaceColor ? 'autohub-native-trim-wave-v6' : 'autohub-opaque-paint-wave-v6') : 'autohub-glass-wave-v6') : 'autohub-surface-scan-v3';
       mat.needsUpdate = true;
     };
     // A restrained volumetric light sheet moves through the whole vehicle.
@@ -564,6 +604,21 @@ export const ThreeCarScene: React.FC<Props> = ({
     laserLight.position.set(0, 1.75, 0);
     laserRig.add(laserLight);
 
+    const scanLayerMaterial = new THREE.ShaderMaterial({
+      uniforms: { uCarInverse: visual.carInverse, uScanZ: visual.scanZ, uStrength: visual.scanStrength },
+      transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+      vertexShader: `uniform mat4 uCarInverse; varying vec3 vCarP; varying vec3 vViewN;
+        void main() { vCarP = (uCarInverse * modelMatrix * vec4(position, 1.0)).xyz;
+          vViewN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `uniform float uScanZ, uStrength; varying vec3 vCarP; varying vec3 vViewN;
+        void main() {
+          float band = exp(-pow((vCarP.z - uScanZ) / .10, 2.0));
+          if (band * uStrength < .015) discard;
+          float edge = pow(1.0 - abs(normalize(vViewN).z), 1.8);
+          gl_FragColor = vec4(.25, .76, 1.0, band * uStrength * (.06 + edge * .30));
+        }`
+    });
+    const scanLayerMeshes: THREE.Mesh[] = [];
     const engineParts: { node: THREE.Group; rest: THREE.Vector3; offset: THREE.Vector3 }[] = [];
     const wheelParts: { node: THREE.Group; rest: THREE.Vector3; offset: THREE.Vector3 }[] = [];
     let windowMaterial: THREE.MeshPhysicalMaterial | null = null;
@@ -571,7 +626,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     let headlightMat: THREE.MeshStandardMaterial | null = null;
     let taillightMat: THREE.MeshStandardMaterial | null = null;
     let disposed = false;
-    gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=11`, (gltf) => {
+    gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=12`, (gltf) => {
       const root = gltf.scene;
       if (disposed) return;
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
@@ -669,7 +724,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           return group;
         };
         const rim = makePart('Rim', new THREE.Vector3(side * 1.12, .05, axle * .28));
-        const tire = makePart('Tire', new THREE.Vector3(side * 1.68, .05, axle * .28));
+        const tire = rim;
         const disc = makePart('BrakeDisc', new THREE.Vector3(side * .65, .05, axle * .28));
         const caliper = makePart('BrakeCaliper', new THREE.Vector3(side * .34, .23, axle * .46));
         const strut = makePart('Coilover', new THREE.Vector3(side * .24, .65, axle * .28));
@@ -885,9 +940,32 @@ export const ThreeCarScene: React.FC<Props> = ({
         paintMeshes.push(paint);
       });
       paintMeshes.forEach(mesh => bodyGrp.add(mesh));
+      carMasterGroup.updateWorldMatrix(true, true);
+      const engineBounds = new THREE.Box3().setFromObject(groupsRef.current.engine);
+      const engineHeart = carMasterGroup.worldToLocal(engineBounds.getCenter(new THREE.Vector3()));
+      visual.fillOrigin.value.copy(engineHeart);
+      const shellBounds = new THREE.Box3().setFromObject(bodyGrp);
+      let fillReach = 0;
+      for (let x = 0; x < 2; x++) for (let y = 0; y < 2; y++) for (let z = 0; z < 2; z++) {
+        const point = new THREE.Vector3(x ? shellBounds.max.x : shellBounds.min.x, y ? shellBounds.max.y : shellBounds.min.y, z ? shellBounds.max.z : shellBounds.min.z);
+        carMasterGroup.worldToLocal(point);
+        fillReach = Math.max(fillReach, point.distanceTo(engineHeart));
+      }
+      visual.fillReach.value = fillReach;
+      const mechanicalMeshes = new Set<THREE.Mesh>();
+      ['engine', 'cooling', 'suspension', 'exhaust', 'battery', 'ecu', 'oxygen_sensor', 'ignition_coil', 'fuel_injectors'].forEach(id => {
+        groupsRef.current[id]?.traverse(node => { if (node instanceof THREE.Mesh) mechanicalMeshes.add(node); });
+      });
+      wheelParts.forEach(({node}) => node.traverse(child => { if (child instanceof THREE.Mesh) mechanicalMeshes.add(child); }));
+      mechanicalMeshes.forEach(source => {
+        const layer = new THREE.Mesh(source.geometry, scanLayerMaterial);
+        layer.name = 'LaserSection_' + source.name; layer.visible = false; layer.renderOrder = 5;
+        source.add(layer); scanLayerMeshes.push(layer);
+      });
       carMasterGroup.remove(root);
       modelReadyRef.current = true;
-    }, undefined, (err) => { if (!disposed) setModelError(true); console.error('BMW model load error', err); });
+      setModelLoading(false);
+    }, undefined, (err) => { if (!disposed) { setModelError(true); setModelLoading(false); } console.error('BMW model load error', err); });
 
     // 3D hotspot pins removed — components light up in their own colour instead
 
@@ -901,17 +979,21 @@ export const ThreeCarScene: React.FC<Props> = ({
     const clock = new THREE.Clock();
     const idlePodium = new THREE.Color(0xf1f5f9);
     const scanPodium = new THREE.Color(0x101e30);
-    const idleRing = new THREE.Color(0xfca311);
+    const idleRing = new THREE.Color(0xc2cbd5);
     const scanRing = new THREE.Color(0x477da3);
     let fillProgress = 0;
     let scanPhase = 0;
     let previousTime = 0;
+    let inViewport = true;
+    const viewportObserver = new IntersectionObserver(entries => { inViewport = entries[0]?.isIntersecting ?? true; }, { rootMargin: '160px' });
+    viewportObserver.observe(containerRef.current);
     let framedExplode = -1;
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
       const delta = Math.min(elapsedTime - previousTime, .05);
+      if (!inViewport || document.hidden) { previousTime = elapsedTime; return; }
       previousTime = elapsedTime;
       const fillStep = delta / (reducedMotion ? .15 : 2.8);
       fillProgress = THREE.MathUtils.clamp(fillProgress + Math.sign(solidTargetRef.current - fillProgress) * Math.min(Math.abs(solidTargetRef.current - fillProgress), fillStep), 0, 1);
@@ -927,10 +1009,23 @@ export const ThreeCarScene: React.FC<Props> = ({
       const sequence = sequenceRef.current;
       if (sequence.active && modelReadyRef.current) {
         controls.enabled = false;
-        if (Number.isNaN(sequence.startAngle)) sequence.startAngle = carMasterGroup.rotation.y;
+        if (Number.isNaN(sequence.startAngle)) {
+          sequence.startAngle = carMasterGroup.rotation.y;
+          fillProgress = 1; visual.fill.value = 1;
+          camera.position.set(9.5, 4.8, 11.5);
+          controls.target.set(0, .75, 0);
+        }
+        if (sequence.elapsed < 2.6 && !sequence.revealing) {
+          const approach = THREE.MathUtils.smoothstep(sequence.elapsed, 0, 2.6);
+          camera.position.lerpVectors(new THREE.Vector3(9.5, 4.8, 11.5), new THREE.Vector3(5.6, 3.8, 6.5), approach);
+          controls.target.set(0, .85, 0);
+          targetCamPosRef.current = null;
+          targetCamLookRef.current = null;
+          if (sequence.elapsed > .3) { solidTargetRef.current = 0; setIsGhostMode(previous => previous ? previous : true); }
+        }
         if (!sequence.revealing) {
           sequence.elapsed += delta;
-          const turn = Math.min(sequence.elapsed / 12, 1);
+          const turn = Math.min(sequence.elapsed / 18, 1);
           const eased = turn * turn * (3 - 2 * turn);
           carMasterGroup.rotation.y = sequence.startAngle + Math.PI * 2 * eased;
           if (turn >= 1 && !liveStateRef.current.isScanning) {
@@ -1061,11 +1156,14 @@ export const ThreeCarScene: React.FC<Props> = ({
       visual.scanStrength.value = THREE.MathUtils.damp(visual.scanStrength.value, scanning ? 1 : 0, 4, delta);
       const focus = visual.scanStrength.value;
       podiumMat.color.copy(idlePodium).lerp(scanPodium, focus);
+      backdropMaterial.color.set(0xf5f7fa).lerp(new THREE.Color(0x081323), focus);
       goldRingMat.color.copy(idleRing).lerp(scanRing, focus);
+      showroomBeltMaterial.color.set(0xe0e5eb).lerp(new THREE.Color(0x203951), focus);
       (gridHelper.material as THREE.Material).opacity = THREE.MathUtils.lerp(.35, .10, focus);
-      if (scanning && !reducedMotion) scanPhase = (scanPhase + delta / 4.8) % 1;
+      if (scanning && !reducedMotion) scanPhase = (scanPhase + delta / 8.5) % 1;
       visual.scanZ.value = reducedMotion ? 0 : THREE.MathUtils.lerp(-2.65, 2.65, .5 - .5 * Math.cos(scanPhase * Math.PI * 2));
       laserRig.visible = visual.scanStrength.value > .005;
+      scanLayerMeshes.forEach(mesh => { mesh.visible = visual.scanStrength.value > .03; });
       laserRig.rotation.copy(carMasterGroup.rotation);
       laserSheet.position.z = visual.scanZ.value;
       laserTrace.position.z = visual.scanZ.value;
@@ -1099,6 +1197,8 @@ export const ThreeCarScene: React.FC<Props> = ({
       modelReadyRef.current = false;
       sequenceCallbacks.current.onSequenceBusyChange?.(false);
       cancelAnimationFrame(animId);
+      viewportObserver.disconnect();
+      environmentTarget.dispose();
       dracoLoader.dispose();
       scene.traverse((o: any) => {
         if (o.isLine) { o.geometry.dispose(); o.material.dispose(); }
@@ -1135,7 +1235,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     sounds.playClick();
     setActivePin(null);
     setInfoCardOpen(false);
-    targetCamPosRef.current = new THREE.Vector3(4.8, 2.9, 5.5);
+    targetCamPosRef.current = new THREE.Vector3(5.6, 3.8, 6.5);
     targetCamLookRef.current = new THREE.Vector3(0, 0.85, 0);
   };
 
@@ -1150,6 +1250,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       <div className="absolute bottom-2 left-3 z-20 max-w-[65%] text-[11px] text-slate-500 pointer-events-auto">
         BMW M4 · 3D ვიზუალიზაცია · <a className="underline" href={`${import.meta.env.BASE_URL}models/bmw-diagnostic-credits.json`} target="_blank" rel="noreferrer">3D ავტორები</a>
       </div>
+      {modelLoading && !modelError && <div role="status" className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center"><span className="rounded-full bg-white/90 px-4 py-2 text-sm text-slate-600 shadow-sm">3D მოდელი იტვირთება…</span></div>}
       {modelError && <div role="alert" className="absolute inset-0 z-30 grid place-items-center bg-white/95 text-sm text-navy">3D მოდელი ვერ ჩაიტვირთა. განაახლეთ გვერდი.</div>}
       {/* 1. TOP FLOATING CONTROL HUD BAR */}
       <div className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pointer-events-none">
