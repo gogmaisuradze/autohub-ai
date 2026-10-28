@@ -6,7 +6,6 @@ import {
   ShieldAlert,
   Wrench,
   ParkingSquare,
-  MoreHorizontal,
   Navigation as NavigationIcon
 } from 'lucide-react';
 
@@ -33,7 +32,6 @@ export const Navigation: React.FC<Props> = ({
     {
       id: 'home' as TabType,
       label: isGe ? 'მთავარი' : 'Dashboard',
-      shortLabel: isGe ? 'მთავარი' : 'Home',
       icon: LayoutGrid,
       badge: null,
       badgeColor: ''
@@ -41,7 +39,6 @@ export const Navigation: React.FC<Props> = ({
     {
       id: 'obd' as TabType,
       label: isGe ? 'დიაგნოსტიკა' : 'Diagnostics',
-      shortLabel: 'OBD',
       icon: Activity,
       badge: dtcCount > 0 ? `${dtcCount}` : null,
       badgeColor: 'bg-rose-500 text-white font-black'
@@ -49,7 +46,6 @@ export const Navigation: React.FC<Props> = ({
     {
       id: 'fines' as TabType,
       label: isGe ? 'ჯარიმები' : 'Traffic Fines',
-      shortLabel: isGe ? 'ჯარიმები' : 'Fines',
       icon: ShieldAlert,
       badge: finesCount > 0 ? `${finesCount}` : null,
       badgeColor: 'bg-gold text-white font-black'
@@ -57,7 +53,6 @@ export const Navigation: React.FC<Props> = ({
     {
       id: 'parking' as TabType,
       label: isGe ? 'პარკინგი' : 'Parking',
-      shortLabel: isGe ? 'პარკინგი' : 'Parking',
       icon: ParkingSquare,
       badge: 'LIVE',
       badgeColor: 'bg-blue-600 text-white font-black'
@@ -65,7 +60,6 @@ export const Navigation: React.FC<Props> = ({
     {
       id: 'map' as TabType,
       label: isGe ? 'რუკა' : 'Live Map',
-      shortLabel: isGe ? 'რუკა' : 'Map',
       icon: NavigationIcon,
       badge: 'LIVE',
       badgeColor: 'bg-cyan-500 text-white font-black'
@@ -73,57 +67,112 @@ export const Navigation: React.FC<Props> = ({
     {
       id: 'service' as TabType,
       label: isGe ? 'სერვისი' : 'Service Log',
-      shortLabel: isGe ? 'სერვისი' : 'Service',
       icon: Wrench,
       badge: null,
       badgeColor: ''
     }
   ];
 
-  return (
-    <nav data-tour="navigation-menu" className="w-full transition-colors border-t border-white/60">
-      <div className="max-w-7xl mx-auto px-1.5 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-6 gap-1 py-1.5 md:flex md:flex-wrap md:items-center md:justify-center md:gap-4 lg:gap-5 md:py-2.5">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
+  // Mobile Bottom Dock Tabs
+  const mobileDockTabs: { id: TabType; label: string; icon: any; badge: any; badgeColor?: string; isSpecial?: boolean }[] = [
+    { id: 'home', label: isGe ? 'მთავარი' : 'Home', icon: LayoutGrid, badge: null },
+    { id: 'obd', label: 'OBD', icon: Activity, badge: dtcCount > 0 ? `${dtcCount}` : null, badgeColor: 'bg-rose-500 text-white font-black', isSpecial: true },
+    { id: 'fines', label: isGe ? 'ჯარიმები' : 'Fines', icon: ShieldAlert, badge: finesCount > 0 ? `${finesCount}` : null, badgeColor: 'bg-gold text-white font-black' },
+    { id: 'parking', label: isGe ? 'პარკინგი' : 'Parking', icon: ParkingSquare, badge: null },
+    { id: 'map', label: isGe ? 'რუკა' : 'Map', icon: NavigationIcon, badge: null },
+    { id: 'service', label: isGe ? 'სერვისი' : 'Service', icon: Wrench, badge: null }
+  ];
 
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  sounds.playClick();
-                  onSelectTab(tab.id);
-                }}
-                className={`relative flex flex-col md:flex-row items-center justify-center py-1 md:py-2 px-1 md:px-4 rounded-xl md:rounded-2xl text-[10px] sm:text-xs md:text-sm font-bold transition-all duration-150 shrink-0 active:scale-95 ${
-                  isActive
-                    ? 'bg-white text-navy shadow-xs border border-slate-200/80 font-black'
-                    : 'text-slate-600 hover:text-navy hover:bg-white/40'
-                }`}
-              >
-                <div className="relative">
+  return (
+    <>
+      {/* 1. TOP HORIZONTAL PILL NAV BAR (DESKTOP) */}
+      <nav data-tour="navigation-menu" className="hidden md:block w-full transition-colors border-t border-white/60">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 lg:gap-5 py-2 sm:py-2.5">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              const Icon = tab.icon;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    sounds.playClick();
+                    onSelectTab(tab.id);
+                  }}
+                  className={`relative px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 shrink-0 active:scale-95 ${
+                    isActive
+                      ? 'bg-white text-navy shadow-xs border border-slate-200/80 font-black'
+                      : 'text-slate-600 hover:text-navy hover:bg-white/40'
+                  }`}
+                >
                   <Icon
-                    className={`w-4 h-4 md:w-4 md:h-4 transition-colors ${
+                    className={`w-4 h-4 transition-colors ${
                       isActive ? 'text-gold' : 'text-slate-500'
                     }`}
                   />
+                  <span>{tab.label}</span>
+
                   {tab.badge && (
                     <span
-                      className={`absolute -top-1.5 -right-2 md:static md:ml-1.5 px-1 py-0.2 min-w-3.5 rounded-full text-[9px] font-mono font-black ${tab.badgeColor} shadow-xs text-center`}
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black ${tab.badgeColor} shadow-xs ml-0.5`}
                     >
                       {tab.badge}
                     </span>
                   )}
-                </div>
-                <span className="truncate mt-0.5 md:mt-0 md:ml-2">
-                  <span className="md:hidden">{tab.shortLabel}</span>
-                  <span className="hidden md:inline">{tab.label}</span>
-                </span>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
+      </nav>
+
+      {/* 2. MOBILE BOTTOM DOCK BAR */}
+      <div data-tour="navigation-menu" className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#ECEAE5]/95 backdrop-blur-xl border-t border-white/90 px-2 py-1.5 shadow-[0_-6px_25px_rgba(20,33,61,0.12)] flex items-center justify-around transition-colors">
+        {mobileDockTabs.map((item) => {
+          const isActive = activeTab === item.id;
+          const IconComponent = item.icon;
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => {
+                sounds.playClick();
+                onSelectTab(item.id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all duration-150 active:scale-90 ${
+                isActive
+                  ? 'bg-white text-navy shadow-xs border border-gold/40'
+                  : 'text-slate-500 hover:text-navy'
+              }`}
+            >
+              <div className="relative">
+                <IconComponent
+                  className={`w-5 h-5 ${
+                    isActive ? (item.isSpecial ? 'text-gold' : 'text-navy') : 'text-slate-400'
+                  }`}
+                />
+                {item.badge && (
+                  <span className={`absolute -top-1 -right-2 px-1 py-0.2 min-w-3.5 rounded-full text-[9px] font-mono font-black ${item.badgeColor || 'bg-rose-500 text-white'} text-center shadow-xs`}>
+                    {item.badge}
+                  </span>
+                )}
+                {item.isSpecial && (
+                  <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-gold animate-ping"></span>
+                )}
+              </div>
+              <span
+                className={`text-[10px] font-bold mt-0.5 ${
+                  isActive ? 'text-navy font-black' : 'text-slate-500'
+                }`}
+              >
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
-    </nav>
+    </>
   );
 };
