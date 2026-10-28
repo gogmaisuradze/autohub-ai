@@ -482,6 +482,7 @@ export const App: React.FC = () => {
   };
 
   const handleTabChange = (tab: TabType) => {
+    const isSameTab = tab === activeTab;
     setActiveTab(tab);
     try {
       localStorage.setItem('autohub_active_tab', tab);
@@ -489,7 +490,9 @@ export const App: React.FC = () => {
     } catch {}
 
     if (tab === 'home') {
-      smoothScrollTo(0, 750);
+      if (!isSameTab && !isSiteTourActive) {
+        smoothScrollTo(0, 750);
+      }
     } else {
       // Gently glide down past the banner so page content starts cleanly below the sticky navigation
       setTimeout(() => {
@@ -766,6 +769,7 @@ export const App: React.FC = () => {
     title?: string;
   }>({});
   const [tourTrigger, setTourTrigger] = useState<number>(0);
+  const [isSiteTourActive, setIsSiteTourActive] = useState<boolean>(false);
 
   const handleOpenTour = () => {
     sounds.playSuccess();
@@ -1027,13 +1031,14 @@ export const App: React.FC = () => {
       </div>
 
       {/* Cover Advertising Banner (Wider panoramic layout for grand automotive photography) */}
-      <div id="cover-banner-section" data-tour="cover-banner" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
+      <div id="cover-banner-section" data-tour="cover-banner" className="hidden md:block w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
         <CoverAdBanner
           onNavigateTab={handleTabChange}
           onOpenBookingModal={() => handleOpenBookingModal()}
           onOpenObdModal={() => setIsObdAdapterModalOpen(true)}
           onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
           onScrollPastBanner={() => scrollToMainContent(950)}
+          isTourActive={isSiteTourActive}
         />
       </div>
 
@@ -1054,6 +1059,7 @@ export const App: React.FC = () => {
               if (prompt) setAiInitialPrompt(prompt);
               handleTabChange('ai');
             }}
+            isTourActive={isSiteTourActive}
           />
         )}
 
@@ -1325,8 +1331,10 @@ export const App: React.FC = () => {
 
       {/* Interactive Cloud Bot & Google-Style Guided Site Tour */}
       <InteractiveSiteTour
+        currentTab={activeTab}
         onNavigateTab={handleTabChange}
         externalTrigger={tourTrigger}
+        onTourActiveChange={setIsSiteTourActive}
       />
 
       {/* Global 4G OBD Parking Stop Confirmation Modal (when user is outside the Parking tab) */}

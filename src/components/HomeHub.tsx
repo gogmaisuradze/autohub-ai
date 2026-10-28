@@ -31,6 +31,7 @@ interface Props {
   onOpenFieldPrompt?: (field: PromptFieldType) => void;
   onNavigateToAiClarification?: (initialPrompt?: string) => void;
   bookings?: ServiceBookingItem[];
+  isTourActive?: boolean;
 }
 
 export const HomeHub: React.FC<Props> = ({
@@ -42,7 +43,8 @@ export const HomeHub: React.FC<Props> = ({
   onOpenBookingModal,
   onOpenFieldPrompt,
   onNavigateToAiClarification,
-  bookings = []
+  bookings = [],
+  isTourActive = false
 }) => {
   const pendingFines = fines.filter(f => f.status === 'pending');
   const totalFineDiscounted = pendingFines.reduce((acc, f) => acc + f.discounted_amount_gel, 0);
@@ -185,7 +187,7 @@ export const HomeHub: React.FC<Props> = ({
       )}
 
       {/* 2. ORBITING SERVICES CAROUSEL (ორბიტის ფანჯარა ელეგანტური ბექგრაუნდით) */}
-      <div data-tour="orbit-carousel" className="rounded-3xl sm:rounded-[2.2rem] p-4 sm:p-6 bg-gradient-to-b from-[#F8FAFD] via-[#F2F5F9] to-[#EAEFF6] border border-white/90 shadow-[inset_4px_4px_14px_rgba(135,148,168,0.28),inset_-4px_-4px_14px_rgba(255,255,255,1)] relative overflow-hidden no-scrollbar flex flex-col items-center justify-center">
+      <div data-tour="orbit-carousel" className="scroll-mt-32 rounded-3xl sm:rounded-[2.2rem] p-4 sm:p-6 bg-gradient-to-b from-[#F8FAFD] via-[#F2F5F9] to-[#EAEFF6] border border-white/90 shadow-[inset_4px_4px_14px_rgba(135,148,168,0.28),inset_-4px_-4px_14px_rgba(255,255,255,1)] relative overflow-hidden no-scrollbar flex flex-col items-center justify-center">
         <div className="w-full flex items-center justify-between px-2 sm:px-4 mb-2">
           <div>
             <span className="text-xs font-bold text-gold uppercase tracking-wider block">
@@ -207,11 +209,12 @@ export const HomeHub: React.FC<Props> = ({
           servicesList={services}
           onSelectDepartment={onSelectDepartment}
           vehicle={vehicle}
+          isTourActive={isTourActive}
         />
       </div>
 
       {/* 3. Stacked Neumorphic Department Cards (Strictly Matching Image 4) */}
-      <div data-tour="department-cards" className="space-y-3.5">
+      <div data-tour="department-cards" className="scroll-mt-32 space-y-3.5">
         <div className="flex items-center justify-between px-2">
           <h3 className="text-sm font-extrabold text-navy uppercase tracking-wider">
             ყველა განყოფილება (დააკლიკეთ გასახსნელად)

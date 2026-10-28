@@ -26,6 +26,7 @@ interface Props {
   onSelectDepartment: (tab: TabType) => void;
   lang?: 'ge' | 'en';
   vehicle?: VehicleProfile;
+  isTourActive?: boolean;
 }
 
 export const ServicesOrbitCarousel: React.FC<Props> = ({
@@ -34,7 +35,8 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   servicesList,
   onSelectDepartment,
   lang = 'ge',
-  vehicle
+  vehicle,
+  isTourActive = false
 }) => {
   const isGe = lang === 'ge';
   const pendingFines = fines.filter(f => f.status === 'pending');
@@ -186,12 +188,12 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   };
 
   useEffect(() => {
-    if (isHovering) return;
+    if (isHovering || isTourActive) return;
     const interval = setInterval(() => {
       setActiveIndex((i) => (i + 1) % hubServices.length);
     }, 6000);
     return () => clearInterval(interval);
-  }, [isHovering, hubServices.length]);
+  }, [isHovering, isTourActive, hubServices.length]);
 
   const activeService = hubServices[activeIndex];
   const ActiveIcon = activeService.icon;
@@ -208,7 +210,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
       ) {
         return;
       }
-      if (document.querySelector('.fixed.inset-0.z-50')) return;
+      if (isTourActive || document.querySelector('.fixed.inset-0.z-50') || document.querySelector('.autohub-tour-active')) return;
 
       if (isHovering) {
         if (e.key === 'ArrowLeft') {

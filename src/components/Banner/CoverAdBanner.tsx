@@ -289,6 +289,7 @@ export interface CoverAdBannerProps {
   onOpenVinHistory?: () => void;
   onOpenBookingModal?: () => void;
   onScrollPastBanner?: () => void;
+  isTourActive?: boolean;
 }
 
 export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
@@ -296,7 +297,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
   onOpenObdModal,
   onOpenVinHistory,
   onOpenBookingModal,
-  onScrollPastBanner
+  onScrollPastBanner,
+  isTourActive = false
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loadedSlides, setLoadedSlides] = useState(() => new Set([0, 1]));
@@ -317,9 +319,9 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
   const current = DIGITAL_SERVICES[currentIndex];
   const CurrentIcon = current.icon;
 
-  // Auto-advance rotation every 7 seconds
+  // Auto-advance rotation every 7 seconds (paused during interactive site tour)
   useEffect(() => {
-    if (isPaused || isDismissed || isCatalogExpanded) return;
+    if (isPaused || isDismissed || isCatalogExpanded || isTourActive) return;
 
     timerRef.current = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % totalServices);
@@ -328,11 +330,11 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPaused, isDismissed, isCatalogExpanded, totalServices]);
+  }, [isPaused, isDismissed, isCatalogExpanded, isTourActive, totalServices]);
 
   // Global Keyboard ArrowLeft / ArrowRight Navigation for Cover Slides
   useEffect(() => {
-    if (isDismissed) return;
+    if (isDismissed || isTourActive) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't intercept when user is typing in form fields
@@ -347,8 +349,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
         return;
       }
 
-      // If a top modal dialog is open, let modal handle its own controls
-      const hasOpenModal = document.querySelector('.fixed.inset-0.z-50');
+      // If a top modal dialog or interactive tour is open, let it handle its own controls
+      const hasOpenModal = document.querySelector('.fixed.inset-0.z-50') || document.querySelector('.autohub-tour-active');
       if (hasOpenModal) {
         return;
       }

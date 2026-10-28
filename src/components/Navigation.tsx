@@ -86,8 +86,8 @@ export const Navigation: React.FC<Props> = ({
 
   return (
     <>
-      {/* 1. TOP HORIZONTAL PILL NAV BAR (Always completely visible on screen, never hides) */}
-      <nav data-tour="navigation-menu" className="w-full transition-colors">
+      {/* 1. TOP HORIZONTAL PILL NAV BAR (დესკტოპზე ჩანს; მობილურზე იმალება — ქვედა dock საკმარისია) */}
+      <nav data-tour="navigation-menu" className="hidden md:block w-full transition-colors">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 lg:gap-5 py-2 sm:py-2.5">
             {tabs.map((tab) => {
@@ -129,7 +129,7 @@ export const Navigation: React.FC<Props> = ({
       </nav>
 
       {/* 2. MOBILE BOTTOM DOCK BAR */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#ECEAE5]/95 backdrop-blur-xl border-t border-white/90 px-2 py-1.5 shadow-[0_-6px_25px_rgba(20,33,61,0.12)] flex items-center justify-around transition-colors">
+      <div data-tour="navigation-menu" className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#ECEAE5]/95 backdrop-blur-xl border-t border-white/90 px-2 py-1.5 shadow-[0_-6px_25px_rgba(20,33,61,0.12)] flex items-center justify-around transition-colors">
         {mobileDockTabs.map((item) => {
           const isActive = activeTab === item.id;
           const IconComponent = item.icon;

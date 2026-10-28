@@ -114,18 +114,24 @@ const TOUR_STEPS: TourStep[] = [
 ];
 
 interface Props {
+  currentTab?: TabType;
   onNavigateTab: (tab: TabType) => void;
   externalTrigger?: number;
+  onTourActiveChange?: (active: boolean) => void;
 }
 
 export const InteractiveSiteTour: React.FC<Props> = ({
+  currentTab,
   onNavigateTab,
-  externalTrigger
+  externalTrigger,
+  onTourActiveChange
 }) => {
   // Draggable constraint container ref (locks window strictly inside viewport)
   const dragConstraintsRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [cardHeight, setCardHeight] = useState(280);
+  const [userCustomPos, setUserCustomPos] = useState<{ x: number; y: number } | null>(null);
+  const [isStepTransitioning, setIsStepTransitioning] = useState(false);
 
   // State: Cloud Bot Prompt (ღრუბლის ფანჯარა ბოტი)
   const [isCloudPromptOpen, setIsCloudPromptOpen] = useState(false);
@@ -135,6 +141,11 @@ export const InteractiveSiteTour: React.FC<Props> = ({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [isCompletedModalOpen, setIsCompletedModalOpen] = useState(false);
+
+  // Notify parent of tour state changes
+  useEffect(() => {
+    onTourActiveChange?.(isTourActive);
+  }, [isTourActive, onTourActiveChange]);
 
   // Measure actual rendered height of the card dynamically to guarantee it fits on screen
   useEffect(() => {
@@ -162,7 +173,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
   // Trigger initial Cloud Bot after 1.5s delay if not dismissed in this session
   useEffect(() => {
     try {
-      const dismissed = sessionStorage.getItem('autohub_cloud_guide_dismissed');
+      const dismissed = localStorage.getItem('autohub_cloud_guide_dismissed');
       if (!dismissed) {
         const timer = setTimeout(() => {
           setIsCloudPromptOpen(true);
@@ -196,7 +207,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     sounds.playClick();
     setIsCloudPromptOpen(false);
     try {
-      sessionStorage.setItem('autohub_cloud_guide_dismissed', 'true');
+      localStorage.setItem('autohub_cloud_guide_dismissed', 'true');
     } catch {}
   };
 
@@ -206,6 +217,17 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     setTargetRect(null);
   };
 
+  // Helper to find visible target element even if multiple elements share a data-tour attribute (e.g. desktop vs mobile nav)
+  const findVisibleTarget = useCallback((selector: string): HTMLElement | null => {
+    const list = document.querySelectorAll(selector);
+    for (let i = 0; i < list.length; i++) {
+      const el = list[i] as HTMLElement;
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) return el;
+    }
+    return document.querySelector(selector) as HTMLElement | null;
+  }, []);
+
   // Update target element's bounding rectangle on step change, resize, or scroll
   const updateTargetRect = useCallback(() => {
     if (!isTourActive) return;
@@ -213,51 +235,66 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     const step = TOUR_STEPS[currentStepIndex];
     if (!step) return;
 
-    const el = document.querySelector(step.targetSelector);
+    const el = findVisibleTarget(step.targetSelector);
     if (el) {
       const rect = el.getBoundingClientRect();
       setTargetRect(rect);
     }
-  }, [isTourActive, currentStepIndex]);
+  }, [isTourActive, currentStepIndex, findVisibleTarget]);
 
   // Handle smooth element transitions when step changes
   useEffect(() => {
     if (!isTourActive) return;
 
-    const step = TOUR_STEPS[currentStepIndex];
-    if (!step) return;
+    setIsStepTransitioning(true);
+    const transitionTimer = setTimeout(() => {
+      setIsStepTransitioning(false);
+      updateTargetRect();
+    }, 450);
 
-    if (step.requiredTab) {
+    const step = TOUR_STEPS[currentStepIndex];
+    if (!step) return () => clearTimeout(transitionTimer);
+
+    // Only switch tabs if the step requires a different tab
+    if (step.requiredTab && currentTab && currentTab !== step.requiredTab) {
       onNavigateTab(step.requiredTab);
     }
 
-    const measureAndAlign = () => {
-      const el = document.querySelector(step.targetSelector);
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        setTargetRect(rect);
+    const alignToTarget = () => {
+      const el = findVisibleTarget(step.targetSelector);
+      if (!el) return;
 
-        // Check if element is already comfortably in view
-        const isBig = rect.height > window.innerHeight * 0.6;
-        const inView = rect.top >= 40 && (rect.top + (isBig ? 120 : rect.height)) <= window.innerHeight - 40;
+      const rect = el.getBoundingClientRect();
+      setTargetRect(rect);
 
-        if (!inView) {
-          el.scrollIntoView({
-            behavior: 'smooth',
-            block: isBig ? 'start' : 'center',
-            inline: 'nearest'
+      const stickyHeader = document.getElementById('sticky-header');
+      const headerH = stickyHeader ? stickyHeader.offsetHeight : 120;
+
+      // Safe view boundaries: element is comfortably in view if its top is below
+      // the sticky header with headroom and not pushed below screen
+      const minVisibleTop = headerH + 12;
+      const isComfortable = rect.top >= minVisibleTop && rect.top <= window.innerHeight * 0.45;
+
+      if (!isComfortable) {
+        const currentY = window.pageYOffset || document.documentElement.scrollTop;
+        const targetY = Math.max(0, currentY + rect.top - headerH - 20);
+
+        if (Math.abs(currentY - targetY) > 25) {
+          window.scrollTo({
+            top: targetY,
+            behavior: 'smooth'
           });
         }
       }
     };
 
-    // Immediate check
-    measureAndAlign();
+    // Immediate alignment
+    alignToTarget();
 
-    // Secondary sync in case of tab switch / dynamic DOM mounting
-    const timer = setTimeout(measureAndAlign, 70);
-    return () => clearTimeout(timer);
-  }, [isTourActive, currentStepIndex, onNavigateTab]);
+    return () => {
+      clearTimeout(transitionTimer);
+    };
+  }, [isTourActive, currentStepIndex, currentTab, onNavigateTab, updateTargetRect, findVisibleTarget]);
 
   // Recalculate position on scroll & resize smoothly using requestAnimationFrame (No jitter)
   useEffect(() => {
@@ -544,11 +581,11 @@ export const InteractiveSiteTour: React.FC<Props> = ({
                     height: targetRect ? targetRect.height + 16 : 100,
                     opacity: targetRect ? 1 : 0
                   }}
-                  transition={{
-                    type: 'tween',
-                    ease: [0.16, 1, 0.3, 1],
-                    duration: 0.32
-                  }}
+                  transition={
+                    isStepTransitioning
+                      ? { type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.35 }
+                      : { duration: 0 }
+                  }
                   rx={18}
                   fill="black"
                 />
@@ -564,7 +601,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
 
           {/* Interactive Backdrop Clickcatcher to avoid accidental outside interactions */}
           <div
-            className="fixed inset-0 z-[9986]"
+            className="fixed inset-0 z-[9986] autohub-tour-active"
             onClick={closeTour}
           />
 
@@ -584,11 +621,11 @@ export const InteractiveSiteTour: React.FC<Props> = ({
               height: targetRect ? targetRect.height + 16 : 0,
               opacity: targetRect ? 1 : 0
             }}
-            transition={{
-              type: 'tween',
-              ease: [0.16, 1, 0.3, 1],
-              duration: 0.32
-            }}
+            transition={
+              isStepTransitioning
+                ? { type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.35 }
+                : { duration: 0 }
+            }
             style={{
               position: 'fixed',
               top: 0,
@@ -602,23 +639,32 @@ export const InteractiveSiteTour: React.FC<Props> = ({
           {/* Floating Explanation Card (Draggable Walkthrough Window - Smooth, bounded & movable) */}
           <motion.div
             ref={cardRef}
-            key={currentStep.id}
             drag
             dragConstraints={dragConstraintsRef}
             dragElastic={0.05}
             dragMomentum={false}
+            onDragEnd={() => {
+              const el = cardRef.current;
+              if (el) {
+                const rect = el.getBoundingClientRect();
+                const pad = 16;
+                const clampedX = Math.max(pad, Math.min(rect.left, window.innerWidth - rect.width - pad));
+                const clampedY = Math.max(pad, Math.min(rect.top, window.innerHeight - rect.height - pad));
+                setUserCustomPos({ x: clampedX, y: clampedY });
+              }
+            }}
             initial={{
               opacity: 0,
               scale: 0.96,
-              top: popoverCoords.top,
-              left: popoverCoords.left,
+              top: userCustomPos ? userCustomPos.y : popoverCoords.top,
+              left: userCustomPos ? userCustomPos.x : popoverCoords.left,
               width: popoverCoords.width
             }}
             animate={{
               opacity: targetRect ? 1 : 0,
               scale: 1,
-              top: popoverCoords.top,
-              left: popoverCoords.left,
+              top: userCustomPos ? userCustomPos.y : popoverCoords.top,
+              left: userCustomPos ? userCustomPos.x : popoverCoords.left,
               width: popoverCoords.width
             }}
             transition={{
@@ -636,18 +682,34 @@ export const InteractiveSiteTour: React.FC<Props> = ({
               scale: 1.02,
               boxShadow: '0 30px 70px rgba(0,0,0,0.85)'
             }}
-            className="rounded-3xl p-3.5 sm:p-4 bg-slate-900/95 backdrop-blur-2xl border-2 border-gold shadow-[0_25px_60px_rgba(0,0,0,0.75)] text-white pointer-events-auto max-h-[calc(100vh-32px)] overflow-y-auto select-none touch-none"
+            className="rounded-3xl p-3 sm:p-3.5 bg-slate-900/95 backdrop-blur-2xl border-2 border-gold shadow-[0_25px_60px_rgba(0,0,0,0.75)] text-white pointer-events-auto max-h-[min(500px,calc(100vh-32px))] overflow-y-auto select-none touch-none flex flex-col justify-between"
           >
             {/* Top Drag Grip Handle & Move Indicator */}
             <div
-              className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-white/10 cursor-grab active:cursor-grabbing text-slate-400 select-none group"
+              className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-white/10 cursor-grab active:cursor-grabbing text-slate-400 select-none group shrink-0"
               title="დააჭირეთ და გადააადგილეთ ფანჯარა ნებისმიერ ადგილას"
             >
               <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 group-hover:text-gold transition-colors">
                 <Move size={12} className="text-gold/80 group-hover:scale-110 transition-transform" />
                 <span className="uppercase tracking-wider">გადაადგილება</span>
+                {userCustomPos && (
+                  <button
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      sounds.playClick();
+                      setUserCustomPos(null);
+                    }}
+                    className="ml-1 text-[9px] px-1.5 py-0.5 rounded bg-white/10 hover:bg-gold/20 text-slate-300 hover:text-gold flex items-center gap-0.5 transition-colors border border-white/10"
+                    title="ავტო-პოზიციაზე დაბრუნება"
+                  >
+                    <RotateCcw size={9} />
+                    <span>საწყისზე</span>
+                  </button>
+                )}
               </div>
-              <div className="w-10 h-1 rounded-full bg-white/20 group-hover:bg-gold/60 transition-colors" />
+              <div className="w-8 h-1 rounded-full bg-white/20 group-hover:bg-gold/60 transition-colors" />
               <span className="text-[10px] font-mono font-bold text-gold/80">{currentStep.badge}</span>
             </div>
 
