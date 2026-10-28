@@ -57,8 +57,8 @@ export const ParkingConfirmationModal: React.FC<Props> = ({
 
   const handleApplyManualCode = () => {
     if (!manualCodeInput.trim()) return;
-    const clean = manualCodeInput.trim().replace('#', '');
-    const found = DELINEATED_PARKING_ZONES.find(z => z.lotCode === clean || z.zoneNumber === clean);
+    const clean = manualCodeInput.trim().replace('#', '').toUpperCase();
+    const found = DELINEATED_PARKING_ZONES.find(z => z.city === currentLot.city && (z.lotCode === clean || z.zoneNumber === clean));
     if (found) {
       onSelectDifferentLot(found);
     } else {

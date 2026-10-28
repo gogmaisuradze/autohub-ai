@@ -51,6 +51,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [isLeafletReady, setIsLeafletReady] = useState(false);
   const [activeReportCount, setActiveReportCount] = useState(0);
   const [showParking, setShowParking] = useState(false);
+  const [parkingViewport, setParkingViewport] = useState(0);
   const [activeMapView, setActiveMapView] = useState<'autohub_map' | 'waze_live'>('autohub_map');
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
 
@@ -103,8 +104,11 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       center: [tbilisiLat, tbilisiLng],
       zoom: 13,
       zoomControl: false,
-      attributionControl: false
+      attributionControl: false,
+      preferCanvas: true
     });
+
+    map.on('moveend', () => setParkingViewport(v => v + 1));
 
     // Pre-create and cache both tile layers for instant, lag-free switching
     const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -397,11 +401,13 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
     // Render Delineated & Numbered Parking Zones (independent toggle + filter)
     if (showParking && (filterType === 'all' || filterType === 'parking')) {
+      const bounds = mapInstanceRef.current.getBounds().pad(0.15);
       DELINEATED_PARKING_ZONES.forEach(zone => {
+        if (!bounds.intersects(L.latLngBounds(zone.polygon))) return;
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase().replace('#', '');
-          const matches = zone.lotCode.includes(q) ||
-            zone.zoneNumber.includes(q) ||
+          const matches = zone.lotCode.toLowerCase().includes(q) ||
+            zone.zoneNumber.toLowerCase().includes(q) ||
             zone.street_ge.toLowerCase().includes(q) ||
             zone.bounds_description_ge.toLowerCase().includes(q);
           if (!matches) return;
@@ -425,13 +431,13 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                   🅿️ ლოტი #${zone.lotCode}
                 </span>
                 <span class="text-xs font-mono font-black text-amber-400">
-                  ${zone.hourlyRateGel !== null ? `${zone.hourlyRateGel.toFixed(2)} ₾/სთ` : 'სტანდარტული'}
+                  ${zone.hourlyRateGel !== null ? `${zone.hourlyRateGel.toFixed(2)} ₾/სთ` : 'ტარიფი გადაამოწმეთ'}
                 </span>
               </div>
-              <h4 class="font-extrabold text-sm text-white mt-2 leading-tight">${zone.street_ge}</h4>
-              <p class="text-xs text-slate-300 mt-1 leading-snug font-mono">${zone.bounds_description_ge}</p>
+              <h4 class="font-extrabold text-sm text-white mt-2 leading-tight">${zone.street_ge.replace(/[&<>"']/g, " ")}</h4>
+              <p class="text-xs text-slate-300 mt-1 leading-snug font-mono">${zone.bounds_description_ge.replace(/[&<>"']/g, " ")}</p>
               <div class="mt-2 text-[11px] font-mono text-emerald-400">
-                ✔ 15 წთ უფასოა (დღეში 1-ხელ)
+                ტარიფი და შეღავათი გადაამოწმეთ ოფიციალურ აპში
               </div>
               <div class="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] gap-2">
                 <a href="${wazeUrl}" target="_blank" rel="noreferrer" class="px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold flex items-center gap-1 transition-all hover:bg-cyan-500 shadow-sm">
@@ -459,6 +465,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           polygon.addTo(layer);
         }
 
+        if (mapInstanceRef.current.getZoom() < 16) return;
+
         // Circular Zone Number Marker Badge
         const zoneBadgeHtml = `
           <div class="relative flex items-center justify-center cursor-pointer group">
@@ -480,7 +488,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         zoneMarker.bindPopup(`
           <div class="p-2 text-xs text-white font-mono space-y-1">
             <div class="font-black text-gold">საპარკინგე ლოტი #${zone.lotCode}</div>
-            <div class="text-slate-300">${zone.street_ge}</div>
+            <div class="text-slate-300">${zone.street_ge.replace(/[&<>"']/g, " ")}</div>
             <div class="text-amber-300 font-bold">${zone.hourlyRateGel !== null ? `${zone.hourlyRateGel.toFixed(2)} ₾/სთ` : ''} • 15 წთ უფასო</div>
             <div class="pt-1.5 flex gap-2">
               <a href="${wazeDeepLink}" target="_blank" rel="noreferrer" class="text-cyan-400 underline font-bold">Waze მისვლა</a>
@@ -491,7 +499,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         zoneMarker.addTo(layer);
       });
     }
-  }, [reports, filterType, searchQuery, showParking]);
+  }, [reports, filterType, searchQuery, showParking, parkingViewport, isLeafletReady]);
 
   // 5. User Geolocation Handler
   const handleLocateMe = () => {

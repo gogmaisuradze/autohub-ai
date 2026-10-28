@@ -805,8 +805,8 @@ export const ParkingModule: React.FC<Props> = ({
     const currentZoneConfig = cityZones.find(z => z.id === selectedZone) || cityZones[0];
 
     // Find or create matching lot
-    const cleanCode = parkingLocationInput.match(/#(\d+)/)?.[1] || '001';
-    const foundLot = DELINEATED_PARKING_ZONES.find(z => z.lotCode === cleanCode || z.zoneNumber === cleanCode) ||
+    const cleanCode = parkingLocationInput.match(/#([A-Za-z]?\d+)/)?.[1]?.toUpperCase() || 'A1043';
+    const foundLot = DELINEATED_PARKING_ZONES.find(z => z.city === selectedCity && (z.lotCode === cleanCode || z.zoneNumber === cleanCode)) ||
       createManualParkingLot(cleanCode, parkingLocationInput, selectedCity);
 
     parkingSessionService.createProbableStopSession(foundLot, vehicle);
@@ -1705,10 +1705,10 @@ export const ParkingModule: React.FC<Props> = ({
                   </span>
                   <div className="flex flex-wrap items-center gap-2 mt-0.5">
                     <span className="text-2xl font-black font-mono text-gold">
-                      #{parkingSession?.lot.lotCode || (parkingLocationInput.match(/#(\d+)/)?.[1] || '005')}
+                      #{parkingSession?.lot.lotCode || (parkingLocationInput.match(/#([A-Za-z]?\d+)/)?.[1] || '005')}
                     </span>
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-white/10 text-white border border-white/20">
-                      ზონა {parkingSession?.lot.tariffCategory || 'A'} ({parkingSession?.lot.hourlyRateGel?.toFixed(2) || activeSession.hourlyRateGel.toFixed(2)} ₾/სთ)
+                      ზონა {parkingSession?.lot.tariffCategory || 'A'} ({parkingSession?.lot.hourlyRateGel?.toFixed(2) || (activeSession.hourlyRateGel?.toFixed(2) || '—')} ₾/სთ)
                     </span>
                   </div>
                   <span className="text-xs text-slate-300 block mt-1">
@@ -1774,7 +1774,7 @@ export const ParkingModule: React.FC<Props> = ({
                   ) : (
                     <div>
                       <span className="text-[10px] font-bold uppercase text-amber-300 block mb-1">
-                        საფასური ({activeSession.hourlyRateGel.toFixed(2)} ₾/სთ)
+                        საფასური ({(activeSession.hourlyRateGel?.toFixed(2) || '—')} ₾/სთ)
                       </span>
                       <span className="text-3xl font-black font-mono text-white">
                         {activeSession.accumulatedCostGel.toFixed(2)} ₾
@@ -2060,7 +2060,7 @@ export const ParkingModule: React.FC<Props> = ({
                 </div>
                 <ParkingZonesMap
                   city={selectedCity}
-                  selectedZoneId={selectedZone}
+                  selectedZoneId={parkingLocationInput.match(/#([A-Za-z]?\d+)/)?.[1]?.toUpperCase()}
                   onSelectZone={handleSelectDelineatedZone}
                   onStartParkingWithZone={handleStartParkingFromMap}
                 />

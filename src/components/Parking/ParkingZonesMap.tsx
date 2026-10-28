@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   DELINEATED_PARKING_ZONES,
   DelineatedParkingZone,
@@ -34,6 +34,8 @@ interface Props {
   className?: string;
 }
 
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+
 const CITY_COORDINATES: Record<'tbilisi' | 'batumi' | 'kutaisi', { center: [number, number]; zoom: number }> = {
   tbilisi: { center: [41.7120, 44.7850], zoom: 13 },
   batumi: { center: [41.6500, 41.6400], zoom: 14 },
@@ -63,9 +65,10 @@ export const ParkingZonesMap: React.FC<Props> = ({
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [hoveredZone, setHoveredZone] = useState<DelineatedParkingZone | null>(null);
 
-  const cityZones = getParkingZonesByCity(city);
+  const cityZones = useMemo(() => getParkingZonesByCity(city), [city]);
+  const [mapRevision, setMapRevision] = useState(0);
 
-  const filteredZones = cityZones.filter(z => {
+  const filteredZones = useMemo(() => cityZones.filter(z => {
     const matchesCategory = activeCategoryFilter === 'all' || z.tariffCategory === activeCategoryFilter;
     const cleanSearch = searchQuery.trim().toLowerCase().replace('#', '');
     if (!cleanSearch) return matchesCategory;
@@ -75,7 +78,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
     const matchesBounds = (z.bounds_description_ge || '').toLowerCase().includes(cleanSearch);
 
     return matchesCategory && (matchesLotCode || matchesStreet || matchesBounds);
-  });
+  }), [cityZones, activeCategoryFilter, searchQuery]);
 
   // Tile URL Helper with mandatory provider attribution
   const getTileConfig = (theme: 'dark' | 'street' | 'satellite') => {
@@ -123,7 +126,8 @@ export const ParkingZonesMap: React.FC<Props> = ({
         center: cityConfig.center,
         zoom: cityConfig.zoom,
         zoomControl: false,
-        attributionControl: true
+        attributionControl: true,
+        preferCanvas: true
       });
 
       L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -155,6 +159,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
       markerLayerGroupRef.current = L.layerGroup().addTo(map);
 
       mapInstanceRef.current = map;
+      map.on('moveend', () => setMapRevision(value => value + 1));
       setMapStatus('ready');
 
       // Set up ResizeObserver to handle tab switching & container size changes
@@ -182,6 +187,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
   }, [city]);
 
   useEffect(() => {
+    if (viewMode !== 'map') return;
     initMap();
 
     return () => {
@@ -191,7 +197,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
         mapInstanceRef.current = null;
       }
     };
-  }, [initMap]);
+  }, [initMap, viewMode]);
 
   // Invalidate map size on viewMode switch
   useEffect(() => {
@@ -239,7 +245,10 @@ export const ParkingZonesMap: React.FC<Props> = ({
     polygonLayerGroupRef.current.clearLayers();
     markerLayerGroupRef.current.clearLayers();
 
+    const bounds = mapInstanceRef.current.getBounds().pad(0.15);
+    const zoom = mapInstanceRef.current.getZoom();
     filteredZones.forEach(zone => {
+      if (!bounds.intersects(L.latLngBounds(zone.polygon))) return;
       const isSelected = selectedZoneId === zone.id || selectedZoneId === zone.lotCode || selectedZoneId === zone.zoneNumber;
 
       // Draw Delineated Polygon
@@ -265,6 +274,8 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
         polygonLayerGroupRef.current.addLayer(polygon);
       }
+
+      if (zoom < 16 && !isSelected) return;
 
       // Marker Icon
       const badgeHtml = `
@@ -301,17 +312,17 @@ export const ParkingZonesMap: React.FC<Props> = ({
               ლოტი #${zone.lotCode}
             </span>
             <span class="text-xs font-mono font-black text-slate-800">
-              ${zone.hourlyRateGel !== null ? `${zone.hourlyRateGel.toFixed(2)} ₾ / სთ` : 'სტანდარტული'}
+              ${zone.hourlyRateGel !== null ? `${zone.hourlyRateGel.toFixed(2)} ₾ / სთ` : 'ტარიფი გადაამოწმეთ'}
             </span>
           </div>
           <div class="mt-2 text-xs font-black text-navy leading-snug">
-            ${zone.street_ge}
+            ${escapeHtml(zone.street_ge)}
           </div>
           <div class="text-[11px] text-slate-500 mt-0.5 font-mono">
-            ${zone.bounds_description_ge}
+            ${escapeHtml(zone.bounds_description_ge)}
           </div>
           <div class="mt-2 text-[10px] text-emerald-800 font-bold bg-emerald-50 border border-emerald-200 p-1 rounded-md text-center">
-            ✔ პირველი 15 წთ უფასოა (დღეში 1-ხელ)
+            ტარიფი და შეღავათი გადაამოწმეთ ოფიციალურ აპში
           </div>
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
             <a href="${wazeDeepLink}" target="_blank" rel="noreferrer" class="flex-1 py-1 px-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-bold text-center flex items-center justify-center gap-1 transition-colors">
@@ -339,7 +350,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
       markerLayerGroupRef.current.addLayer(marker);
     });
-  }, [filteredZones, selectedZoneId]);
+  }, [filteredZones, selectedZoneId, mapStatus, mapRevision, viewMode]);
 
   const handleSelectAndPan = (zone: DelineatedParkingZone) => {
     sounds.playClick();
@@ -388,7 +399,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 font-mono">
-                ზონალური კოდები (#001-#030), ტარიფები და 15-წუთიანი უფასო ლიმიტის პირობები
+                {city === 'tbilisi' ? 'ზუსტი მუნიციპალური კონტურები და კოდები • განახლებულია 28.10.2026' : 'ადგილების სია • გადაამოწმეთ ადგილზე'}
               </p>
             </div>
           </div>
@@ -430,7 +441,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="მოძებნეთ ლოტის კოდით (მაგ: 001, 005) ან ქუჩით (ჭავჭავაძე, პეკინი...)"
+              placeholder="მოძებნეთ ლოტის კოდით (მაგ: A1043, A2371) ან ქუჩით (ჭავჭავაძე, პეკინი...)"
               className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-navy focus:outline-none focus:ring-1 focus:ring-gold"
             />
             {searchQuery && (
@@ -448,9 +459,9 @@ export const ParkingZonesMap: React.FC<Props> = ({
             <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">ტარიფი:</span>
             {[
               { id: 'all', label: 'ყველა' },
-              { id: 'A', label: 'ზონა A (1₾)' },
-              { id: 'B', label: 'ზონა B (2₾)' },
-              { id: 'C', label: 'ზონა C (3₾)' }
+              { id: 'A', label: 'ზონა A' },
+              { id: 'B', label: 'ზონა B' },
+              { id: 'C', label: 'ზონა C' }
             ].map(f => (
               <button
                 key={f.id}
@@ -565,15 +576,15 @@ export const ParkingZonesMap: React.FC<Props> = ({
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-md bg-blue-500 border border-blue-300"></span>
-              <span>ზონა A — 1.00 ₾ / სთ (ცენტრი)</span>
+              <span>ზონა A • ზუსტი კონტურები</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-md bg-amber-500 border border-amber-300"></span>
-              <span>ზონა B — 2.00 ₾ / სთ (საშუალო)</span>
+              <span>ზონა B</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-md bg-emerald-500 border border-emerald-300"></span>
-              <span>ზონა C — 3.00 ₾ / სთ (გარეუბანი)</span>
+              <span>ზონა C</span>
             </div>
           </div>
 
@@ -598,7 +609,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
                         </span>
                       </div>
                       <span className="text-xs font-mono font-black text-navy bg-gold/15 px-2 py-0.5 rounded-md border border-gold/30">
-                        {targetZone.hourlyRateGel !== null ? `${targetZone.hourlyRateGel.toFixed(2)} ₾ / სთ` : 'სტანდარტული'}
+                        {targetZone.hourlyRateGel !== null ? `${targetZone.hourlyRateGel.toFixed(2)} ₾ / სთ` : 'ტარიფი გადაამოწმეთ'}
                       </span>
                     </div>
 
@@ -641,12 +652,13 @@ export const ParkingZonesMap: React.FC<Props> = ({
           )}
         </div>
       ) : (
-        /* List View of All Numbered Zones */
+        /* Limit list DOM size; search still includes all places. */
         <div className="p-4 sm:p-5 max-h-[460px] overflow-y-auto space-y-2.5 bg-slate-50/60">
+          {filteredZones.length > 100 && <p className="text-xs text-slate-500">ნაჩვენებია პირველი 100 ადგილი {filteredZones.length}-დან. მოძებნეთ კოდით ან მისამართით.</p>}
           {filteredZones.length === 0 ? (
             <div className="p-8 text-center space-y-3">
               <div className="text-slate-400 text-xs">
-                ლოტი „{searchQuery}“ ვერ მოიძებნა წინასწარ დახაზულ სიაში.
+                ლოტი „{searchQuery}“ ვერ მოიძებნა ადგილების სიაში.
               </div>
               {searchQuery.trim() && (
                 <button
@@ -659,7 +671,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
               )}
             </div>
           ) : (
-            filteredZones.map(zone => {
+            filteredZones.slice(0, 100).map(zone => {
               const isSelected = selectedZoneId === zone.id || selectedZoneId === zone.lotCode || selectedZoneId === zone.zoneNumber;
               const wazeUrl = `https://waze.com/ul?ll=${zone.geometry.center[0]},${zone.geometry.center[1]}&navigate=yes`;
 
@@ -711,10 +723,10 @@ export const ParkingZonesMap: React.FC<Props> = ({
                   <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100/20">
                     <div className="text-right font-mono">
                       <span className={`text-xs font-black block ${isSelected ? 'text-gold' : 'text-navy'}`}>
-                        {zone.hourlyRateGel !== null ? `${zone.hourlyRateGel.toFixed(2)} ₾ / სთ` : 'სტანდარტული'}
+                        {zone.hourlyRateGel !== null ? `${zone.hourlyRateGel.toFixed(2)} ₾ / სთ` : 'ტარიფი გადაამოწმეთ'}
                       </span>
                       <span className={`text-[10px] block ${isSelected ? 'text-emerald-300' : 'text-emerald-700'}`}>
-                        ✔ 15 წთ უფასოა
+                        შეღავათი გადაამოწმეთ
                       </span>
                     </div>
 
@@ -755,10 +767,10 @@ export const ParkingZonesMap: React.FC<Props> = ({
       <div className="p-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between text-[11px] text-slate-500 px-4 gap-2">
         <span className="flex items-center gap-1 font-mono">
           <Info size={13} className="text-amber-500 shrink-0" />
-          <span>ტარიფი მოქმედებს 08:00-დან 22:00-მდე. ელექტრომობილებისთვის პარკირება უფასოა.</span>
+          <span>წყარო: api.municipal.gov.ge • კონტურები, მისამართები და სრული კოდები.</span>
         </span>
         <span className="font-mono font-bold text-navy">
-          🇬🇪 პირველი 15 წთ უფასოა (დღეში 1-ხელ ლოტზე)
+          ტარიფი და შეღავათები გადაამოწმეთ ოფიციალურ აპში
         </span>
       </div>
 

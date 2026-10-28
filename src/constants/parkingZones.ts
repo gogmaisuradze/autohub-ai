@@ -1,3 +1,4 @@
+import registry from './tbilisiParkingRegistry.json';
 /**
  * AutoHub AI - Municipal Parking Lots Registry
  * Official Tbilisi, Batumi & Kutaisi Parking Zones
@@ -18,13 +19,13 @@ export type DelineatedParkingZone = ParkingLocationLot & {
   categoryName_ge: string;
   street_name_ge: string;
   category: ParkingCategory;
-  hourly_rate_gel: number;
+  hourly_rate_gel: number | null;
   free_minutes: number;
   center: [number, number];
   polygon: [number, number][];
 };
 
-export const DELINEATED_PARKING_ZONES: DelineatedParkingZone[] = [
+const LEGACY_PARKING_ZONES: DelineatedParkingZone[] = [
   // ==========================================
   // TBILISI ZONAL-HOURLY PARKING (თბილისი)
   // ==========================================
@@ -584,12 +585,41 @@ export const DELINEATED_PARKING_ZONES: DelineatedParkingZone[] = [
   }
 ];
 
+// The municipal endpoint verifies geometry, code and address only.
+// Tariffs and exemptions must be confirmed separately with the operator.
+const officialTbilisiLots: DelineatedParkingZone[] = registry.places.map(place => {
+  const polygon = place.polygon as [number, number][];
+  const ring = polygon.slice(0, -1);
+  const center: [number, number] = [
+    ring.reduce((sum, p) => sum + p[0], 0) / ring.length,
+    ring.reduce((sum, p) => sum + p[1], 0) / ring.length
+  ];
+  return {
+    id: `tb_${place.id}`, lotCode: place.code, zoneNumber: place.code,
+    city: 'tbilisi', street_ge: place.address, street_name_ge: place.address,
+    address_ge: place.address, bounds_description_ge: place.address,
+    tariffCategory: 'A', category: 'A', categoryLabel_ge: 'ზონა A', categoryName_ge: 'ზონა A',
+    hourlyRateGel: null, hourly_rate_gel: null, freeMinutes: 0, free_minutes: 0,
+    operatingHours_ge: 'გადაამოწმეთ ოფიციალურ აპში', electricVehiclesFree: false,
+    geometry: { center, polygon }, center, polygon,
+    color: '#3b82f6', fillColor: '#3b82f6',
+    verificationStatus: 'verified_official', dataSource: registry.source,
+    lastVerifiedAt: registry.retrievedAt,
+    verificationNotes: 'ოფიციალური კონტური, კოდი და მისამართი; ტარიფი და შეღავათები ცალკე გადასამოწმებელია.'
+  };
+});
+
+export const DELINEATED_PARKING_ZONES: DelineatedParkingZone[] = [
+  ...officialTbilisiLots,
+  ...LEGACY_PARKING_ZONES.filter(zone => zone.city !== 'tbilisi')
+];
+
 export const getParkingZonesByCity = (city: ParkingCity): DelineatedParkingZone[] => {
   return DELINEATED_PARKING_ZONES.filter(z => z.city === city);
 };
 
 export const getParkingZoneByNumber = (zoneNum: string, city: ParkingCity = 'tbilisi'): DelineatedParkingZone | undefined => {
-  const clean = zoneNum.replace('#', '').trim();
+  const clean = zoneNum.replace('#', '').trim().toUpperCase();
   return DELINEATED_PARKING_ZONES.find(z => z.city === city && (z.lotCode === clean || z.zoneNumber === clean));
 };
 
@@ -598,7 +628,7 @@ export const getParkingZoneByNumber = (zoneNum: string, city: ParkingCity = 'tbi
  * (when lot is not yet present in our mapped database)
  */
 export function createManualParkingLot(lotCode: string, streetName?: string, city: ParkingCity = 'tbilisi'): DelineatedParkingZone {
-  const cleanCode = lotCode.replace('#', '').trim().padStart(3, '0');
+  const cleanCode = lotCode.replace('#', '').trim().toUpperCase();
   const cityNames: Record<ParkingCity, string> = {
     tbilisi: 'თბილისი',
     batumi: 'ბათუმი',
