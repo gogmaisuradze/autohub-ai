@@ -104,7 +104,14 @@ export const ThreeCarScene: React.FC<Props> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [scanStage, setScanStage] = useState<'idle' | 'rotating' | 'waiting' | 'reveal' | 'fault' | 'clean' | 'error'>('idle');
-  const sequenceRef = useRef({ active: false, elapsed: 0, startAngle: NaN, revealing: false });
+  const sequenceRef = useRef<{
+    active: boolean;
+    elapsed: number;
+    startAngle: number;
+    revealing: boolean;
+    initialCamPos?: THREE.Vector3 | null;
+  }>({ active: false, elapsed: 0, startAngle: NaN, revealing: false, initialCamPos: null });
+  const lastHapticRef = useRef<number>(0);
   const sequenceCallbacks = useRef({ onSequenceBusyChange, onSelectComponent });
   sequenceCallbacks.current = { onSequenceBusyChange, onSelectComponent };
   const scanOutcomeRef = useRef(scanOutcome);
@@ -113,7 +120,7 @@ export const ThreeCarScene: React.FC<Props> = ({
   const scanVisualActive = isScanning || ['rotating', 'waiting', 'reveal'].includes(scanStage);
   useEffect(() => {
     if (!isScanning) return;
-    sequenceRef.current = { active: true, elapsed: 0, startAngle: NaN, revealing: false };
+    sequenceRef.current = { active: true, elapsed: 0, startAngle: NaN, revealing: false, initialCamPos: null };
     setScanStage('rotating');
     setExplodeFactor(0);
     targetExplodeRef.current = 0;
@@ -123,14 +130,21 @@ export const ThreeCarScene: React.FC<Props> = ({
     setActivePin(null);
     activePinRef.current = null;
     setInfoCardOpen(false);
-    targetCamPosRef.current = new THREE.Vector3(5.6, 3.8, 6.5);
-    targetCamLookRef.current = new THREE.Vector3(0, .85, 0);
+    const isMobileClient = (containerRef.current?.clientWidth || window.innerWidth) < 640;
+    targetCamPosRef.current = isMobileClient
+      ? new THREE.Vector3(3.45, 1.75, 3.95)
+      : new THREE.Vector3(4.15, 2.05, 4.65);
+    targetCamLookRef.current = new THREE.Vector3(0, .75, 0);
     sequenceCallbacks.current.onSequenceBusyChange?.(true);
     const viewport = containerRef.current;
-    if (viewport) window.scrollTo({
-      top: window.scrollY + viewport.getBoundingClientRect().top - Math.max(132, (window.innerHeight - viewport.clientHeight) / 2),
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-    });
+    if (viewport) {
+      const topOffset = 70;
+      const targetScrollY = window.scrollY + viewport.getBoundingClientRect().top - topOffset;
+      window.scrollTo({
+        top: Math.max(0, targetScrollY),
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+      });
+    }
   }, [isScanning]);
 
   // UI Interactive States
@@ -1009,19 +1023,29 @@ export const ThreeCarScene: React.FC<Props> = ({
       const sequence = sequenceRef.current;
       if (sequence.active && modelReadyRef.current) {
         controls.enabled = false;
+        const isMobileScreen = (containerRef.current?.clientWidth || window.innerWidth) < 640;
+        const targetForegroundCam = isMobileScreen
+          ? new THREE.Vector3(3.45, 1.75, 3.95)
+          : new THREE.Vector3(4.15, 2.05, 4.65);
+        const targetForegroundLook = new THREE.Vector3(0, 0.75, 0);
+
         if (Number.isNaN(sequence.startAngle)) {
           sequence.startAngle = carMasterGroup.rotation.y;
           fillProgress = 1; visual.fill.value = 1;
-          camera.position.set(9.5, 4.8, 11.5);
-          controls.target.set(0, .75, 0);
+          sequence.initialCamPos = camera.position.clone();
+          controls.target.copy(targetForegroundLook);
         }
-        if (sequence.elapsed < 2.6 && !sequence.revealing) {
-          const approach = THREE.MathUtils.smoothstep(sequence.elapsed, 0, 2.6);
-          camera.position.lerpVectors(new THREE.Vector3(9.5, 4.8, 11.5), new THREE.Vector3(5.6, 3.8, 6.5), approach);
-          controls.target.set(0, .85, 0);
+        if (sequence.elapsed < 2.4 && !sequence.revealing) {
+          const approach = THREE.MathUtils.smoothstep(sequence.elapsed, 0, 2.4);
+          const startPos = sequence.initialCamPos || camera.position;
+          camera.position.lerpVectors(startPos, targetForegroundCam, approach);
+          controls.target.lerpVectors(controls.target, targetForegroundLook, approach * 0.15);
           targetCamPosRef.current = null;
           targetCamLookRef.current = null;
           if (sequence.elapsed > .3) { solidTargetRef.current = 0; setIsGhostMode(previous => previous ? previous : true); }
+        } else if (!sequence.revealing && sequence.active) {
+          camera.position.lerp(targetForegroundCam, 0.05);
+          controls.target.lerp(targetForegroundLook, 0.05);
         }
         if (!sequence.revealing) {
           sequence.elapsed += delta;
@@ -1171,6 +1195,47 @@ export const ThreeCarScene: React.FC<Props> = ({
       traceMaterial.opacity = visual.scanStrength.value * .65;
       laserLight.intensity = visual.scanStrength.value * .55;
       rimLight.intensity = .7 + visual.scanStrength.value * .35;
+
+      // Laser-Synchronized 3D Vibration ("ტესტირების დროს სკანირების ლაზერის მიხედვით ოდნავ ვიბრირებდეს")
+      if (focus > 0.01) {
+        const laserDist = Math.abs(visual.scanZ.value);
+        const onCarProximity = Math.max(0.25, 1.0 - laserDist / 2.65);
+        
+        // High-frequency harmonic oscillation (simulating laser ultrasonic scan resonance)
+        const vib1 = Math.sin(elapsedTime * 64.0);
+        const vib2 = Math.cos(elapsedTime * 92.0);
+        const vib3 = Math.sin(elapsedTime * 128.0);
+        
+        // Intensity factor modulated by laser scan strength and beam proximity on vehicle
+        const intensityFactor = focus * (0.65 + 0.35 * onCarProximity);
+        const vibAmp = 0.0032 * intensityFactor; // Subtle 3.2mm micro-vibration in 3D world units
+        
+        carMasterGroup.position.x = (vib1 * 0.7 + vib2 * 0.3) * vibAmp;
+        carMasterGroup.position.y = (vib2 * 0.8 + vib3 * 0.2) * (vibAmp * 0.65);
+        carMasterGroup.position.z = (vib3 * 0.7 + vib1 * 0.3) * (vibAmp * 0.8);
+        
+        // Subtle micro-rotational tremor
+        carMasterGroup.rotation.z = Math.sin(elapsedTime * 70.0) * (vibAmp * 0.35);
+        carMasterGroup.rotation.x = Math.cos(elapsedTime * 58.0) * (vibAmp * 0.25);
+
+        // Mobile Device Physical Haptic Pulse (matching laser sweep rhythm)
+        if (focus > 0.35 && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          const now = performance.now();
+          if (now - lastHapticRef.current > 300) {
+            lastHapticRef.current = now;
+            try {
+              navigator.vibrate(12);
+            } catch {
+              // Ignore if restricted by browser security policies
+            }
+          }
+        }
+      } else {
+        carMasterGroup.position.set(0, 0, 0);
+        carMasterGroup.rotation.z = 0;
+        carMasterGroup.rotation.x = 0;
+      }
+
       carMasterGroup.updateWorldMatrix(true, false);
       visual.carInverse.value.copy(carMasterGroup.matrixWorld).invert();
 
@@ -1244,9 +1309,20 @@ export const ThreeCarScene: React.FC<Props> = ({
   const selectedFault = selectedCompData ? getFaultForComponent(selectedCompData) : undefined;
 
   return (
-    <div className="relative w-full h-[430px] sm:h-[560px] md:h-[640px] rounded-3xl overflow-hidden neu-surface border border-white shadow-sm bg-gradient-to-b from-[#FAFBFC] via-[#F2F3F5] to-[#E8EBEF] select-none touch-pan-y">
+    <div className={`relative w-full h-[430px] sm:h-[560px] md:h-[640px] rounded-3xl overflow-hidden neu-surface select-none touch-pan-y transition-all duration-700 ${
+      scanVisualActive
+        ? 'ring-4 ring-cyan-500/60 shadow-[0_0_45px_rgba(34,211,238,0.35),0_16px_36px_rgba(15,23,42,0.25)] border border-cyan-400 z-30'
+        : 'border border-white shadow-sm bg-gradient-to-b from-[#FAFBFC] via-[#F2F3F5] to-[#E8EBEF]'
+    }`}>
       
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none transition-opacity duration-1000" style={{ background: 'radial-gradient(ellipse at 50% 48%, #1a3047 0%, #0b1728 58%, #050b14 100%)', opacity: scanVisualActive ? 1 : 0 }} />
+      {/* Active Laser Scanning Badge */}
+      {scanVisualActive && (
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/90 text-cyan-300 border border-cyan-400/60 backdrop-blur-md shadow-[0_0_25px_rgba(34,211,238,0.4)] animate-pulse text-xs font-black">
+          <Zap size={14} className="text-cyan-400 animate-bounce" />
+          <span>3D ლაზერული სკანირება • ECU ტელემეტრია</span>
+        </div>
+      )}
       <div className="absolute bottom-2 left-3 z-20 max-w-[65%] text-[11px] text-slate-500 pointer-events-auto">
         BMW M4 · 3D ვიზუალიზაცია · <a className="underline" href={`${import.meta.env.BASE_URL}models/bmw-diagnostic-credits.json`} target="_blank" rel="noreferrer">3D ავტორები</a>
       </div>

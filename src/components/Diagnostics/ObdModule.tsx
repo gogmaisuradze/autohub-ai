@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DtcCode, TelemetryData, VehicleProfile } from '../../types';
 import { ThreeCarScene } from '../ThreeCarScene';
 import { TelemetryGauges } from './TelemetryGauges';
@@ -87,6 +87,7 @@ export const ObdModule: React.FC<Props> = ({
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [lastScanTime, setLastScanTime] = useState<string>('დღეს, 16:42');
   const [hasScanned, setHasScanned] = useState<boolean>(() => dtcCodes.length > 0);
+  const studioSectionRef = useRef<HTMLDivElement>(null);
 
   // Embedded Adapter Instructions State (Matches ObdAdapterConnectModal)
   const [selectedInstructionType, setSelectedInstructionType] = useState<string>(adapterType || 'cloud_4g');
@@ -171,6 +172,16 @@ export const ObdModule: React.FC<Props> = ({
     sounds.playScanSweep();
     setScanOutcome(null);
     setIsScanning(true);
+
+    // Immediately bring 3D model into foreground on mobile and desktop
+    if (studioSectionRef.current) {
+      const topOffset = 70;
+      const targetTop = window.scrollY + studioSectionRef.current.getBoundingClientRect().top - topOffset;
+      window.scrollTo({
+        top: Math.max(0, targetTop),
+        behavior: 'smooth'
+      });
+    }
 
     try {
       const res = await n8nService.scanObd("43 01 33 00 00", vehicle.id);
@@ -1029,7 +1040,7 @@ export const ObdModule: React.FC<Props> = ({
       )}
 
       {/* 2. 3D Studio Viewport */}
-      <div>
+      <div ref={studioSectionRef} id="three-car-studio" className="scroll-mt-20">
         <div className="flex items-center justify-between mb-2 px-1">
           <h2 className="text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
             <Cpu className="w-4 h-4 text-gold" />
