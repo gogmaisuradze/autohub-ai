@@ -161,7 +161,7 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     accentColor: '#10B981',
     badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
     imageUrl: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=2400&q=85',
-    imagePosition: 'object-[center_80%] lg:object-[68%_82%]',
+    imagePosition: 'object-[center_42%] lg:object-[68%_44%]',
     carModelHint: 'PORSCHE 911 GT PERFORMANCE & PRECISION SERVICE',
     description: 'ზეთის, ფილტრების, ხუნდებისა და სავალი ნაწილის გეგმიური აღრიცხვა, გარბენის მიხედვით შეხსენებები და ავტომობილის ხარჯების კონტროლი.',
     highlights: [
@@ -444,8 +444,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
     switch (current.previewType) {
       case 'obd_gauge':
         return (
-          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-white/20 shadow-xl flex flex-col gap-2.5 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="w-full max-w-[330px] h-[155px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3 sm:p-3.5 border border-white/20 shadow-xl flex flex-col justify-between text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -492,8 +492,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
       case 'fines_card':
         return (
-          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-rose-500/30 shadow-xl flex flex-col gap-2.5 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="w-full max-w-[330px] h-[155px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3 sm:p-3.5 border border-rose-500/30 shadow-xl flex flex-col justify-between text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-300">
                 <ShieldAlert size={14} className="text-rose-400" />
                 <span>Police.ge რადარი #GEO-412</span>
@@ -530,8 +530,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
       case 'parking_zone':
         return (
-          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-blue-500/30 shadow-xl flex flex-col gap-2.5 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="w-full max-w-[330px] h-[155px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3 sm:p-3.5 border border-blue-500/30 shadow-xl flex flex-col justify-between text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-300">
                 <ParkingSquare size={14} className="text-blue-400" />
                 <span>მუნიციპალური პარკინგი</span>
@@ -566,8 +566,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
       case 'log_timeline':
         return (
-          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-emerald-500/30 shadow-xl flex flex-col gap-2.5 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="w-full max-w-[330px] h-[155px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3 sm:p-3.5 border border-emerald-500/30 shadow-xl flex flex-col justify-between text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-300">
                 <BookOpen size={14} className="text-emerald-400" />
                 <span>ციფრული სერვის-წიგნაკი</span>
@@ -603,8 +603,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
       case 'radar_hud':
         return (
-          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-cyan-500/30 shadow-xl flex flex-col gap-2.5 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="w-full max-w-[330px] h-[155px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3 sm:p-3.5 border border-cyan-500/30 shadow-xl flex flex-col justify-between text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-cyan-300">
                 <Radio size={14} className="text-cyan-400 animate-pulse" />
                 <span>რადარების დეტექტორი</span>
@@ -638,8 +638,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
       case 'exam_badge':
         return (
-          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-indigo-500/30 shadow-xl flex flex-col gap-2.5 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="w-full max-w-[330px] h-[155px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3 sm:p-3.5 border border-indigo-500/30 shadow-xl flex flex-col justify-between text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-300">
                 <GraduationCap size={14} className="text-indigo-400" />
                 <span>საგამოცდო ბილეთები 2026</span>
@@ -672,8 +672,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
       case 'vin_report':
         return (
-          <div className="w-full max-w-[330px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3.5 sm:p-4 border border-purple-500/30 shadow-xl flex flex-col gap-2.5 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="w-full max-w-[330px] h-[155px] backdrop-blur-md bg-slate-950/40 hover:bg-slate-950/60 transition-all rounded-2xl p-3 sm:p-3.5 border border-purple-500/30 shadow-xl flex flex-col justify-between text-white">
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-purple-300">
                 <ShieldCheck size={14} className="text-purple-400" />
                 <span>Carfax & Copart ანგარიში</span>
@@ -713,34 +713,40 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
     <div
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-700/50 transition-all bg-slate-950 group"
+      className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-700/50 bg-slate-950 group"
     >
-      {/* Background Thematic Car Photography - 100% Opacity, Vibrant, Wide & Crystal Clear */}
+      {/* Background Thematic Car Photography - Cross-fade Layers for zero-lag 60fps transitions */}
       <div className="absolute inset-0 bg-slate-950 overflow-hidden">
-        <img
-          src={current.imageUrl}
-          alt={current.title}
-          className={`w-full h-full object-cover transform transition-all duration-1000 ease-out scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05] ${
-            current.imagePosition || 'object-center lg:object-[68%_center]'
-          }`}
-        />
+        {DIGITAL_SERVICES.map((srv, idx) => {
+          const isActive = idx === currentIndex;
+          return (
+            <img
+              key={srv.id}
+              src={srv.imageUrl}
+              alt={srv.title}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out pointer-events-none transform scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05] ${
+                isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              } ${srv.imagePosition || 'object-center lg:object-[68%_center]'}`}
+            />
+          );
+        })}
 
         {/* Targeted Left Gradient (Soft, localized text protection leaving over 60% of the car photo wide open and crystal clear) */}
-        <div className="absolute inset-y-0 left-0 w-full sm:w-1/2 lg:w-[44%] bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-transparent pointer-events-none" />
+        <div className="absolute inset-y-0 left-0 w-full sm:w-1/2 lg:w-[44%] bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-transparent pointer-events-none z-20" />
         
         {/* Subtle Top & Bottom Shadow for Controls Legibility */}
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent pointer-events-none" />
-        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950/60 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent pointer-events-none z-20" />
+        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950/60 to-transparent pointer-events-none z-20" />
       </div>
 
       {/* Top Gold Laser Accent Line */}
       <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent opacity-85 z-20" />
 
-      {/* Main Content Container (+25% Height Expansion so Car Photos Appear Grand, Complete and Uncropped) */}
-      <div className="relative z-10 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 flex flex-col justify-between min-h-[420px] sm:min-h-[480px] md:min-h-[520px] lg:min-h-[550px] xl:min-h-[570px]">
+      {/* Main Content Container - Fixed uniform height for all slides to eliminate any jumping */}
+      <div className="relative z-10 px-4 sm:px-8 lg:px-12 py-5 sm:py-7 flex flex-col justify-between h-[520px] sm:h-[540px] md:h-[550px] lg:h-[560px] xl:h-[570px] overflow-hidden">
         
         {/* Top Header: Category Tag, Horizontal Service Selector Tabs & Drawer Toggle */}
-        <div className="space-y-2.5">
+        <div className="space-y-2 sm:space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-mono font-bold border flex items-center gap-1.5 shadow-xs backdrop-blur-md ${current.tagColor}`}>
@@ -815,27 +821,27 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
         </div>
 
         {/* Top Content Zone: Subtitle, Title & Narrative + Top-Right HUD Widget */}
-        <div className="pt-2 sm:pt-3 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
-          <div className="lg:col-span-8 xl:col-span-8 space-y-1.5 sm:space-y-2 max-w-2xl">
-            <div className="text-[11px] sm:text-xs font-mono tracking-widest text-gold font-bold uppercase drop-shadow-sm">
+        <div className="pt-1.5 sm:pt-2 grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6 items-start">
+          <div className="lg:col-span-8 xl:col-span-8 space-y-1 sm:space-y-1.5 max-w-2xl">
+            <div className="text-[11px] sm:text-xs font-mono tracking-widest text-gold font-bold uppercase drop-shadow-sm truncate">
               {current.subtitle}
             </div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[32px] font-black text-white tracking-tight leading-snug drop-shadow-lg">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[28px] xl:text-[30px] font-black text-white tracking-tight leading-snug drop-shadow-lg line-clamp-2 min-h-[2.5rem] sm:min-h-[3.8rem]">
               {current.title}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium drop-shadow-md max-w-2xl">
+            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium drop-shadow-md max-w-2xl line-clamp-2 min-h-[2.4rem]">
               {current.description}
             </p>
           </div>
 
           {/* Right: Sleek Frosted Glass HUD Widget (Tucked neatly to top-right) */}
-          <div className="lg:col-span-4 xl:col-span-4 hidden lg:flex items-start justify-end pt-1">
+          <div className="lg:col-span-4 xl:col-span-4 hidden lg:flex items-start justify-end pt-0.5">
             {renderVisualCard()}
           </div>
         </div>
 
         {/* Center Open Window: Clear Unobstructed Zone Showcasing the Car Photography */}
-        <div className="flex-1 min-h-[60px] sm:min-h-[90px] lg:min-h-[120px] pointer-events-none" />
+        <div className="flex-1 min-h-[30px] sm:min-h-[40px] pointer-events-none" />
 
         {/* Bottom Zone: Highlights 4-Pill Strip + CTA Action Bar (Distributed Tastefully at Lower Section) */}
         <div className="space-y-3 pt-2">
