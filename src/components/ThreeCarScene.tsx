@@ -968,16 +968,16 @@ export const ThreeCarScene: React.FC<Props> = ({
           return out;
         };
         if (roof.length) {
-          // A separate black glass panel: never included in the white paint wave.
-          const roofMat = new THREE.MeshPhysicalMaterial({
-            color: 0x080c12, roughness: .16, metalness: .05,
-            clearcoat: 1, clearcoatRoughness: .10, ior: 1.5,
-            transparent: false, opacity: 1, depthWrite: true, side: THREE.DoubleSide
-          });
-          const roofMesh = new THREE.Mesh(subset(roof), roofMat);
+          // Roof panel inherits the body paint lacquer and is included in the body paint meshes
+          const roofGlass = ghostGlassMat.clone();
+          roofGlass.side = THREE.FrontSide;
+          roofGlass.userData.solidRoughness = .19;
+          roofGlass.userData.solidMetalness = .36;
+          const roofMesh = new THREE.Mesh(subset(roof), roofGlass);
           roofMesh.name = 'BMW_Roof_Panel';
           roofMesh.matrix.copy(m.matrix); roofMesh.matrix.decompose(roofMesh.position, roofMesh.quaternion, roofMesh.scale);
           m.parent?.add(roofMesh); bodyGrp.attach(roofMesh);
+          bodyMaterialsRef.current.push(roofGlass);
           m.geometry = subset(windows);
         }
         geometry.dispose();

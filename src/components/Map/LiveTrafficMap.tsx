@@ -51,7 +51,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [reports, setReports] = useState<MapReport[]>([]);
   const [communityReports, setCommunityReports] = useState<MapReport[]>([]);
   const [backendPois, setBackendPois] = useState<MapReport[]>([]);
-  const [filterType, setFilterType] = useState<MapPointType | 'all'>('all');
+  const [filterType, setFilterType] = useState<MapPointType | 'all' | 'none'>('none');
+  const [selectedReport, setSelectedReport] = useState<MapReport | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFix, setLocationFix] = useState<LocationFix | null>(null);
   const [locationError, setLocationError] = useState('');
@@ -88,6 +89,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
   // Sync combined reports from community (n8n) and backend POIs
   useEffect(() => {
+    if (filterType === 'none' && !searchQuery.trim()) {
+      setReports([]);
+      return;
+    }
     const comm = communityReports.filter(r => !/^(radar-[1-3]|patrol-[1-3]|hazard-[1-2])$/.test(r.id));
     const seen = new Set<string>();
     const merged: MapReport[] = [];
@@ -98,12 +103,17 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       }
     }
     setReports(merged);
-  }, [communityReports, backendPois]);
+  }, [communityReports, backendPois, filterType, searchQuery]);
 
   // Viewport POI fetcher (queries standalone backend based on map bbox)
-  const fetchViewportPois = useCallback(async (currentFilter: MapPointType | 'all') => {
+  const fetchViewportPois = useCallback(async (currentFilter: MapPointType | 'all' | 'none') => {
     const map = mapInstanceRef.current;
     if (!map) return;
+
+    if (currentFilter === 'none') {
+      setBackendPois([]);
+      return;
+    }
 
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -173,20 +183,12 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       if (backendAlive) {
         const modeLabel = mapDataService.isStaticMode() ? 'სტატიკური ბაზა' : 'Live API';
         setCameraStatus(`🟢 AutoHub Map აქტიურია (${modeLabel}) • 9 000+ ობიექტი (OSM & მუნიციპალური პარკინგი)`);
-        if (mapInstanceRef.current) {
-          fetchViewportPois(filterType);
-        } else {
-          // Preload default Tbilisi area POIs
-          const initial = await mapDataService.fetchPois({
-            filterType,
-            lat: 41.7151,
-            lng: 44.8271,
-            radius_m: 6000,
-            limit: 250
-          });
-          if (initial.length > 0) {
-            setBackendPois(initial);
+        if (filterType !== 'none') {
+          if (mapInstanceRef.current) {
+            fetchViewportPois(filterType);
           }
+        } else {
+          setBackendPois([]);
         }
       } else {
         // Fallback to local cameras dataset if standalone server is not running
@@ -273,6 +275,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     // Map Click handler - allows placing a point directly by clicking
     map.on('click', (e: any) => {
       setClickedCoords({ lat: e.latlng.lat, lng: e.latlng.lng });
+      setSelectedReport(null);
     });
 
     // Invalidate size after render to prevent grey/empty tile glitch
@@ -702,14 +705,20 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       const marker = L.marker([item.lat, item.lng], { icon: customIcon });
       marker.bindPopup(popupContent, {
         className: 'dark-neon-popup',
-        maxWidth: 320
+        maxWidth: 320,
+        autoPan: false
       });
 
-      marker.on('click', () => {
-        sounds.playClick();
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.flyTo([item.lat, item.lng], 16, { duration: 0.8 });
+      marker.on('click', (e: any) => {
+        if (e?.originalEvent) {
+          e.originalEvent.stopPropagation();
         }
+        sounds.playClick();
+        setSelectedReport(item);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.panTo([item.lat, item.lng], { animate: true, duration: 0.35 });
+        }
+        marker.openPopup();
       });
 
       marker.addTo(layer);
@@ -768,14 +777,29 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
           polygon.bindPopup(popupContent, {
             className: 'dark-neon-popup',
-            maxWidth: 280
+            maxWidth: 280,
+            autoPan: false
           });
 
-          polygon.on('click', () => {
-            sounds.playClick();
-            if (mapInstanceRef.current) {
-              mapInstanceRef.current.flyTo(zone.geometry.center, 16, { duration: 0.8 });
+          polygon.on('click', (e: any) => {
+            if (e?.originalEvent) {
+              e.originalEvent.stopPropagation();
             }
+            sounds.playClick();
+            setSelectedReport({
+              id: `zone-${zone.lotCode}`,
+              type: 'parking',
+              title: `საპარკინგე ლოტი #${zone.lotCode}`,
+              description: zone.bounds_description_ge,
+              address: zone.street_ge,
+              code: zone.lotCode,
+              lat: zone.geometry.center[0],
+              lng: zone.geometry.center[1],
+              timestamp: Date.now(),
+              confirmations: 1,
+              active: true
+            });
+            polygon.openPopup();
           });
 
           polygon.addTo(layer);
@@ -810,7 +834,28 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
               <a href="${wazeDeepLink}" target="_blank" rel="noreferrer" class="text-cyan-400 underline font-bold">Waze მისვლა</a>
             </div>
           </div>
-        `, { className: 'dark-neon-popup' });
+        `, { className: 'dark-neon-popup', autoPan: false });
+
+        zoneMarker.on('click', (e: any) => {
+          if (e?.originalEvent) {
+            e.originalEvent.stopPropagation();
+          }
+          sounds.playClick();
+          setSelectedReport({
+            id: `zone-${zone.lotCode}`,
+            type: 'parking',
+            title: `საპარკინგე ლოტი #${zone.lotCode}`,
+            description: zone.bounds_description_ge,
+            address: zone.street_ge,
+            code: zone.lotCode,
+            lat: zone.geometry.center[0],
+            lng: zone.geometry.center[1],
+            timestamp: Date.now(),
+            confirmations: 1,
+            active: true
+          });
+          zoneMarker.openPopup();
+        });
 
         zoneMarker.addTo(layer);
       });
@@ -861,19 +906,19 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     }
   };
 
-  // Filters definition
+  // Filters definition: specific categories first, 'all' at the end
   const filterOptions = [
-    { key: 'all' as const, label: 'ყველა', icon: Layers },
     { key: 'radar' as const, label: 'რადარები (260)', icon: Camera, color: 'text-amber-500' },
-    { key: 'patrol' as const, label: 'პატრული (Live)', icon: Shield, color: 'text-blue-500' },
-    { key: 'parking' as const, label: '🅿️ პარკინგი (#ლოტები)', icon: ParkingSquare, color: 'text-cyan-400' },
     { key: 'fuel' as const, label: 'საწვავი (1 421)', icon: Fuel, color: 'text-emerald-500' },
     { key: 'charging' as const, label: 'დამტენები (254)', icon: Zap, color: 'text-cyan-400' },
+    { key: 'parking' as const, label: '🅿️ პარკინგი (#ლოტები)', icon: ParkingSquare, color: 'text-cyan-400' },
+    { key: 'patrol' as const, label: 'პატრული (Live)', icon: Shield, color: 'text-blue-500' },
     { key: 'service' as const, label: 'სერვისი & საბურავები (1 344)', icon: Wrench, color: 'text-amber-400' },
     { key: 'car_wash' as const, label: 'სამრეცხაო (902)', icon: Droplets, color: 'text-sky-400' },
     { key: 'parts' as const, label: 'ნაწილები (619)', icon: Cog, color: 'text-purple-400' },
     { key: 'showroom' as const, label: 'ავტოსალონები (122)', icon: Building2, color: 'text-gold' },
-    { key: 'hazard' as const, label: 'საფრთხე', icon: AlertTriangle, color: 'text-rose-500' }
+    { key: 'hazard' as const, label: 'საფრთხე', icon: AlertTriangle, color: 'text-rose-500' },
+    { key: 'all' as const, label: 'ყველა (სრული ბაზა)', icon: Layers, color: 'text-gold' }
   ];
 
   return (
@@ -979,7 +1024,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                   key={opt.key}
                   onClick={() => {
                     sounds.playClick();
-                    setFilterType(opt.key);
+                    setFilterType(isActive ? 'none' : opt.key);
+                    setSelectedReport(null);
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
                     isActive
@@ -1016,7 +1062,16 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         </div>
       </div>
 
-      <p role="status" className="text-xs text-slate-600 px-2">{cameraStatus}<br />საზოგადოებრივი ბაზა შეიძლება არასრული იყოს. იხელმძღვანელეთ საგზაო ნიშნებით. <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">© OpenStreetMap contributors · ODbL</a></p>
+      <p role="status" className="text-xs text-slate-600 px-2">
+        {filterType === 'none' && !searchQuery
+          ? '🗺️ რუკა მზადაა. აირჩიეთ კატეგორია ზედა პანელიდან (რადარები, საწვავი, დამტენები, პარკინგი...) ობიექტების გამოსაჩენად.'
+          : cameraStatus}
+        <br />
+        საზოგადოებრივი ბაზა შეიძლება არასრული იყოს. იხელმძღვანელეთ საგზაო ნიშნებით.{' '}
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">
+          © OpenStreetMap contributors · ODbL
+        </a>
+      </p>
       <p role="status" className="text-xs text-slate-500 px-2">{locationError || (locationFix?.source === 'obd' ? 'მდებარეობა: მანქანის 4G OBD GPS' : locationFix ? 'მდებარეობა: მიმდინარე მოწყობილობის GPS' : '')}</p>
       {/* 2. Interactive Map Canvas OR Official Waze Live Map View */}
       {activeMapView === 'waze_live' ? (
@@ -1189,6 +1244,139 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           <Plus size={18} />
           <span>შეტყობინების დამატება</span>
         </button>
+
+        {/* Selected Marker Rich Info Card (Slides up when any marker is clicked) */}
+        {selectedReport && (
+          <div
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="absolute bottom-3 left-3 right-3 sm:left-4 sm:right-auto sm:max-w-md z-30 p-4 rounded-3xl bg-slate-950/95 backdrop-blur-xl border border-slate-700/90 text-white shadow-2xl animate-fade-in"
+          >
+            {/* Header: Badge + Time + Close */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                selectedReport.type === 'patrol' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                selectedReport.type === 'radar' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                selectedReport.type === 'hazard' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                selectedReport.type === 'fuel' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                selectedReport.type === 'charging' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
+                selectedReport.type === 'service' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                selectedReport.type === 'car_wash' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
+                selectedReport.type === 'parts' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
+                selectedReport.type === 'parking' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                'bg-gold/20 text-gold border border-gold/30'
+              }`}>
+                {selectedReport.type === 'patrol' ? '🚓 საპატრულო ეკიპაჟი' :
+                 selectedReport.type === 'radar' ? (selectedReport.speed_limit_kmh ? `⚡ რადარი · ${selectedReport.speed_limit_kmh} კმ/სთ` : '📷 ' + (selectedReport.cameraKind || 'რადარი / კამერა')) :
+                 selectedReport.type === 'hazard' ? '⚠️ საგზაო საფრთხე' :
+                 selectedReport.type === 'fuel' ? `⛽ ავტოგასამართი ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
+                 selectedReport.type === 'charging' ? `⚡ დამტენი სადგური ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
+                 selectedReport.type === 'service' ? `🔧 ავტოსერვისი & საბურავები ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
+                 selectedReport.type === 'car_wash' ? `🧼 ავტოსამრეცხაო ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
+                 selectedReport.type === 'parts' ? `🔩 ავტონაწილები ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
+                 selectedReport.type === 'parking' ? (selectedReport.code ? `🅿️ საპარკინგე ლოტი #${selectedReport.code}` : '🅿️ პარკინგი') :
+                 '🏢 ავტოსალონი'}
+              </span>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {selectedReport.cameraSource ? 'OSM OpenData' : formatTimeAgo(selectedReport.timestamp)}
+                </span>
+                <button
+                  onClick={() => setSelectedReport(null)}
+                  className="w-6 h-6 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-xs transition-all"
+                  title="დახურვა"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Title & Description */}
+            <h4 className="font-extrabold text-base text-white mt-2 leading-tight">
+              {selectedReport.title}
+            </h4>
+            {selectedReport.description && selectedReport.description !== selectedReport.address && (
+              <p className="text-xs text-slate-300 mt-1 leading-snug">
+                {selectedReport.description}
+              </p>
+            )}
+
+            {/* Details Box */}
+            <div className="mt-2.5 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1.5 text-xs text-slate-300">
+              {selectedReport.speed_limit_kmh && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">მაქს. სიჩქარე:</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-red-600/30 text-red-300 border border-red-500 font-mono font-black text-xs">
+                    ⚡ {selectedReport.speed_limit_kmh} კმ/სთ
+                  </span>
+                </div>
+              )}
+              {selectedReport.address && (
+                <div className="flex items-start gap-1.5">
+                  <span className="text-gold">📍</span>
+                  <span>{selectedReport.address}</span>
+                </div>
+              )}
+              {selectedReport.phone && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-emerald-400">📞</span>
+                  <a href={`tel:${selectedReport.phone}`} className="text-cyan-300 font-mono font-bold hover:underline">
+                    {selectedReport.phone}
+                  </a>
+                </div>
+              )}
+              {selectedReport.opening_hours && (
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                  <span>🕒</span>
+                  <span>{selectedReport.opening_hours}</span>
+                </div>
+              )}
+              {selectedReport.website && (
+                <div className="flex items-center gap-1.5">
+                  <span>🌐</span>
+                  <a href={selectedReport.website} target="_blank" rel="noopener noreferrer" className="text-cyan-300 hover:underline">
+                    ვებსაიტი ↗
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Navigation & Action Buttons */}
+            <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1">
+                <a
+                  href={`https://waze.com/ul?ll=${selectedReport.lat},${selectedReport.lng}&navigate=yes`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 py-2 px-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                >
+                  <Navigation size={14} />
+                  <span>Waze</span>
+                </a>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${selectedReport.lat},${selectedReport.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition-all"
+                >
+                  <ExternalLink size={14} />
+                  <span>Google Maps</span>
+                </a>
+              </div>
+              {selectedReport.phone && (
+                <a
+                  href={`tel:${selectedReport.phone}`}
+                  className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all shrink-0"
+                >
+                  <Phone size={14} />
+                  <span>დარეკვა</span>
+                </a>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
       )}

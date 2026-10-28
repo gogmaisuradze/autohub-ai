@@ -1041,12 +1041,12 @@ export const ObdModule: React.FC<Props> = ({
 
       {/* 2. 3D Studio Viewport */}
       <div ref={studioSectionRef} id="three-car-studio" className="scroll-mt-20">
-        <div className="flex items-center justify-between mb-2 px-1">
-          <h2 className="text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-gold" />
-            3D ინტერაქტიული დიაგნოსტიკის სტუდია
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2 px-1">
+          <h2 className="text-xs sm:text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
+            <Cpu className="w-4 h-4 text-gold shrink-0" />
+            <span>3D ინტერაქტიული დიაგნოსტიკის სტუდია</span>
           </h2>
-          <span className="text-xs text-slate-500 font-mono">
+          <span className="text-[11px] sm:text-xs text-slate-500 font-mono truncate">
             {vehicle.brand} {vehicle.model} • {vehicle.engine}
           </span>
         </div>
