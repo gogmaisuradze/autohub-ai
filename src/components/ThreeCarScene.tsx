@@ -520,11 +520,11 @@ export const ThreeCarScene: React.FC<Props> = ({
             float surfaceAlpha = clamp(diffuseColor.a / max(opacity, .001), 0.0, 1.0);
             diffuseColor.rgb ${paintLayer && mat.userData.keepSurfaceColor ? '*=' : '='} ${paintLayer ? 'uPaintColor' : 'uGhostColor'};
             diffuseColor.a = surfaceAlpha * ${paintLayer ? 'uFill' : 'uGhostAlpha * (1.0 - uFill)'};
-            ${paintLayer && mat.userData.keepSurfaceColor ? `
-              float frontGrille = smoothstep(2.08, 2.18, vCarSurface.z) * (1.0 - smoothstep(.40, .48, abs(vCarSurface.x))) * step(.17, vCarSurface.y - uLift) * (1.0 - step(.83, vCarSurface.y - uLift));
+            ${paintLayer ? `
+              float frontGrille = smoothstep(2.20, 2.28, vCarSurface.z) * (1.0 - smoothstep(.40, .48, abs(vCarSurface.x))) * step(.17, vCarSurface.y - uLift) * (1.0 - smoothstep(.66, .69, vCarSurface.y - uLift));
               diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.006, .008, .012), frontGrille);` : ''}`);
-          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = ' + (paintLayer ? 'uSolidRoughness;' : '.13;'));
-          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = ' + (paintLayer ? 'uSolidMetalness;' : '.03;'));
+          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = ' + (paintLayer ? 'mix(uSolidRoughness, .48, frontGrille);' : '.13;'));
+          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = ' + (paintLayer ? 'mix(uSolidMetalness, .03, frontGrille);' : '.03;'));
         }
         shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
           float scanBand = exp(-pow((vCarSurface.z - uScanZ) / .035, 2.0));
@@ -532,7 +532,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           outgoingLight += (vec3(.72, .93, 1.0) * scanBand * 1.6 + vec3(.06, .32, .60) * scanHalo * .32) * uScanStrength;
           #include <opaque_fragment>`);
       };
-      mat.customProgramCacheKey = () => body ? (paintLayer ? (mat.userData.keepSurfaceColor ? 'autohub-native-trim-v4' : 'autohub-opaque-paint-v4') : 'autohub-glass-fade-v4') : 'autohub-surface-scan-v3';
+      mat.customProgramCacheKey = () => body ? (paintLayer ? (mat.userData.keepSurfaceColor ? 'autohub-native-trim-v5' : 'autohub-opaque-paint-v5') : 'autohub-glass-fade-v4') : 'autohub-surface-scan-v3';
       mat.needsUpdate = true;
     };
     // A restrained volumetric light sheet moves through the whole vehicle.
