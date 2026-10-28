@@ -161,7 +161,7 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     accentColor: '#10B981',
     badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
     imageUrl: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=2400&q=85',
-    imagePosition: 'object-[center_42%] lg:object-[68%_44%]',
+    imagePosition: 'object-[center_78%] lg:object-[68%_78%]',
     carModelHint: 'PORSCHE 911 GT PERFORMANCE & PRECISION SERVICE',
     description: 'ზეთის, ფილტრების, ხუნდებისა და სავალი ნაწილის გეგმიური აღრიცხვა, გარბენის მიხედვით შეხსენებები და ავტომობილის ხარჯების კონტროლი.',
     highlights: [
@@ -743,18 +743,18 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
         })}
 
         {/* Targeted Left Gradient (Soft, localized text protection leaving over 60% of the car photo wide open and crystal clear) */}
-        <div className="absolute inset-y-0 left-0 w-full sm:w-1/2 lg:w-[44%] bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-transparent pointer-events-none z-20" />
+        <div className="absolute inset-y-0 left-0 w-full sm:w-3/5 lg:w-[42%] bg-gradient-to-r from-slate-950/75 via-slate-950/35 to-transparent pointer-events-none z-10" />
         
         {/* Subtle Top & Bottom Shadow for Controls Legibility */}
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent pointer-events-none z-20" />
-        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950/60 to-transparent pointer-events-none z-20" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/60 via-slate-950/20 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-slate-950/50 to-transparent pointer-events-none z-10" />
       </div>
 
       {/* Top Gold Laser Accent Line */}
       <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent opacity-85 z-20" />
 
       {/* Main Content Container - Fixed uniform height for all slides to eliminate any jumping */}
-      <div className="relative z-10 px-4 sm:px-8 lg:px-12 py-5 sm:py-7 flex flex-col justify-between h-[520px] sm:h-[540px] md:h-[550px] lg:h-[560px] xl:h-[570px] overflow-hidden">
+      <div className="relative z-30 px-4 sm:px-8 lg:px-12 py-5 sm:py-7 flex flex-col justify-between h-[520px] sm:h-[540px] md:h-[550px] lg:h-[560px] xl:h-[570px] overflow-hidden">
         
         {/* Top Header: Category Tag, Horizontal Service Selector Tabs & Drawer Toggle */}
         <div className="space-y-2 sm:space-y-2.5">
@@ -834,13 +834,13 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
         {/* Top Content Zone: Subtitle, Title & Narrative + Top-Right HUD Widget */}
         <div className="pt-1.5 sm:pt-2 grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6 items-start">
           <div className="lg:col-span-8 xl:col-span-8 space-y-1 sm:space-y-1.5 max-w-2xl">
-            <div className="text-[11px] sm:text-xs font-mono tracking-widest text-gold font-bold uppercase drop-shadow-sm truncate">
+            <div className="text-[11px] sm:text-xs font-mono tracking-widest text-gold font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] truncate">
               {current.subtitle}
             </div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[28px] xl:text-[30px] font-black text-white tracking-tight leading-snug drop-shadow-lg line-clamp-2 min-h-[2.8rem] sm:min-h-[4.2rem] lg:min-h-[4.8rem]">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[28px] xl:text-[30px] font-black text-white tracking-tight leading-snug drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] line-clamp-2 min-h-[2.8rem] sm:min-h-[4.2rem] lg:min-h-[4.8rem]">
               {current.title}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium drop-shadow-md max-w-2xl line-clamp-2 min-h-[2.5rem] sm:min-h-[2.8rem]">
+            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-semibold drop-shadow-[0_1px_6px_rgba(0,0,0,0.95)] max-w-2xl line-clamp-2 min-h-[2.5rem] sm:min-h-[2.8rem]">
               {current.description}
             </p>
           </div>
@@ -861,10 +861,10 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
             {current.highlights.map((h, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl backdrop-blur-md bg-slate-950/80 border border-white/20 text-[11px] sm:text-xs font-semibold text-slate-100 shadow-sm transition-all hover:border-gold/50 hover:bg-slate-900/80"
+                className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl backdrop-blur-md bg-slate-950/85 border border-white/25 text-[11px] sm:text-xs font-bold text-white shadow-md transition-all hover:border-gold/60 hover:bg-slate-900"
               >
-                <CheckCircle2 size={15} className="text-gold shrink-0" />
-                <span className="truncate">{h}</span>
+                <CheckCircle2 size={15} className="text-gold shrink-0 drop-shadow-xs" />
+                <span className="truncate drop-shadow-xs">{h}</span>
               </div>
             ))}
           </div>
@@ -876,7 +876,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
             <button
               type="button"
               onClick={() => handleAction(current)}
-              className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-xs sm:text-sm font-black shadow-lg hover:shadow-gold/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group/btn"
+              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-gold/25 hover:shadow-gold/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group/btn border border-gold/40 cursor-pointer"
             >
               <span>{current.ctaText}</span>
               <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
@@ -886,7 +886,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
               <button
                 type="button"
                 onClick={() => handleSecondaryAction(current)}
-                className="hidden sm:inline-flex px-3 py-2 rounded-xl backdrop-blur-md bg-slate-900/70 hover:bg-slate-900 text-slate-200 hover:text-white text-xs font-bold border border-white/15 shadow-xs transition-colors"
+                className="hidden sm:inline-flex px-3.5 py-2 rounded-xl backdrop-blur-md bg-slate-900/90 hover:bg-slate-850 text-white hover:text-gold text-xs font-bold border border-white/25 hover:border-gold/40 shadow-md transition-all cursor-pointer"
               >
                 {current.secondaryCtaText}
               </button>
@@ -899,7 +899,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                   sounds.playClick();
                   onScrollPastBanner();
                 }}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl backdrop-blur-md bg-slate-900/60 hover:bg-slate-900 text-slate-300 hover:text-gold text-xs font-bold border border-white/10 hover:border-gold/30 shadow-xs transition-all group/scroll"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl backdrop-blur-md bg-slate-900/90 hover:bg-slate-850 text-slate-200 hover:text-gold text-xs font-bold border border-white/20 hover:border-gold/40 shadow-md transition-all group/scroll cursor-pointer"
                 title="გვერდის კონტენტზე ნელა ჩასქროლვა"
               >
                 <span>კონტენტი</span>
