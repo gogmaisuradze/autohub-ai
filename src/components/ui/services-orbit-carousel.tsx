@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TabType } from "../Navigation";
 import { DtcCode, FineItem, ServiceItem, VehicleProfile } from "../../types";
@@ -179,9 +179,41 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
 
   const containerSize = radius * 2 + nodeSize + 20;
 
+  // Touch swipe & finger flick rotation ("თითის კვრით ტრიალი")
+  const [dragAngle, setDragAngle] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const isDraggingRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Prevent vertical page scroll during horizontal finger swipe on mobile
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handleNativeTouchMove = (e: TouchEvent) => {
+      if (!touchStartRef.current) return;
+      const deltaX = e.touches[0].clientX - touchStartRef.current.x;
+      const deltaY = e.touches[0].clientY - touchStartRef.current.y;
+
+      // If horizontal gesture dominates, cancel native vertical scroll so swipe is buttery smooth
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 6) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    el.addEventListener('touchmove', handleNativeTouchMove, { passive: false });
+    return () => el.removeEventListener('touchmove', handleNativeTouchMove);
+  }, []);
+
   const getRotation = useCallback(
-    (index: number): number => (index - activeIndex) * (360 / hubServices.length),
-    [activeIndex, hubServices.length]
+    (index: number): number => {
+      const base = (index - activeIndex) * (360 / hubServices.length);
+      return base + dragAngle;
+    },
+    [activeIndex, hubServices.length, dragAngle]
   );
 
   const next = () => {
@@ -194,13 +226,113 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     setActiveIndex((i) => (i - 1 + hubServices.length) % hubServices.length);
   };
 
+  const handleDragStart = (clientX: number, clientY: number, target: HTMLElement | null) => {
+    // If tapping an action button inside the card, let the button handle it
+    if (target && target.closest('button')) {
+      return;
+    }
+    touchStartRef.current = {
+      x: clientX,
+      y: clientY,
+      time: Date.now()
+    };
+    isDraggingRef.current = false;
+  };
+
+  const handleDragMove = (clientX: number, clientY: number) => {
+    if (!touchStartRef.current) return;
+    const deltaX = clientX - touchStartRef.current.x;
+
+    if (Math.abs(deltaX) > 6 || isDraggingRef.current) {
+      isDraggingRef.current = true;
+      setIsDragging(true);
+
+      // 70px drag corresponds to 60deg (one full service node)
+      const rawAngle = (deltaX / 70) * 60;
+      setDragAngle(rawAngle);
+    }
+  };
+
+  const handleDragEnd = (clientX: number) => {
+    if (!touchStartRef.current) return;
+
+    const deltaX = clientX - touchStartRef.current.x;
+    const timeElapsed = Math.max(1, Date.now() - touchStartRef.current.time);
+    const velocityX = deltaX / timeElapsed; // px per ms
+
+    const wasDragging = isDraggingRef.current;
+    touchStartRef.current = null;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    setDragAngle(0);
+
+    if (!wasDragging && Math.abs(deltaX) < 10) {
+      return;
+    }
+
+    // Finger flick ("თითის კვრა") or dragged past threshold:
+    // Fast flick velocity (> 0.22 px/ms) OR distance > 30px
+    const isFlick = Math.abs(velocityX) > 0.22 || Math.abs(deltaX) > 30;
+
+    if (isFlick) {
+      if (deltaX < 0) {
+        // Swiped left -> advance to next service
+        next();
+      } else {
+        // Swiped right -> go to previous service
+        prev();
+      }
+    }
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    handleDragStart(t.clientX, t.clientY, e.target as HTMLElement | null);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    handleDragMove(t.clientX, t.clientY);
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const t = e.changedTouches[0];
+    handleDragEnd(t.clientX);
+  };
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    handleDragStart(e.clientX, e.clientY, e.target as HTMLElement | null);
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (touchStartRef.current) {
+      handleDragMove(e.clientX, e.clientY);
+    }
+  };
+
+  const onMouseUp = (e: React.MouseEvent) => {
+    if (touchStartRef.current) {
+      handleDragEnd(e.clientX);
+    }
+  };
+
+  const onMouseLeave = () => {
+    setIsHovering(false);
+    if (touchStartRef.current) {
+      touchStartRef.current = null;
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      setDragAngle(0);
+    }
+  };
+
   useEffect(() => {
-    if (isHovering || isTourActive) return;
+    if (isHovering || isTourActive || isDragging) return;
     const interval = setInterval(() => {
       setActiveIndex((i) => (i + 1) % hubServices.length);
     }, 6000);
     return () => clearInterval(interval);
-  }, [isHovering, isTourActive, hubServices.length]);
+  }, [isHovering, isTourActive, isDragging, hubServices.length]);
 
   const activeService = hubServices[activeIndex];
   const ActiveIcon = activeService.icon;
@@ -239,6 +371,9 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   }, [isHovering, activeService, onSelectDepartment]);
 
   const handleNodeClick = (index: number, tab: TabType) => {
+    // If the user was dragging/swiping, don't trigger click
+    if (isDraggingRef.current || Math.abs(dragAngle) > 6) return;
+
     sounds.playClick();
     if (index === activeIndex) {
       onSelectDepartment(tab);
@@ -249,9 +384,19 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
 
   return (
     <div
-      className="flex flex-col items-center justify-center p-1 sm:p-2 relative select-none overflow-visible no-scrollbar my-auto"
+      ref={containerRef}
+      className={`flex flex-col items-center justify-center p-1 sm:p-2 relative select-none overflow-visible no-scrollbar my-auto touch-pan-y ${
+        isDragging ? 'cursor-grabbing' : 'cursor-grab'
+      }`}
       onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseLeave={onMouseLeave}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
     >
       {/* Orbit Container with optimal fit */}
       <div
@@ -371,12 +516,16 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
               animate={{
                 transform: `rotate(${rotation}deg) translateY(-${radius}px)`,
               }}
-              transition={{
-                type: "spring",
-                stiffness: 160,
-                damping: 22,
-                delay: isActive ? 0 : Math.abs(i - activeIndex) * 0.04
-              }}
+              transition={
+                isDragging
+                  ? { type: "tween", duration: 0 }
+                  : {
+                      type: "spring",
+                      stiffness: 160,
+                      damping: 22,
+                      delay: isActive ? 0 : Math.abs(i - activeIndex) * 0.04
+                    }
+              }
               style={{
                 width: nodeSize,
                 height: nodeSize,
@@ -389,11 +538,15 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
               {/* Counter-rotation to keep icons upright */}
               <motion.div
                 animate={{ rotate: -rotation }}
-                transition={{
-                  type: "spring",
-                  stiffness: 160,
-                  damping: 22,
-                }}
+                transition={
+                  isDragging
+                    ? { type: "tween", duration: 0 }
+                    : {
+                        type: "spring",
+                        stiffness: 160,
+                        damping: 22,
+                      }
+                }
                 className="w-full h-full"
               >
                 <motion.div
