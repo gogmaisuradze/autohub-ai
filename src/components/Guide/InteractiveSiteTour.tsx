@@ -17,7 +17,8 @@ import {
   Activity,
   ShieldAlert,
   HelpCircle,
-  RotateCcw
+  RotateCcw,
+  Move
 } from 'lucide-react';
 
 export interface TourStep {
@@ -29,7 +30,7 @@ export interface TourStep {
   description: string;
   icon: React.ComponentType<{ className?: string; size?: number | string }>;
   requiredTab?: TabType;
-  placement?: 'bottom' | 'top' | 'center-bottom' | 'bottom-right' | 'top-right' | 'auto';
+  placement?: 'bottom' | 'top' | 'center-bottom' | 'bottom-right' | 'top-right' | 'left-bottom' | 'left' | 'auto';
 }
 
 const TOUR_STEPS: TourStep[] = [
@@ -97,7 +98,7 @@ const TOUR_STEPS: TourStep[] = [
     description: 'ამ ღილაკით აკავშირებთ Bluetooth ან Wi-Fi ELM327 ადაპტერს. ჩართვისას ინდიკატორი მწვანედ აინთება და პირდაპირ ამოიკითხავს შეცდომებს.',
     icon: Activity,
     requiredTab: 'home',
-    placement: 'bottom'
+    placement: 'bottom-right'
   },
   {
     id: 'ai-floating-widget',
@@ -108,7 +109,7 @@ const TOUR_STEPS: TourStep[] = [
     description: 'თქვენი პერსონალური ხელოვნური ინტელექტი: დააჭირეთ ქვედა მარჯვენა ღილაკს ნებისმიერ დროს, ჰკითხეთ ნაწილების ფასები, შეცდომების მიზეზები და მიიღეთ რჩევები ქართულად!',
     icon: Bot,
     requiredTab: 'home',
-    placement: 'top-right'
+    placement: 'left-bottom'
   }
 ];
 
@@ -121,6 +122,9 @@ export const InteractiveSiteTour: React.FC<Props> = ({
   onNavigateTab,
   externalTrigger
 }) => {
+  // Draggable constraint container ref (locks window strictly inside viewport)
+  const dragConstraintsRef = useRef<HTMLDivElement>(null);
+
   // State: Cloud Bot Prompt (ღრუბლის ფანჯარა ბოტი)
   const [isCloudPromptOpen, setIsCloudPromptOpen] = useState(false);
   
@@ -329,8 +333,8 @@ export const InteractiveSiteTour: React.FC<Props> = ({
   // Calculate Popover Position with smooth, stable coordinates that never flip or jump
   const getPopoverCoords = () => {
     const popoverWidth = Math.min(380, window.innerWidth - 32);
-    const popoverHeight = 250;
-    const margin = 14;
+    const popoverHeight = 260;
+    const margin = 16;
     const pad = 16;
 
     if (!targetRect) {
@@ -344,14 +348,24 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     const preferredPlacement = currentStep?.placement || 'auto';
 
     let left = targetRect.left + targetRect.width / 2 - popoverWidth / 2;
-    if (preferredPlacement === 'top-right' || preferredPlacement === 'bottom-right' || targetRect.right > window.innerWidth - 100) {
-      left = Math.min(left, targetRect.right - popoverWidth);
-    }
-    left = Math.max(pad, Math.min(left, window.innerWidth - popoverWidth - pad));
-
     let top = 0;
 
-    if (preferredPlacement === 'bottom') {
+    if (preferredPlacement === 'left-bottom' || preferredPlacement === 'left') {
+      // Place to the left of target, cleanly aligned near bottom of viewport
+      left = targetRect.left - popoverWidth - margin;
+      top = Math.max(pad, window.innerHeight - popoverHeight - pad - 12);
+      if (left < pad) {
+        // Fallback for narrow mobile screens: place above target
+        left = pad;
+        top = Math.max(pad, targetRect.top - popoverHeight - margin);
+      }
+    } else if (preferredPlacement === 'bottom-right') {
+      top = targetRect.bottom + margin;
+      left = targetRect.right - popoverWidth;
+      if (top + popoverHeight > window.innerHeight - pad) {
+        top = Math.max(pad, targetRect.top - popoverHeight - margin);
+      }
+    } else if (preferredPlacement === 'bottom') {
       top = targetRect.bottom + margin;
       if (top + popoverHeight > window.innerHeight - pad) {
         if (targetRect.top > popoverHeight + margin + pad) {
@@ -362,12 +376,16 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       }
     } else if (preferredPlacement === 'top' || preferredPlacement === 'top-right') {
       top = targetRect.top - popoverHeight - margin;
+      if (preferredPlacement === 'top-right') {
+        left = targetRect.right - popoverWidth;
+      }
       if (top < pad) {
         top = Math.min(targetRect.bottom + margin, window.innerHeight - popoverHeight - pad);
       }
     } else if (preferredPlacement === 'center-bottom') {
       // Anchored calmly near bottom of viewport, displaying the spotlighted content clearly above
       top = window.innerHeight - popoverHeight - pad - 12;
+      left = (window.innerWidth - popoverWidth) / 2;
     } else {
       // Auto placement
       const spaceBelow = window.innerHeight - targetRect.bottom;
@@ -386,7 +404,12 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       }
     }
 
-    top = Math.max(pad, Math.min(top, window.innerHeight - popoverHeight - pad));
+    // Strict boundary clamping so it NEVER goes off screen
+    const maxTop = Math.max(pad, window.innerHeight - popoverHeight - pad);
+    const maxLeft = Math.max(pad, window.innerWidth - popoverWidth - pad);
+
+    top = Math.max(pad, Math.min(top, maxTop));
+    left = Math.max(pad, Math.min(left, maxLeft));
 
     return {
       top,
@@ -524,6 +547,12 @@ export const InteractiveSiteTour: React.FC<Props> = ({
             onClick={closeTour}
           />
 
+          {/* Viewport Bounds Container for Drag Constraints (Strictly locks window inside screen) */}
+          <div
+            ref={dragConstraintsRef}
+            className="fixed inset-3 sm:inset-4 pointer-events-none z-[9987]"
+          />
+
           {/* Smooth Gliding Golden Halo Border Around Target Element */}
           <motion.div
             initial={false}
@@ -549,26 +578,57 @@ export const InteractiveSiteTour: React.FC<Props> = ({
             className="border-2 border-gold shadow-[0_0_20px_rgba(252,163,17,0.55)] pointer-events-none"
           />
 
-          {/* Floating Explanation Card (Smoothly Gliding Card with Cross-Fading Content) */}
+          {/* Floating Explanation Card (Draggable Walkthrough Window - Smooth, bounded & movable) */}
           <motion.div
-            initial={false}
-            animate={{
+            key={currentStep.id}
+            drag
+            dragConstraints={dragConstraintsRef}
+            dragElastic={0.06}
+            dragMomentum={false}
+            initial={{
+              opacity: 0,
+              scale: 0.96,
               top: popoverCoords.top,
               left: popoverCoords.left,
-              width: popoverCoords.width,
-              opacity: targetRect ? 1 : 0
+              width: popoverCoords.width
+            }}
+            animate={{
+              opacity: targetRect ? 1 : 0,
+              scale: 1,
+              top: popoverCoords.top,
+              left: popoverCoords.left,
+              width: popoverCoords.width
             }}
             transition={{
               type: 'tween',
               ease: [0.16, 1, 0.3, 1],
-              duration: 0.32
+              duration: 0.28
             }}
             style={{
               position: 'fixed',
-              zIndex: 9999
+              zIndex: 9999,
+              cursor: 'grab'
             }}
-            className="rounded-3xl p-5 bg-slate-900/90 backdrop-blur-2xl border-2 border-gold shadow-[0_25px_60px_rgba(0,0,0,0.65)] text-white pointer-events-auto"
+            whileDrag={{
+              cursor: 'grabbing',
+              scale: 1.02,
+              boxShadow: '0 30px 70px rgba(0,0,0,0.85)'
+            }}
+            className="rounded-3xl p-4 sm:p-5 bg-slate-900/95 backdrop-blur-2xl border-2 border-gold shadow-[0_25px_60px_rgba(0,0,0,0.75)] text-white pointer-events-auto max-h-[calc(100vh-32px)] overflow-y-auto select-none touch-none"
           >
+            {/* Top Drag Grip Handle & Move Indicator */}
+            <div
+              className="flex items-center justify-between pb-2 mb-2 border-b border-white/10 cursor-grab active:cursor-grabbing text-slate-400 select-none group"
+              title="დააჭირეთ და გადააადგილეთ ფანჯარა ნებისმიერ ადგილას"
+            >
+              <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 group-hover:text-gold transition-colors">
+                <Move size={12} className="text-gold/80 group-hover:scale-110 transition-transform" />
+                <span className="uppercase tracking-wider">გადაადგილება</span>
+              </div>
+              <div className="w-12 h-1 rounded-full bg-white/20 group-hover:bg-gold/60 transition-colors" />
+              <span className="text-[10px] font-mono font-bold text-gold/80">{currentStep.badge}</span>
+            </div>
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep.id}
@@ -590,8 +650,9 @@ export const InteractiveSiteTour: React.FC<Props> = ({
 
                   <button
                     type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={closeTour}
-                    className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors border border-white/20"
+                    className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors border border-white/20 cursor-pointer"
                     title="ტურიდან გასვლა"
                   >
                     <X size={14} />
@@ -633,12 +694,13 @@ export const InteractiveSiteTour: React.FC<Props> = ({
                 <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-white/15">
                   <button
                     type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={handlePrev}
                     disabled={currentStepIndex === 0}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all ${
                       currentStepIndex === 0
                         ? 'opacity-30 cursor-not-allowed text-slate-500'
-                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/30'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/30 cursor-pointer'
                     }`}
                   >
                     <ArrowLeft size={13} />
@@ -648,16 +710,18 @@ export const InteractiveSiteTour: React.FC<Props> = ({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
+                      onPointerDown={(e) => e.stopPropagation()}
                       onClick={closeTour}
-                      className="text-xs text-slate-400 hover:text-white font-bold px-2 py-1 transition-colors"
+                      className="text-xs text-slate-400 hover:text-white font-bold px-2 py-1 transition-colors cursor-pointer"
                     >
                       გამოტოვება
                     </button>
 
                     <button
                       type="button"
+                      onPointerDown={(e) => e.stopPropagation()}
                       onClick={handleNext}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-xs font-black shadow-md hover:shadow-gold/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-xs font-black shadow-md hover:shadow-gold/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>{currentStepIndex === TOUR_STEPS.length - 1 ? 'დასრულება 🎉' : 'შემდეგი'}</span>
                       <ArrowRight size={13} />
