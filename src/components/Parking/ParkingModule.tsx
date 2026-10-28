@@ -38,6 +38,7 @@ import {
   Zap,
   X
 } from 'lucide-react';
+import ParkingLocationPicker from './ParkingLocationPicker';
 import { ParkingZonesMap } from './ParkingZonesMap';
 import { DelineatedParkingZone, DELINEATED_PARKING_ZONES, createManualParkingLot } from '../../constants/parkingZones';
 import {
@@ -543,6 +544,7 @@ export const ParkingModule: React.FC<Props> = ({
   });
 
   // Selected City & Zone State
+  const [locationPicker, setLocationPicker] = useState<{ initialLot?: DelineatedParkingZone } | null>(null);
   const [selectedCity, setSelectedCity] = useState<CityType>('tbilisi');
   const [selectedZone, setSelectedZone] = useState<string>('zone_a');
   const [parkingLocationInput, setParkingLocationInput] = useState(CITY_QUICK_LOCATIONS.tbilisi[0]);
@@ -618,7 +620,7 @@ export const ParkingModule: React.FC<Props> = ({
           ...prev,
           isActive: true,
           zoneName_ge: `ზონა #${sess.lot.lotCode} — ${sess.lot.street_ge}`,
-          hourlyRateGel: sess.lot.hourlyRateGel || 1.0,
+          hourlyRateGel: sess.lot.hourlyRateGel,
           startTime: new Date(sess.stoppedAt).getTime(),
           plateNumber: sess.plateNumber
         }));
@@ -660,8 +662,9 @@ export const ParkingModule: React.FC<Props> = ({
         const elapsedMin = Math.floor(elapsedSec / 60);
 
         // Free 15 min rule calculation
-        const freeRem = Math.max(0, 15 - elapsedMin);
-        const billableHours = elapsedMin > 15 ? Math.ceil((elapsedMin - 15) / 60) : 0;
+        const freeAllowance = parkingSession?.lot.freeMinutes ?? 0;
+        const freeRem = Math.max(0, freeAllowance - elapsedMin);
+        const billableHours = elapsedMin > freeAllowance ? Math.ceil((elapsedMin - freeAllowance) / 60) : 0;
         const currentCost = billableHours * activeSession.hourlyRateGel;
 
         setActiveSession(prev => {
@@ -680,7 +683,7 @@ export const ParkingModule: React.FC<Props> = ({
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [activeSession.isActive, activeSession.startTime, activeSession.hourlyRateGel]);
+  }, [activeSession.isActive, activeSession.startTime, activeSession.hourlyRateGel, parkingSession?.lot.freeMinutes]);
 
   // Persist parking fines and permits
   useEffect(() => {
@@ -767,7 +770,7 @@ export const ParkingModule: React.FC<Props> = ({
     }
   };
 
-  const handleStartParkingFromMap = (zone: DelineatedParkingZone) => {
+  const startConfirmedParking = (zone: DelineatedParkingZone, durationMinutes: number) => {
     sounds.playScanSweep();
     setSelectedCity(zone.city);
     const catId = zone.category === 'A' ? 'zone_a' : zone.category === 'B' ? 'zone_b' : 'zone_c';
@@ -776,8 +779,10 @@ export const ParkingModule: React.FC<Props> = ({
     setParkingLocationInput(locName);
 
     // Trigger state in parkingSessionService
-    parkingSessionService.createProbableStopSession(zone, vehicle);
-    parkingSessionService.confirmParking(5);
+    const session = parkingSessionService.createProbableStopSession(zone, vehicle);
+    if (!session || session.lot.lotCode !== zone.lotCode) return;
+    parkingSessionService.confirmParking(Math.min(5, durationMinutes - 1), durationMinutes);
+    setLocationPicker(null);
 
     const newSession: ActiveParkingSession = {
       isActive: true,
@@ -789,9 +794,10 @@ export const ParkingModule: React.FC<Props> = ({
       elapsedSeconds: 0,
       accumulatedCostGel: 0,
       isFree15MinActive: true,
-      freeMinRemaining: 15,
+      freeMinRemaining: zone.freeMinutes,
       plateNumber: vehicle.plate_number || 'FR-282-EE'
     };
+    newSession.isFree15MinActive = zone.freeMinutes > 0;
 
     setActiveSession(newSession);
     try {
@@ -799,37 +805,11 @@ export const ParkingModule: React.FC<Props> = ({
     } catch {}
   };
 
+  const handleStartParkingFromMap = (zone: DelineatedParkingZone) => {
+    setLocationPicker({ initialLot: zone });
+  };
   const handleStartParking = () => {
-    sounds.playScanSweep();
-    const cityZones = CITY_ZONES[selectedCity] || CITY_ZONES.tbilisi;
-    const currentZoneConfig = cityZones.find(z => z.id === selectedZone) || cityZones[0];
-
-    // Find or create matching lot
-    const cleanCode = parkingLocationInput.match(/#([A-Za-z]?\d+)/)?.[1]?.toUpperCase() || 'A1043';
-    const foundLot = DELINEATED_PARKING_ZONES.find(z => z.city === selectedCity && (z.lotCode === cleanCode || z.zoneNumber === cleanCode)) ||
-      createManualParkingLot(cleanCode, parkingLocationInput, selectedCity);
-
-    parkingSessionService.createProbableStopSession(foundLot, vehicle);
-    parkingSessionService.confirmParking(5);
-
-    const newSession: ActiveParkingSession = {
-      isActive: true,
-      city: selectedCity,
-      zone: selectedZone as any,
-      zoneName_ge: `${currentZoneConfig.name} (${currentZoneConfig.rate})`,
-      hourlyRateGel: currentZoneConfig.rateGel,
-      startTime: Date.now(),
-      elapsedSeconds: 0,
-      accumulatedCostGel: 0,
-      isFree15MinActive: true,
-      freeMinRemaining: 15,
-      plateNumber: vehicle.plate_number || 'FR-282-EE'
-    };
-
-    setActiveSession(newSession);
-    try {
-      localStorage.setItem('autohub_active_parking_session', JSON.stringify(newSession));
-    } catch {}
+    setLocationPicker({});
   };
 
   const handleStopParking = () => {
@@ -886,6 +866,10 @@ export const ParkingModule: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
+      {locationPicker && <ParkingLocationPicker city={selectedCity} initialLot={locationPicker.initialLot}
+        plate={vehicle.plate_number || ''}
+        obdReading={obdMode === 'real' && telemetry?.vehicleId === vehicle.id && activeDevice?.deviceId === telemetry?.deviceId ? telemetry : undefined} onClose={() => setLocationPicker(null)}
+        onConfirm={startConfirmedParking} />}
       
       {/* ======================================================== */}
       {/* 0. SMART PARKING DECK (იგივე სტილი და ფერები რაც OBD ბანერში) */}
@@ -2103,7 +2087,7 @@ export const ParkingModule: React.FC<Props> = ({
                   className="btn-stitch-primary w-full py-4.5 px-6 text-sm sm:text-base font-black tracking-wide"
                 >
                   <Play size={18} className="fill-navy" />
-                  <span>პარკირების დაწყება (Live Timer ჩართვა)</span>
+                  <span>პარკირების ჩართვა — ლოტის შემოწმება</span>
                 </button>
                 <p className="text-[11px] text-center text-slate-500 mt-2.5 font-mono flex items-center justify-center gap-1.5">
                   <span>ავტომობილი:</span>
@@ -2482,7 +2466,7 @@ export const ParkingModule: React.FC<Props> = ({
       )}
 
       {/* 4G OBD Real-time Stop Detection & Parking Confirmation Modal */}
-      {parkingSession && parkingSession.status === 'probable_stop' && (
+      {!locationPicker && parkingSession && parkingSession.status === 'probable_stop' && (
         <ParkingConfirmationModal
           session={parkingSession}
           candidateLots={stopResult?.candidateLots || [parkingSession.lot]}
