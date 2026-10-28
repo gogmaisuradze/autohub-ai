@@ -737,7 +737,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
               sizes="100vw"
               decoding="async"
               alt={srv.title}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out pointer-events-none transform scale-100 group-hover:scale-105 opacity-100 brightness-100 contrast-[1.05] ${
+              className={`absolute inset-0 w-full h-full object-cover transform transition-all duration-1000 ease-out scale-100 group-hover:scale-105 pointer-events-none brightness-100 contrast-[1.05] ${
                 isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
               } ${srv.imagePosition || 'object-center lg:object-[68%_center]'}`}
             />
@@ -978,7 +978,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                     handleSelectService(idx);
                     setIsCatalogExpanded(false);
                   }}
-                  className={`rounded-2xl border transition-all cursor-pointer flex flex-col justify-between overflow-hidden ${
+                  className={`group/card rounded-2xl border transition-all cursor-pointer flex flex-col justify-between overflow-hidden ${
                     isActive
                       ? 'border-gold bg-gold/10 shadow-lg ring-1 ring-gold/40'
                       : 'border-slate-800 bg-slate-900/80 hover:border-slate-700 hover:bg-slate-900'
@@ -991,7 +991,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                       loading="lazy"
                       decoding="async"
                       alt={srv.title}
-                      className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+                      className={`w-full h-full object-cover transform scale-100 group-hover/card:scale-105 transition-transform duration-700 ease-out ${
                         srv.imagePosition || 'object-center'
                       }`}
                     />
