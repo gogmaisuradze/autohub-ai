@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { sounds } from '../../services/soundEffects';
 import {
   Wifi,
@@ -136,13 +137,13 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
     setConnectionPhase('connecting');
     setConnectStep(1); // Connecting to device
 
-    await new Promise(r => setTimeout(r, 700));
+    await new Promise(r => setTimeout(r, 800));
     setConnectStep(2); // CAN-Bus Protocol & Baudrate
 
-    await new Promise(r => setTimeout(r, 750));
+    await new Promise(r => setTimeout(r, 850));
     setConnectStep(3); // Querying ECU & Sensors
 
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, 800));
     sounds.playSuccess();
     setConnectionPhase('connected');
   };
@@ -500,77 +501,213 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
 
         {/* 3. HIGH-TECH CONNECTION ANIMATION (When connecting) */}
         {connectionPhase === 'connecting' && (
-          <div className="p-6 rounded-3xl bg-white border border-gold/40 shadow-xl space-y-5 animate-fade-in text-center">
-            
-            {/* Visual Wave Simulation: Phone -> Signal Waves -> OBD Adapter -> Car */}
-            <div className="relative py-4 flex items-center justify-around">
-              {/* Phone Node */}
-              <div className="flex flex-col items-center">
-                <div className="w-14 h-14 rounded-2xl bg-navy text-gold flex items-center justify-center shadow-lg relative">
-                  <Smartphone className="w-7 h-7" />
-                  <span className="w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white absolute -top-1 -right-1 animate-ping"></span>
+          <div className="p-5 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xl space-y-5 animate-fade-in text-center relative overflow-hidden">
+            {/* Top gold laser line */}
+            <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent opacity-80" />
+
+            {/* Visual Stream Handshake: Phone <—— Minimalist Telemetry Stream ——> Car */}
+            <div className="relative pt-2 pb-3 px-2 flex items-center justify-between gap-3 sm:gap-6">
+              
+              {/* Phone Node (AutoHub AI) */}
+              <div className="flex flex-col items-center shrink-0">
+                <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-navy text-gold flex items-center justify-center shadow-lg relative border border-gold/30">
+                  <Smartphone className="w-6 h-6 sm:w-7 sm:h-7 text-gold" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white absolute -top-1 -right-1 shadow-xs animate-pulse" />
                 </div>
-                <span className="text-[11px] font-bold text-navy mt-1.5 font-mono">AutoHub AI</span>
+                <span className="text-[11px] font-black text-navy mt-1.5 font-mono tracking-tight">AutoHub AI</span>
+                <span className="text-[9px] font-mono text-slate-400 uppercase">Live App</span>
               </div>
 
-              {/* Animated Signal Waves Stream */}
-              <div className="flex-1 max-w-[200px] flex items-center justify-center relative px-2">
-                <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden relative">
-                  <div className="h-full bg-gradient-to-r from-gold via-amber-400 to-emerald-500 w-1/2 rounded-full animate-pulse mx-auto"></div>
+              {/* Minimalist Telemetry Wave & Data Packet Stream */}
+              <div className="flex-1 flex flex-col items-center justify-center relative min-w-[130px] sm:min-w-[180px]">
+                {/* Central Protocol Chip Badge */}
+                <div className="mb-2 px-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 shadow-2xs flex items-center gap-1.5">
+                  {selectedType === 'wifi' ? (
+                    <Wifi size={11} className="text-gold" />
+                  ) : selectedType === 'bluetooth' ? (
+                    <Bluetooth size={11} className="text-gold" />
+                  ) : (
+                    <Radio size={11} className="text-gold" />
+                  )}
+                  <span className="text-[10px] font-mono font-bold text-navy uppercase tracking-wider">
+                    {selectedType === 'wifi' ? 'Wi-Fi 50 PID' : selectedType === 'bluetooth' ? 'BLE 5.0' : '4G LTE Cloud'}
+                  </span>
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center animate-ping">
-                    <Activity className="w-4 h-4 text-gold animate-spin" />
-                  </div>
+
+                {/* Stream Track Line with Moving Laser & Packets */}
+                <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden relative border border-slate-200/50">
+                  {/* Glowing Laser Beam */}
+                  <motion.div
+                    animate={{ x: ['-100%', '200%'] }}
+                    transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+                    className="absolute inset-y-0 w-24 bg-gradient-to-r from-transparent via-gold to-emerald-400 opacity-90"
+                  />
                 </div>
+
+                {/* Bidirectional Telemetry Packets */}
+                <div className="relative w-full h-2 overflow-hidden pointer-events-none mt-1">
+                  <motion.div
+                    animate={{ x: ['0%', '100%'], opacity: [0, 1, 1, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.4, ease: 'linear' }}
+                    className="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_6px_rgba(252,163,17,0.9)]"
+                  />
+                  <motion.div
+                    animate={{ x: ['100%', '0%'], opacity: [0, 1, 1, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.4, delay: 0.7, ease: 'linear' }}
+                    className="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.9)]"
+                  />
+                </div>
+
+                <span className="text-[9px] font-mono text-slate-400 tracking-wider">
+                  CAN-BUS 11-BIT • 500 KBPS
+                </span>
               </div>
 
               {/* Car ECU Node */}
-              <div className="flex flex-col items-center">
-                <div className="w-14 h-14 rounded-2xl bg-gold text-navy flex items-center justify-center shadow-lg relative">
-                  <Car className="w-7 h-7" />
-                  <span className="w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white absolute -top-1 -right-1 animate-pulse"></span>
+              <div className="flex flex-col items-center shrink-0">
+                <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-navy text-gold flex items-center justify-center shadow-lg relative border border-gold/30">
+                  <Car className="w-6 h-6 sm:w-7 sm:h-7 text-gold" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white absolute -top-1 -right-1 shadow-xs animate-pulse" />
                 </div>
-                <span className="text-[11px] font-bold text-navy mt-1.5 font-mono">{vehicleBrand} {vehicleModel}</span>
+                <span className="text-[11px] font-black text-navy mt-1.5 font-mono tracking-tight truncate max-w-[110px] sm:max-w-[140px]">
+                  {vehicleBrand} {vehicleModel}
+                </span>
+                <span className="text-[9px] font-mono text-slate-400 uppercase">OBD-II ECU</span>
               </div>
+
             </div>
 
             {/* Handshake Progress Steps with Live Status */}
-            <div className="space-y-2 text-left text-xs font-mono max-w-md mx-auto">
-              <div className={`p-2.5 rounded-xl border flex items-center justify-between transition-all ${
-                connectStep >= 1 ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' : 'bg-slate-50 text-slate-400 border-slate-200'
+            <div className="space-y-2 text-left text-xs font-mono max-w-lg mx-auto">
+              
+              {/* Step 1 */}
+              <div className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between transition-all duration-300 ${
+                connectStep > 1
+                  ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950 shadow-2xs'
+                  : connectStep === 1
+                  ? 'bg-amber-50/80 border-2 border-gold text-navy font-bold shadow-xs'
+                  : 'bg-slate-50/60 border-slate-200 text-slate-400'
               }`}>
-                <span className="flex items-center gap-2">
-                  <Zap size={14} className={connectStep >= 1 ? 'text-emerald-600' : 'text-slate-400'} />
-                  <span>1. {selectedType === 'wifi' ? 'Wi-Fi სიგნალის დაკავშირება' : selectedType === 'bluetooth' ? 'Bluetooth BLE დაწყვილება' : '4G Cloud პინგი'}</span>
-                </span>
-                {connectStep >= 1 ? <CheckCircle2 size={15} className="text-emerald-600" /> : <Activity size={13} className="animate-spin text-gold" />}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                    connectStep > 1
+                      ? 'bg-emerald-500 text-white'
+                      : connectStep === 1
+                      ? 'bg-gold text-navy'
+                      : 'bg-slate-200 text-slate-500'
+                  }`}>
+                    {connectStep > 1 ? <Check size={11} className="stroke-[3]" /> : '1'}
+                  </div>
+                  <span className="truncate">
+                    {selectedType === 'wifi' ? 'Wi-Fi სიგნალის დაკავშირება (192.168.0.10)' : selectedType === 'bluetooth' ? 'Bluetooth BLE 5.0 დაწყვილება' : '4G Cloud LTE პინგი (Gateway)'}
+                  </span>
+                </div>
+
+                <div className="shrink-0 ml-2">
+                  {connectStep > 1 ? (
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
+                      დაკავშირდა • OK
+                    </span>
+                  ) : connectStep === 1 ? (
+                    <span className="px-2 py-0.5 rounded-md bg-gold/20 text-navy text-[10px] font-black border border-gold/50 flex items-center gap-1.5 animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gold animate-ping" />
+                      <span>პინგი...</span>
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-mono">მოლოდინი</span>
+                  )}
+                </div>
               </div>
 
-              <div className={`p-2.5 rounded-xl border flex items-center justify-between transition-all ${
-                connectStep >= 2 ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' : 'bg-slate-50 text-slate-400 border-slate-200'
+              {/* Step 2 */}
+              <div className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between transition-all duration-300 ${
+                connectStep > 2
+                  ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950 shadow-2xs'
+                  : connectStep === 2
+                  ? 'bg-amber-50/80 border-2 border-gold text-navy font-bold shadow-xs'
+                  : 'bg-slate-50/60 border-slate-200 text-slate-400'
               }`}>
-                <span className="flex items-center gap-2">
-                  <Cpu size={14} className={connectStep >= 2 ? 'text-emerald-600' : 'text-slate-400'} />
-                  <span>2. CAN-Bus პროტოკოლის ამოცნობა (ISO 15765-4)</span>
-                </span>
-                {connectStep >= 2 ? <CheckCircle2 size={15} className="text-emerald-600" /> : connectStep === 1 ? <Activity size={13} className="animate-spin text-gold" /> : <span>...</span>}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                    connectStep > 2
+                      ? 'bg-emerald-500 text-white'
+                      : connectStep === 2
+                      ? 'bg-gold text-navy'
+                      : 'bg-slate-200 text-slate-500'
+                  }`}>
+                    {connectStep > 2 ? <Check size={11} className="stroke-[3]" /> : '2'}
+                  </div>
+                  <span className="truncate">
+                    CAN-Bus პროტოკოლის ამოცნობა (ISO 15765-4)
+                  </span>
+                </div>
+
+                <div className="shrink-0 ml-2">
+                  {connectStep > 2 ? (
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
+                      ISO 11/500 • OK
+                    </span>
+                  ) : connectStep === 2 ? (
+                    <span className="px-2 py-0.5 rounded-md bg-gold/20 text-navy text-[10px] font-black border border-gold/50 flex items-center gap-1.5 animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gold animate-ping" />
+                      <span>სკანირება...</span>
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-mono">მოლოდინი</span>
+                  )}
+                </div>
               </div>
 
-              <div className={`p-2.5 rounded-xl border flex items-center justify-between transition-all ${
-                connectStep >= 3 ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' : 'bg-slate-50 text-slate-400 border-slate-200'
+              {/* Step 3 */}
+              <div className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between transition-all duration-300 ${
+                connectStep >= 3
+                  ? 'bg-amber-50/80 border-2 border-gold text-navy font-bold shadow-xs'
+                  : 'bg-slate-50/60 border-slate-200 text-slate-400'
               }`}>
-                <span className="flex items-center gap-2">
-                  <ShieldCheck size={14} className={connectStep >= 3 ? 'text-emerald-600' : 'text-slate-400'} />
-                  <span>3. ECU ბორტ-კომპიუტერის სინქრონიზაცია & VIN</span>
-                </span>
-                {connectStep >= 3 ? <CheckCircle2 size={15} className="text-emerald-600" /> : connectStep === 2 ? <Activity size={13} className="animate-spin text-gold" /> : <span>...</span>}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                    connectStep >= 3
+                      ? 'bg-gold text-navy'
+                      : 'bg-slate-200 text-slate-500'
+                  }`}>
+                    {connectStep >= 3 ? <Zap size={11} className="fill-navy" /> : '3'}
+                  </div>
+                  <span className="truncate">
+                    ECU ბორტ-კომპიუტერის სინქრონიზაცია & VIN
+                  </span>
+                </div>
+
+                <div className="shrink-0 ml-2">
+                  {connectStep >= 3 ? (
+                    <span className="px-2 py-0.5 rounded-md bg-gold/20 text-navy text-[10px] font-black border border-gold/50 flex items-center gap-1.5 animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gold animate-ping" />
+                      <span>სინქრონიზაცია...</span>
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-mono">მოლოდინი</span>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Bottom Progress Bar & Info */}
+            <div className="max-w-lg mx-auto pt-1 space-y-2">
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+                <div
+                  className="h-full bg-gradient-to-r from-gold via-amber-400 to-emerald-500 transition-all duration-500 ease-out rounded-full"
+                  style={{
+                    width: connectStep === 1 ? '35%' : connectStep === 2 ? '70%' : connectStep >= 3 ? '100%' : '15%'
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 px-1">
+                <span>რეალურ დროში ტელემეტრია...</span>
+                <span className="text-navy font-bold">გთხოვთ არ გათიშოთ აალება</span>
               </div>
             </div>
 
-            <p className="text-xs text-slate-500 font-mono">
-              მონაცემები იკითხება რეალურ დროში... გთხოვთ არ გათიშოთ აალება
-            </p>
           </div>
         )}
 
