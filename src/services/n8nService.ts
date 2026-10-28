@@ -542,329 +542,12 @@ class N8nService {
     }
 
     // Default Tbilisi Verified POIs (radars, fuel stations, showrooms, patrols)
-    const initialReports: MapReport[] = [
-      // Patrol Alerts
-      {
-        id: 'patrol-1',
-        type: 'patrol',
-        title: 'საპატრულო ეკიპაჟი - ჩასაფრება',
-        description: 'ვაჟა-ფშაველას გამზირი, სამედიცინო უნივერსიტეტთან. ამოწმებენ მობილურსა და ღვედს.',
-        lat: 41.7265,
-        lng: 44.7562,
-        timestamp: Date.now() - 12 * 60000,
-        confirmations: 16,
-        dismissals: 1,
-        active: true
-      },
-      {
-        id: 'patrol-2',
-        type: 'patrol',
-        title: 'საპატრულო პოლიცია - მოძრავი ეკიპაჟი',
-        description: 'მტკვრის მარჯვენა სანაპირო, იუსტიციის სახლთან მიმართულებით.',
-        lat: 41.7001,
-        lng: 44.8055,
-        timestamp: Date.now() - 28 * 60000,
-        confirmations: 24,
-        dismissals: 2,
-        active: true
-      },
-      {
-        id: 'patrol-3',
-        type: 'patrol',
-        title: 'საპატრულო შემოწმება',
-        description: 'აღმაშენებლის ხეივანი, დიღომი - მოძრაობის კონტროლი.',
-        lat: 41.7850,
-        lng: 44.7720,
-        timestamp: Date.now() - 48 * 60000,
-        confirmations: 9,
-        dismissals: 0,
-        active: true
-      },
-
-      // Speed Cameras / Radars
-      {
-        id: 'radar-1',
-        type: 'radar',
-        title: 'სტაციონარული სიჩქარის რადარი (60 კმ/სთ)',
-        description: 'ჭავჭავაძის გამზირი 32, ვაკის პარკთან. ფიქსირდება ორივე მიმართულება.',
-        lat: 41.7108,
-        lng: 44.7674,
-        timestamp: Date.now() - 150 * 60000,
-        confirmations: 54,
-        dismissals: 0,
-        active: true
-      },
-      {
-        id: 'radar-2',
-        type: 'radar',
-        title: 'სექციური სიჩქარის კონტროლი (70 კმ/სთ)',
-        description: 'კახეთის გზატკეცილი, თბილისის აეროპორტის მიმართულება. სექციის სიგრძე 3.2 კმ.',
-        lat: 41.6912,
-        lng: 44.8980,
-        timestamp: Date.now() - 320 * 60000,
-        confirmations: 112,
-        dismissals: 0,
-        active: true
-      },
-      {
-        id: 'radar-3',
-        type: 'radar',
-        title: 'ჭკვიანი კამერა - ზოლის და წითლის კონტროლი',
-        description: 'გმირთა მოედანი, სანაპიროს ასახვევთან. ავტობუსის ზოლისა და მანევრის კონტროლი.',
-        lat: 41.7142,
-        lng: 44.7825,
-        timestamp: Date.now() - 95 * 60000,
-        confirmations: 43,
-        dismissals: 1,
-        active: true
-      },
-
-      // Road Hazards / Accidents
-      {
-        id: 'hazard-1',
-        type: 'hazard',
-        title: 'ავტოსაგზაო შემთხვევა - მარჯვენა ზოლი გადაკეტილია',
-        description: 'კოსტავას ქუჩა, ფილარმონიასთან. შეფერხებულია მოძრაობა, მოსულია ევაკუატორი.',
-        lat: 41.7065,
-        lng: 44.7885,
-        timestamp: Date.now() - 9 * 60000,
-        confirmations: 18,
-        dismissals: 1,
-        active: true
-      },
-      {
-        id: 'hazard-2',
-        type: 'hazard',
-        title: 'საგზაო სარემონტო სამუშაოები',
-        description: 'წერეთლის გამზირი, საგზაო საფარის შეკეთება.',
-        lat: 41.7345,
-        lng: 44.7890,
-        timestamp: Date.now() - 60 * 60000,
-        confirmations: 29,
-        dismissals: 2,
-        active: true
-      },
-
-      // Fuel Stations & Live Prices
-      {
-        id: 'fuel-socar-vake',
-        type: 'fuel',
-        title: 'SOCAR Energy (სოკარი - ვაკე)',
-        description: 'Nano Regular, Nano Premium, Nano Super, Euro Diesel, CNG & EV.',
-        brand: 'Socar',
-        address: 'ჭავჭავაძის გამზირი 80, ვაკე',
-        lat: 41.7100,
-        lng: 44.7430,
-        fuel_prices: {
-          super_98: 3.58,
-          premium_95: 3.08,
-          regular_92: 2.89,
-          diesel: 3.14,
-          lpg: 1.55,
-          ev_kwh: 0.42
-        },
-        timestamp: Date.now() - 20 * 60000,
-        confirmations: 56,
-        active: true
-      },
-      {
-        id: 'fuel-1',
-        type: 'fuel',
-        title: 'Wissol Smart Station (ვისოლი)',
-        description: 'სრული ასორტიმენტი, Smart Point მარკეტი და ყავა.',
-        brand: 'Wissol',
-        address: 'ჭავჭავაძის გამზ. 64, ვაკე',
-        lat: 41.7115,
-        lng: 44.7550,
-        fuel_prices: {
-          super_98: 3.65,
-          premium_95: 3.12,
-          regular_92: 2.94,
-          diesel: 3.19,
-          lpg: 1.62,
-          ev_kwh: 0.45
-        },
-        timestamp: Date.now() - 30 * 60000,
-        confirmations: 47,
-        active: true
-      },
-      {
-        id: 'fuel-2',
-        type: 'fuel',
-        title: 'Gulf Georgia (გალფი)',
-        description: 'G-Force პრემიუმ საწვავი და სწრაფი მომსახურება.',
-        brand: 'Gulf',
-        address: 'ვაჟა-ფშაველას გამზ. 41, საბურთალო',
-        lat: 41.7240,
-        lng: 44.7480,
-        fuel_prices: {
-          super_98: 3.62,
-          premium_95: 3.09,
-          regular_92: 2.92,
-          diesel: 3.17,
-          lpg: 1.59
-        },
-        timestamp: Date.now() - 45 * 60000,
-        confirmations: 38,
-        active: true
-      },
-      {
-        id: 'fuel-3',
-        type: 'fuel',
-        title: 'Rompetrol Georgia (რომპეტროლი)',
-        description: 'Efix რუმინული ევრო 5 საწვავი.',
-        brand: 'Rompetrol',
-        address: 'მარჯვენა სანაპირო, ვახუშტის ხიდთან',
-        lat: 41.7225,
-        lng: 44.7840,
-        fuel_prices: {
-          super_98: 3.68,
-          premium_95: 3.14,
-          regular_92: 2.95,
-          diesel: 3.22
-        },
-        timestamp: Date.now() - 50 * 60000,
-        confirmations: 25,
-        active: true
-      },
-      {
-        id: 'fuel-4',
-        type: 'fuel',
-        title: 'SOCAR Energy (სოკარი - კახეთის გზატკეცილი)',
-        description: 'Nano ბენზინი, დიზელი, CNG გაზი და ელექტრო სწრაფი დამტენი.',
-        brand: 'Socar',
-        address: 'კახეთის გზატკეცილი 12',
-        lat: 41.6960,
-        lng: 44.8720,
-        fuel_prices: {
-          super_98: 3.58,
-          premium_95: 3.08,
-          regular_92: 2.89,
-          diesel: 3.14,
-          lpg: 1.55,
-          ev_kwh: 0.42
-        },
-        timestamp: Date.now() - 80 * 60000,
-        confirmations: 41,
-        active: true
-      },
-      {
-        id: 'fuel-5',
-        type: 'fuel',
-        title: 'Lukoil (ლუკოილი)',
-        description: 'ევრო სტანდარტის საწვავი ხელმისაწვდომ ფასად.',
-        brand: 'Lukoil',
-        address: 'წერეთლის გამზირი 114, დიდუბე',
-        lat: 41.7380,
-        lng: 44.7850,
-        fuel_prices: {
-          super_98: 3.59,
-          premium_95: 3.05,
-          regular_92: 2.88,
-          diesel: 3.12
-        },
-        timestamp: Date.now() - 110 * 60000,
-        confirmations: 22,
-        active: true
-      },
-
-      // Auto Showrooms & Official Dealerships / Auto Hubs
-      {
-        id: 'showroom-autoban',
-        type: 'showroom',
-        title: 'Autoban Georgia (ავტობანი - autoban.ge)',
-        description: 'ავტონაწილების, აკუმულატორების, ზეთებისა და სერვისის უდიდესი ქსელი.',
-        brand: 'Autoban',
-        address: 'დავით აღმაშენებლის ხეივანი მე-12 კმ / ბელიაშვილის 151',
-        phone: '+995 32 2 400 400',
-        rating: 4.8,
-        lat: 41.7850,
-        lng: 44.7580,
-        timestamp: Date.now() - 300 * 60000,
-        confirmations: 110,
-        active: true
-      },
-      {
-        id: 'showroom-1',
-        type: 'showroom',
-        title: 'Porsche Center Tbilisi (პორშე ცენტრი)',
-        description: 'ოფიციალური იმპორტიორი და სერვის ცენტრი საქართველოში.',
-        brand: 'Porsche',
-        address: 'კახეთის გზატკეცილი 81',
-        phone: '+995 32 2 244 911',
-        rating: 4.9,
-        lat: 41.6885,
-        lng: 44.9120,
-        timestamp: Date.now() - 1000 * 60000,
-        confirmations: 78,
-        active: true
-      },
-      {
-        id: 'showroom-2',
-        type: 'showroom',
-        title: 'Tegeta Motors Central Hub (თეგეტა მოტორსი)',
-        description: 'ყველაზე დიდი ავტო-მომსახურების ცენტრი და შოურუმი კავკასიაში.',
-        brand: 'Tegeta',
-        address: 'აკაკი ბელიაშვილის ქ. 48, დიღომი',
-        phone: '+995 32 2 264 444',
-        rating: 4.8,
-        lat: 41.7760,
-        lng: 44.7660,
-        timestamp: Date.now() - 1200 * 60000,
-        confirmations: 135,
-        active: true
-      },
-      {
-        id: 'showroom-3',
-        type: 'showroom',
-        title: 'BMW Caucasus (ომეგა მოტორსი)',
-        description: 'BMW-სა და MINI-ს ოფიციალური დილერი საქართველოში.',
-        brand: 'BMW',
-        address: 'აღმაშენებლის ხეივანი მე-12 კმ',
-        phone: '+995 32 2 544 444',
-        rating: 4.8,
-        lat: 41.7920,
-        lng: 44.7680,
-        timestamp: Date.now() - 1500 * 60000,
-        confirmations: 63,
-        active: true
-      },
-      {
-        id: 'showroom-4',
-        type: 'showroom',
-        title: 'Toyota Center Tegeta (ტოიოტა ცენტრი)',
-        description: 'ტოიოტას ოფიციალური დილერი - შოურუმი და სერვისი.',
-        brand: 'Toyota',
-        address: 'უნივერსიტეტის ქუჩა 6, საბურთალო',
-        phone: '+995 32 2 292 000',
-        rating: 4.7,
-        lat: 41.7180,
-        lng: 44.7320,
-        timestamp: Date.now() - 1800 * 60000,
-        confirmations: 82,
-        active: true
-      },
-      {
-        id: 'showroom-5',
-        type: 'showroom',
-        title: 'Mercedes-Benz Center (აკა)',
-        description: 'Mercedes-Benz-ის გენერალური წარმომადგენლობა საქართველოში.',
-        brand: 'Mercedes-Benz',
-        address: 'აკაკი ბელიაშვილის ქ. 12, დიღომი',
-        phone: '+995 32 2 243 000',
-        rating: 4.8,
-        lat: 41.7710,
-        lng: 44.7710,
-        timestamp: Date.now() - 2000 * 60000,
-        confirmations: 94,
-        active: true
-      }
-    ];
+    const initialReports: MapReport[] = [];
 
     // Combine live reports from n8n + local user additions + verified base POIs
     let localAdditions: MapReport[] = [];
     try {
-      const cached = localStorage.getItem('autohub_map_reports');
+      const cached = localStorage.getItem('autohub_map_reports_v2');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed)) localAdditions = parsed;
@@ -889,7 +572,7 @@ class N8nService {
 
     const finalResult = Array.from(mergedMap.values());
     try {
-      localStorage.setItem('autohub_map_reports', JSON.stringify(finalResult));
+      localStorage.setItem('autohub_map_reports_v2', JSON.stringify(finalResult));
     } catch (e) {
       // ignore
     }
@@ -927,10 +610,10 @@ class N8nService {
 
     // Save to local storage
     try {
-      const cached = localStorage.getItem('autohub_map_reports');
+      const cached = localStorage.getItem('autohub_map_reports_v2');
       const list: MapReport[] = cached ? JSON.parse(cached) : [];
       const updated = [payload, ...list];
-      localStorage.setItem('autohub_map_reports', JSON.stringify(updated));
+      localStorage.setItem('autohub_map_reports_v2', JSON.stringify(updated));
     } catch (e) {
       // ignore
     }
@@ -942,7 +625,7 @@ class N8nService {
   // 7. Vote on Report (Confirm: "ადგილზეა" or Dismiss: "აღარ არის")
   public async voteReport(reportId: string, isStillThere: boolean): Promise<{ success: boolean }> {
     try {
-      const cached = localStorage.getItem('autohub_map_reports');
+      const cached = localStorage.getItem('autohub_map_reports_v2');
       if (cached) {
         const list: MapReport[] = JSON.parse(cached);
         const updated = list.map(item => {
@@ -955,7 +638,7 @@ class N8nService {
           }
           return item;
         });
-        localStorage.setItem('autohub_map_reports', JSON.stringify(updated));
+        localStorage.setItem('autohub_map_reports_v2', JSON.stringify(updated));
       }
     } catch (e) {
       // ignore
