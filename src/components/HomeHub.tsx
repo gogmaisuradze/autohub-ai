@@ -72,8 +72,8 @@ export const HomeHub: React.FC<Props> = ({
   const mainDepartments = [
     {
       id: 'obd' as TabType,
-      title: 'ტესტირება & OBD-II დიაგნოსტიკა',
-      subtitle: 'DTC შეცდომების კოდები, ცოცხალი ტელემეტრია და ჩეკის ჩაქრობა',
+      title: 'დიაგნოსტიკა',
+      subtitle: 'DTC კოდები და ცოცხალი ტელემეტრია',
       icon: Activity,
       badgeText: dtcCodes.length > 0 ? `${dtcCodes.length}` : 'OK',
       badgeColor: dtcCodes.length > 0 ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white',
@@ -82,8 +82,8 @@ export const HomeHub: React.FC<Props> = ({
     },
     {
       id: 'fines' as TabType,
-      title: 'საპატრულო ჯარიმები, მოწმობა & ბილეთები',
-      subtitle: 'ვიდეოჯარიმები, 100-ქულიანი მართვის მოწმობა & საგამოცდო ბილეთები 2026',
+      title: 'ჯარიმები',
+      subtitle: 'ვიდეოჯარიმები, მოწმობა და ბილეთები',
       icon: ShieldAlert,
       badgeText: pendingFines.length > 0 ? `${pendingFines.length}` : 'OK',
       badgeColor: pendingFines.length > 0 ? 'bg-gold text-navy font-bold shadow-gold-soft' : 'bg-emerald-500 text-white font-bold shadow-sm',
@@ -92,8 +92,8 @@ export const HomeHub: React.FC<Props> = ({
     },
     {
       id: 'parking' as TabType,
-      title: 'საპარკინგე სერვისები (საქართველო)',
-      subtitle: 'ზონალური პარკირების წამზომი (A/B/C), მუნიციპალური ჯარიმები & აბონემენტები',
+      title: 'პარკინგი',
+      subtitle: 'ზონალური ტაიმერი და აბონემენტები',
       icon: ParkingSquare,
       badgeText: 'P',
       badgeColor: 'bg-blue-600 text-white font-black shadow-sm',
@@ -102,8 +102,8 @@ export const HomeHub: React.FC<Props> = ({
     },
     {
       id: 'service' as TabType,
-      title: 'მანქანის სერვის-ჟურნალი & რესურსი',
-      subtitle: 'ძრავის ზეთი, სამუხრუჭე ხუნდები, ფილტრები და ტექ-დათვალიერება',
+      title: 'სერვისი',
+      subtitle: 'ზეთი, ხუნდები, ფილტრები, ტექდათვალიერება',
       icon: Wrench,
       badgeText: oilService ? `${oilService.health_percentage}%` : 'OK',
       badgeColor: 'bg-gold text-navy font-bold',
@@ -112,8 +112,8 @@ export const HomeHub: React.FC<Props> = ({
     },
     {
       id: 'map' as TabType,
-      title: 'Waze ცოცხალი საგზაო რუკა & რადარები',
-      subtitle: 'საპატრულო ეკიპაჟები, სიჩქარის რადარები, საწვავის ფასები & ავტოსალონები',
+      title: 'რუკა',
+      subtitle: 'რადარები, საპატრულო და საწვავის ფასები',
       icon: NavigationIcon,
       badgeText: 'LIVE',
       badgeColor: 'bg-cyan-500 text-white font-black shadow-sm',
@@ -122,8 +122,8 @@ export const HomeHub: React.FC<Props> = ({
     },
     {
       id: 'ai' as TabType,
-      title: 'AI პერსონალური მექანიკოსი',
-      subtitle: 'ქართულენოვანი კონსულტაცია, ნაწილების ფასები და ხარჯთაღრიცხვა',
+      title: 'AI მექანიკოსი',
+      subtitle: 'კონსულტაცია და ფასები ქართულად',
       icon: Bot,
       badgeText: 'AI',
       badgeColor: 'bg-navy text-white',
@@ -219,7 +219,7 @@ export const HomeHub: React.FC<Props> = ({
           <h3 className="text-sm font-extrabold text-navy uppercase tracking-wider">
             ყველა განყოფილება (დააკლიკეთ გასახსნელად)
           </h3>
-          <span className="text-xs font-mono text-slate-400">5 განყოფილება</span>
+          <span className="text-xs font-mono text-slate-400">{mainDepartments.length} განყოფილება</span>
         </div>
 
         {mainDepartments.map((dept) => {
@@ -282,55 +282,6 @@ export const HomeHub: React.FC<Props> = ({
             </div>
           );
         })}
-      </div>
-
-      {/* 4. Mini Telemetry Widgets in Neumorphic Cards (Matching Image 1) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-        <div className="neu-card rounded-2xl p-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">ძრავის RPM</span>
-            <Activity className="w-4 h-4 text-gold" />
-          </div>
-          <div className="my-2">
-            <span className="text-2xl font-black font-mono text-navy">785</span>
-            <span className="text-xs text-slate-400 font-mono ml-1">rpm</span>
-          </div>
-          <div className="text-[11px] text-emerald-600 font-bold">● სტაბილური ბრუნი</div>
-        </div>
-
-        <div className="neu-card rounded-2xl p-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">ანტიფრიზი</span>
-            <Thermometer className="w-4 h-4 text-gold" />
-          </div>
-          <div className="my-2">
-            <span className="text-2xl font-black font-mono text-navy">92°C</span>
-          </div>
-          <div className="text-[11px] text-emerald-600 font-bold">● სამუშაო ნორმა</div>
-        </div>
-
-        <div className="neu-card rounded-2xl p-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">ბორტ-ძაბვა</span>
-            <Wifi className="w-4 h-4 text-gold" />
-          </div>
-          <div className="my-2">
-            <span className="text-2xl font-black font-mono text-navy">14.2 V</span>
-          </div>
-          <div className="text-[11px] text-slate-500 font-medium">გენერატორი მუხტავს</div>
-        </div>
-
-        <div className="neu-card rounded-2xl p-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">ჯარიმები</span>
-            <BellRing className="w-4 h-4 text-gold" />
-          </div>
-          <div className="my-2">
-            <span className="text-2xl font-black font-mono text-gold">40 ₾</span>
-            <span className="text-xs line-through text-slate-400 ml-1">50 ₾</span>
-          </div>
-          <div className="text-[11px] text-gold font-bold">● -20% ვადაში</div>
-        </div>
       </div>
 
     </div>
