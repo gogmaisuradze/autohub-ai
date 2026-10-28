@@ -853,6 +853,37 @@ export const ThreeCarScene: React.FC<Props> = ({
       const bodyGrp = new THREE.Group();
       carMasterGroup.add(bodyGrp);
       groupsRef.current['body'] = bodyGrp;
+      // Mirror pieces were merged into paint, plastic and translucent cabin meshes.
+      // Keep their original geometry, but give both housings one consistent finish.
+      const mirrorHousingMaterial = new THREE.MeshPhysicalMaterial({
+        color:0x0c1014,roughness:.38,metalness:.03,clearcoat:.45,clearcoatRoughness:.18,envMapIntensity:.35,side:THREE.DoubleSide
+      });
+      const mirrorGroups=['Body_Paint','Body_Trim','Body_Interior'];
+      for(const groupName of mirrorGroups)for(const mesh of meshesOf(groupName)){
+        if(Array.isArray(mesh.material))continue;
+        const geometry=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();
+        const positions=geometry.getAttribute('position');
+        const keep:number[]=[],mirrors:number[]=[];
+        const point=new THREE.Vector3();
+        for(let i=0;i<positions.count;i+=3){
+          point.set(0,0,0);
+          for(let j=0;j<3;j++)point.add(new THREE.Vector3().fromBufferAttribute(positions,i+j).applyMatrix4(mesh.matrixWorld));
+          point.multiplyScalar(1/3);
+          const mirror=Math.abs(point.x)>.84&&Math.abs(point.x)<1.15&&point.y>.88&&point.y<1.2&&point.z>.30&&point.z<.72;
+          (mirror?mirrors:keep).push(i,i+1,i+2);
+        }
+        if(mirrors.length){
+          const mirrorGeometry=geometry.clone();mirrorGeometry.clearGroups();mirrorGeometry.setIndex(mirrors);
+          const mirrorMesh=new THREE.Mesh(mirrorGeometry,mirrorHousingMaterial);
+          mirrorMesh.name='OriginalMirrorHousing_'+mesh.name;
+          mirrorMesh.matrix.copy(mesh.matrix);mirrorMesh.matrix.decompose(mirrorMesh.position,mirrorMesh.quaternion,mirrorMesh.scale);
+          mesh.parent?.add(mirrorMesh);bodyGrp.attach(mirrorMesh);mirrorMesh.castShadow=true;
+          const rest=geometry.clone();rest.clearGroups();rest.setIndex(keep);rest.computeBoundingSphere();
+          mesh.geometry=rest;
+        }
+        geometry.dispose();
+      }
+
       const ghostGlassMat = new THREE.MeshPhysicalMaterial({
         color: 0xaecbe6, transmission: 0.0, opacity: 0.26, transparent: true,
         roughness: 0.14, ior: 1.45, metalness: 0.05, clearcoat: 1.0, depthWrite: false
@@ -863,6 +894,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       meshesOf('Body_Paint').forEach(mesh => {
         const native = mesh.material as THREE.MeshStandardMaterial;
         const glass = ghostGlassMat.clone();
+        glass.side = THREE.FrontSide; // Mirror housings are separate; do not paint inward-facing body surfaces.
         glass.normalMap = native.normalMap;
         glass.normalScale.copy(native.normalScale).multiplyScalar(.18);
         glass.userData.solidRoughness = .19;
@@ -893,24 +925,36 @@ export const ThreeCarScene: React.FC<Props> = ({
       windowMaterial = windowMat;
       meshesOf('Body_Glass').forEach(m => {
         // The downloaded model includes its roof panel in the glass mesh.
-        // Separate the roof from the windows so the car body is 100% complete and fully painted.
+        // Keep the panoramic roof black, separate from white paint and windows.
         const geometry = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
         const positions = geometry.getAttribute('position');
         const roof: number[] = [], windows: number[] = [];
-        const point = new THREE.Vector3(), normal = new THREE.Vector3();
-        const triangle = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
-        const isRoof = (p: THREE.Vector3, n: THREE.Vector3) => {
-          if (p.y < 1.23) return false;
-          if (p.z > 0.278 || p.z < -1.140) return false;
-          if (Math.abs(p.x) > 0.51 && Math.abs(n.x) > 0.68) return false;
-          return true;
-        };
-        for (let i = 0; i < positions.count; i += 3) {
-          for (let j = 0; j < 3; j++) triangle[j].fromBufferAttribute(positions, i + j).applyMatrix4(m.matrixWorld);
-          point.copy(triangle[0]).add(triangle[1]).add(triangle[2]).multiplyScalar(1 / 3);
-          normal.subVectors(triangle[1], triangle[0]).cross(new THREE.Vector3().subVectors(triangle[2], triangle[0])).normalize();
-          const list = isRoof(point, normal) ? roof : windows;
-          list.push(i, i + 1, i + 2);
+        // Split only complete connected glass panes, never cut triangles at a Z threshold.
+        const count=positions.count/3;
+        const parent=Array.from({length:count},(_,i)=>i);
+        const find=(i:number):number=>{while(parent[i]!==i){parent[i]=parent[parent[i]];i=parent[i];}return i;};
+        const join=(a:number,b:number)=>{parent[find(a)]=find(b);};
+        const welded=new Map<string,number>();
+        for(let i=0;i<positions.count;i++){
+          const key=[positions.getX(i),positions.getY(i),positions.getZ(i)].map(v=>Math.round(v*10000)).join(',');
+          const triangle=Math.floor(i/3),other=welded.get(key);
+          if(other===undefined)welded.set(key,triangle);else join(triangle,other);
+        }
+        const bounds=new Map<number,THREE.Box3>();
+        const point=new THREE.Vector3();
+        for(let i=0;i<positions.count;i++){
+          const group=find(Math.floor(i/3));
+          let box=bounds.get(group);if(!box){box=new THREE.Box3();bounds.set(group,box);}
+          point.fromBufferAttribute(positions,i).applyMatrix4(m.matrixWorld);box.expandByPoint(point);
+        }
+        const roofGroups=new Set<number>();
+        bounds.forEach((box,group)=>{
+          const size=box.getSize(new THREE.Vector3());
+          if(box.min.y>1.20&&size.x>.6&&size.z>.7)roofGroups.add(group);
+        });
+        for(let i=0;i<positions.count;i+=3){
+          const list=roofGroups.has(find(i/3))?roof:windows;
+          list.push(i,i+1,i+2);
         }
         const subset = (ids: number[]) => {
           const out = new THREE.BufferGeometry();
@@ -924,10 +968,12 @@ export const ThreeCarScene: React.FC<Props> = ({
           return out;
         };
         if (roof.length) {
-          const roofMat = ghostGlassMat.clone();
-          roofMat.userData.solidRoughness = .19;
-          roofMat.userData.solidMetalness = .36;
-          bodyMaterialsRef.current.push(roofMat);
+          // A separate black glass panel: never included in the white paint wave.
+          const roofMat = new THREE.MeshPhysicalMaterial({
+            color: 0x080c12, roughness: .16, metalness: .05,
+            clearcoat: 1, clearcoatRoughness: .10, ior: 1.5,
+            transparent: false, opacity: 1, depthWrite: true, side: THREE.DoubleSide
+          });
           const roofMesh = new THREE.Mesh(subset(roof), roofMat);
           roofMesh.name = 'BMW_Roof_Panel';
           roofMesh.matrix.copy(m.matrix); roofMesh.matrix.decompose(roofMesh.position, roofMesh.quaternion, roofMesh.scale);
@@ -1052,16 +1098,27 @@ export const ThreeCarScene: React.FC<Props> = ({
             paintMat.envMapIntensity = 1.0;
           }
           paintMat.transparent = false; paintMat.depthWrite = true; paintMat.alphaHash = true;
-          paintMat.polygonOffset = true; paintMat.polygonOffsetFactor = -1; paintMat.polygonOffsetUnits = -1;
+          paintMat.polygonOffset = true; paintMat.polygonOffsetFactor = -3; paintMat.polygonOffsetUnits = -3;
           applySurfaceEffects(paintMat, true, true);
           paintMaterials.set(ghostMat, paintMat);
         }
         return paintMat;
         };
         const paintMaterial = nativeMaterials.map(material => getPaintMaterial(material as THREE.MeshPhysicalMaterial));
-        const paint = new THREE.Mesh(node.geometry, Array.isArray(node.material) ? paintMaterial : paintMaterial[0]);
+        let paintGeometry=node.geometry;
+        if(!nativeMaterials.some(material=>material.userData.keepSurfaceColor)){
+          // Lift the lacquer by 0.8mm to avoid coplanar dark trim bleeding through.
+          paintGeometry=node.geometry.clone();
+          const position=paintGeometry.getAttribute('position'),normal=paintGeometry.getAttribute('normal');
+          if(normal)for(let i=0;i<position.count;i++){
+            position.setXYZ(i,position.getX(i)+normal.getX(i)*.0008,position.getY(i)+normal.getY(i)*.0008,position.getZ(i)+normal.getZ(i)*.0008);
+          }
+          position.needsUpdate=true;paintGeometry.computeBoundingSphere();
+        }
+        const paint = new THREE.Mesh(paintGeometry, Array.isArray(node.material) ? paintMaterial : paintMaterial[0]);
         paint.name = 'PaintLayer_' + node.name;
         paint.position.copy(node.position); paint.quaternion.copy(node.quaternion); paint.scale.copy(node.scale);
+        paint.renderOrder = nativeMaterials.some(material=>material.userData.keepSurfaceColor) ? 0 : 2;
         paint.castShadow = false;
         paintMeshes.push(paint);
       });
@@ -1342,6 +1399,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       visual.carInverse.value.copy(carMasterGroup.matrixWorld).invert();
 
       controls.update();
+      canopy.visible = camera.position.y < canopy.position.y - .3;
       renderer.render(scene, camera);
     };
 

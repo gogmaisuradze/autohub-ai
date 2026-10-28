@@ -992,9 +992,9 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#ECEAE5] text-navy antialiased">
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-[#ECEAE5] text-navy antialiased">
       {/* 1 & 2. Unified Sticky Header & Navigation Bar (Always visible on screen, never hidden) */}
-      <div id="sticky-header" className="sticky top-0 z-40 w-full bg-[#ECEAE5]/95 backdrop-blur-xl border-b border-white/80 transition-colors shadow-xs">
+      <div id="sticky-header" className="sticky top-0 z-40 w-full max-w-full overflow-hidden bg-[#ECEAE5]/95 backdrop-blur-xl border-b border-white/80 transition-colors shadow-xs">
         <Header
           vehicle={vehicle}
           allVehicles={allVehicles}
@@ -1043,7 +1043,7 @@ export const App: React.FC = () => {
       </div>
 
       {/* 3. Main Content Container (Unified wide layout matching CoverAdBanner) */}
-      <main id="main-content" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-28 sm:pb-24">
+      <main id="main-content" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-16 sm:pb-24">
         {/* Home Hub View (Department Buttons on Screen) */}
         {activeTab === 'home' && (
           <HomeHub

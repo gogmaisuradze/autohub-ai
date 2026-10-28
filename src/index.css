@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html, body, #root {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
   body {
     font-family: "FiraGO", system-ui, -apple-system, sans-serif;
     background-color: #ECEAE5;
