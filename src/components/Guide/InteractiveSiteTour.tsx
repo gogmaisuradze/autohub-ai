@@ -29,6 +29,7 @@ export interface TourStep {
   description: string;
   icon: React.ComponentType<{ className?: string; size?: number | string }>;
   requiredTab?: TabType;
+  placement?: 'bottom' | 'top' | 'center-bottom' | 'bottom-right' | 'top-right' | 'auto';
 }
 
 const TOUR_STEPS: TourStep[] = [
@@ -40,7 +41,8 @@ const TOUR_STEPS: TourStep[] = [
     badge: '1 / 7',
     description: 'აქ ჩანს თქვენი არჩეული ავტომობილი. დაწკაპუნებით შეგიძლიათ გადართოთ მანქანები, შეცვალოთ სახელმწიფო ნომერი, გარბენი ან დაამატოთ ახალი ავტომობილი გარაჟში.',
     icon: Car,
-    requiredTab: 'home'
+    requiredTab: 'home',
+    placement: 'bottom'
   },
   {
     id: 'navigation-menu',
@@ -50,7 +52,8 @@ const TOUR_STEPS: TourStep[] = [
     badge: '2 / 7',
     description: 'მთავარი მენიუს ღილაკებით მყისიერად გადადიხართ ნებისმიერ განყოფილებაზე: მთავარი, OBD დიაგნოსტიკა, საპატრულო ჯარიმები, პარკინგი, სერვის-დღიური, რადარების რუკა და მეტი.',
     icon: Compass,
-    requiredTab: 'home'
+    requiredTab: 'home',
+    placement: 'bottom'
   },
   {
     id: 'cover-banner',
@@ -60,7 +63,8 @@ const TOUR_STEPS: TourStep[] = [
     badge: '3 / 7',
     description: 'AutoHub-ის 7 ძირითადი ციფრული სერვისი თემატური ავტო-ფოტოებითა და ცოცხალი ვიჯეტებით. ზედა ღილაკებით შეგიძლიათ სწრაფად გადართოთ სერვისები და გახსნათ შესაბამისი მოდული.',
     icon: Layers,
-    requiredTab: 'home'
+    requiredTab: 'home',
+    placement: 'center-bottom'
   },
   {
     id: 'orbit-carousel',
@@ -70,7 +74,8 @@ const TOUR_STEPS: TourStep[] = [
     badge: '4 / 7',
     description: 'დაატრიალეთ სერვისების მოცულობითი ბურთები, ცენტრალურ ფანჯარაში იხილეთ სტატუსი და გადადით შესაბამის მოდულში ღილაკით "გადასვლა".',
     icon: Sparkles,
-    requiredTab: 'home'
+    requiredTab: 'home',
+    placement: 'center-bottom'
   },
   {
     id: 'department-cards',
@@ -80,7 +85,8 @@ const TOUR_STEPS: TourStep[] = [
     badge: '5 / 7',
     description: 'თქვენი ავტომობილის ცოცხალი მონაცემები: Check Engine შეცდომების რაოდენობა, გადასახდელი საპატრულო ჯარიმები 20%-იანი ფასდაკლებით და ძრავის ზეთის დარჩენილი რესურსი.',
     icon: ShieldAlert,
-    requiredTab: 'home'
+    requiredTab: 'home',
+    placement: 'center-bottom'
   },
   {
     id: 'obd-status',
@@ -90,7 +96,8 @@ const TOUR_STEPS: TourStep[] = [
     badge: '6 / 7',
     description: 'ამ ღილაკით აკავშირებთ Bluetooth ან Wi-Fi ELM327 ადაპტერს. ჩართვისას ინდიკატორი მწვანედ აინთება და პირდაპირ ამოიკითხავს შეცდომებს.',
     icon: Activity,
-    requiredTab: 'home'
+    requiredTab: 'home',
+    placement: 'bottom'
   },
   {
     id: 'ai-floating-widget',
@@ -100,7 +107,8 @@ const TOUR_STEPS: TourStep[] = [
     badge: '7 / 7',
     description: 'თქვენი პერსონალური ხელოვნური ინტელექტი: დააჭირეთ ქვედა მარჯვენა ღილაკს ნებისმიერ დროს, ჰკითხეთ ნაწილების ფასები, შეცდომების მიზეზები და მიიღეთ რჩევები ქართულად!',
     icon: Bot,
-    requiredTab: 'home'
+    requiredTab: 'home',
+    placement: 'top-right'
   }
 ];
 
@@ -194,47 +202,52 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       onNavigateTab(step.requiredTab);
     }
 
-    // Try measuring element immediately
-    const el = document.querySelector(step.targetSelector);
-    if (el) {
-      const rect = el.getBoundingClientRect();
-      setTargetRect(rect);
+    const measureAndAlign = () => {
+      const el = document.querySelector(step.targetSelector);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setTargetRect(rect);
 
-      const inView = rect.top >= 60 && rect.bottom <= (window.innerHeight - 60);
-      if (!inView) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Smoothly track while page scrolls
-        const interval = setInterval(() => {
-          const r = el.getBoundingClientRect();
-          setTargetRect(r);
-        }, 40);
-        setTimeout(() => clearInterval(interval), 450);
-      }
-    } else {
-      // Fallback if tab content needs a moment to mount
-      const timer = setTimeout(() => {
-        const delayedEl = document.querySelector(step.targetSelector);
-        if (delayedEl) {
-          setTargetRect(delayedEl.getBoundingClientRect());
-          delayedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Check if element is already comfortably in view
+        const isBig = rect.height > window.innerHeight * 0.6;
+        const inView = rect.top >= 40 && (rect.top + (isBig ? 120 : rect.height)) <= window.innerHeight - 40;
+
+        if (!inView) {
+          el.scrollIntoView({
+            behavior: 'smooth',
+            block: isBig ? 'start' : 'center',
+            inline: 'nearest'
+          });
         }
-      }, 60);
-      return () => clearTimeout(timer);
-    }
+      }
+    };
+
+    // Immediate check
+    measureAndAlign();
+
+    // Secondary sync in case of tab switch / dynamic DOM mounting
+    const timer = setTimeout(measureAndAlign, 70);
+    return () => clearTimeout(timer);
   }, [isTourActive, currentStepIndex, onNavigateTab]);
 
-  // Recalculate position on scroll & resize smoothly
+  // Recalculate position on scroll & resize smoothly using requestAnimationFrame (No jitter)
   useEffect(() => {
     if (!isTourActive) return;
 
+    let rafId: number | null = null;
     const handleScrollOrResize = () => {
-      updateTargetRect();
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        updateTargetRect();
+        rafId = null;
+      });
     };
 
-    window.addEventListener('resize', handleScrollOrResize);
+    window.addEventListener('resize', handleScrollOrResize, { passive: true });
     window.addEventListener('scroll', handleScrollOrResize, { passive: true });
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleScrollOrResize);
       window.removeEventListener('scroll', handleScrollOrResize);
     };
@@ -313,29 +326,67 @@ export const InteractiveSiteTour: React.FC<Props> = ({
   const currentStep = TOUR_STEPS[currentStepIndex];
   const StepIcon = currentStep?.icon || Sparkles;
 
-  // Calculate Popover Position with smooth coordinates
+  // Calculate Popover Position with smooth, stable coordinates that never flip or jump
   const getPopoverCoords = () => {
-    const popoverWidth = Math.min(360, window.innerWidth - 32);
+    const popoverWidth = Math.min(380, window.innerWidth - 32);
+    const popoverHeight = 250;
+    const margin = 14;
+    const pad = 16;
+
     if (!targetRect) {
       return {
-        top: Math.max(20, window.innerHeight / 2 - 130),
-        left: Math.max(16, window.innerWidth / 2 - popoverWidth / 2),
+        top: Math.max(pad, (window.innerHeight - popoverHeight) / 2),
+        left: Math.max(pad, (window.innerWidth - popoverWidth) / 2),
         width: popoverWidth
       };
     }
 
-    const popoverHeight = 260;
-    const margin = 16;
+    const preferredPlacement = currentStep?.placement || 'auto';
 
-    // Center horizontally on target, clamped within viewport
     let left = targetRect.left + targetRect.width / 2 - popoverWidth / 2;
-    left = Math.max(16, Math.min(left, window.innerWidth - popoverWidth - 16));
-
-    // Place below if space permits; otherwise place above
-    let top = targetRect.bottom + margin;
-    if (top + popoverHeight > window.innerHeight - 20) {
-      top = Math.max(20, targetRect.top - popoverHeight - margin);
+    if (preferredPlacement === 'top-right' || preferredPlacement === 'bottom-right' || targetRect.right > window.innerWidth - 100) {
+      left = Math.min(left, targetRect.right - popoverWidth);
     }
+    left = Math.max(pad, Math.min(left, window.innerWidth - popoverWidth - pad));
+
+    let top = 0;
+
+    if (preferredPlacement === 'bottom') {
+      top = targetRect.bottom + margin;
+      if (top + popoverHeight > window.innerHeight - pad) {
+        if (targetRect.top > popoverHeight + margin + pad) {
+          top = targetRect.top - popoverHeight - margin;
+        } else {
+          top = window.innerHeight - popoverHeight - pad;
+        }
+      }
+    } else if (preferredPlacement === 'top' || preferredPlacement === 'top-right') {
+      top = targetRect.top - popoverHeight - margin;
+      if (top < pad) {
+        top = Math.min(targetRect.bottom + margin, window.innerHeight - popoverHeight - pad);
+      }
+    } else if (preferredPlacement === 'center-bottom') {
+      // Anchored calmly near bottom of viewport, displaying the spotlighted content clearly above
+      top = window.innerHeight - popoverHeight - pad - 12;
+    } else {
+      // Auto placement
+      const spaceBelow = window.innerHeight - targetRect.bottom;
+      const spaceAbove = targetRect.top;
+
+      if (spaceBelow >= popoverHeight + margin || spaceBelow >= spaceAbove) {
+        top = targetRect.bottom + margin;
+        if (top + popoverHeight > window.innerHeight - pad) {
+          top = window.innerHeight - popoverHeight - pad;
+        }
+      } else {
+        top = targetRect.top - popoverHeight - margin;
+        if (top < pad) {
+          top = pad;
+        }
+      }
+    }
+
+    top = Math.max(pad, Math.min(top, window.innerHeight - popoverHeight - pad));
 
     return {
       top,
@@ -450,10 +501,9 @@ export const InteractiveSiteTour: React.FC<Props> = ({
                     opacity: targetRect ? 1 : 0
                   }}
                   transition={{
-                    type: 'spring',
-                    damping: 32,
-                    stiffness: 240,
-                    mass: 0.8
+                    type: 'tween',
+                    ease: [0.16, 1, 0.3, 1],
+                    duration: 0.32
                   }}
                   rx={18}
                   fill="black"
@@ -485,10 +535,9 @@ export const InteractiveSiteTour: React.FC<Props> = ({
               opacity: targetRect ? 1 : 0
             }}
             transition={{
-              type: 'spring',
-              damping: 32,
-              stiffness: 240,
-              mass: 0.8
+              type: 'tween',
+              ease: [0.16, 1, 0.3, 1],
+              duration: 0.32
             }}
             style={{
               position: 'fixed',
@@ -510,10 +559,9 @@ export const InteractiveSiteTour: React.FC<Props> = ({
               opacity: targetRect ? 1 : 0
             }}
             transition={{
-              type: 'spring',
-              damping: 32,
-              stiffness: 240,
-              mass: 0.8
+              type: 'tween',
+              ease: [0.16, 1, 0.3, 1],
+              duration: 0.32
             }}
             style={{
               position: 'fixed',

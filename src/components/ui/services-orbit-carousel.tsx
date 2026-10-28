@@ -288,11 +288,11 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
         <AnimatePresence mode="wait">
           <motion.div
             key={activeService.id}
-            initial={{ opacity: 0, scale: 0.92 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.92 }}
-            transition={{ type: "spring", stiffness: 340, damping: 28 }}
-            className="z-10 rounded-3xl p-3.5 sm:p-4.5 w-[185px] min-[400px]:w-[205px] sm:w-[225px] md:w-[235px] text-center bg-gradient-to-b from-white via-[#F8FAFD] to-[#EDF2F8] border border-slate-200/90 shadow-[0_12px_28px_-6px_rgba(20,33,61,0.14),0_4px_10px_-2px_rgba(20,33,61,0.06),inset_0_1px_1px_rgba(255,255,255,1),inset_0_-2px_4px_rgba(140,155,175,0.12)]"
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ type: "tween", ease: [0.16, 1, 0.3, 1], duration: 0.22 }}
+            className="z-10 rounded-3xl p-3.5 sm:p-4.5 w-[185px] min-[400px]:w-[205px] sm:w-[225px] md:w-[235px] h-[255px] sm:h-[275px] flex flex-col justify-between text-center bg-gradient-to-b from-white via-[#F8FAFD] to-[#EDF2F8] border border-slate-200/90 shadow-[0_12px_28px_-6px_rgba(20,33,61,0.14),0_4px_10px_-2px_rgba(20,33,61,0.06),inset_0_1px_1px_rgba(255,255,255,1),inset_0_-2px_4px_rgba(140,155,175,0.12)]"
           >
             {/* Top Badge */}
             <div className="flex items-center justify-center mb-1 sm:mb-1.5">

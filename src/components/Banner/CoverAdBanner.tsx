@@ -837,10 +837,10 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
             <div className="text-[11px] sm:text-xs font-mono tracking-widest text-gold font-bold uppercase drop-shadow-sm truncate">
               {current.subtitle}
             </div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[28px] xl:text-[30px] font-black text-white tracking-tight leading-snug drop-shadow-lg line-clamp-2 min-h-[2.5rem] sm:min-h-[3.8rem]">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-[28px] xl:text-[30px] font-black text-white tracking-tight leading-snug drop-shadow-lg line-clamp-2 min-h-[2.8rem] sm:min-h-[4.2rem] lg:min-h-[4.8rem]">
               {current.title}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium drop-shadow-md max-w-2xl line-clamp-2 min-h-[2.4rem]">
+            <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium drop-shadow-md max-w-2xl line-clamp-2 min-h-[2.5rem] sm:min-h-[2.8rem]">
               {current.description}
             </p>
           </div>
