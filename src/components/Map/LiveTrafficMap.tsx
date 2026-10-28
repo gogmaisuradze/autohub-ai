@@ -185,19 +185,20 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     const sat = satLayerRef.current;
     if (!osm || !sat) return;
 
+    // ახალი ფენა ჯერ დავამატოთ, ძველი მერე მოვხსნათ — რომ რუკა არ „ჩაქრეს" ცვლილებისას
     if (mapTheme === 'satellite') {
-      if (map.hasLayer(osm)) map.removeLayer(osm);
       if (!map.hasLayer(sat)) sat.addTo(map);
       sat.bringToBack();
+      if (map.hasLayer(osm)) map.removeLayer(osm);
       if (mapContainerRef.current) {
         mapContainerRef.current.classList.remove('dark-map-tiles');
         mapContainerRef.current.style.backgroundColor = '#000000';
       }
     } else {
       // Both 'dark' and 'street' use cached OpenStreetMap
-      if (map.hasLayer(sat)) map.removeLayer(sat);
       if (!map.hasLayer(osm)) osm.addTo(map);
       osm.bringToBack();
+      if (map.hasLayer(sat)) map.removeLayer(sat);
 
       // Instant CSS filter toggle — zero network request, zero lag!
       if (mapContainerRef.current) {
@@ -210,6 +211,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         }
       }
     }
+    // ფენის გადართვის შემდეგ ხელახალი დახატვა — თეთრი/ნაცრისფერი ფილების თავიდან ასაცილებლად
+    setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 60);
   }, [mapTheme]);
 
   // Helper: Format relative time in Georgian
@@ -646,67 +649,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                 <span>🚗 Waze Live Map</span>
               </button>
             </div>
-
-            {/* Map Theme Toggle (Dark, Street, Satellite) */}
-            <div className="flex items-center gap-1 p-1 bg-white/90 rounded-2xl border border-slate-200/90 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setMapTheme('dark');
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                  mapTheme === 'dark' ? 'bg-navy text-gold shadow-sm font-black' : 'text-slate-600 hover:text-navy hover:bg-slate-100'
-                }`}
-                title="მუქი რუკის რეჟიმი"
-              >
-                <span>🌙 მუქი</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setMapTheme('street');
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                  mapTheme === 'street' ? 'bg-navy text-gold shadow-sm font-black' : 'text-slate-600 hover:text-navy hover:bg-slate-100'
-                }`}
-                title="სტანდარტული ქუჩების რუკა"
-              >
-                <span>🗺️ ქუჩები</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setMapTheme('satellite');
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                  mapTheme === 'satellite' ? 'bg-navy text-gold shadow-sm font-black' : 'text-slate-600 hover:text-navy hover:bg-slate-100'
-                }`}
-                title="Esri სატელიტური აეროფოტო"
-              >
-                <span>🛰️ სატელიტი</span>
-              </button>
-            </div>
-
-            {/* Parking Layer Toggle (show/hide delineated parking zones) */}
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                setShowParking(v => !v);
-              }}
-              title={showParking ? 'პარკინგის ზონების დამალვა' : 'პარკინგის ზონების ჩვენება და დაწყება'}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all active:scale-95 border ${
-                showParking
-                  ? 'bg-navy text-gold border-navy shadow-sm ring-2 ring-gold/40'
-                  : 'bg-white text-slate-700 border-slate-200/80 hover:border-gold shadow-2xs'
-              }`}
-            >
-              <ParkingSquare size={15} className={showParking ? 'text-gold' : 'text-slate-500'} />
-              <span>{showParking ? '🅿️ პარკინგი: ჩართულია' : '🅿️ პარკინგი: გამორთულია'}</span>
-            </button>
 
             {/* Refresh */}
             <button
