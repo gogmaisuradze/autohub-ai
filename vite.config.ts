@@ -16,11 +16,11 @@ export default defineConfig({
     cors: true,
     proxy: {
       '/api/v1': {
-        target: 'http://127.0.0.1:8787',
+        target: process.env.MAP_API_PROXY_TARGET || 'http://127.0.0.1:8787',
         changeOrigin: true
       },
       '/health': {
-        target: 'http://127.0.0.1:8787',
+        target: process.env.MAP_API_PROXY_TARGET || 'http://127.0.0.1:8787',
         changeOrigin: true
       }
     }
@@ -31,11 +31,11 @@ export default defineConfig({
     cors: true,
     proxy: {
       '/api/v1': {
-        target: 'http://127.0.0.1:8787',
+        target: process.env.MAP_API_PROXY_TARGET || 'http://127.0.0.1:8787',
         changeOrigin: true
       },
       '/health': {
-        target: 'http://127.0.0.1:8787',
+        target: process.env.MAP_API_PROXY_TARGET || 'http://127.0.0.1:8787',
         changeOrigin: true
       }
     }

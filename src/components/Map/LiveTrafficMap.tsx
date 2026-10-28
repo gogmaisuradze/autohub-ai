@@ -127,9 +127,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         signal: ac.signal
       });
 
-      if (pois && pois.length > 0) {
+      if (!ac.signal.aborted) {
         setBackendPois(pois);
-        setCameraStatus(`🟢 AutoHub Map API • ${pois.length} ობიექტი ეკრანზე • 9 000+ ბაზაში`);
+        const modeLabel = mapDataService.isStaticMode() ? 'სტატიკური ბაზა' : 'Live API';
+        setCameraStatus(`🟢 AutoHub Map (${modeLabel}) • ${pois.length} ობიექტი ეკრანზე • 9 000+ ბაზაში`);
       }
     } catch (e: any) {
       if (e?.name !== 'AbortError') {
@@ -170,7 +171,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
       const backendAlive = isBackendHealthy.status === 'fulfilled' && isBackendHealthy.value;
       if (backendAlive) {
-        setCameraStatus('🟢 AutoHub Map API აქტიურია • 9 000+ ობიექტი (OSM & მუნიციპალური პარკინგი)');
+        const modeLabel = mapDataService.isStaticMode() ? 'სტატიკური ბაზა' : 'Live API';
+        setCameraStatus(`🟢 AutoHub Map აქტიურია (${modeLabel}) • 9 000+ ობიექტი (OSM & მუნიციპალური პარკინგი)`);
         if (mapInstanceRef.current) {
           fetchViewportPois(filterType);
         } else {
