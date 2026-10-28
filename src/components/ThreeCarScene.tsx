@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { DtcCode, VehicleProfile } from '../types';
 import { sounds } from '../services/soundEffects';
@@ -200,8 +201,8 @@ export const ThreeCarScene: React.FC<Props> = ({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-  const [isGhostMode, setIsGhostMode] = useState<boolean>(true); // Ghost X-Ray Wireframe body vs Solid
-  const solidTargetRef = useRef(0);
+  const [isGhostMode, setIsGhostMode] = useState<boolean>(false); // Show the finished paint first; X-ray remains available
+  const solidTargetRef = useRef(1);
   const [explodeFactor, setExplodeFactor] = useState<number>(0); // 0 to 1
   const [infoCardOpen, setInfoCardOpen] = useState<boolean>(false);
   const [leftHudOpen, setLeftHudOpen] = useState<boolean>(false);
@@ -410,8 +411,8 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     // 2. Camera Setup (Perspective angle matching the user's digital twin blueprint photo)
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(5.6, 3.8, 6.5);
-    const initialTarget = new THREE.Vector3(0, 0.85, 0);
+    camera.position.copy(width < 640 ? new THREE.Vector3(6.4,2.8,7.6) : new THREE.Vector3(4.9,2.25,5.8));
+    const initialTarget = new THREE.Vector3(0, 1.65, 0);
     camera.lookAt(initialTarget);
     cameraRef.current = camera;
 
@@ -426,7 +427,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 0.95;
     containerRef.current.innerHTML = '';
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
@@ -434,6 +435,13 @@ export const ThreeCarScene: React.FC<Props> = ({
     // რეალისტური სტუდიური გარემოს ასახვა (PBR reflections მეტალზე/შუშაზე)
     const pmrem = new THREE.PMREMGenerator(renderer);
     const room = new RoomEnvironment();
+    // Softbox reflections are baked once into the existing environment texture.
+    const softbox = (w:number,h:number,position:THREE.Vector3,target:THREE.Vector3,strength:number) => {
+      const panel = new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color(1,.98,.95).multiplyScalar(strength),side:THREE.DoubleSide,toneMapped:false}));
+      panel.position.copy(position); panel.lookAt(target); room.add(panel);
+    };
+    softbox(8,1.2,new THREE.Vector3(-3,5,1),new THREE.Vector3(0,0,0),3.0);
+    softbox(6,.8,new THREE.Vector3(4,3,-2),new THREE.Vector3(0,1,0),2.3);
     const environmentTarget = pmrem.fromScene(room, 0.04);
     scene.environment = environmentTarget.texture;
     room.dispose();
@@ -455,57 +463,74 @@ export const ThreeCarScene: React.FC<Props> = ({
     });
 
     // 5. Studio Lighting Rig (Clean blueprint studio lighting)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
+    const ambientLight = new THREE.AmbientLight(0xd9efff, 0.65);
     scene.add(ambientLight);
 
-    const mainKeyLight = new THREE.DirectionalLight(0xffffff, 1.85);
+    const mainKeyLight = new THREE.DirectionalLight(0xf1fbff, 3.0);
     mainKeyLight.position.set(6, 12, 6);
     mainKeyLight.castShadow = true;
     mainKeyLight.shadow.mapSize.width = 1024;
     mainKeyLight.shadow.mapSize.height = 1024;
-    mainKeyLight.shadow.bias = -0.0004;
+    mainKeyLight.shadow.bias = -0.0002;
+    mainKeyLight.shadow.normalBias = .015;
+    mainKeyLight.shadow.radius = 2;
+    mainKeyLight.shadow.camera.left = -4;
+    mainKeyLight.shadow.camera.right = 4;
+    mainKeyLight.shadow.camera.top = 4;
+    mainKeyLight.shadow.camera.bottom = -4;
     scene.add(mainKeyLight);
 
-    const softFillLight = new THREE.DirectionalLight(0xe0f2fe, 1.15);
+    const softFillLight = new THREE.DirectionalLight(0xecf0ff, 1.7);
     softFillLight.position.set(-6, 5, -5);
     scene.add(softFillLight);
 
-    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.7);
+    const rimLight = new THREE.DirectionalLight(0xf0f5ff, 0.85);
     rimLight.position.set(4, 2, -6);
     scene.add(rimLight);
 
     // 6. High-Tech Blueprint Stage Floor (Matching the technical digital grid in photo)
     const stageGroup = new THREE.Group();
 
-    // Stage Base Disc
-    // A seamless white circular showroom: floor, rounded wall and ceiling.
-    const roomProfile: THREE.Vector2[] = [new THREE.Vector2(0, -.25), new THREE.Vector2(15.5, -.25)];
-    for (let i = 1; i <= 20; i++) {
-      const angle = i / 20 * Math.PI / 2;
-      roomProfile.push(new THREE.Vector2(15.5 + 2.5 * Math.sin(angle), -.25 + 2.5 * (1 - Math.cos(angle))));
+    // Dark spherical showroom with a suspended honeycomb light canopy.
+    const backdropGeometry = new THREE.SphereGeometry(14,64,40);
+    const backdropMaterial = new THREE.MeshStandardMaterial({color:0x17191e,roughness:.55,metalness:.25,side:THREE.BackSide});
+    const backdrop = new THREE.Mesh(backdropGeometry,backdropMaterial);
+    backdrop.position.y=1.2;scene.add(backdrop);
+    const showroomBeltMaterial = new THREE.MeshBasicMaterial({color:0x315061});
+    const showroomBelt = new THREE.Mesh(new THREE.TorusGeometry(13.95,.014,6,128),showroomBeltMaterial);
+    showroomBelt.rotation.x=Math.PI/2;showroomBelt.position.y=1.2;scene.add(showroomBelt);
+    const canopy = new THREE.Group();canopy.position.y=4.1;
+    const neonCore = new THREE.MeshBasicMaterial({color:new THREE.Color(.91,.96,1).multiplyScalar(1.1),toneMapped:false});
+    const neonHalo = new THREE.MeshBasicMaterial({color:0xfff3df,transparent:true,opacity:.045,depthWrite:false});
+    const edges=new Set<string>();
+    const neonTube=(a:THREE.Vector3,b:THREE.Vector3)=>{
+      const midpoint=a.clone().add(b).multiplyScalar(.5),direction=b.clone().sub(a);
+      const length=direction.length();direction.normalize();
+      for(const [radius,material] of [[.014,neonCore],[.044,neonHalo]] as const){
+        const tube=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,length,6),material);
+        tube.position.copy(midpoint);tube.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction);canopy.add(tube);
+      }
+    };
+    const hexSize=.85;
+    for(let q=-1;q<=1;q++)for(let r=-1;r<=1;r++){
+      if(Math.abs(q+r)>1)continue;
+      const cx=hexSize*1.5*q,cz=hexSize*Math.sqrt(3)*(r+q/2);
+      const corners=Array.from({length:6},(_,i)=>new THREE.Vector3(cx+hexSize*Math.cos(i*Math.PI/3),0,cz+hexSize*Math.sin(i*Math.PI/3)));
+      for(let i=0;i<6;i++){
+        const a=corners[i],b=corners[(i+1)%6];
+        const key=[a.toArray().map(v=>v.toFixed(3)).join(','),b.toArray().map(v=>v.toFixed(3)).join(',')].sort().join('|');
+        if(!edges.has(key)){edges.add(key);neonTube(a,b);}
+      }
     }
-    roomProfile.push(new THREE.Vector2(18, 5.5));
-    for (let i = 1; i <= 16; i++) {
-      const angle = i / 16 * Math.PI / 2;
-      roomProfile.push(new THREE.Vector2(18 - 2.5 * (1 - Math.cos(angle)), 5.5 + 2.5 * Math.sin(angle)));
-    }
-    roomProfile.push(new THREE.Vector2(0, 8));
-    const backdropGeometry = new THREE.LatheGeometry(roomProfile, 96);
-    const backdropMaterial = new THREE.MeshStandardMaterial({ color: 0xf5f7fa, roughness: .86, metalness: 0, side: THREE.BackSide });
-    const backdrop = new THREE.Mesh(backdropGeometry, backdropMaterial);
-    backdrop.receiveShadow = true; scene.add(backdrop);
-    const showroomBeltMaterial = new THREE.MeshBasicMaterial({ color: 0xe0e5eb });
-    const showroomBelt = new THREE.Mesh(new THREE.TorusGeometry(17.98, .018, 6, 144), showroomBeltMaterial);
-    showroomBelt.rotation.x = Math.PI / 2; showroomBelt.position.y = 3.2;
-    scene.add(showroomBelt);
+    scene.add(canopy);
 
     const podiumGeo = new THREE.CylinderGeometry(3.15, 3.28, .22, 72);
     const podiumMat = new THREE.MeshStandardMaterial({
-      color: 0xF1F5F9,
-      roughness: 0.28,
-      metalness: 0.12
+      color: 0x172b38,
+      roughness: 0.12,
+      metalness: 0.85
     });
-    const podiumSide = new THREE.MeshStandardMaterial({ color: 0x293543, roughness: .30, metalness: .55 });
+    const podiumSide = new THREE.MeshStandardMaterial({ color: 0x0c1721, roughness: .22, metalness: .8 });
     const podium = new THREE.Mesh(podiumGeo, [podiumSide, podiumMat, podiumSide]);
     podium.position.y = -.14;
     podium.castShadow = true;
@@ -522,7 +547,7 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     // Warm Gold Outer Ring
     const goldRingGeo = new THREE.RingGeometry(3.145, 3.17, 72);
-    const goldRingMat = new THREE.MeshBasicMaterial({ color: 0xc2cbd5, side: THREE.DoubleSide });
+    const goldRingMat = new THREE.MeshBasicMaterial({ color: 0xc3c8d0, side: THREE.DoubleSide });
     const goldRing = new THREE.Mesh(goldRingGeo, goldRingMat);
     goldRing.rotation.x = -Math.PI / 2;
     goldRing.position.y = -.025;
@@ -530,6 +555,16 @@ export const ThreeCarScene: React.FC<Props> = ({
     stageGroup.add(goldRing);
 
     scene.add(stageGroup);
+    // Bake these exact ceiling lights into paint/window reflections once.
+    const showroomPmrem=new THREE.PMREMGenerator(renderer);
+    const showroomEnvironment=showroomPmrem.fromScene(scene,.045,.1,30);
+    scene.environment=showroomEnvironment.texture;showroomPmrem.dispose();
+    const floorMirror=new Reflector(new THREE.CircleGeometry(3.14,72),{
+      textureWidth:width<640?512:768,textureHeight:width<640?512:768,clipBias:.003,color:0x5e6067
+    });
+    floorMirror.rotation.x=-Math.PI/2;floorMirror.position.y=-.026;stageGroup.add(floorMirror);
+
+
 
     // 7. Master Automotive Model Hierarchy
     const carMasterGroup = new THREE.Group();
@@ -680,10 +715,10 @@ export const ThreeCarScene: React.FC<Props> = ({
     const engineParts: { node: THREE.Group; rest: THREE.Vector3; offset: THREE.Vector3 }[] = [];
     const wheelParts: { node: THREE.Group; rest: THREE.Vector3; offset: THREE.Vector3 }[] = [];
     let windowMaterial: THREE.MeshPhysicalMaterial | null = null;
-    let roofMaterial: THREE.MeshPhysicalMaterial | null = null;
     let headlightMat: THREE.MeshStandardMaterial | null = null;
     let taillightMat: THREE.MeshStandardMaterial | null = null;
     let disposed = false;
+
     gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=12`, (gltf) => {
       const root = gltf.scene;
       if (disposed) return;
@@ -823,15 +858,15 @@ export const ThreeCarScene: React.FC<Props> = ({
         roughness: 0.14, ior: 1.45, metalness: 0.05, clearcoat: 1.0, depthWrite: false
       });
       ghostGlassMat.userData.ghostOpacity = 0.26;
-      ghostGlassMat.userData.solidColor = 0x34465e; // AutoHub: muted graphite-blue metallic, matched to the navy interface
+      ghostGlassMat.userData.solidColor = 0xe5e8eb; // Pearl white automotive lacquer
       bodyMaterialsRef.current = [ghostGlassMat];
       meshesOf('Body_Paint').forEach(mesh => {
         const native = mesh.material as THREE.MeshStandardMaterial;
         const glass = ghostGlassMat.clone();
         glass.normalMap = native.normalMap;
-        glass.normalScale.copy(native.normalScale);
-        glass.userData.solidRoughness = .27;
-        glass.userData.solidMetalness = .55;
+        glass.normalScale.copy(native.normalScale).multiplyScalar(.18);
+        glass.userData.solidRoughness = .19;
+        glass.userData.solidMetalness = .36;
         mesh.material = glass;
         bodyMaterialsRef.current.push(glass);
         bodyGrp.attach(mesh);
@@ -852,28 +887,29 @@ export const ThreeCarScene: React.FC<Props> = ({
 
       // მინები — ყოველთვის გამჭვირვ. (საქარე მინა/ფანჯრები)
       const windowMat = new THREE.MeshPhysicalMaterial({
-        color: 0x57758a, transmission: 0.0, opacity: 0.10, transparent: true,
+        color: 0x222b34, transmission: 0.0, opacity: 0.10, transparent: true,
         roughness: 0.05, ior: 1.5, metalness: 0.0, clearcoat: 1.0, depthWrite: false
       });
       windowMaterial = windowMat;
-      roofMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0x101b28, transparent: true, opacity: .16,
-        roughness: .10, metalness: .12, clearcoat: 1, clearcoatRoughness: .06,
-        ior: 1.5, transmission: 0, depthWrite: false, side: THREE.DoubleSide
-      });
       meshesOf('Body_Glass').forEach(m => {
-        // The downloaded model includes its panoramic roof in the glass mesh.
-        // Separate the roof from the windows so solid mode has a complete shell.
+        // The downloaded model includes its roof panel in the glass mesh.
+        // Separate the roof from the windows so the car body is 100% complete and fully painted.
         const geometry = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
         const positions = geometry.getAttribute('position');
         const roof: number[] = [], windows: number[] = [];
         const point = new THREE.Vector3(), normal = new THREE.Vector3();
         const triangle = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+        const isRoof = (p: THREE.Vector3, n: THREE.Vector3) => {
+          if (p.y < 1.23) return false;
+          if (p.z > 0.278 || p.z < -1.140) return false;
+          if (Math.abs(p.x) > 0.51 && Math.abs(n.x) > 0.68) return false;
+          return true;
+        };
         for (let i = 0; i < positions.count; i += 3) {
           for (let j = 0; j < 3; j++) triangle[j].fromBufferAttribute(positions, i + j).applyMatrix4(m.matrixWorld);
           point.copy(triangle[0]).add(triangle[1]).add(triangle[2]).multiplyScalar(1 / 3);
           normal.subVectors(triangle[1], triangle[0]).cross(new THREE.Vector3().subVectors(triangle[2], triangle[0])).normalize();
-          const list = point.y > 1.31 && point.z > -.95 && point.z < .24 && Math.abs(normal.y) > .78 ? roof : windows;
+          const list = isRoof(point, normal) ? roof : windows;
           list.push(i, i + 1, i + 2);
         }
         const subset = (ids: number[]) => {
@@ -888,7 +924,11 @@ export const ThreeCarScene: React.FC<Props> = ({
           return out;
         };
         if (roof.length) {
-          const roofMesh = new THREE.Mesh(subset(roof), roofMaterial!);
+          const roofMat = ghostGlassMat.clone();
+          roofMat.userData.solidRoughness = .19;
+          roofMat.userData.solidMetalness = .36;
+          bodyMaterialsRef.current.push(roofMat);
+          const roofMesh = new THREE.Mesh(subset(roof), roofMat);
           roofMesh.name = 'BMW_Roof_Panel';
           roofMesh.matrix.copy(m.matrix); roofMesh.matrix.decompose(roofMesh.position, roofMesh.quaternion, roofMesh.scale);
           m.parent?.add(roofMesh); bodyGrp.attach(roofMesh);
@@ -908,7 +948,24 @@ export const ThreeCarScene: React.FC<Props> = ({
       interiorMat.userData.ghostOpacity = 0.10;
       interiorMat.userData.solidColor = 0x17202a;
       bodyMaterialsRef.current.push(interiorMat);
-      meshesOf('Body_Interior').forEach(m => { m.material = interiorMat; m.castShadow = true; bodyGrp.attach(m); });
+      // Keep upholstery, dashboard and small-detail textures instead of flattening them.
+      const attachNativeDetail = (mesh:THREE.Mesh) => {
+        const originals = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        const materials = originals.map(original => {
+          const native = original as THREE.MeshStandardMaterial;
+          const material = new THREE.MeshPhysicalMaterial();
+          THREE.MeshStandardMaterial.prototype.copy.call(material,native);
+          material.transparent=true;material.opacity=.10;material.depthWrite=false;
+          material.clearcoat=.08;material.clearcoatRoughness=.3;
+          material.userData={ghostOpacity:.10,solidColor:0xffffff,keepSurfaceColor:true,
+            solidRoughness:Math.max(.35,native.roughness ?? .6),solidMetalness:native.metalness ?? 0};
+          bodyMaterialsRef.current.push(material);
+          return material;
+        });
+        mesh.material=Array.isArray(mesh.material)?materials:materials[0];
+        mesh.castShadow=true;mesh.receiveShadow=true;bodyGrp.attach(mesh);
+      };
+      meshesOf('Body_Interior').forEach(attachNativeDetail);
 
       // თავფარები — ანათებს თეთრ-ცისფრად
       const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xddeeff, emissiveIntensity: 0.3, roughness: 0.12, metalness: 0.0 });
@@ -964,7 +1021,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       // Never discard unclaimed native detail when removing the loader root.
       const remaining: THREE.Mesh[] = [];
       root.traverse((o: any) => { if (o.isMesh) remaining.push(o); });
-      remaining.forEach(m => { m.material = interiorMat; bodyGrp.attach(m); });
+      remaining.forEach(attachNativeDetail);
       const bodyMaterials = new Set<THREE.Material>(bodyMaterialsRef.current);
       const processedMaterials = new Set<THREE.Material>();
       carMasterGroup.traverse(node => {
@@ -981,17 +1038,28 @@ export const ThreeCarScene: React.FC<Props> = ({
       const paintMeshes: THREE.Mesh[] = [];
       const paintMaterials = new Map<THREE.Material, THREE.MeshPhysicalMaterial>();
       bodyGrp.traverse(node => {
-        if (!(node instanceof THREE.Mesh) || !bodyMaterials.has(node.material as THREE.Material)) return;
-        const ghostMat = node.material as THREE.MeshPhysicalMaterial;
+        if (!(node instanceof THREE.Mesh)) return;
+        const nativeMaterials = Array.isArray(node.material) ? node.material : [node.material];
+        if (!nativeMaterials.every(material => bodyMaterials.has(material))) return;
+        const getPaintMaterial = (ghostMat:THREE.MeshPhysicalMaterial) => {
         let paintMat = paintMaterials.get(ghostMat);
         if (!paintMat) {
           paintMat = ghostMat.clone();
+          if (!ghostMat.userData.keepSurfaceColor) {
+            paintMat.clearcoat = 1;
+            paintMat.clearcoatRoughness = .055;
+            paintMat.ior = 1.5;
+            paintMat.envMapIntensity = 1.0;
+          }
           paintMat.transparent = false; paintMat.depthWrite = true; paintMat.alphaHash = true;
           paintMat.polygonOffset = true; paintMat.polygonOffsetFactor = -1; paintMat.polygonOffsetUnits = -1;
           applySurfaceEffects(paintMat, true, true);
           paintMaterials.set(ghostMat, paintMat);
         }
-        const paint = new THREE.Mesh(node.geometry, paintMat);
+        return paintMat;
+        };
+        const paintMaterial = nativeMaterials.map(material => getPaintMaterial(material as THREE.MeshPhysicalMaterial));
+        const paint = new THREE.Mesh(node.geometry, Array.isArray(node.material) ? paintMaterial : paintMaterial[0]);
         paint.name = 'PaintLayer_' + node.name;
         paint.position.copy(node.position); paint.quaternion.copy(node.quaternion); paint.scale.copy(node.scale);
         paint.castShadow = false;
@@ -1037,9 +1105,9 @@ export const ThreeCarScene: React.FC<Props> = ({
     // =========================================================================
     let animId: number;
     const clock = new THREE.Clock();
-    const idlePodium = new THREE.Color(0xf1f5f9);
+    const idlePodium = new THREE.Color(0x172b38);
     const scanPodium = new THREE.Color(0x101e30);
-    const idleRing = new THREE.Color(0xc2cbd5);
+    const idleRing = new THREE.Color(0xc3c8d0);
     const scanRing = new THREE.Color(0x477da3);
     let fillProgress = 0;
     let scanPhase = 0;
@@ -1059,8 +1127,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       fillProgress = THREE.MathUtils.clamp(fillProgress + Math.sign(solidTargetRef.current - fillProgress) * Math.min(Math.abs(solidTargetRef.current - fillProgress), fillStep), 0, 1);
       visual.fill.value = fillProgress * fillProgress * (3 - 2 * fillProgress);
       visual.lift.value = currentExplodeRef.current * 1.10;
-      if (windowMaterial) windowMaterial.opacity = THREE.MathUtils.lerp(.10, .36, visual.fill.value);
-      if (roofMaterial) roofMaterial.opacity = THREE.MathUtils.lerp(.16, .94, visual.fill.value);
+      if (windowMaterial) windowMaterial.opacity = THREE.MathUtils.lerp(.10, .56, visual.fill.value);
       // ფარები ინთება როცა მანქანა მკაფიო/მყარი ხდება
       if (headlightMat) headlightMat.emissiveIntensity = 0.12 + fillProgress * .85;
       if (taillightMat) taillightMat.emissiveIntensity = 0.12 + fillProgress * .75;
@@ -1226,9 +1293,9 @@ export const ThreeCarScene: React.FC<Props> = ({
       visual.scanStrength.value = THREE.MathUtils.damp(visual.scanStrength.value, scanning ? 1 : 0, 4, delta);
       const focus = visual.scanStrength.value;
       podiumMat.color.copy(idlePodium).lerp(scanPodium, focus);
-      backdropMaterial.color.set(0xf5f7fa).lerp(new THREE.Color(0x081323), focus);
+      backdropMaterial.color.set(0x17191e).lerp(new THREE.Color(0x081323), focus);
       goldRingMat.color.copy(idleRing).lerp(scanRing, focus);
-      showroomBeltMaterial.color.set(0xe0e5eb).lerp(new THREE.Color(0x203951), focus);
+      showroomBeltMaterial.color.set(0x315061).lerp(new THREE.Color(0x203951), focus);
       (gridHelper.material as THREE.Material).opacity = THREE.MathUtils.lerp(.35, .10, focus);
       if (scanning && !reducedMotion) scanPhase = (scanPhase + delta / 8.5) % 1;
       visual.scanZ.value = reducedMotion ? 0 : THREE.MathUtils.lerp(-2.65, 2.65, .5 - .5 * Math.cos(scanPhase * Math.PI * 2));
@@ -1298,6 +1365,8 @@ export const ThreeCarScene: React.FC<Props> = ({
       sequenceCallbacks.current.onSequenceBusyChange?.(false);
       cancelAnimationFrame(animId);
       viewportObserver.disconnect();
+      floorMirror.getRenderTarget().dispose();
+      showroomEnvironment.dispose();
       environmentTarget.dispose();
       dracoLoader.dispose();
       scene.traverse((o: any) => {
@@ -1335,8 +1404,8 @@ export const ThreeCarScene: React.FC<Props> = ({
     sounds.playClick();
     setActivePin(null);
     setInfoCardOpen(false);
-    targetCamPosRef.current = new THREE.Vector3(5.6, 3.8, 6.5);
-    targetCamLookRef.current = new THREE.Vector3(0, 0.85, 0);
+    targetCamPosRef.current = (containerRef.current?.clientWidth || 800) < 640 ? new THREE.Vector3(6.4,2.8,7.6) : new THREE.Vector3(4.9,2.25,5.8);
+    targetCamLookRef.current = new THREE.Vector3(0, 1.65, 0);
   };
 
   // Selected Component info for detail card
@@ -1344,7 +1413,7 @@ export const ThreeCarScene: React.FC<Props> = ({
   const selectedFault = selectedCompData ? getFaultForComponent(selectedCompData) : undefined;
 
   return (
-    <div className={`relative w-full h-[430px] sm:h-[560px] md:h-[640px] rounded-3xl overflow-hidden neu-surface select-none touch-pan-y transition-all duration-700 ${
+    <div className={`relative w-full h-[540px] sm:h-[620px] md:h-[640px] rounded-3xl overflow-hidden neu-surface select-none touch-pan-y transition-all duration-700 ${
       scanVisualActive
         ? 'ring-4 ring-cyan-500/60 shadow-[0_0_45px_rgba(34,211,238,0.35),0_16px_36px_rgba(15,23,42,0.25)] border border-cyan-400 z-30'
         : 'border border-white shadow-sm bg-gradient-to-b from-[#FAFBFC] via-[#F2F3F5] to-[#E8EBEF]'

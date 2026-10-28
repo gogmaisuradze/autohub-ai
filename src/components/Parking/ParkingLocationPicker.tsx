@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { DELINEATED_PARKING_ZONES, DelineatedParkingZone } from '../../constants/parkingZones';
 import { isPointInPolygon } from '../../services/parkingStopDetector';
 import { DeviceTelemetryReading } from '../../types/telemetry';
+import { getPreferredLocation } from '../../services/locationService';
 import { leafletLoader } from '../../services/leafletLoader';
 
 type Fix = { lat: number; lng: number; accuracy: number };
@@ -19,8 +20,9 @@ export function distanceToLot(fix: Fix, lot: DelineatedParkingZone): number {
   return best;
 }
 
-export default function ParkingLocationPicker({ city, initialLot, plate, obdReading, onClose, onConfirm }: {
+export default function ParkingLocationPicker({ city, initialLot, plate, obdReading, vehicleId, onClose, onConfirm }: {
   obdReading?: DeviceTelemetryReading;
+  vehicleId?: string;
   city: 'tbilisi' | 'batumi' | 'kutaisi'; initialLot?: DelineatedParkingZone; plate: string;
   onClose: () => void; onConfirm: (lot: DelineatedParkingZone, minutes: number) => void;
 }) {
@@ -35,7 +37,7 @@ export default function ParkingLocationPicker({ city, initialLot, plate, obdRead
   const [confirmed, setConfirmed] = useState(false);
   const mapElement = useRef<HTMLDivElement>(null), mapRef = useRef<any>();
   const requestId = useRef(0);
-  const locate = (preferred?: 'phone' | 'obd') => {
+  const locate = async (preferred?: 'phone' | 'obd') => {
     const id = ++requestId.current;
     setBusy(true); setError(''); if (!initialLot) setSelected(undefined); setFix(undefined); setCandidates([]); setConfirmed(false);
     if (!navigator.geolocation && !obdReading) {setBusy(false); setError('მდებარეობა მიუწვდომელია. აირჩიეთ ლოტი კოდით.'); return;}
@@ -54,20 +56,15 @@ export default function ParkingLocationPicker({ city, initialLot, plate, obdRead
       if (!nearby.length) setError('ამ მდებარეობასთან ოფიციალური ლოტი ვერ მოიძებნა. გადაამოწმეთ ადგილზე არსებული ნიშანი და კოდი.');
       if (!initialLot && nearby.length === 1) setSelected(nearby[0].lot);
     };
-    if (preferred !== 'phone' && obdReading && obdReading.latitude !== null && obdReading.longitude !== null && obdReading.accuracyMeters !== null) {
-      applyFix({lat:obdReading.latitude,lng:obdReading.longitude,accuracy:obdReading.accuracyMeters}, Date.parse(obdReading.recordedAt), 'obd');
-      return;
+    try {
+      const selected = await getPreferredLocation(vehicleId, preferred === 'phone' ? 'device' : preferred === 'obd' ? 'obd' : 'auto',50);
+      applyFix({lat:selected.lat,lng:selected.lng,accuracy:selected.accuracy},selected.timestamp,selected.source==='obd'?'obd':'phone');
+    } catch(error) {
+      if(id!==requestId.current)return;
+      setBusy(false);setError(error instanceof Error?error.message:'მდებარეობა ვერ განისაზღვრა.');
     }
-    if (preferred === 'obd') {setBusy(false);setError('მანქანის ახალი GPS მონაცემი ჯერ არ მოსულა. გამოიყენეთ ტელეფონის მდებარეობა.');return;}
-    if (!navigator.geolocation) {setBusy(false);setError('ტელეფონის GPS მიუწვდომელია. აირჩიეთ მანქანის GPS ან მოძებნეთ კოდით.');return;}
-    navigator.geolocation.getCurrentPosition(position => {
-      applyFix({lat:position.coords.latitude,lng:position.coords.longitude,accuracy:position.coords.accuracy},position.timestamp,'phone');
-    }, err => {
-      if (id !== requestId.current) return;
-      setBusy(false); setError(err.code === 1 ? 'მდებარეობის ნებართვა გამორთულია. შეგიძლიათ ლოტი კოდით მოძებნოთ.' : 'მდებარეობა ვერ განისაზღვრა. სცადეთ ხელახლა ან მოძებნეთ კოდით.');
-    }, {enableHighAccuracy: true, timeout: 15000, maximumAge: 0});
   };
-  useEffect(() => {locate(); return () => {requestId.current++;};}, []);
+  useEffect(() => {locate(); return () => {requestId.current++;};}, [vehicleId]);
   useEffect(() => {
     let disposed = false;
     leafletLoader.load().then(L => {

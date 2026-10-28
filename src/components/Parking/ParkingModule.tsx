@@ -867,7 +867,7 @@ export const ParkingModule: React.FC<Props> = ({
   return (
     <div className="space-y-6">
       {locationPicker && <ParkingLocationPicker city={selectedCity} initialLot={locationPicker.initialLot}
-        plate={vehicle.plate_number || ''}
+        plate={vehicle.plate_number || ''} vehicleId={vehicle.id}
         obdReading={obdMode === 'real' && telemetry?.vehicleId === vehicle.id && activeDevice?.deviceId === telemetry?.deviceId ? telemetry : undefined} onClose={() => setLocationPicker(null)}
         onConfirm={startConfirmedParking} />}
       

@@ -179,8 +179,9 @@ class Obd4gService {
     if (this.mode !== 'real') return;
 
     const device = this.devices.find(d => d.deviceId === reading.deviceId);
-    if (!device) return;
+    if (!device || device.vehicleId !== reading.vehicleId) return;
 
+    device.mode = 'real';
     device.lastHeartbeatAt = reading.receivedAt;
     device.status = 'online';
     this.saveDevices();

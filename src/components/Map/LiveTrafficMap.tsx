@@ -5,6 +5,7 @@ import { sounds } from '../../services/soundEffects';
 import { leafletLoader } from '../../services/leafletLoader';
 import { loadCameras } from '../../services/cameraService';
 import { mapDataService } from '../../services/mapDataService';
+import { getPreferredLocation, watchPreferredLocation, LocationFix } from '../../services/locationService';
 import AddReportModal from './AddReportModal';
 import {
   Navigation,
@@ -52,6 +53,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [backendPois, setBackendPois] = useState<MapReport[]>([]);
   const [filterType, setFilterType] = useState<MapPointType | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [locationFix, setLocationFix] = useState<LocationFix | null>(null);
+  const [locationError, setLocationError] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -347,12 +350,17 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     layer.clearLayers();
 
     // Filter reports
+    const qLower = searchQuery.trim().toLowerCase();
     const filtered = reports.filter(r => {
       const matchesFilter = filterType === 'all' || r.type === filterType;
-      const matchesSearch = !searchQuery.trim() ||
-        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (r.description && r.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (r.brand && r.brand.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesSearch = !qLower ||
+        r.title.toLowerCase().includes(qLower) ||
+        (r.description && r.description.toLowerCase().includes(qLower)) ||
+        (r.brand && r.brand.toLowerCase().includes(qLower)) ||
+        (r.address && r.address.toLowerCase().includes(qLower)) ||
+        (r.code && r.code.toLowerCase().includes(qLower)) ||
+        (r.speedLimit && r.speedLimit.toLowerCase().includes(qLower)) ||
+        (r.cameraKind && r.cameraKind.toLowerCase().includes(qLower));
       return matchesFilter && matchesSearch;
     });
 
@@ -367,10 +375,13 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         case 'patrol':
           markerClass = 'patrol-marker';
           iconHtml = `
-            <div class="relative flex items-center justify-center cursor-pointer group">
-              <span class="absolute w-8 h-8 rounded-full bg-blue-500/30 animate-ping"></span>
-              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-900 border-2 border-cyan-400 text-white flex items-center justify-center shadow-[0_0_15px_rgba(0,180,255,0.7)] group-hover:scale-110 transition-transform">
-                <svg class="w-5 h-5 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <div class="relative flex flex-col items-center cursor-pointer group">
+              <span class="absolute top-1 w-12 h-12 rounded-full bg-blue-500/35 animate-ping pointer-events-none"></span>
+              <div class="px-2 py-0.5 rounded-full bg-blue-600 text-white font-mono font-black text-[9px] shadow-md border border-cyan-300 -mb-2 z-20 whitespace-nowrap">
+                🚨 LIVE პატრული
+              </div>
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-800 to-slate-950 border-2 border-cyan-400 text-white flex items-center justify-center shadow-[0_0_18px_rgba(0,180,255,0.8)] group-hover:scale-115 transition-transform z-10">
+                <svg class="w-5 h-5 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
             </div>
           `;
@@ -378,23 +389,78 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
         case 'radar':
           markerClass = 'radar-marker';
-          iconHtml = `
-            <div class="relative flex items-center justify-center cursor-pointer group">
-              <span class="absolute w-8 h-8 rounded-full bg-amber-500/30 animate-pulse"></span>
-              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-red-600 border-2 border-amber-300 text-white flex items-center justify-center shadow-[0_0_15px_rgba(255,160,0,0.8)] group-hover:scale-110 transition-transform">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          if (item.speed_limit_kmh) {
+            // Authentic European/Georgian Speed Limit Road Sign (Red Ring, White Interior, Bold Black Speed)
+            iconHtml = `
+              <div class="relative flex flex-col items-center cursor-pointer group">
+                <span class="absolute top-0 w-11 h-11 rounded-full bg-red-500/35 animate-ping pointer-events-none"></span>
+                <div class="px-2 py-0.5 rounded-full bg-slate-950 text-red-300 font-mono font-black text-[9px] shadow-md border border-red-500/80 -mb-2 z-20 whitespace-nowrap">
+                  ${item.speed_limit_kmh} კმ/სთ
+                </div>
+                <div class="relative w-10 h-10 rounded-full bg-white border-[3.5px] border-red-600 flex items-center justify-center shadow-[0_0_18px_rgba(239,68,68,0.85)] group-hover:scale-115 transition-transform z-10">
+                  <span class="text-slate-950 font-black font-mono text-sm tracking-tight leading-none">${item.speed_limit_kmh}</span>
+                </div>
               </div>
-            </div>
-          `;
+            `;
+          } else if (item.camera_kind === 'average_speed') {
+            // Average Speed Camera Section
+            iconHtml = `
+              <div class="relative flex flex-col items-center cursor-pointer group">
+                <span class="absolute top-0 w-11 h-11 rounded-full bg-amber-500/35 animate-pulse pointer-events-none"></span>
+                <div class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-mono font-black text-[9px] shadow-md border border-amber-200 -mb-2 z-20 whitespace-nowrap">
+                  სექციური
+                </div>
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-600 to-slate-950 border-2 border-amber-300 text-white flex items-center justify-center shadow-[0_0_18px_rgba(245,158,11,0.8)] group-hover:scale-115 transition-transform z-10">
+                  <div class="flex flex-col items-center leading-none">
+                    <span class="text-[8px] font-black tracking-widest text-amber-100">A⇢B</span>
+                    <span class="text-[10px] font-black font-mono">AVG</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          } else if (item.camera_kind === 'traffic_signals') {
+            // Traffic Light Camera
+            iconHtml = `
+              <div class="relative flex flex-col items-center cursor-pointer group">
+                <span class="absolute top-0 w-11 h-11 rounded-full bg-emerald-500/25 animate-pulse pointer-events-none"></span>
+                <div class="px-2 py-0.5 rounded-full bg-slate-950 text-emerald-300 font-mono font-black text-[9px] shadow-md border border-emerald-400 -mb-2 z-20 whitespace-nowrap">
+                  შუქნიშანი
+                </div>
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-slate-900 to-navy border-2 border-emerald-400 text-white flex flex-col items-center justify-center gap-0.5 shadow-[0_0_16px_rgba(16,185,129,0.7)] group-hover:scale-115 transition-transform z-10">
+                  <div class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_4px_#ef4444]"></span>
+                    <span class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_4px_#f59e0b]"></span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_4px_#10b981]"></span>
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            // General Radar / Camera
+            iconHtml = `
+              <div class="relative flex flex-col items-center cursor-pointer group">
+                <span class="absolute top-0 w-11 h-11 rounded-full bg-amber-500/30 animate-pulse pointer-events-none"></span>
+                <div class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-mono font-black text-[9px] shadow-md border border-amber-200 -mb-2 z-20 whitespace-nowrap">
+                  რადარი
+                </div>
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-red-600 border-2 border-amber-300 text-white flex items-center justify-center shadow-[0_0_18px_rgba(245,158,11,0.8)] group-hover:scale-115 transition-transform z-10">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                </div>
+              </div>
+            `;
+          }
           break;
 
         case 'hazard':
           markerClass = 'hazard-marker';
           iconHtml = `
-            <div class="relative flex items-center justify-center cursor-pointer group">
-              <span class="absolute w-8 h-8 rounded-full bg-rose-500/30 animate-ping"></span>
-              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-700 border-2 border-rose-300 text-white flex items-center justify-center shadow-[0_0_15px_rgba(255,50,80,0.8)] group-hover:scale-110 transition-transform">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div class="relative flex flex-col items-center cursor-pointer group">
+              <span class="absolute top-1 w-12 h-12 rounded-full bg-rose-500/35 animate-ping pointer-events-none"></span>
+              <div class="px-2 py-0.5 rounded-full bg-rose-500 text-white font-black text-[9px] shadow-md border border-rose-300 -mb-2 z-20 whitespace-nowrap">
+                ⚠️ საფრთხე
+              </div>
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-600 via-red-800 to-slate-950 border-2 border-rose-300 text-white flex items-center justify-center shadow-[0_0_18px_rgba(244,63,94,0.85)] group-hover:scale-115 transition-transform z-10">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
               </div>
             </div>
           `;
@@ -402,14 +468,23 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
         case 'fuel':
           markerClass = 'fuel-marker';
+          const brandUpper = (item.brand || item.title || '').toUpperCase();
+          const fuelBrand =
+            brandUpper.includes('WISSOL') || brandUpper.includes('ვისოლ') ? 'Wissol' :
+            brandUpper.includes('GULF') || brandUpper.includes('გალფ') ? 'Gulf' :
+            brandUpper.includes('ROMPETROL') || brandUpper.includes('რომპეტროლ') ? 'Rompetrol' :
+            brandUpper.includes('SOCAR') || brandUpper.includes('სოკარ') ? 'Socar' :
+            brandUpper.includes('LUKOIL') || brandUpper.includes('ლუკოილ') ? 'Lukoil' :
+            brandUpper.includes('PORTAL') || brandUpper.includes('პორტალ') ? 'Portal' :
+            (item.brand || 'საწვავი');
           const lowestPrice = item.fuel_prices ? (item.fuel_prices.regular_92 || item.fuel_prices.premium_95) : null;
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-emerald-500 text-navy font-black text-[10px] font-mono shadow-md border border-emerald-300 -mb-2 z-10 whitespace-nowrap">
-                ${lowestPrice ? `${lowestPrice.toFixed(2)}₾` : item.brand || 'საწვავი'}
+              <div class="px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 font-black text-[9px] font-mono shadow-md border border-emerald-200 -mb-2 z-20 whitespace-nowrap">
+                ${lowestPrice ? `${lowestPrice.toFixed(2)}₾` : fuelBrand}
               </div>
-              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-900 border-2 border-emerald-300 text-white flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.7)] group-hover:scale-110 transition-transform">
-                <svg class="w-5 h-5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9h2a2 2 0 012 2v7a2 2 0 01-2 2h-2"></path></svg>
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-700 to-slate-950 border-2 border-emerald-300 text-white flex items-center justify-center shadow-[0_0_16px_rgba(16,185,129,0.75)] group-hover:scale-115 transition-transform z-10">
+                <svg class="w-5 h-5 text-emerald-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9h2a2 2 0 012 2v7a2 2 0 01-2 2h-2"/></svg>
               </div>
             </div>
           `;
@@ -419,11 +494,12 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           markerClass = 'charging-marker';
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950 font-black text-[10px] font-mono shadow-md border border-cyan-200 -mb-2 z-10 whitespace-nowrap">
-                ${item.brand || 'EV დამტენი'}
+              <span class="absolute top-1 w-12 h-12 rounded-full bg-cyan-400/30 animate-pulse pointer-events-none"></span>
+              <div class="px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950 font-black text-[9px] font-mono shadow-md border border-cyan-200 -mb-2 z-20 whitespace-nowrap">
+                ⚡ ${item.brand || 'EV Fast'}
               </div>
-              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-800 border-2 border-cyan-300 text-white flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.8)] group-hover:scale-110 transition-transform">
-                <svg class="w-5 h-5 text-cyan-100 fill-current" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-600 to-slate-950 border-2 border-cyan-300 text-white flex items-center justify-center shadow-[0_0_18px_rgba(6,182,212,0.85)] group-hover:scale-115 transition-transform z-10">
+                <svg class="w-5 h-5 text-cyan-200 fill-current" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               </div>
             </div>
           `;
@@ -433,10 +509,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           markerClass = 'service-marker';
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] shadow-md border border-amber-200 -mb-2 z-10 whitespace-nowrap">
-                ${item.brand || 'სერვისი'}
+              <div class="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[9px] shadow-md border border-amber-200 -mb-2 z-20 whitespace-nowrap">
+                🔧 ${item.brand || 'სერვისი'}
               </div>
-              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-800 border-2 border-amber-300 text-white flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.7)] group-hover:scale-110 transition-transform">
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-700 to-slate-950 border-2 border-amber-300 text-white flex items-center justify-center shadow-[0_0_16px_rgba(245,158,11,0.75)] group-hover:scale-115 transition-transform z-10">
                 <svg class="w-5 h-5 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
               </div>
             </div>
@@ -447,10 +523,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           markerClass = 'car-wash-marker';
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-sky-400 text-slate-950 font-black text-[10px] shadow-md border border-sky-200 -mb-2 z-10 whitespace-nowrap">
-                ${item.brand || 'სამრეცხაო'}
+              <div class="px-2 py-0.5 rounded-full bg-sky-400 text-slate-950 font-black text-[9px] shadow-md border border-sky-200 -mb-2 z-20 whitespace-nowrap">
+                🧼 ${item.brand || 'სამრეცხაო'}
               </div>
-              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-800 border-2 border-sky-300 text-white flex items-center justify-center shadow-[0_0_15px_rgba(14,165,233,0.7)] group-hover:scale-110 transition-transform">
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-700 to-slate-950 border-2 border-sky-200 text-white flex items-center justify-center shadow-[0_0_16px_rgba(14,165,233,0.75)] group-hover:scale-115 transition-transform z-10">
                 <svg class="w-5 h-5 text-sky-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>
               </div>
             </div>
@@ -461,10 +537,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           markerClass = 'parts-marker';
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-purple-400 text-slate-950 font-black text-[10px] shadow-md border border-purple-200 -mb-2 z-10 whitespace-nowrap">
-                ${item.brand || 'ნაწილები'}
+              <div class="px-2 py-0.5 rounded-full bg-purple-400 text-slate-950 font-black text-[9px] shadow-md border border-purple-200 -mb-2 z-20 whitespace-nowrap">
+                🔩 ${item.brand || 'ნაწილები'}
               </div>
-              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-900 border-2 border-purple-300 text-white flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.7)] group-hover:scale-110 transition-transform">
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 via-indigo-800 to-slate-950 border-2 border-purple-300 text-white flex items-center justify-center shadow-[0_0_16px_rgba(168,85,247,0.75)] group-hover:scale-115 transition-transform z-10">
                 <svg class="w-5 h-5 text-purple-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               </div>
             </div>
@@ -475,11 +551,11 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           markerClass = 'parking-marker';
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-blue-500 text-white font-black text-[10px] font-mono shadow-md border border-blue-200 -mb-2 z-10 whitespace-nowrap">
-                ${item.code ? `#${item.code}` : 'P'}
+              <div class="px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950 font-black text-[9px] font-mono shadow-md border border-cyan-200 -mb-2 z-20 whitespace-nowrap">
+                ${item.code ? `#${item.code}` : '🅿️ ლოტი'}
               </div>
-              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-navy border-2 border-cyan-400 text-white flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.7)] group-hover:scale-110 transition-transform">
-                <span class="text-white font-black text-base">P</span>
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-900 to-slate-950 border-2 border-cyan-300 text-white flex items-center justify-center shadow-[0_0_16px_rgba(59,130,246,0.8)] group-hover:scale-115 transition-transform z-10">
+                <span class="text-white font-black text-base font-mono">P</span>
               </div>
             </div>
           `;
@@ -489,11 +565,11 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           markerClass = 'showroom-marker';
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-gold text-navy font-black text-[10px] shadow-md border border-amber-300 -mb-2 z-10 whitespace-nowrap">
-                ${item.rating ? `${item.rating} ★` : 'ავტო'}
+              <div class="px-2 py-0.5 rounded-full bg-gold text-navy font-black text-[9px] shadow-md border border-amber-300 -mb-2 z-20 whitespace-nowrap">
+                👑 ${item.brand || 'ავტოსალონი'}
               </div>
-              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-slate-800 to-navy border-2 border-gold text-gold flex items-center justify-center shadow-[0_0_15px_rgba(252,163,17,0.6)] group-hover:scale-110 transition-transform">
-                <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-slate-900 via-navy to-slate-950 border-2 border-gold text-gold flex items-center justify-center shadow-[0_0_18px_rgba(252,163,17,0.7)] group-hover:scale-115 transition-transform z-10">
+                <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
               </div>
             </div>
           `;
@@ -503,26 +579,47 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       const customIcon = L.divIcon({
         className: 'custom-leaflet-marker',
         html: iconHtml,
-        iconSize: [42, 42],
-        iconAnchor: [21, 21],
+        iconSize: [44, 44],
+        iconAnchor: [22, 22],
         popupAnchor: [0, -22]
       });
 
       // Construct Popup HTML with Dark Neon Glassmorphism
       let popupBodyHtml = '';
-      if (item.cameraSource) {
+      if (item.type === 'radar') {
         popupBodyHtml += `
-          <div class="mt-2 text-xs text-slate-300">
+          <div class="mt-2.5 p-2.5 rounded-2xl bg-slate-900/90 border border-amber-500/30 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">კამერის ტიპი:</span>
+              <span class="font-bold text-amber-300">${escapeHtml(item.cameraKind || 'სტაციონარული რადარი')}</span>
+            </div>
+            ${item.speed_limit_kmh ? `
+              <div class="flex items-center justify-between pt-1.5 border-t border-slate-800">
+                <span class="text-slate-400">მაქს. სიჩქარე:</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-red-600/30 text-red-300 border border-red-500 font-mono font-black text-xs">
+                  ⚡ ${item.speed_limit_kmh} კმ/სთ
+                </span>
+              </div>
+            ` : ''}
+            <div class="text-[10px] text-slate-400 pt-1.5 border-t border-slate-800 flex items-center justify-between">
+              <span>წყარო: ${escapeHtml(item.cameraSource || 'OpenStreetMap')}</span>
+              ${item.osmId ? `<a href="https://www.openstreetmap.org/node/${item.osmId}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 underline font-mono">OSM #${item.osmId} ↗</a>` : ''}
+            </div>
+          </div>
+        `;
+      } else if (item.cameraSource) {
+        popupBodyHtml += `
+          <div class="mt-2.5 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 text-xs text-slate-300 space-y-1">
             ${item.speedLimit ? `<div>ლიმიტი: <strong class="text-amber-400">${escapeHtml(item.speedLimit)}</strong></div>` : ''}
             <div>წყარო: ${escapeHtml(item.cameraSource)}</div>
             ${item.cameraUpdatedAt ? `<div>განახლდა: ${escapeHtml(new Date(item.cameraUpdatedAt).toLocaleDateString('ka-GE'))}</div>` : ''}
-            ${item.osmId ? `<a href="https://www.openstreetmap.org/node/${item.osmId}" target="_blank" rel="noopener noreferrer" class="text-cyan-300">წყაროს ნახვა ↗</a>` : ''}
+            ${item.osmId ? `<a href="https://www.openstreetmap.org/node/${item.osmId}" target="_blank" rel="noopener noreferrer" class="text-cyan-300 underline font-mono">წყაროს ნახვა ↗</a>` : ''}
           </div>
         `;
       }
       if (item.type === 'fuel' && item.fuel_prices) {
         popupBodyHtml += `
-          <div class="mt-2.5 p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80">
+          <div class="mt-2.5 p-2.5 rounded-2xl bg-slate-900/90 border border-emerald-500/30">
             <div class="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 flex justify-between">
               <span>საწვავის ტიპი</span>
               <span>ფასი / 1 ლიტრი</span>
@@ -540,21 +637,24 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       }
       if (item.phone || item.website || item.opening_hours || item.address || item.code) {
         popupBodyHtml += `
-          <div class="mt-2.5 p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 space-y-1 text-xs">
-            ${item.code ? `<div class="font-mono text-cyan-300 font-bold">🅿️ ლოტი #${escapeHtml(item.code)}</div>` : ''}
+          <div class="mt-2.5 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 space-y-1.5 text-xs">
+            ${item.code ? `<div class="font-mono text-cyan-300 font-bold flex items-center justify-between"><span>🅿️ საპარკინგე ლოტი #${escapeHtml(item.code)}</span><span class="text-amber-300 text-[10px]">15 წთ უფასო</span></div>` : ''}
             ${item.rating ? `<div class="flex items-center gap-1.5 text-gold font-bold"><span>შეფასება:</span><span>${item.rating} / 5.0 ★</span></div>` : ''}
-            ${item.address ? `<div class="text-slate-300">📍 ${escapeHtml(item.address)}</div>` : ''}
-            ${item.phone ? `<div class="flex items-center gap-1"><span>📞</span><a href="tel:${escapeHtml(item.phone)}" class="text-cyan-300 font-mono hover:underline">${escapeHtml(item.phone)}</a></div>` : ''}
+            ${item.address ? `<div class="text-slate-300 flex items-start gap-1"><span>📍</span><span>${escapeHtml(item.address)}</span></div>` : ''}
+            ${item.phone ? `<div class="flex items-center gap-1"><span>📞</span><a href="tel:${escapeHtml(item.phone)}" class="text-cyan-300 font-mono font-bold hover:underline">${escapeHtml(item.phone)}</a></div>` : ''}
             ${item.website ? `<div class="flex items-center gap-1"><span>🌐</span><a href="${escapeHtml(item.website)}" target="_blank" rel="noopener noreferrer" class="text-cyan-300 hover:underline">ვებსაიტი ↗</a></div>` : ''}
-            ${item.opening_hours ? `<div class="text-[11px] text-slate-400">🕒 ${escapeHtml(item.opening_hours)}</div>` : ''}
+            ${item.opening_hours ? `<div class="text-[11px] text-slate-400 flex items-center gap-1"><span>🕒</span><span>${escapeHtml(item.opening_hours)}</span></div>` : ''}
           </div>
         `;
       }
 
+      const wazeDeepLink = `https://waze.com/ul?ll=${item.lat},${item.lng}&navigate=yes`;
+      const gmapsLink = `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}`;
+
       const popupContent = `
-        <div class="w-64 font-sans text-slate-100 p-1">
+        <div class="w-72 font-sans text-slate-100 p-1">
           <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
               item.type === 'patrol' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
               item.type === 'radar' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
               item.type === 'hazard' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
@@ -567,29 +667,32 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
               'bg-gold/20 text-gold border border-gold/30'
             }">
               ${item.type === 'patrol' ? '🚓 საპატრულო ეკიპაჟი' :
-                item.type === 'radar' ? '📷 ' + escapeHtml(item.cameraKind || 'რადარი / კამერა') :
+                item.type === 'radar' ? (item.speed_limit_kmh ? `⚡ რადარი · ${item.speed_limit_kmh} კმ/სთ` : '📷 ' + escapeHtml(item.cameraKind || 'რადარი / კამერა')) :
                 item.type === 'hazard' ? '⚠️ საგზაო საფრთხე' :
                 item.type === 'fuel' ? '⛽ ავტოგასამართი' :
                 item.type === 'charging' ? '⚡ დამტენი სადგური' :
                 item.type === 'service' ? '🔧 ავტოსერვისი & საბურავები' :
                 item.type === 'car_wash' ? '🧼 ავტოსამრეცხაო' :
                 item.type === 'parts' ? '🔩 ავტონაწილები' :
-                item.type === 'parking' ? '🅿️ საპარკინგე ლოტი' : '🏢 ავტო სალონი'}
+                item.type === 'parking' ? (item.code ? `🅿️ საპარკინგე ლოტი #${escapeHtml(item.code)}` : '🅿️ პარკინგი') : '🏢 ავტო სალონი'}
             </span>
-            <span class="text-[10px] text-slate-400 font-mono">${item.cameraSource ? 'OSM' : formatTimeAgo(item.timestamp)}</span>
+            <span class="text-[10px] text-slate-400 font-mono">${item.cameraSource ? 'OSM OpenData' : formatTimeAgo(item.timestamp)}</span>
           </div>
 
           <h4 class="font-extrabold text-sm text-white mt-2 leading-tight">${item.title}</h4>
-          ${item.description ? `<p class="text-xs text-slate-300 mt-1 leading-snug">${item.description}</p>` : ''}
+          ${item.description && item.description !== item.address ? `<p class="text-xs text-slate-300 mt-1 leading-snug">${item.description}</p>` : ''}
           ${popupBodyHtml}
 
-          <div class="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between gap-1 text-[11px]">
-            <span class="text-slate-400 flex items-center gap-1">
-              👍 <strong class="text-emerald-400 font-mono">${item.cameraSource ? 'OSM' : item.confirmations}</strong> ${item.cameraSource ? 'წყარო' : 'დასტური'}
-            </span>
-            <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" rel="noreferrer" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 font-bold flex items-center gap-1 transition-colors">
-              მარშრუტი ↗
-            </a>
+          <div class="mt-3 pt-2.5 border-t border-slate-800 flex flex-wrap items-center justify-between gap-1.5 text-xs">
+            <div class="flex items-center gap-1.5">
+              <a href="${wazeDeepLink}" target="_blank" rel="noreferrer" class="px-2.5 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-bold flex items-center gap-1 transition-all">
+                <span>Waze ↗</span>
+              </a>
+              <a href="${gmapsLink}" target="_blank" rel="noreferrer" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center gap-1 transition-all">
+                <span>Google Maps ↗</span>
+              </a>
+            </div>
+            ${item.phone ? `<a href="tel:${escapeHtml(item.phone)}" class="px-2.5 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-bold flex items-center gap-1 transition-all"><span>📞 დარეკვა</span></a>` : ''}
           </div>
         </div>
       `;
@@ -597,7 +700,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       const marker = L.marker([item.lat, item.lng], { icon: customIcon });
       marker.bindPopup(popupContent, {
         className: 'dark-neon-popup',
-        maxWidth: 280
+        maxWidth: 320
       });
 
       marker.on('click', () => {
@@ -712,66 +815,30 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     }
   }, [reports, filterType, searchQuery, showParking, parkingViewport, isLeafletReady]);
 
-  // 5. User Geolocation Handler
-  const handleLocateMe = () => {
-    sounds.playClick();
-    setIsLocating(true);
-
-    if (!navigator.geolocation) {
-      alert('თქვენს ბრაუზერში GPS გეოლოკაცია არ არის მხარდაჭერილი.');
-      setIsLocating(false);
-      return;
+  // Real OBD GPS has priority; the current device provides the fallback.
+  useEffect(() => {
+    return watchPreferredLocation(vehicle?.id, fix => {setLocationFix(fix);setUserLocation({lat:fix.lat,lng:fix.lng});setLocationError('');}, message => {setLocationError(message);setLocationFix(null);setUserLocation(null);});
+  }, [vehicle?.id]);
+  useEffect(() => {
+    const map=mapInstanceRef.current,L=(window as any).L;
+    if(!map||!L)return;
+    if(!locationFix){userMarkerRef.current?.remove();userMarkerRef.current=null;return;}
+    const label=locationFix.source==='obd'?'თქვენი მანქანა • 4G OBD GPS':'თქვენი მოწყობილობა • GPS';
+    const content=`<div class="p-2 text-xs font-bold text-white">${label}<br>სიზუსტე: ±${Math.round(locationFix.accuracy)} მ</div>`;
+    if(userMarkerRef.current){userMarkerRef.current.setLatLng([locationFix.lat,locationFix.lng]);userMarkerRef.current.setPopupContent(content);}
+    else {
+      const icon=L.divIcon({className:'user-car-marker',html:'<div style="width:24px;height:24px;border:3px solid white;border-radius:50%;background:#0284c7;box-shadow:0 0 0 8px #0284c733"></div>',iconSize:[24,24],iconAnchor:[12,12]});
+      userMarkerRef.current=L.marker([locationFix.lat,locationFix.lng],{icon}).bindPopup(content,{className:'dark-neon-popup'}).addTo(map);
     }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setUserLocation(coords);
-        setIsLocating(false);
-        sounds.playSuccess();
-
-        const L = (window as any).L;
-        if (!L || !mapInstanceRef.current) return;
-
-        // Fly to location
-        mapInstanceRef.current.flyTo([coords.lat, coords.lng], 15, {
-          duration: 1.5
-        });
-
-        // Add or update User Vehicle Marker
-        if (userMarkerRef.current) {
-          userMarkerRef.current.setLatLng([coords.lat, coords.lng]);
-        } else {
-          const userIcon = L.divIcon({
-            className: 'user-car-marker',
-            html: `
-              <div class="relative flex items-center justify-center">
-                <span class="absolute w-12 h-12 rounded-full bg-cyan-400/25 animate-ping"></span>
-                <span class="absolute w-8 h-8 rounded-full bg-cyan-400/50"></span>
-                <div class="w-9 h-9 rounded-full bg-navy border-2 border-cyan-400 text-cyan-300 flex items-center justify-center shadow-[0_0_20px_#00f0ff] z-10">
-                  <svg class="w-5 h-5 text-cyan-300" fill="currentColor" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/><circle cx="7.5" cy="14.5" r="1.5"/><circle cx="16.5" cy="14.5" r="1.5"/></svg>
-                </div>
-              </div>
-            `,
-            iconSize: [40, 40],
-            iconAnchor: [20, 20]
-          });
-
-          userMarkerRef.current = L.marker([coords.lat, coords.lng], { icon: userIcon })
-            .bindPopup(`<div class="p-2 text-xs font-bold text-white">ჩემი მანქანა: ${vehicle ? `${vehicle.brand} ${vehicle.model}` : 'GPS ლოკაცია'}</div>`, { className: 'dark-neon-popup' })
-            .addTo(mapInstanceRef.current);
-        }
-      },
-      (err) => {
-        console.warn('Geolocation error:', err);
-        setIsLocating(false);
-        // Fallback to Tbilisi center
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.flyTo([41.7151, 44.8271], 13);
-        }
-      },
-      { enableHighAccuracy: true, timeout: 7000 }
-    );
+  },[locationFix,isLeafletReady]);
+  const handleLocateMe = async () => {
+    sounds.playClick();setIsLocating(true);
+    try {
+      const fix=await getPreferredLocation(vehicle?.id);
+      setLocationFix(fix);setUserLocation({lat:fix.lat,lng:fix.lng});setLocationError('');
+      mapInstanceRef.current?.flyTo([fix.lat,fix.lng],15,{duration:1});sounds.playSuccess();
+    } catch(error) {setLocationError(error instanceof Error?error.message:'მდებარეობა ვერ განისაზღვრა.');}
+    finally {setIsLocating(false);}
   };
 
   // 6. Handle New Report Add
@@ -948,6 +1015,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       </div>
 
       <p role="status" className="text-xs text-slate-600 px-2">{cameraStatus}<br />საზოგადოებრივი ბაზა შეიძლება არასრული იყოს. იხელმძღვანელეთ საგზაო ნიშნებით. <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">© OpenStreetMap contributors · ODbL</a></p>
+      <p role="status" className="text-xs text-slate-500 px-2">{locationError || (locationFix?.source === 'obd' ? 'მდებარეობა: მანქანის 4G OBD GPS' : locationFix ? 'მდებარეობა: მიმდინარე მოწყობილობის GPS' : '')}</p>
       {/* 2. Interactive Map Canvas OR Official Waze Live Map View */}
       {activeMapView === 'waze_live' ? (
         <div className="space-y-3 animate-fade-in">
