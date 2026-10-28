@@ -507,18 +507,24 @@ export const ThreeCarScene: React.FC<Props> = ({
           uFill: visual.fill, uLift: visual.lift, uScanZ: visual.scanZ,
           uScanStrength: visual.scanStrength, uCarInverse: visual.carInverse,
           uGhostColor: { value: ghostColor }, uPaintColor: { value: solidColor },
-          uGhostAlpha: { value: mat.userData.ghostOpacity ?? .26 }
+          uGhostAlpha: { value: mat.userData.ghostOpacity ?? .26 },
+          uSolidRoughness: { value: mat.userData.solidRoughness ?? .30 },
+          uSolidMetalness: { value: mat.userData.solidMetalness ?? .40 }
         });
         shader.vertexShader = 'uniform mat4 uCarInverse; varying vec3 vCarSurface;\n' + shader.vertexShader;
         shader.vertexShader = shader.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvCarSurface = (uCarInverse * modelMatrix * vec4(transformed, 1.0)).xyz;');
-        shader.fragmentShader = `uniform float uFill, uLift, uScanZ, uScanStrength, uGhostAlpha;
+        shader.fragmentShader = `uniform float uFill, uLift, uScanZ, uScanStrength, uGhostAlpha, uSolidRoughness, uSolidMetalness;
           uniform vec3 uGhostColor, uPaintColor; varying vec3 vCarSurface;\n` + shader.fragmentShader;
         if (body) {
           shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-            diffuseColor.rgb = ${paintLayer ? 'uPaintColor' : 'uGhostColor'};
-            diffuseColor.a = ${paintLayer ? 'uFill' : 'uGhostAlpha * (1.0 - uFill)'};`);
-          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = ' + (paintLayer ? '.30;' : '.13;'));
-          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = ' + (paintLayer ? '.40;' : '.03;'));
+            float surfaceAlpha = clamp(diffuseColor.a / max(opacity, .001), 0.0, 1.0);
+            diffuseColor.rgb ${paintLayer && mat.userData.keepSurfaceColor ? '*=' : '='} ${paintLayer ? 'uPaintColor' : 'uGhostColor'};
+            diffuseColor.a = surfaceAlpha * ${paintLayer ? 'uFill' : 'uGhostAlpha * (1.0 - uFill)'};
+            ${paintLayer && mat.userData.keepSurfaceColor ? `
+              float frontGrille = smoothstep(2.08, 2.18, vCarSurface.z) * (1.0 - smoothstep(.40, .48, abs(vCarSurface.x))) * step(.17, vCarSurface.y - uLift) * (1.0 - step(.83, vCarSurface.y - uLift));
+              diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.006, .008, .012), frontGrille);` : ''}`);
+          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = ' + (paintLayer ? 'uSolidRoughness;' : '.13;'));
+          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = ' + (paintLayer ? 'uSolidMetalness;' : '.03;'));
         }
         shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
           float scanBand = exp(-pow((vCarSurface.z - uScanZ) / .035, 2.0));
@@ -526,7 +532,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           outgoingLight += (vec3(.72, .93, 1.0) * scanBand * 1.6 + vec3(.06, .32, .60) * scanHalo * .32) * uScanStrength;
           #include <opaque_fragment>`);
       };
-      mat.customProgramCacheKey = () => body ? (paintLayer ? 'autohub-opaque-paint-v3' : 'autohub-glass-fade-v3') : 'autohub-surface-scan-v3';
+      mat.customProgramCacheKey = () => body ? (paintLayer ? (mat.userData.keepSurfaceColor ? 'autohub-native-trim-v4' : 'autohub-opaque-paint-v4') : 'autohub-glass-fade-v4') : 'autohub-surface-scan-v3';
       mat.needsUpdate = true;
     };
     // A restrained volumetric light sheet moves through the whole vehicle.
@@ -565,7 +571,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     let headlightMat: THREE.MeshStandardMaterial | null = null;
     let taillightMat: THREE.MeshStandardMaterial | null = null;
     let disposed = false;
-    gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=10`, (gltf) => {
+    gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=11`, (gltf) => {
       const root = gltf.scene;
       if (disposed) return;
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
@@ -706,7 +712,30 @@ export const ThreeCarScene: React.FC<Props> = ({
       ghostGlassMat.userData.ghostOpacity = 0.26;
       ghostGlassMat.userData.solidColor = 0x1746b0; // iPhone 17 ღრმა/გაჯერებული ლურჯი
       bodyMaterialsRef.current = [ghostGlassMat];
-      meshesOf('Body_Paint').forEach(m => { m.material = ghostGlassMat; bodyGrp.attach(m); });
+      meshesOf('Body_Paint').forEach(mesh => {
+        const native = mesh.material as THREE.MeshStandardMaterial;
+        const glass = ghostGlassMat.clone();
+        glass.normalMap = native.normalMap;
+        glass.normalScale.copy(native.normalScale);
+        glass.userData.solidRoughness = .27;
+        glass.userData.solidMetalness = .55;
+        mesh.material = glass;
+        bodyMaterialsRef.current.push(glass);
+        bodyGrp.attach(mesh);
+      });
+      ['Body_Trim', 'Body_Grille'].forEach(name => meshesOf(name).forEach(mesh => {
+        const native = mesh.material as THREE.MeshStandardMaterial;
+        const material = new THREE.MeshPhysicalMaterial();
+        THREE.MeshStandardMaterial.prototype.copy.call(material, native);
+        material.transparent = true; material.opacity = .14; material.depthWrite = false;
+        material.alphaTest = 0;
+        material.clearcoat = .12; material.clearcoatRoughness = .22;
+        material.userData = { ghostOpacity: .14, solidColor: 0xffffff, keepSurfaceColor: true,
+          solidRoughness: name === 'Body_Grille' ? .34 : .48, solidMetalness: .03 };
+        mesh.material = material;
+        bodyMaterialsRef.current.push(material);
+        bodyGrp.attach(mesh);
+      }));
 
       // მინები — ყოველთვის გამჭვირვ. (საქარე მინა/ფანჯრები)
       const windowMat = new THREE.MeshPhysicalMaterial({
@@ -756,7 +785,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         m.material = windowMat; bodyGrp.attach(m);
       });
 
-      const headLensMat = new THREE.MeshPhysicalMaterial({color: 0xc5dfed, transparent: true, opacity: .24, roughness: .08, metalness: 0, clearcoat: 1, ior: 1.49, depthWrite: false});
+      const headLensMat = new THREE.MeshPhysicalMaterial({color: 0xe6eef2, transparent: true, opacity: .16, roughness: .05, metalness: 0, clearcoat: 1, ior: 1.49, depthWrite: false});
       const tailLensMat = new THREE.MeshPhysicalMaterial({color: 0x9e101c, transparent: true, opacity: .55, roughness: .13, metalness: 0, clearcoat: 1, ior: 1.49, depthWrite: false});
       meshesOf('Headlight_Lenses').forEach(m => {m.material = headLensMat; bodyGrp.attach(m);});
       meshesOf('Taillight_Lenses').forEach(m => {m.material = tailLensMat; bodyGrp.attach(m);});
@@ -891,8 +920,8 @@ export const ThreeCarScene: React.FC<Props> = ({
       if (windowMaterial) windowMaterial.opacity = THREE.MathUtils.lerp(.10, .36, visual.fill.value);
       if (roofMaterial) roofMaterial.opacity = THREE.MathUtils.lerp(.16, .94, visual.fill.value);
       // ფარები ინთება როცა მანქანა მკაფიო/მყარი ხდება
-      if (headlightMat) headlightMat.emissiveIntensity = 0.22 + fillProgress * 3.0;
-      if (taillightMat) taillightMat.emissiveIntensity = 0.18 + fillProgress * 1.9;
+      if (headlightMat) headlightMat.emissiveIntensity = 0.12 + fillProgress * .85;
+      if (taillightMat) taillightMat.emissiveIntensity = 0.12 + fillProgress * .75;
       bodyMaterialsRef.current.forEach(mat => { mat.depthWrite = false; });
 
       const sequence = sequenceRef.current;
