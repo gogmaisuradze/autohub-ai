@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-10-28T17:35:52.261818+00:00",
+  "source_data_at": "2026-10-27T21:23:59Z",
+  "source": "https://download.geofabrik.de/europe/georgia.html",
+  "license": "ODbL-1.0",
+  "sha256": "dd6e0eec9ba4b3f5669394be714c4d7a49f52d200b2b3f2c5f70dd7b2bcf5e55",
+  "layers": {
+    "cameras": {
+      "count": 260,
+      "bytes": 76176,
+      "named": 1
+    },
+    "parking": {
+      "count": 2302,
+      "bytes": 782283,
+      "named": 25
+    },
+    "fuel": {
+      "count": 1421,
+      "bytes": 948796,
+      "named": 833
+    },
+    "charging": {
+      "count": 254,
+      "bytes": 101613,
+      "named": 67
+    },
+    "services": {
+      "count": 1344,
+      "bytes": 418071,
+      "named": 202
+    },
+    "car-wash": {
+      "count": 902,
+      "bytes": 277075,
+      "named": 62
+    },
+    "parts": {
+      "count": 619,
+      "bytes": 199222,
+      "named": 120
+    },
+    "showrooms": {
+      "count": 122,
+      "bytes": 48087,
+      "named": 73
+    }
+  },
+  "notes": [
+    "Only OSM-mapped objects; completeness and current operation are not guaranteed.",
+    "Parking points are not official lot codes, tariffs or exact parking boundaries.",
+    "Ways represented by mean outline coordinates, not verified entrances.",
+    "Multipolygon-only POIs and area enforcement devices are not extracted."
+  ]
+}

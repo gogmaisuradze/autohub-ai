@@ -118,6 +118,36 @@ export const ThreeCarScene: React.FC<Props> = ({
   scanOutcomeRef.current = scanOutcome;
   const modelReadyRef = useRef(false);
   const scanVisualActive = isScanning || ['rotating', 'waiting', 'reveal'].includes(scanStage);
+  // Brief physical pulses during the scan; unsupported browsers remain silent.
+  useEffect(() => {
+    if (!scanVisualActive || typeof navigator.vibrate !== 'function') return;
+    let interval: ReturnType<typeof setInterval> | undefined;
+    let stopped = false;
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      if (interval !== undefined) clearInterval(interval);
+      try { navigator.vibrate(0); } catch { /* Browser may deny haptics. */ }
+    };
+    const pulse = () => {
+      if (stopped) return;
+      if (document.hidden) { stop(); return; }
+      try { if (!navigator.vibrate([30, 55, 30])) stop(); }
+      catch { stop(); }
+    };
+    const onVisibility = () => { if (document.hidden) stop(); };
+    pulse();
+    if (!stopped) interval = setInterval(pulse, 850);
+    const timeout = setTimeout(stop, 60000);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', stop);
+    return () => {
+      stop();
+      clearTimeout(timeout);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', stop);
+    };
+  }, [scanVisualActive]);
   useEffect(() => {
     if (!isScanning) return;
     sequenceRef.current = { active: true, elapsed: 0, startAngle: NaN, revealing: false, initialCamPos: null };
@@ -158,6 +188,18 @@ export const ThreeCarScene: React.FC<Props> = ({
   liveStateRef.current.autoRotate = autoRotate;
   const [modelError, setModelError] = useState(false);
   const [modelLoading, setModelLoading] = useState(true);
+  const [modelProgress, setModelProgress] = useState<number | null>(null);
+  const topControlsRef = useRef<HTMLDivElement>(null);
+  const [controlsHeight, setControlsHeight] = useState(160);
+  useEffect(() => {
+    const element = topControlsRef.current;
+    if (!element) return;
+    const update = () => setControlsHeight(element.getBoundingClientRect().height);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const [isGhostMode, setIsGhostMode] = useState<boolean>(true); // Ghost X-Ray Wireframe body vs Solid
   const solidTargetRef = useRef(0);
   const [explodeFactor, setExplodeFactor] = useState<number>(0); // 0 to 1
@@ -535,6 +577,8 @@ export const ThreeCarScene: React.FC<Props> = ({
     const base = import.meta.env.BASE_URL || '/';
     const cleanBase = base.endsWith('/') ? base : `${base}/`;
     dracoLoader.setDecoderPath(`${cleanBase}draco/`);
+    dracoLoader.setWorkerLimit(2);
+    dracoLoader.preload();
     gltfLoader.setDRACOLoader(dracoLoader);
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -779,7 +823,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         roughness: 0.14, ior: 1.45, metalness: 0.05, clearcoat: 1.0, depthWrite: false
       });
       ghostGlassMat.userData.ghostOpacity = 0.26;
-      ghostGlassMat.userData.solidColor = 0x1746b0; // iPhone 17 ღრმა/გაჯერებული ლურჯი
+      ghostGlassMat.userData.solidColor = 0x34465e; // AutoHub: muted graphite-blue metallic, matched to the navy interface
       bodyMaterialsRef.current = [ghostGlassMat];
       meshesOf('Body_Paint').forEach(mesh => {
         const native = mesh.material as THREE.MeshStandardMaterial;
@@ -979,7 +1023,9 @@ export const ThreeCarScene: React.FC<Props> = ({
       carMasterGroup.remove(root);
       modelReadyRef.current = true;
       setModelLoading(false);
-    }, undefined, (err) => { if (!disposed) { setModelError(true); setModelLoading(false); } console.error('BMW model load error', err); });
+    }, (event) => {
+      if (!disposed && event.lengthComputable && event.total > 0) setModelProgress(Math.min(100, Math.round(event.loaded / event.total * 100)));
+    }, (err) => { if (!disposed) { setModelError(true); setModelLoading(false); } console.error('BMW model load error', err); });
 
     // 3D hotspot pins removed — components light up in their own colour instead
 
@@ -1218,18 +1264,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         carMasterGroup.rotation.z = Math.sin(elapsedTime * 70.0) * (vibAmp * 0.35);
         carMasterGroup.rotation.x = Math.cos(elapsedTime * 58.0) * (vibAmp * 0.25);
 
-        // Mobile Device Physical Haptic Pulse (matching laser sweep rhythm)
-        if (focus > 0.35 && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-          const now = performance.now();
-          if (now - lastHapticRef.current > 300) {
-            lastHapticRef.current = now;
-            try {
-              navigator.vibrate(12);
-            } catch {
-              // Ignore if restricted by browser security policies
-            }
-          }
-        }
+
       } else {
         carMasterGroup.position.set(0, 0, 0);
         carMasterGroup.rotation.z = 0;
@@ -1318,28 +1353,28 @@ export const ThreeCarScene: React.FC<Props> = ({
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none transition-opacity duration-1000" style={{ background: 'radial-gradient(ellipse at 50% 48%, #1a3047 0%, #0b1728 58%, #050b14 100%)', opacity: scanVisualActive ? 1 : 0 }} />
       {/* Active Laser Scanning Badge */}
       {scanVisualActive && (
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/90 text-cyan-300 border border-cyan-400/60 backdrop-blur-md shadow-[0_0_25px_rgba(34,211,238,0.4)] animate-pulse text-xs font-black">
+        <div className="absolute bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/90 text-cyan-300 border border-cyan-400/60 backdrop-blur-md shadow-[0_0_25px_rgba(34,211,238,0.4)] animate-pulse text-xs font-black">
           <Zap size={14} className="text-cyan-400 animate-bounce" />
-          <span>3D ლაზერული სკანირება • ECU ტელემეტრია</span>
+          <span>სკანირება</span>
         </div>
       )}
       <div className="absolute bottom-2 left-3 z-20 max-w-[65%] text-[11px] text-slate-500 pointer-events-auto">
         BMW M4 · 3D ვიზუალიზაცია · <a className="underline" href={`${import.meta.env.BASE_URL}models/bmw-diagnostic-credits.json`} target="_blank" rel="noreferrer">3D ავტორები</a>
       </div>
-      {modelLoading && !modelError && <div role="status" className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center"><span className="rounded-full bg-white/90 px-4 py-2 text-sm text-slate-600 shadow-sm">3D მოდელი იტვირთება…</span></div>}
+      {modelLoading && !modelError && <div role="status" className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center"><span className="rounded-full bg-white/90 px-4 py-2 text-sm text-slate-600 shadow-sm">{modelProgress === 100 ? '3D მოდელი მზადდება…' : modelProgress === null ? '3D მოდელი იტვირთება…' : `3D მოდელი იტვირთება… ${modelProgress}%`}</span></div>}
       {modelError && <div role="alert" className="absolute inset-0 z-30 grid place-items-center bg-white/95 text-sm text-navy">3D მოდელი ვერ ჩაიტვირთა. განაახლეთ გვერდი.</div>}
       {/* 1. TOP FLOATING CONTROL HUD BAR */}
-      <div className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pointer-events-none">
+      <div ref={topControlsRef} className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-col lg:flex-row lg:flex-wrap lg:items-center lg:justify-between gap-2 pointer-events-none">
         
         {/* Left: Window Status Badge & Active Vehicle Plate */}
-        <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 pointer-events-auto shadow-sm">
+        <div className="flex w-full lg:w-auto min-w-0 flex-wrap items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 pointer-events-auto shadow-sm">
           <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
           <span className="text-[11px] sm:text-xs font-black text-navy font-mono tracking-tight flex items-center gap-1 sm:gap-1.5">
             <Cpu size={12} className="text-gold" />
-            <span>{vehicle ? `${vehicle.brand} ${vehicle.model}` : 'DIGITAL TWIN X-RAY'}</span>
+            <span className="break-words">{vehicle ? `${vehicle.brand} ${vehicle.model}` : 'DIGITAL TWIN X-RAY'}</span>
           </span>
           {vehicle?.plate_number && (
-            <div className="hidden min-[400px]:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-md bg-white text-navy font-mono text-[10px] sm:text-[11px] font-black border border-slate-300 shadow-xs ml-0.5">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-md bg-white text-navy font-mono text-[10px] sm:text-[11px] font-black border border-slate-300 shadow-xs ml-0.5">
               <span className="text-blue-700 text-[9px] sm:text-[10px] font-bold">🇬🇪 GE</span>
               <span>{vehicle.plate_number}</span>
             </div>
@@ -1347,7 +1382,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         </div>
 
         {/* Right HUD Controls: Ghost / Solid Toggle, Exploded View Slider & Reset */}
-        <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+        <div className="grid w-full lg:w-auto grid-cols-6 lg:flex lg:flex-wrap items-center gap-2 pointer-events-auto">
           
           {/* Quick Scan Button right on 3D Screen */}
           {onStartScan && (
@@ -1357,8 +1392,8 @@ export const ThreeCarScene: React.FC<Props> = ({
                 sounds.playClick();
                 onStartScan();
               }}
-              disabled={scanVisualActive}
-              className={`px-3 sm:px-4 py-1.5 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md active:scale-95 border ${
+              disabled={scanVisualActive || modelLoading || modelError}
+              className={`col-span-2 min-w-0 min-h-[44px] justify-center px-1.5 sm:px-4 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md active:scale-95 border ${
                 scanVisualActive
                   ? 'bg-amber-400 text-slate-950 border-amber-500 animate-pulse cursor-wait'
                   : 'bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 hover:shadow-gold-soft hover:scale-105 border-gold shadow-sm'
@@ -1373,7 +1408,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           {/* Ghost Glass / Solid Body Toggle */}
           <button
             onClick={toggleGhostMode}
-            className={`px-3.5 py-1.5 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-sm ${
+            className={`col-span-2 min-w-0 min-h-[44px] justify-center px-1.5 sm:px-3.5 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-sm ${
               isGhostMode
                 ? 'bg-navy text-white shadow-md'
                 : 'neu-btn text-navy'
@@ -1390,14 +1425,14 @@ export const ThreeCarScene: React.FC<Props> = ({
               sounds.playClick();
               setExplodeFactor(prev => (prev > 0.5 ? 0 : 1));
             }}
-            className={`px-3.5 py-1.5 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-sm ${
+            className={`col-span-2 min-w-0 min-h-[44px] justify-center px-1.5 sm:px-3.5 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-sm ${
               explodeFactor > 0.5
                 ? 'bg-gold text-navy shadow-gold-soft'
                 : 'neu-btn text-navy'
             }`}
           >
             <Layers size={13} />
-            <span>{explodeFactor > 0.5 ? 'აწყობა (0%)' : 'დაშლა (100%)'}</span>
+            <span>{explodeFactor > 0.5 ? 'აწყობა' : 'დაშლა'}</span>
           </button>
 
           {/* Turntable Auto-Rotate Toggle */}
@@ -1406,8 +1441,10 @@ export const ThreeCarScene: React.FC<Props> = ({
               sounds.playClick();
               setAutoRotate(r => !r);
             }}
-            className="w-8 h-8 rounded-full neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
+            className="w-full lg:w-11 h-11 rounded-xl neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
             title="ტრიალის ჩართვა/გამორთვა"
+            aria-label="ტრიალის ჩართვა/გამორთვა"
+            aria-pressed={autoRotate}
           >
             <RotateCw size={13} className={autoRotate ? 'text-gold' : 'text-slate-400'} />
           </button>
@@ -1415,16 +1452,14 @@ export const ThreeCarScene: React.FC<Props> = ({
           {/* Reset Camera View */}
           <button
             onClick={handleResetCamera}
-            className="w-8 h-8 rounded-full neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
+            className="w-full lg:w-11 h-11 rounded-xl neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
             title="საწყის ხედზე დაბრუნება"
+            aria-label="საწყის ხედზე დაბრუნება"
           >
             <Maximize2 size={13} />
           </button>
-        </div>
-      </div>
-
       {/* 2. EXPLODED VIEW SCRUB SLIDER (Floating Top-Left) */}
-      <div className="absolute top-12 sm:top-16 left-1/2 -translate-x-1/2 z-20 pointer-events-auto bg-white/90 backdrop-blur-md px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
+      <div className="col-span-4 min-w-0 h-11 lg:w-48 pointer-events-auto bg-white/90 backdrop-blur-md px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
         <Sliders size={12} className="text-gold" />
         <span className="text-[10px] sm:text-[11px] font-bold text-navy whitespace-nowrap">
           {Math.round(explodeFactor * 100)}%
@@ -1436,15 +1471,19 @@ export const ThreeCarScene: React.FC<Props> = ({
           step="0.01"
           value={explodeFactor}
           onChange={(e) => setExplodeFactor(parseFloat(e.target.value))}
-          className="w-16 min-[400px]:w-20 sm:w-32 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-gold"
+          aria-label="დაშლის დონე"
+          className="min-w-0 w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-gold"
         />
+      </div>
+
+        </div>
       </div>
 
       {/* 3. 3D WEBGL CANVAS MOUNT */}
       <div ref={containerRef} className="relative w-full h-full cursor-grab active:cursor-grabbing touch-pan-y" />
 
       {/* 3A. LEFT HUD PANEL: რას აანალიზებს (სისტემები) */}
-      <div style={{ opacity: scanVisualActive ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute top-14 sm:top-16 left-2.5 sm:left-4 z-20 pointer-events-auto max-w-[230px] sm:max-w-[270px]">
+      <div style={{ top: controlsHeight + 26, opacity: scanVisualActive ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute left-2.5 sm:left-4 z-20 pointer-events-auto max-w-[230px] sm:max-w-[270px]">
         {leftHudOpen ? (
           <div className="bg-white/95 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
@@ -1550,7 +1589,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       </div>
 
       {/* 3B. RIGHT HUD PANEL: რას ნახულობს და რა იპოვა */}
-      <div style={{ opacity: scanVisualActive ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute top-14 sm:top-16 right-2.5 sm:right-4 z-20 pointer-events-auto max-w-[240px] sm:max-w-[290px]">
+      <div style={{ top: controlsHeight + 26, opacity: scanVisualActive ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute right-2.5 sm:right-4 z-20 pointer-events-auto max-w-[240px] sm:max-w-[290px]">
         {rightHudOpen ? (
           <div className="bg-white/95 backdrop-blur-xl p-3 sm:p-3.5 rounded-3xl border border-white/80 shadow-xl space-y-2 text-navy animate-fade-in">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
@@ -1654,7 +1693,7 @@ export const ThreeCarScene: React.FC<Props> = ({
 
       {/* 4. INTERACTIVE GLASSMORPHISM DETAIL CARD (Opens when component is selected) */}
       {infoCardOpen && selectedCompData && (
-        <div className="absolute top-12 sm:top-16 left-2.5 right-2.5 sm:left-auto sm:right-4 z-30 w-auto sm:w-80 max-w-sm rounded-3xl p-3.5 sm:p-4 bg-white/95 backdrop-blur-xl border border-white/80 shadow-2xl transition-all animate-in fade-in zoom-in-95">
+        <div style={{top: controlsHeight + 26}} className="absolute left-2.5 right-2.5 sm:left-auto sm:right-4 z-30 w-auto sm:w-80 max-w-sm rounded-3xl p-3.5 sm:p-4 bg-white/95 backdrop-blur-xl border border-white/80 shadow-2xl transition-all animate-in fade-in zoom-in-95">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <span

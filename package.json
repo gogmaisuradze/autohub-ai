@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "map:server": "node backend/src/server.mjs",
+    "map:test": "node --test backend/test/*.test.mjs",
+    "cameras:update": "node scripts/update-cameras.mjs"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.2",

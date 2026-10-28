@@ -320,7 +320,17 @@ export interface N8nConfig {
   useLiveWebhook: boolean;
 }
 
-export type MapPointType = 'radar' | 'patrol' | 'hazard' | 'fuel' | 'showroom' | 'parking';
+export type MapPointType =
+  | 'radar'
+  | 'patrol'
+  | 'hazard'
+  | 'fuel'
+  | 'charging'
+  | 'service'
+  | 'car_wash'
+  | 'parts'
+  | 'showroom'
+  | 'parking';
 
 export interface FuelPrices {
   super_98?: number;
@@ -332,6 +342,15 @@ export interface FuelPrices {
 }
 
 export interface MapReport {
+  cameraSource?: string;
+  cameraUpdatedAt?: string;
+  speedLimit?: string;
+  speed_limit_kmh?: number | null;
+  cameraKind?: string;
+  camera_kind?: string | null;
+  osmId?: number;
+  code?: string;
+  layer?: string;
   id: string;
   type: MapPointType;
   title: string;
@@ -346,6 +365,8 @@ export interface MapReport {
   rating?: number;
   phone?: string;
   address?: string;
+  website?: string;
+  opening_hours?: string;
   active: boolean;
 }
 

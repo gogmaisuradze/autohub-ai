@@ -13,12 +13,32 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0',
-    cors: true
+    cors: true,
+    proxy: {
+      '/api/v1': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true
+      },
+      '/health': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true
+      }
+    }
   },
   preview: {
     port: 5173,
     host: '0.0.0.0',
-    cors: true
+    cors: true,
+    proxy: {
+      '/api/v1': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true
+      },
+      '/health': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true
+      }
+    }
   },
   build: {
     chunkSizeWarningLimit: 1000,
