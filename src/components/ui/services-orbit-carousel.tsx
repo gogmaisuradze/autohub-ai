@@ -132,6 +132,12 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
 
   // Generous radius so the orbiting nodes NEVER touch the central window
   const [radius, setRadius] = useState(250);
@@ -141,6 +147,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     const handleResize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
+      setIsMobile(w < 768);
 
       // Available vertical space between navigation and bottom
       const availH = Math.max(380, h - 210);
@@ -376,7 +383,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
                 position: "absolute",
                 top: `calc(50% - ${nodeSize / 2}px)`,
                 left: `calc(50% - ${nodeSize / 2}px)`,
-                zIndex: isActive ? 25 : 15,
+                zIndex: isActive ? 30 : (isMobile ? 5 : 15),
               }}
             >
               {/* Counter-rotation to keep icons upright */}
