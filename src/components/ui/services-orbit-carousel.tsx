@@ -139,7 +139,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     return false;
   });
 
-  // Generous radius so the orbiting nodes NEVER touch the central window
+  // Responsive radius & node size carefully tailored for mobile viewport bounds
   const [radius, setRadius] = useState(250);
   const [nodeSize, setNodeSize] = useState(82);
 
@@ -152,15 +152,22 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
       // Available vertical space between navigation and bottom
       const availH = Math.max(380, h - 210);
 
-      if (w < 440) {
-        setRadius(135);
-        setNodeSize(58);
+      if (w < 380) {
+        // Ultra-compact phones (iPhone SE, smaller Androids)
+        setRadius(104);
+        setNodeSize(44);
+      } else if (w < 440) {
+        // Standard modern phones (iPhone 12/13/14/15/16, Galaxy S series)
+        setRadius(114);
+        setNodeSize(48);
       } else if (w < 640) {
-        setRadius(165);
-        setNodeSize(66);
+        // Larger phones / phablets
+        setRadius(132);
+        setNodeSize(54);
       } else if (w < 768) {
-        setRadius(195);
-        setNodeSize(72);
+        // Small tablets
+        setRadius(168);
+        setNodeSize(64);
       } else if (availH < 680) {
         // Compact height laptops
         setRadius(230);
@@ -177,7 +184,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const containerSize = radius * 2 + nodeSize + 20;
+  const containerSize = radius * 2 + nodeSize + 14;
 
   // Touch swipe & finger flick rotation ("თითის კვრით ტრიალი")
   const [dragAngle, setDragAngle] = useState(0);
@@ -247,8 +254,9 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
       isDraggingRef.current = true;
       setIsDragging(true);
 
-      // 70px drag corresponds to 60deg (one full service node)
-      const rawAngle = (deltaX / 70) * 60;
+      // Responsive drag sensitivity: ~50px on mobile, ~70px on desktop
+      const stepPx = isMobile ? 50 : 70;
+      const rawAngle = (deltaX / stepPx) * 60;
       setDragAngle(rawAngle);
     }
   };
@@ -385,7 +393,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col items-center justify-center p-1 sm:p-2 relative select-none overflow-visible no-scrollbar my-auto touch-pan-y ${
+      className={`w-full max-w-full flex flex-col items-center justify-center p-0.5 sm:p-2 relative select-none overflow-visible no-scrollbar my-auto touch-pan-y ${
         isDragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
       onMouseEnter={() => setIsHovering(true)}
@@ -435,8 +443,8 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
         </motion.div>
 
         {/* Subtle Ambient Radial Glow & Background Halo behind the central window */}
-        <div className="absolute w-[210px] sm:w-[250px] h-[210px] sm:h-[250px] rounded-full bg-gradient-to-tr from-gold/20 via-blue-500/15 to-transparent blur-xl pointer-events-none z-0" />
-        <div className="absolute w-[195px] sm:w-[235px] h-[195px] sm:h-[235px] rounded-full bg-white/40 border border-slate-200/50 pointer-events-none z-0" />
+        <div className="absolute w-[150px] min-[380px]:w-[170px] sm:w-[250px] h-[150px] min-[380px]:h-[170px] sm:h-[250px] rounded-full bg-gradient-to-tr from-gold/20 via-blue-500/15 to-transparent blur-xl pointer-events-none z-0" />
+        <div className="absolute w-[140px] min-[380px]:w-[160px] sm:w-[235px] h-[140px] min-[380px]:h-[160px] sm:h-[235px] rounded-full bg-white/40 border border-slate-200/50 pointer-events-none z-0" />
 
         {/* Central Recessed Inset Card (ორბიტის ცენტრალური ფანჯარა ელეგანტური ბექგრაუნდით) */}
         <AnimatePresence mode="wait">
@@ -446,40 +454,40 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ type: "tween", ease: [0.16, 1, 0.3, 1], duration: 0.22 }}
-            className="z-10 rounded-3xl p-3.5 sm:p-4.5 w-[185px] min-[400px]:w-[205px] sm:w-[225px] md:w-[235px] h-[255px] sm:h-[275px] flex flex-col justify-between text-center bg-gradient-to-b from-white via-[#F8FAFD] to-[#EDF2F8] border border-slate-200/90 shadow-[0_12px_28px_-6px_rgba(20,33,61,0.14),0_4px_10px_-2px_rgba(20,33,61,0.06),inset_0_1px_1px_rgba(255,255,255,1),inset_0_-2px_4px_rgba(140,155,175,0.12)]"
+            className="z-10 rounded-2xl sm:rounded-3xl p-2.5 min-[380px]:p-3 sm:p-4.5 w-[155px] min-[380px]:w-[172px] sm:w-[225px] md:w-[235px] h-[190px] min-[380px]:h-[205px] sm:h-[275px] flex flex-col justify-between text-center bg-gradient-to-b from-white via-[#F8FAFD] to-[#EDF2F8] border border-slate-200/90 shadow-[0_12px_28px_-6px_rgba(20,33,61,0.14),0_4px_10px_-2px_rgba(20,33,61,0.06),inset_0_1px_1px_rgba(255,255,255,1),inset_0_-2px_4px_rgba(140,155,175,0.12)]"
           >
             {/* Top Badge */}
-            <div className="flex items-center justify-center mb-1 sm:mb-1.5">
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black shadow-xs ${activeService.badgeColor}`}>
+            <div className="flex items-center justify-center mb-0.5 sm:mb-1.5">
+              <span className={`px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] min-[380px]:text-[10px] sm:text-[11px] font-black shadow-xs ${activeService.badgeColor}`}>
                 {activeService.badgeText}
               </span>
             </div>
 
             {/* Recessed Icon Plate */}
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full mx-auto my-1 sm:my-1.5 flex items-center justify-center bg-white shadow-[inset_2px_2px_4px_rgba(140,155,175,0.35),inset_-2px_-2px_4px_rgba(255,255,255,1)] border border-slate-100">
-              <ActiveIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-navy" />
+            <div className="w-8 h-8 min-[380px]:w-9 min-[380px]:h-9 sm:w-11 sm:h-11 rounded-full mx-auto my-0.5 sm:my-1.5 flex items-center justify-center bg-white shadow-[inset_2px_2px_4px_rgba(140,155,175,0.35),inset_-2px_-2px_4px_rgba(255,255,255,1)] border border-slate-100 shrink-0">
+              <ActiveIcon className="w-4 h-4 min-[380px]:w-4.5 min-[380px]:h-4.5 sm:w-5.5 sm:h-5.5 text-navy" />
             </div>
 
-            <h3 className="text-xs sm:text-base font-black text-navy mt-0.5 tracking-tight">
+            <h3 className="text-xs min-[380px]:text-sm sm:text-base font-black text-navy mt-0.5 tracking-tight truncate px-1">
               {activeService.name}
             </h3>
 
-            <p className="text-[10px] sm:text-xs text-slate-500 font-bold mt-0.5">
+            <p className="text-[9px] min-[380px]:text-[10px] sm:text-xs text-slate-500 font-bold truncate">
               {activeService.role}
             </p>
 
-            <p className="text-[10px] sm:text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed px-1">
+            <p className="text-[9px] min-[380px]:text-[10px] sm:text-xs text-slate-600 mt-0.5 line-clamp-1 min-[380px]:line-clamp-2 leading-tight sm:leading-relaxed px-1">
               {activeService.desc}
             </p>
 
             {/* Inset Navigation & Action Buttons */}
-            <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-2.5 sm:mt-3 pt-2 sm:pt-2.5 border-t border-slate-300/40">
+            <div className="flex items-center justify-center gap-1 sm:gap-2 mt-1 sm:mt-3 pt-1.5 sm:pt-2.5 border-t border-slate-300/40">
               <button
                 onClick={prev}
-                className="btn-stitch-soft w-8 h-8 rounded-full p-0 flex items-center justify-center text-navy hover:text-gold"
+                className="btn-stitch-soft w-6 h-6 min-[380px]:w-7 min-[380px]:h-7 sm:w-8 sm:h-8 rounded-full p-0 flex items-center justify-center text-navy hover:text-gold shrink-0"
                 title={isGe ? "წინა" : "Previous"}
               >
-                <ChevronLeft size={14} />
+                <ChevronLeft size={12} className="sm:w-3.5 sm:h-3.5" />
               </button>
 
               <button
@@ -487,18 +495,18 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
                   sounds.playSuccess();
                   onSelectDepartment(activeService.tab);
                 }}
-                className="btn-stitch-primary px-4 sm:px-5 py-2 text-xs sm:text-sm font-black"
+                className="btn-stitch-primary px-2.5 min-[380px]:px-3.5 sm:px-5 py-1 min-[380px]:py-1.5 sm:py-2 text-[10px] min-[380px]:text-xs sm:text-sm font-black"
               >
                 <span>{isGe ? "გადასვლა" : "Enter"}</span>
-                <ArrowRight size={13} />
+                <ArrowRight size={11} className="sm:w-3 sm:h-3" />
               </button>
 
               <button
                 onClick={next}
-                className="btn-stitch-soft w-8 h-8 rounded-full p-0 flex items-center justify-center text-navy hover:text-gold"
+                className="btn-stitch-soft w-6 h-6 min-[380px]:w-7 min-[380px]:h-7 sm:w-8 sm:h-8 rounded-full p-0 flex items-center justify-center text-navy hover:text-gold shrink-0"
                 title={isGe ? "შემდეგი" : "Next"}
               >
-                <ChevronRight size={14} />
+                <ChevronRight size={12} className="sm:w-3.5 sm:h-3.5" />
               </button>
             </div>
           </motion.div>
@@ -566,11 +574,11 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
                   title={service.name}
                 >
                   <NodeIcon
-                    size={nodeSize >= 86 ? 28 : nodeSize >= 75 ? 24 : nodeSize >= 65 ? 20 : 17}
+                    size={nodeSize >= 80 ? 26 : nodeSize >= 68 ? 22 : nodeSize >= 52 ? 18 : 15}
                     className={`transition-colors duration-200 drop-shadow-xs ${isActive ? "text-gold" : "text-navy"}`}
                   />
-                  <span className={`font-black tracking-tight truncate max-w-[86%] mt-0.5 text-center transition-colors duration-200 ${
-                    nodeSize >= 86 ? "text-xs" : nodeSize >= 75 ? "text-[11px]" : "text-[9px]"
+                  <span className={`font-black tracking-tight truncate max-w-[90%] leading-none mt-0.5 text-center transition-colors duration-200 ${
+                    nodeSize >= 80 ? "text-xs" : nodeSize >= 68 ? "text-[11px]" : nodeSize >= 52 ? "text-[9px]" : "text-[8px]"
                   } ${isActive ? "text-navy" : "text-slate-800"}`}>
                     {service.title}
                   </span>
