@@ -15,7 +15,7 @@ export const LAYER_TO_POINT_TYPE: Record<string, MapPointType> = {
 };
 
 export const POINT_TYPE_TO_LAYERS: Record<string, string[]> = {
-  'all': ['cameras', 'fuel', 'charging', 'services', 'car-wash', 'parts', 'showrooms', 'parking', 'official-parking'],
+  'all': ['cameras', 'fuel', 'charging', 'services', 'car-wash', 'parts', 'showrooms'],
   'radar': ['cameras'],
   'fuel': ['fuel'],
   'charging': ['charging'],
@@ -23,7 +23,7 @@ export const POINT_TYPE_TO_LAYERS: Record<string, string[]> = {
   'car_wash': ['car-wash'],
   'parts': ['parts'],
   'showroom': ['showrooms'],
-  'parking': ['parking', 'official-parking'],
+  'parking': [],
   'patrol': [], // Community only (n8n)
   'hazard': []  // Community only (n8n)
 };
@@ -496,10 +496,13 @@ export const mapDataService = {
       const search = (params.q || '').trim().toLowerCase();
       let matched = allFeatures;
 
-      // Filter by bbox
-      if (params.bbox) {
+      // Filter by bbox with fallback if bbox is zero or uninitialized
+      if (params.bbox && !isNaN(params.bbox[0]) && params.bbox[0] !== params.bbox[2]) {
         const box = params.bbox;
-        matched = matched.filter(f => inBox(f, box));
+        const inBoxFeatures = matched.filter(f => inBox(f, box));
+        if (inBoxFeatures.length > 0) {
+          matched = inBoxFeatures;
+        }
       }
 
       // Filter by search query
