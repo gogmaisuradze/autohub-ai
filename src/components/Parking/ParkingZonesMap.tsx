@@ -23,7 +23,8 @@ import {
   RotateCcw,
   ExternalLink,
   ShieldCheck,
-  Compass
+  Compass,
+  Zap
 } from 'lucide-react';
 
 interface Props {
@@ -59,7 +60,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
   // States: Map Loader & Theme
   const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>('dark');
+  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>('street');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<'all' | 'A' | 'B' | 'C'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
@@ -264,6 +265,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
         polygon.on('click', () => {
           sounds.playClick();
           onSelectZone(zone);
+          marker.openPopup();
           if (mapInstanceRef.current) {
             mapInstanceRef.current.flyTo(zone.geometry.center, 16, { duration: 0.8 });
           }
@@ -332,12 +334,29 @@ export const ParkingZonesMap: React.FC<Props> = ({
               Maps
             </a>
           </div>
+          <button type="button" id="start-park-${zone.id}" class="w-full mt-2 py-2 px-3 rounded-xl bg-gold hover:bg-amber-400 text-navy font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95">
+            <span>⚡ ამ ლოტზე პარკირების დაწყება</span>
+          </button>
         </div>
       `;
 
       marker.bindPopup(popupHtml, {
         closeButton: false,
         className: 'custom-leaflet-popup'
+      });
+
+      marker.on('popupopen', () => {
+        const btn = document.getElementById(`start-park-${zone.id}`);
+        if (btn) {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            sounds.playSuccess();
+            onSelectZone(zone);
+            if (onStartParkingWithZone) {
+              onStartParkingWithZone(zone);
+            }
+          };
+        }
       });
 
       marker.on('click', () => {
@@ -435,25 +454,57 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
         {/* Search input & Category Filter Chips */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="მოძებნეთ ლოტის კოდით (მაგ: A1043, A2371) ან ქუჩით (ჭავჭავაძე, პეკინი...)"
-              className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-navy focus:outline-none focus:ring-1 focus:ring-gold"
-            />
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (searchQuery.trim()) {
+                const clean = searchQuery.trim().toLowerCase().replace('#', '');
+                const match = cityZones.find(z =>
+                  z.lotCode.toLowerCase() === clean ||
+                  z.zoneNumber.toLowerCase() === clean ||
+                  z.street_ge.toLowerCase().includes(clean)
+                );
+                if (match) {
+                  handleSelectAndPan(match);
+                  if (onStartParkingWithZone) onStartParkingWithZone(match);
+                } else {
+                  handleAddManualCode();
+                }
+              }
+            }}
+            className="relative flex-1 flex items-center gap-1.5"
+          >
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ჩაწერეთ ლოტი (მაგ: A1043, 005) ან ქუჩა — 1-კლიკით პარკირება..."
+                className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-navy focus:outline-none focus:ring-1 focus:ring-gold"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-2.5 text-xs text-slate-400 hover:text-navy"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
             {searchQuery && (
               <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-navy"
+                type="submit"
+                className="px-3.5 py-2 rounded-xl bg-gold hover:bg-amber-400 text-navy font-black text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0 active:scale-95"
+                title="მყისიერი პარკირება ამ ლოტზე"
               >
-                ✕
+                <Zap size={13} className="fill-navy" />
+                <span>⚡ პარკირება</span>
               </button>
             )}
-          </div>
+          </form>
 
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">ტარიფი:</span>
@@ -508,14 +559,14 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
       {/* Main Body: Interactive Map vs List View */}
       {viewMode === 'map' ? (
-        <div className="relative w-full h-[380px] sm:h-[460px] bg-slate-900">
+        <div className="relative w-full h-[440px] sm:h-[540px] bg-[#FAFBFD]">
           
           {/* Map Mount Point */}
           <div ref={mapContainerRef} className="w-full h-full z-0" />
 
           {/* Loading Overlay */}
           {mapStatus === 'loading' && (
-            <div className="absolute inset-0 z-[500] bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 text-white">
+            <div className="absolute inset-0 z-[500] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 text-navy">
               <div className="w-10 h-10 border-3 border-gold border-t-transparent rounded-full animate-spin"></div>
               <p className="text-xs font-bold font-mono">რუკის ბიბლიოთეკის ჩატვირთვა...</p>
             </div>
@@ -638,10 +689,10 @@ export const ParkingZonesMap: React.FC<Props> = ({
                             sounds.playSuccess();
                             onStartParkingWithZone(targetZone);
                           }}
-                          className="px-3.5 py-1 rounded-xl bg-gold hover:bg-amber-400 text-navy font-black text-xs shadow-xs flex items-center gap-1 transition-all active:scale-95"
+                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-gold to-amber-500 hover:from-amber-400 hover:to-gold text-navy font-black text-xs shadow-md flex items-center gap-1.5 transition-all active:scale-95 hover:scale-105"
                         >
-                          <Play size={12} className="fill-navy" />
-                          <span>პარკირება</span>
+                          <Zap size={14} className="fill-navy text-navy" />
+                          <span>⚡ პარკირების დაწყება</span>
                         </button>
                       )}
                     </div>

@@ -1341,7 +1341,19 @@ export const ParkingModule: React.FC<Props> = ({
       </div>
 
       {/* ======================================================== */}
-      {/* 1. DEDICATED PARKING PROFILE & ADDED VEHICLES CAROUSEL    */}
+      {/* 1. INTERACTIVE PARKING ZONES MAP (პირველივე მთავარი აქცენტი) */}
+      {/* ======================================================== */}
+      <div id="parking-zones-map-section" className="space-y-2">
+        <ParkingZonesMap
+          city={selectedCity}
+          selectedZoneId={parkingLocationInput.match(/#([A-Za-z]?\d+)/)?.[1]?.toUpperCase()}
+          onSelectZone={handleSelectDelineatedZone}
+          onStartParkingWithZone={handleStartParkingFromMap}
+        />
+      </div>
+
+      {/* ======================================================== */}
+      {/* 2. DEDICATED PARKING PROFILE & ADDED VEHICLES CAROUSEL    */}
       {/* ======================================================== */}
       <div className="p-5 sm:p-7 rounded-3xl neu-card shadow-neu-card border border-white space-y-5">
         
@@ -2031,23 +2043,33 @@ export const ParkingModule: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* 3. INTERACTIVE NUMBERED & DELINEATED PARKING ZONES MAP */}
+              {/* 3. PARKING ZONES MAP NOTICE & QUICK JUMP */}
               <div className="pt-2">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-black text-navy uppercase tracking-wider flex items-center gap-2">
-                    <MapPin size={14} className="text-gold" />
-                    <span>3. დახაზული და დანომრილი ზონების რუკა (აირჩიეთ პირდაპირ რუკაზე):</span>
-                  </label>
-                  <span className="text-[11px] font-mono text-slate-400">
-                    {CITIES.find(c => c.id === selectedCity)?.name_ge}
-                  </span>
+                <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-navy text-gold flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                      🅿️
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-black text-navy">
+                        საპარკინგე ზონების რუკა განთავსებულია გვერდის დასაწყისში
+                      </h4>
+                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                        {CITIES.find(c => c.id === selectedCity)?.name_ge} • ზუსტი კონტურები, ლოტები და 1-კლიკით პარკირება
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      document.getElementById('parking-zones-map-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="px-4 py-2 rounded-xl bg-navy text-gold font-bold text-xs hover:bg-slate-800 transition-all shadow-xs shrink-0"
+                  >
+                    ↑ რუკაზე დაბრუნება
+                  </button>
                 </div>
-                <ParkingZonesMap
-                  city={selectedCity}
-                  selectedZoneId={parkingLocationInput.match(/#([A-Za-z]?\d+)/)?.[1]?.toUpperCase()}
-                  onSelectZone={handleSelectDelineatedZone}
-                  onStartParkingWithZone={handleStartParkingFromMap}
-                />
               </div>
 
               {/* 4. QUICK LOCATION CHIPS FOR SELECTED CITY */}
