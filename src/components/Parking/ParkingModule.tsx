@@ -1795,327 +1795,140 @@ export const ParkingModule: React.FC<Props> = ({
               </div>
             </div>
           ) : (
-            /* Start Parking Control Center */
-            <div className="p-6 rounded-3xl neu-card shadow-neu-card border border-white space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            /* Start Parking Control Center — სადა & მინიმალისტური დიზაინი */
+            <div className="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl neu-circle flex items-center justify-center text-gold shadow-sm">
-                    <Timer className="w-5 h-5 text-navy" />
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-800">
+                    <Timer size={18} />
                   </div>
                   <div>
-                    <h3 className="text-base font-extrabold text-navy">
-                      ზონალური საათობრივი პარკირების დაწყება
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                      ზონალური პარკირების დაწყება
                     </h3>
-                    <p className="text-xs text-slate-500 font-mono">
-                      საქართველოს მუნიციპალური სატრანსპორტო სააგენტოების ერთიანი სისტემა
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      თბილისი • ბათუმი • ქუთაისი
                     </p>
                   </div>
                 </div>
 
-                <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200 shrink-0">
-                  🇬🇪 პირველი 15 წთ უფასოა
-                </span>
-              </div>
-
-              {/* 1. AUTHENTIC CITY & REGION SELECTOR (TBILISI, BATUMI & KUTAISI) */}
-              <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <label className="text-xs font-black text-navy uppercase tracking-wider flex items-center gap-2">
-                    <MapPin size={14} className="text-gold" />
-                    <span>1. აირჩიეთ ქალაქი / რეგიონი:</span>
-                  </label>
-                  <span className="text-[11px] text-slate-400 font-mono">
-                    თბილისი • ბათუმი • ქუთაისი • ოფიციალური გერბები & ლოგოები
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline-flex px-2.5 py-1 rounded-full text-[11px] font-mono font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    ⏱️ 15 წთ უფასო
                   </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  {CITIES.map(c => {
-                    const isSelected = selectedCity === c.id;
-
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => {
-                          sounds.playClick();
-                          setSelectedCity(c.id);
-                          const firstZone = CITY_ZONES[c.id][0];
-                          setSelectedZone(firstZone.id);
-                          setParkingLocationInput(CITY_QUICK_LOCATIONS[c.id][0]);
-                        }}
-                        className={`p-3.5 sm:p-4 rounded-3xl text-left border transition-all flex flex-col justify-between group relative overflow-hidden ${
-                          isSelected
-                            ? 'bg-navy text-white border-gold shadow-lg ring-2 ring-gold/40 scale-[1.02]'
-                            : 'bg-white hover:bg-slate-50 text-navy border-slate-200 shadow-xs'
-                        }`}
-                      >
-                        {/* Top: Official Municipal Logo / Emblem from User Files + Selection Status */}
-                        <div className="flex items-start justify-between gap-2 mb-2.5 w-full">
-                          <div className={`h-14 sm:h-16 px-3 py-1.5 rounded-2xl flex items-center justify-center transition-all ${
-                            isSelected
-                              ? 'bg-white p-2 shadow-sm ring-2 ring-gold/40'
-                              : 'bg-white p-2 shadow-xs border border-slate-200'
-                          }`}>
-                            <img
-                              src={c.logoBase64}
-                              alt={c.name_ge}
-                              className="max-h-12 max-w-[130px] object-contain"
-                            />
-                          </div>
-
-                          {/* Selection Status Badge */}
-                          <div className="flex flex-col items-end gap-1">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider ${
-                              isSelected
-                                ? 'bg-gold text-navy font-black shadow-xs'
-                                : 'bg-slate-100 text-slate-500'
-                            }`}>
-                              {isSelected ? '✓ არჩეულია' : 'ოფიციალური'}
-                            </span>
-                            {isSelected && (
-                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse ring-2 ring-white/40" />
-                            )}
-                          </div>
-                        </div>
-
-                        {/* City Details */}
-                        <div className="w-full">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-black text-sm sm:text-base tracking-wide block">{c.name_ge}</span>
-                            <span className={`text-[10px] font-mono ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>
-                              ({c.name_en})
-                            </span>
-                          </div>
-                          <span className={`text-[10px] font-mono font-bold block mt-0.5 ${isSelected ? 'text-gold' : 'text-slate-500'}`}>
-                            {c.region_ge}
-                          </span>
-                          <span className={`text-[11px] font-medium mt-1 block truncate ${isSelected ? 'text-slate-200' : 'text-slate-600'}`}>
-                            {c.subtitle}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                  <GeorgianLicensePlate plate={vehicle.plate_number || 'FR-282-EE'} size="xs" variant="white" />
                 </div>
               </div>
 
-              {/* TBILISI PARKING OFFICIAL BRAND BANNER */}
-              {selectedCity === 'tbilisi' && (
-                <div className="p-3.5 sm:p-4 bg-gradient-to-r from-blue-50/90 via-white to-amber-50/40 rounded-2xl border border-blue-200/70 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 sm:h-14 px-3 py-1 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center justify-center shrink-0">
-                      <img
-                        src={TBILISI_PARKING_LOGO_B64}
-                        alt="თბილისის პარკინგი"
-                        className="max-h-10 max-w-[140px] object-contain"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs sm:text-sm font-black text-navy">
-                          თბილისის მუნიციპალური პარკინგი
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          ოფიციალური სისტემა
+              {/* 1. City Selector — Sleek Minimalist Segmented Tabs */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
+                {CITIES.map(c => {
+                  const isSelected = selectedCity === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setSelectedCity(c.id);
+                        const firstZone = CITY_ZONES[c.id][0];
+                        setSelectedZone(firstZone.id);
+                        setParkingLocationInput(CITY_QUICK_LOCATIONS[c.id][0]);
+                      }}
+                      className={`flex-1 py-1.5 px-3 rounded-lg text-xs transition-all ${
+                        isSelected
+                          ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                          : 'text-slate-600 hover:text-slate-900 font-medium'
+                      }`}
+                    >
+                      {c.name_ge}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 2. Zone Selector — Compact Horizontal Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {CITY_ZONES[selectedCity].map(z => {
+                  const isSel = selectedZone === z.id;
+                  return (
+                    <button
+                      key={z.id}
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setSelectedZone(z.id);
+                      }}
+                      className={`p-3 rounded-xl text-left border transition-all ${
+                        isSel
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                          : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span>{z.name}</span>
+                        <span className={`font-mono text-[11px] ${isSel ? 'text-amber-300' : 'text-slate-600'}`}>
+                          {z.rate}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                        დედაქალაქის ზონალურ-საათობრივი პარკირების გადახდა • A, B, C ზონები
+                      <p className={`text-[10px] truncate mt-1 ${isSel ? 'text-slate-300' : 'text-slate-400'}`}>
+                        {z.areas}
                       </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
-                    <span className="px-2.5 py-1 rounded-xl bg-white text-navy font-mono font-bold text-xs border border-slate-200 shadow-2xs">
-                      ⏱️ 15 წთ უფასო
-                    </span>
-                  </div>
-                </div>
-              )}
+                    </button>
+                  );
+                })}
+              </div>
 
-              {/* BATUMI MUNICIPAL INSPECTION OFFICIAL BRAND BANNER */}
-              {selectedCity === 'batumi' && (
-                <div className="p-3.5 sm:p-4 bg-gradient-to-r from-teal-50/90 via-white to-blue-50/40 rounded-2xl border border-teal-200/70 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 sm:h-14 px-3 py-1 bg-white rounded-xl border border-teal-200 shadow-xs flex items-center justify-center shrink-0">
-                      <img
-                        src={BATUMI_PARKING_LOGO_B64}
-                        alt="ბათუმის მუნიციპალური ინსპექცია"
-                        className="max-h-11 max-w-[100px] object-contain"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs sm:text-sm font-black text-navy">
-                          ბათუმის მუნიციპალური ინსპექცია • საპარკინგე სამსახური
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-teal-100 text-teal-800 border border-teal-200">
-                          ოფიციალური კონტროლი
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                        ბულვარის & სანაპიროს საათობრივი პარკირება • მუნიციპალური საშვები
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
-                    <span className="px-2.5 py-1 rounded-xl bg-white text-navy font-mono font-bold text-xs border border-slate-200 shadow-2xs">
-                      🌊 ბულვარი & ცენტრი
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* KUTAISI MUNICIPALITY OFFICIAL BRAND BANNER */}
-              {selectedCity === 'kutaisi' && (
-                <div className="p-3.5 sm:p-4 bg-gradient-to-r from-emerald-50/90 via-white to-amber-50/40 rounded-2xl border border-emerald-200/70 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 sm:h-14 px-3 py-1 bg-white rounded-xl border border-emerald-200 shadow-xs flex items-center justify-center shrink-0">
-                      <img
-                        src={KUTAISI_PARKING_LOGO_B64}
-                        alt="ქუთაისის მერიის სატრანსპორტო სამსახური"
-                        className="max-h-11 max-w-[100px] object-contain"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs sm:text-sm font-black text-navy">
-                          ქუთაისის მერია • სატრანსპორტო სამსახური
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          ოფიციალური სისტემა
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                        დავით აღმაშენებლის მოედნის & ისტორიული ცენტრის საათობრივი პარკირება
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
-                    <span className="px-2.5 py-1 rounded-xl bg-white text-navy font-mono font-bold text-xs border border-slate-200 shadow-2xs">
-                      🏛️ ცენტრი (1 ₾/სთ)
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* 2. DYNAMIC ZONE SELECTOR FOR THE SELECTED CITY */}
-              <div>
-                <label className="block text-xs font-black text-navy uppercase tracking-wider mb-2">
-                  2. აირჩიეთ {CITIES.find(c => c.id === selectedCity)?.name_ge}ს პარკირების ზონა & ტარიფი:
+              {/* 3. Address & Lot Input with Quick Chips */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  საპარკინგე ლოტი ან მისამართი:
                 </label>
-                <div className={`grid grid-cols-1 ${
-                  CITY_ZONES[selectedCity].length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
-                } gap-3`}>
-                  {CITY_ZONES[selectedCity].map(z => {
-                    const isSel = selectedZone === z.id;
-                    return (
-                      <div
-                        key={z.id}
-                        onClick={() => {
-                          sounds.playClick();
-                          setSelectedZone(z.id);
-                        }}
-                        className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                          isSel
-                            ? 'bg-navy text-white border-navy shadow-md scale-[1.02] ring-2 ring-gold/40'
-                            : 'bg-white hover:bg-slate-50 text-navy border-slate-200 shadow-xs'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="font-extrabold text-sm">{z.name}</span>
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-black ${
-                            isSel ? 'bg-gold text-navy' : 'bg-slate-100 text-slate-700'
-                          }`}>
-                            {z.rate}
-                          </span>
-                        </div>
-                        <p className={`text-[11px] leading-relaxed ${isSel ? 'text-slate-300' : 'text-slate-500'}`}>
-                          {z.areas}
-                        </p>
-                        <div className="mt-2 pt-2 border-t border-slate-100/20 flex items-center justify-between text-[10px]">
-                          <span className={`font-mono ${isSel ? 'text-gold' : 'text-slate-400'}`}>სტატუსი: {z.badge}</span>
-                          <span className={`font-bold ${isSel ? 'text-emerald-300' : 'text-emerald-700'}`}>● ხელმისაწვდომია</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="relative">
+                  <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={parkingLocationInput}
+                    onChange={(e) => setParkingLocationInput(e.target.value)}
+                    placeholder="ჩაწერეთ საპარკინგე ლოტი (#A1410) ან ქუჩა..."
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-all"
+                  />
                 </div>
-              </div>
 
-              {/* 3. PARKING ZONES MAP NOTICE & QUICK JUMP */}
-              <div className="pt-2">
-                <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-navy text-gold flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
-                      🅿️
-                    </div>
-                    <div>
-                      <h4 className="text-xs sm:text-sm font-black text-navy">
-                        საპარკინგე ზონების რუკა განთავსებულია გვერდის დასაწყისში
-                      </h4>
-                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                        {CITIES.find(c => c.id === selectedCity)?.name_ge} • ზუსტი კონტურები, ლოტები და 1-კლიკით პარკირება
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      document.getElementById('parking-zones-map-section')?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="px-4 py-2 rounded-xl bg-navy text-gold font-bold text-xs hover:bg-slate-800 transition-all shadow-xs shrink-0"
-                  >
-                    ↑ რუკაზე დაბრუნება
-                  </button>
-                </div>
-              </div>
-
-              {/* 4. QUICK LOCATION CHIPS FOR SELECTED CITY */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1.5">
-                  4. პარკირების ლოკაცია / ზონის ნომერი ({CITIES.find(c => c.id === selectedCity)?.name_ge}):
-                </label>
-                <div className="flex flex-wrap gap-1.5 mb-2">
+                {/* Quick Chips (Understated & Minimalist) */}
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {CITY_QUICK_LOCATIONS[selectedCity].map(loc => (
                     <button
                       key={loc}
                       type="button"
                       onClick={() => setParkingLocationInput(loc)}
-                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${
                         parkingLocationInput === loc
-                          ? 'bg-navy text-gold shadow-sm'
-                          : 'bg-white text-navy border border-slate-200 hover:bg-slate-50'
+                          ? 'bg-slate-900 text-white font-bold'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                       }`}
                     >
                       {loc}
                     </button>
                   ))}
                 </div>
-                <input
-                  type="text"
-                  value={parkingLocationInput}
-                  onChange={(e) => setParkingLocationInput(e.target.value)}
-                  placeholder="შეიყვანეთ ქუჩა ან ლოკაცია..."
-                  className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-navy focus:outline-none focus:ring-1 focus:ring-gold"
-                />
               </div>
 
-              {/* Start Button */}
+              {/* 4. Sleek Minimalist Start Button */}
               <div className="pt-2">
                 <button
                   onClick={handleStartParking}
-                  className="btn-stitch-primary w-full py-4.5 px-6 text-sm sm:text-base font-black tracking-wide"
+                  className="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white font-bold text-sm sm:text-base transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer border border-slate-800"
                 >
-                  <Play size={18} className="fill-navy" />
-                  <span>პარკირების ჩართვა — ლოტის შემოწმება</span>
+                  <Play size={16} className="text-amber-400 fill-amber-400" />
+                  <span>პარკირების დაწყება</span>
                 </button>
-                <p className="text-[11px] text-center text-slate-500 mt-2.5 font-mono flex items-center justify-center gap-1.5">
+                <div className="text-[11px] text-center text-slate-500 mt-2 font-mono flex items-center justify-center gap-1.5 flex-wrap">
                   <span>ავტომობილი:</span>
                   <GeorgianLicensePlate plate={vehicle.plate_number || 'FR-282-EE'} size="xs" variant="white" />
-                  <span>• პირველი 15 წუთი უფასოა!</span>
-                </p>
+                  <span>• პირველი 15 წუთი უფასოა</span>
+                </div>
               </div>
             </div>
           )}
