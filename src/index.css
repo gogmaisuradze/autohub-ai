@@ -4,8 +4,12 @@
 
 @layer base {
   html, body, #root {
+    width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
+  }
+  canvas {
+    max-width: 100% !important;
   }
   body {
     font-family: "FiraGO", system-ui, -apple-system, sans-serif;

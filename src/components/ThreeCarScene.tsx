@@ -403,8 +403,9 @@ export const ThreeCarScene: React.FC<Props> = ({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const width = containerRef.current.clientWidth || 800;
-    const height = containerRef.current.clientHeight || 450;
+    const measuredW = containerRef.current.clientWidth || containerRef.current.parentElement?.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 390);
+    const width = Math.min(measuredW, typeof window !== 'undefined' ? window.innerWidth : measuredW);
+    const height = containerRef.current.clientHeight || 540;
 
     // 1. Scene
     const scene = new THREE.Scene();
@@ -425,6 +426,10 @@ export const ThreeCarScene: React.FC<Props> = ({
       setModelError(true);setModelLoading(false);return;
     }
     renderer.setSize(width, height);
+    renderer.domElement.style.maxWidth = '100%';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.display = 'block';
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, width < 640 ? 1.25 : 1.5));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1381,8 +1386,9 @@ export const ThreeCarScene: React.FC<Props> = ({
     // Responsive Resizing
     const handleResize = () => {
       if (!containerRef.current || !renderer || !camera) return;
-      const w = containerRef.current.clientWidth || 800;
-      const h = containerRef.current.clientHeight || 450;
+      const parentW = containerRef.current.parentElement?.clientWidth || window.innerWidth || 390;
+      const w = Math.min(containerRef.current.clientWidth || parentW, window.innerWidth || parentW);
+      const h = containerRef.current.clientHeight || 540;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -1579,7 +1585,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       </div>
 
       {/* 3. 3D WEBGL CANVAS MOUNT */}
-      <div ref={containerRef} className="relative w-full h-full cursor-grab active:cursor-grabbing touch-pan-y" />
+      <div ref={containerRef} className="relative w-full h-full max-w-full overflow-hidden cursor-grab active:cursor-grabbing touch-pan-y" />
 
       {/* 3A. LEFT HUD PANEL: რას აანალიზებს (სისტემები) */}
       <div style={{ top: controlsHeight + 26, opacity: scanVisualActive ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute left-2.5 sm:left-4 z-20 pointer-events-auto max-w-[230px] sm:max-w-[270px]">

@@ -76,10 +76,10 @@ export const Navigation: React.FC<Props> = ({
   return (
     <nav
       data-tour="navigation-menu"
-      className="w-full transition-colors border-t border-white/60 bg-[#ECEAE5]/90"
+      className="w-full max-w-full overflow-hidden transition-colors border-t border-white/60 bg-[#ECEAE5]/90"
     >
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-start md:justify-center gap-1.5 sm:gap-2.5 md:gap-4 lg:gap-5 py-2 sm:py-2.5 overflow-x-auto no-scrollbar scroll-smooth">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 w-full">
+        <div className="flex items-center justify-start md:justify-center gap-1.5 sm:gap-2.5 md:gap-4 lg:gap-5 py-2 sm:py-2.5 overflow-x-auto no-scrollbar scroll-smooth w-full">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             const Icon = tab.icon;

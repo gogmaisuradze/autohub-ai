@@ -1,5 +1,6 @@
 import { mapApiClient, MapFeature, MapLayerItem, MapFeatureProperties } from './autohubMapClient';
 import { MapPointType, MapReport } from '../types';
+import { getGeorgiaRegionName } from './cameraService';
 
 export const LAYER_TO_POINT_TYPE: Record<string, MapPointType> = {
   'cameras': 'radar',
@@ -44,13 +45,45 @@ const asText = (v: any): string | null => (typeof v === 'string' && v.trim() ? v
 function normalizeStaticFeature(feature: any, layer: string, meta: any): MapFeature {
   const p = feature.properties || {};
   const speed = p.maxspeed && /^\d+(\.\d+)?$/.test(p.maxspeed) ? Number(p.maxspeed) : null;
+  
+  let computedName = asText(p['name:ka']) || asText(p.name) || asText(p['brand:ka']) || asText(p.brand) || asText(p['operator:ka']) || asText(p.operator);
+  if (!computedName) {
+    if (layer === 'cameras') {
+      computedName = p.enforcement === 'traffic_signals'
+        ? 'შუქნიშნის კამერა'
+        : p.enforcement === 'average_speed'
+        ? 'საშუალო სიჩქარის რადარი'
+        : speed ? `სიჩქარის რადარი · ${speed} კმ/სთ` : 'სიჩქარის რადარი';
+    } else if (layer === 'fuel') {
+      computedName = p.brand ? `${p.brand} • ავტოგასამართი` : 'ავტოგასამართი სადგური';
+    } else if (layer === 'charging') {
+      computedName = p.brand ? `${p.brand} • EV დამტენი` : 'ელექტრო-დამტენი სადგური';
+    } else if (layer === 'services') {
+      computedName = p.brand ? `${p.brand} • ავტოსერვისი` : 'ავტოსერვისი & ვულკანიზაცია';
+    } else if (layer === 'car-wash') {
+      computedName = p.brand ? `${p.brand} • სამრეცხაო` : 'ავტოსამრეცხაო';
+    } else if (layer === 'parts') {
+      computedName = p.brand ? `${p.brand} • ნაწილები` : 'ავტონაწილების მაღაზია';
+    } else if (layer === 'parking' || layer === 'official-parking') {
+      computedName = p.code ? `საპარკინგე ლოტი #${p.code}` : 'მუნიციპალური პარკინგი';
+    } else if (layer === 'showrooms') {
+      computedName = p.brand ? `${p.brand} • ავტოსალონი` : 'ავტოსალონი';
+    } else {
+      computedName = LAYER_DEFAULTS[layer] || 'საგზაო ობიექტი';
+    }
+  }
+
+  const street = [p['addr:street'], p['addr:housenumber']].filter(Boolean).join(' ');
+  const city = p['addr:city'] || '';
+  const streetAddr = street ? (city ? `${city}, ${street}` : street) : null;
+
   return {
     ...feature,
     properties: {
       ...p,
       layer,
-      name: asText(p['name:ka']) || asText(p.name) || asText(p.brand) || LAYER_DEFAULTS[layer] || 'ობიექტი',
-      address: asText(p.address) || [p['addr:street'], p['addr:housenumber']].filter(Boolean).join(' ') || null,
+      name: computedName,
+      address: asText(p.address) || streetAddr || null,
       phone: asText(p['contact:phone']) || asText(p.phone) || null,
       website: asText(p['contact:website']) || asText(p.website) || null,
       opening_hours: asText(p.opening_hours) || null,
@@ -214,35 +247,91 @@ export function convertFeatureToMapReport(feature: MapFeature): MapReport | null
   const coords = getFeatureCoordinates(feature);
   if (!coords) return null;
 
-  const p = (feature.properties || {}) as Partial<MapFeatureProperties>;
+  const p = (feature.properties || {}) as any;
   const layer = p.layer || 'cameras';
   const pointType = LAYER_TO_POINT_TYPE[layer] || 'radar';
   const idStr = String(feature.id || `${layer}-${coords.lat.toFixed(5)}-${coords.lng.toFixed(5)}`);
 
+  const speedKmh = p.speed_limit_kmh ? Number(p.speed_limit_kmh) : (p.maxspeed ? parseInt(String(p.maxspeed), 10) : null);
+  const region = getGeorgiaRegionName(coords.lat, coords.lng);
+  
+  const rawBrand = p['brand:ka'] || p.brand || p['operator:ka'] || p.operator || '';
+  const rawName = p['name:ka'] || p.name || p['name:en'] || '';
+  
+  let title = p.name || rawName;
+  if (!title || title === 'ობიექტი') {
+    if (pointType === 'radar') {
+      title = p.camera_kind === 'traffic_signals'
+        ? 'შუქნიშნის კამერა'
+        : p.camera_kind === 'average_speed'
+        ? 'საშუალო სიჩქარის რადარი (A ⇢ B)'
+        : speedKmh ? `სიჩქარის რადარი · ${speedKmh} კმ/სთ` : 'სიჩქარის რადარი';
+    } else if (pointType === 'fuel') {
+      title = rawBrand ? `${rawBrand} • ავტოგასამართი` : 'ავტოგასამართი სადგური';
+    } else if (pointType === 'charging') {
+      title = rawBrand ? `${rawBrand} • EV დამტენი` : 'ელექტრო-დამტენი სადგური';
+    } else if (pointType === 'service') {
+      title = rawBrand ? `${rawBrand} • ავტოსერვისი` : 'ავტოსერვისი & ვულკანიზაცია';
+    } else if (pointType === 'car_wash') {
+      title = rawBrand ? `${rawBrand} • სამრეცხაო` : 'ავტოსამრეცხაო';
+    } else if (pointType === 'parts') {
+      title = rawBrand ? `${rawBrand} • ავტონაწილები` : 'ავტონაწილების მაღაზია';
+    } else if (pointType === 'parking') {
+      title = p.code ? `საპარკინგე ლოტი #${p.code}` : 'მუნიციპალური პარკინგი';
+    } else if (pointType === 'showroom') {
+      title = rawBrand ? `${rawBrand} • ავტოსალონი` : 'ავტოსალონი';
+    } else {
+      title = 'საგზაო ობიექტი';
+    }
+  }
+
+  const street = [p['addr:street'], p['addr:housenumber']].filter(Boolean).join(' ');
+  const city = p['addr:city'] || '';
+  const formattedAddress = p.address || (street ? (city ? `${city}, ${street}` : `${region}, ${street}`) : `${region} • საგზაო მონაკვეთი (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`);
+
+  let desc = p.description || p.code || '';
+  if (!desc || desc === 'OSM-ის საზოგადოებრივი მონაცემი') {
+    if (pointType === 'radar') {
+      desc = p.camera_kind === 'traffic_signals'
+        ? 'შუქნიშნის წითელზე გავლისა და ზოლის კონტროლის კამერა.'
+        : p.camera_kind === 'average_speed'
+        ? `სექციური სიჩქარის კონტროლის რადარი.${speedKmh ? ` ზღვრული სიჩქარე: ${speedKmh} კმ/სთ.` : ''}`
+        : `სტაციონარული სიჩქარის რადარი.${speedKmh ? ` მაქსიმალური დაშვებული სიჩქარე: ${speedKmh} კმ/სთ.` : ''}`;
+    } else if (pointType === 'fuel') {
+      desc = rawBrand ? `${rawBrand}-ის ავტოგასამართი სადგური.` : 'ავტოგასამართი სადგური.';
+    } else if (pointType === 'charging') {
+      desc = 'ელექტრომობილის სწრაფი დამტენი სადგური.';
+    } else if (pointType === 'service') {
+      desc = 'ავტოსერვისი, სავალი ნაწილი, ზეთის შეცვლა და საბურავები.';
+    } else if (pointType === 'car_wash') {
+      desc = 'ავტომობილის რეცხვა და მოვლა.';
+    } else if (pointType === 'parking') {
+      desc = p.code ? `მუნიციპალური საპარკინგე ზონა #${p.code}. 15 წთ უფასო.` : 'ავტოსადგომი.';
+    }
+  }
+
   return {
     id: idStr,
     type: pointType,
-    title: p.name || 'ობიექტი',
-    description: p.address || p.code || undefined,
+    title,
+    description: desc,
     lat: coords.lat,
     lng: coords.lng,
     timestamp: p.source_data_at ? new Date(p.source_data_at).getTime() : Date.now(),
     confirmations: 1,
     active: true,
-    brand: p.brand || undefined,
-    phone: p.phone || undefined,
-    address: p.address || undefined,
-    website: p.website || undefined,
+    brand: p.brand || rawBrand || undefined,
+    phone: p.phone || p['contact:phone'] || undefined,
+    address: formattedAddress,
+    website: p.website || p['contact:website'] || undefined,
     opening_hours: p.opening_hours || undefined,
-    speedLimit: p.speed_limit_kmh ? `${p.speed_limit_kmh} კმ/სთ` : undefined,
-    speed_limit_kmh: p.speed_limit_kmh ?? null,
+    speedLimit: speedKmh ? `${speedKmh} კმ/სთ` : undefined,
+    speed_limit_kmh: speedKmh,
     cameraKind: p.camera_kind === 'traffic_signals'
       ? 'შუქნიშნის კამერა'
       : p.camera_kind === 'average_speed'
-      ? 'საშუალო სიჩქარის რადარი'
-      : p.camera_kind === 'speed_camera'
-      ? 'სიჩქარის რადარი'
-      : undefined,
+      ? 'საშუალო სიჩქარის რადარი (A ⇢ B)'
+      : speedKmh ? `სიჩქარის რადარი · ${speedKmh} კმ/სთ` : 'სიჩქარის რადარი',
     camera_kind: p.camera_kind ?? null,
     code: p.code || undefined,
     layer,

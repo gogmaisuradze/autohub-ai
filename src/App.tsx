@@ -1044,7 +1044,7 @@ export const App: React.FC = () => {
       </div>
 
       {/* 3. Main Content Container (Unified wide layout matching CoverAdBanner) */}
-      <main id="main-content" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-16 sm:pb-24">
+      <main id="main-content" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-16 sm:pb-24 overflow-x-hidden">
         {/* Home Hub View (Department Buttons on Screen) */}
         {activeTab === 'home' && (
           <HomeHub

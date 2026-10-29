@@ -3,7 +3,7 @@ import { MapPointType, MapReport, VehicleProfile } from '../../types';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
 import { leafletLoader } from '../../services/leafletLoader';
-import { loadCameras } from '../../services/cameraService';
+import { loadCameras, getGeorgiaRegionName } from '../../services/cameraService';
 import { mapDataService } from '../../services/mapDataService';
 import { getPreferredLocation, watchPreferredLocation, LocationFix } from '../../services/locationService';
 import AddReportModal from './AddReportModal';
@@ -231,9 +231,9 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
     // Pre-create and cache both tile layers for instant, lag-free switching
     // Carto Voyager provides the authentic clean pastel Google Maps aesthetic
-    const osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    const osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      subdomains: 'abcd',
+      subdomains: 'abc',
       attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     });
     osmLayerRef.current = osmLayer;
@@ -645,12 +645,11 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </div>
         `;
       }
-      if (item.phone || item.website || item.opening_hours || item.address || item.code) {
+      if (item.phone || item.website || item.opening_hours || item.code) {
         popupBodyHtml += `
           <div class="mt-2.5 p-2.5 rounded-2xl bg-[#F8F9FA] border border-[#DADCE0] space-y-1.5 text-xs text-[#3C4043]">
             ${item.code ? `<div class="font-mono text-[#1A73E8] font-bold flex items-center justify-between"><span>🅿️ საპარკინგე ლოტი #${escapeHtml(item.code)}</span><span class="text-[#D97706] text-[10px]">15 წთ უფასო</span></div>` : ''}
             ${item.rating ? `<div class="flex items-center gap-1.5 text-[#D97706] font-bold"><span>შეფასება:</span><span>${item.rating} / 5.0 ★</span></div>` : ''}
-            ${item.address ? `<div class="text-[#5F6368] flex items-start gap-1"><span>📍</span><span>${escapeHtml(item.address)}</span></div>` : ''}
             ${item.phone ? `<div class="flex items-center gap-1"><span>📞</span><a href="tel:${escapeHtml(item.phone)}" class="text-[#1A73E8] font-mono font-bold hover:underline">${escapeHtml(item.phone)}</a></div>` : ''}
             ${item.website ? `<div class="flex items-center gap-1"><span>🌐</span><a href="${escapeHtml(item.website)}" target="_blank" rel="noopener noreferrer" class="text-[#1A73E8] hover:underline">ვებსაიტი ↗</a></div>` : ''}
             ${item.opening_hours ? `<div class="text-[11px] text-[#5F6368] flex items-center gap-1"><span>🕒</span><span>${escapeHtml(item.opening_hours)}</span></div>` : ''}
@@ -658,6 +657,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         `;
       }
 
+      const displayAddress = item.address || `${getGeorgiaRegionName(item.lat, item.lng)} • საგზაო მონაკვეთი (${item.lat.toFixed(4)}, ${item.lng.toFixed(4)})`;
       const wazeDeepLink = `https://waze.com/ul?ll=${item.lat},${item.lng}&navigate=yes`;
       const gmapsLink = `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}`;
 
@@ -690,7 +690,11 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </div>
 
           <h4 class="font-bold text-sm text-[#202124] mt-2 leading-tight">${item.title}</h4>
-          ${item.description && item.description !== item.address ? `<p class="text-xs text-[#5F6368] mt-1 leading-snug">${item.description}</p>` : ''}
+          <div class="text-xs text-[#5F6368] flex items-start gap-1 mt-1 font-medium">
+            <span class="shrink-0 mt-0.5">📍</span>
+            <span>${escapeHtml(displayAddress)}</span>
+          </div>
+          ${item.description && item.description !== item.address && item.description !== displayAddress ? `<p class="text-xs text-[#5F6368] mt-1 leading-snug">${item.description}</p>` : ''}
           ${popupBodyHtml}
 
           <div class="mt-3 pt-2.5 border-t border-[#E8EAED] flex flex-wrap items-center justify-between gap-1.5 text-xs">
@@ -1302,6 +1306,12 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             <h4 className="font-bold text-base text-[#202124] mt-2 leading-tight">
               {selectedReport.title}
             </h4>
+            <div className="flex items-start gap-1.5 mt-1 text-xs text-[#5F6368] font-medium">
+              <span className="shrink-0 mt-0.5">📍</span>
+              <span>
+                {selectedReport.address || `${getGeorgiaRegionName(selectedReport.lat, selectedReport.lng)} • საგზაო მონაკვეთი (${selectedReport.lat.toFixed(4)}, ${selectedReport.lng.toFixed(4)})`}
+              </span>
+            </div>
             {selectedReport.description && selectedReport.description !== selectedReport.address && (
               <p className="text-xs text-[#5F6368] mt-1 leading-snug">
                 {selectedReport.description}
@@ -1316,12 +1326,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                   <span className="px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 font-mono font-bold text-xs">
                     ⚡ {selectedReport.speed_limit_kmh} კმ/სთ
                   </span>
-                </div>
-              )}
-              {selectedReport.address && (
-                <div className="flex items-start gap-1.5">
-                  <span>📍</span>
-                  <span>{selectedReport.address}</span>
                 </div>
               )}
               {selectedReport.phone && (

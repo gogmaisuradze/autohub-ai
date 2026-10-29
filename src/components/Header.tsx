@@ -136,9 +136,9 @@ export const Header: React.FC<Props> = ({
   );
 
   return (
-    <header className="w-full border-b border-white/60 transition-colors">
+    <header className="w-full max-w-full overflow-hidden border-b border-white/60 transition-colors">
       {/* ROW 1: Brand & Top Action Controls */}
-      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-0 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-4">
+      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-0 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-4 w-full">
         
         {/* 1. Left: Brand & Subtitle with V1 Circular Logo */}
         <div
@@ -348,7 +348,7 @@ export const Header: React.FC<Props> = ({
       </div>
 
       {/* ROW 2: Mobile Vehicle Selector Bar (Lifts the vehicle pill above navigation on mobile) */}
-      <div className="md:hidden px-2.5 pb-2 pt-0.5 max-w-7xl mx-auto">
+      <div className="md:hidden px-2.5 pb-2 pt-0.5 max-w-7xl mx-auto w-full">
         {hasSelectedVehicle && vehicle ? (
           <div data-tour="header-vehicle-mobile" className="relative w-full">
             <button
