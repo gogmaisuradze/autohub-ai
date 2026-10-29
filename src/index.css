@@ -463,7 +463,36 @@
 
 .leaflet-container {
   font-family: inherit !important;
-  background-color: #1a2232 !important;
+  background-color: #F4F3F0 !important;
+}
+
+/* Google Maps Clean Light Popup Styling */
+.light-google-popup .leaflet-popup-content-wrapper {
+  background: #FFFFFF !important;
+  border: 1px solid #DADCE0 !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 10px 25px -5px rgba(60, 64, 67, 0.22), 0 4px 10px -2px rgba(60, 64, 67, 0.12) !important;
+  padding: 6px !important;
+  color: #202124 !important;
+}
+
+.light-google-popup .leaflet-popup-tip {
+  background: #FFFFFF !important;
+  border: 1px solid #DADCE0 !important;
+  box-shadow: none !important;
+}
+
+.light-google-popup .leaflet-popup-close-button {
+  color: #5F6368 !important;
+  top: 10px !important;
+  right: 12px !important;
+  font-size: 16px !important;
+  padding: 4px !important;
+  transition: all 0.2s ease;
+}
+
+.light-google-popup .leaflet-popup-close-button:hover {
+  color: #202124 !important;
 }
 
 /* Modern Soft Slate Dark Styling for OpenStreetMap (Applied to the entire tile-pane: Instant & Zero Lag) */
