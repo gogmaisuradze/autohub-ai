@@ -6,6 +6,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { DtcCode, VehicleProfile } from '../types';
+import { CarScenePoster } from './CarScenePoster';
 import { sounds } from '../services/soundEffects';
 import {
   Layers,
@@ -417,11 +418,12 @@ export const ThreeCarScene: React.FC<Props> = ({
     cameraRef.current = camera;
 
     // 3. Renderer with ACES Filmic Tone Mapping
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: 'high-performance'
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+    } catch {
+      setModelError(true);setModelLoading(false);return;
+    }
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, width < 640 ? 1.25 : 1.5));
     renderer.shadowMap.enabled = true;
@@ -650,14 +652,14 @@ export const ThreeCarScene: React.FC<Props> = ({
             if (uFill <= .001) painted = 0.0;
             if (uFill >= .999) painted = 1.0;
             float surfaceAlpha = clamp(diffuseColor.a / max(opacity, .001), 0.0, 1.0);
-            diffuseColor.rgb ${paintLayer && mat.userData.keepSurfaceColor ? '*=' : '='} ${paintLayer ? 'uPaintColor' : 'uGhostColor'};
-            diffuseColor.a = surfaceAlpha * ${paintLayer ? 'painted' : 'uGhostAlpha * (1.0 - painted)'};
-            ${!paintLayer ? 'diffuseColor.a *= 1.0 - exp(-pow((vCarSurface.z - uScanZ) / .18, 2.0)) * uScanStrength * .85;' : ''}
-            ${paintLayer ? `
-              float frontGrille = smoothstep(2.20, 2.28, vCarSurface.z) * (1.0 - smoothstep(.40, .48, abs(vCarSurface.x))) * step(.17, vCarSurface.y - uLift) * (1.0 - smoothstep(.66, .69, vCarSurface.y - uLift));
-              diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.006, .008, .012), frontGrille);` : ''}`);
-          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = ' + (paintLayer ? 'mix(uSolidRoughness, .48, frontGrille);' : '.13;'));
-          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = ' + (paintLayer ? 'mix(uSolidMetalness, .03, frontGrille);' : '.03;'));
+            vec3 solidSurface = ${mat.userData.keepSurfaceColor ? 'diffuseColor.rgb * uPaintColor' : 'uPaintColor'};
+            diffuseColor.rgb = mix(uGhostColor, solidSurface, painted);
+            diffuseColor.a = surfaceAlpha * mix(uGhostAlpha, 1.0, painted);
+            diffuseColor.a *= 1.0 - exp(-pow((vCarSurface.z - uScanZ) / .18, 2.0)) * uScanStrength * .85 * (1.0 - painted);
+            float frontGrille = smoothstep(2.20, 2.28, vCarSurface.z) * (1.0 - smoothstep(.40, .48, abs(vCarSurface.x))) * step(.17, vCarSurface.y - uLift) * (1.0 - smoothstep(.66, .69, vCarSurface.y - uLift));
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.006, .008, .012), frontGrille * painted);`);
+          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(.13, mix(uSolidRoughness, .48, frontGrille), painted);');
+          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(.03, mix(uSolidMetalness, .03, frontGrille), painted);');
         }
         shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
           float scanBand = exp(-pow((vCarSurface.z - uScanZ) / .035, 2.0));
@@ -665,7 +667,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           outgoingLight += (vec3(.72, .93, 1.0) * scanBand * 1.6 + vec3(.06, .32, .60) * scanHalo * .32) * uScanStrength;
           #include <opaque_fragment>`);
       };
-      mat.customProgramCacheKey = () => body ? (paintLayer ? (mat.userData.keepSurfaceColor ? 'autohub-native-trim-wave-v6' : 'autohub-opaque-paint-wave-v6') : 'autohub-glass-wave-v6') : 'autohub-surface-scan-v3';
+      mat.customProgramCacheKey = () => body ? (mat.userData.keepSurfaceColor ? 'autohub-single-native-v1' : 'autohub-single-paint-v1') : 'autohub-surface-scan-v3';
       mat.needsUpdate = true;
     };
     // A restrained volumetric light sheet moves through the whole vehicle.
@@ -718,6 +720,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     let headlightMat: THREE.MeshStandardMaterial | null = null;
     let taillightMat: THREE.MeshStandardMaterial | null = null;
     let disposed = false;
+    let firstModelFramePending = false;
 
     gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=12`, (gltf) => {
       const root = gltf.scene;
@@ -869,6 +872,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           point.set(0,0,0);
           for(let j=0;j<3;j++)point.add(new THREE.Vector3().fromBufferAttribute(positions,i+j).applyMatrix4(mesh.matrixWorld));
           point.multiplyScalar(1/3);
+          carMasterGroup.worldToLocal(point);
           const mirror=Math.abs(point.x)>.84&&Math.abs(point.x)<1.15&&point.y>.88&&point.y<1.2&&point.z>.30&&point.z<.72;
           (mirror?mirrors:keep).push(i,i+1,i+2);
         }
@@ -968,17 +972,11 @@ export const ThreeCarScene: React.FC<Props> = ({
           return out;
         };
         if (roof.length) {
-          // Roof panel inherits the body paint lacquer and is included in the body paint meshes
-          const roofGlass = ghostGlassMat.clone();
-          roofGlass.side = THREE.FrontSide;
-          roofGlass.userData.solidRoughness = .19;
-          roofGlass.userData.solidMetalness = .36;
+          const roofGlass = new THREE.MeshPhysicalMaterial({color:0x080c12,roughness:.16,metalness:.05,clearcoat:1,clearcoatRoughness:.1,side:THREE.DoubleSide});
           const roofMesh = new THREE.Mesh(subset(roof), roofGlass);
           roofMesh.name = 'BMW_Roof_Panel';
           roofMesh.matrix.copy(m.matrix); roofMesh.matrix.decompose(roofMesh.position, roofMesh.quaternion, roofMesh.scale);
           m.parent?.add(roofMesh); bodyGrp.attach(roofMesh);
-          bodyMaterialsRef.current.push(roofGlass);
-          m.geometry = subset(windows);
         }
         geometry.dispose();
         m.material = windowMat; bodyGrp.attach(m);
@@ -1079,50 +1077,13 @@ export const ThreeCarScene: React.FC<Props> = ({
           }
         });
       });
-      // Opaque hashed paint progressively replaces the glass, with depth testing
-      // active from the first frame. There is no final material/depth-mode switch.
-      const paintMeshes: THREE.Mesh[] = [];
-      const paintMaterials = new Map<THREE.Material, THREE.MeshPhysicalMaterial>();
-      bodyGrp.traverse(node => {
-        if (!(node instanceof THREE.Mesh)) return;
-        const nativeMaterials = Array.isArray(node.material) ? node.material : [node.material];
-        if (!nativeMaterials.every(material => bodyMaterials.has(material))) return;
-        const getPaintMaterial = (ghostMat:THREE.MeshPhysicalMaterial) => {
-        let paintMat = paintMaterials.get(ghostMat);
-        if (!paintMat) {
-          paintMat = ghostMat.clone();
-          if (!ghostMat.userData.keepSurfaceColor) {
-            paintMat.clearcoat = 1;
-            paintMat.clearcoatRoughness = .055;
-            paintMat.ior = 1.5;
-            paintMat.envMapIntensity = 1.0;
-          }
-          paintMat.transparent = false; paintMat.depthWrite = true; paintMat.alphaHash = true;
-          paintMat.polygonOffset = true; paintMat.polygonOffsetFactor = -3; paintMat.polygonOffsetUnits = -3;
-          applySurfaceEffects(paintMat, true, true);
-          paintMaterials.set(ghostMat, paintMat);
+      // A single surface changes from glass to paint. No overlapping shells,
+      // stochastic alpha dithering or displaced duplicate geometry.
+      bodyMaterialsRef.current.forEach(material => {
+        if(!material.userData.keepSurfaceColor){
+          material.clearcoat=1;material.clearcoatRoughness=.08;material.ior=1.5;
         }
-        return paintMat;
-        };
-        const paintMaterial = nativeMaterials.map(material => getPaintMaterial(material as THREE.MeshPhysicalMaterial));
-        let paintGeometry=node.geometry;
-        if(!nativeMaterials.some(material=>material.userData.keepSurfaceColor)){
-          // Lift the lacquer by 0.8mm to avoid coplanar dark trim bleeding through.
-          paintGeometry=node.geometry.clone();
-          const position=paintGeometry.getAttribute('position'),normal=paintGeometry.getAttribute('normal');
-          if(normal)for(let i=0;i<position.count;i++){
-            position.setXYZ(i,position.getX(i)+normal.getX(i)*.0008,position.getY(i)+normal.getY(i)*.0008,position.getZ(i)+normal.getZ(i)*.0008);
-          }
-          position.needsUpdate=true;paintGeometry.computeBoundingSphere();
-        }
-        const paint = new THREE.Mesh(paintGeometry, Array.isArray(node.material) ? paintMaterial : paintMaterial[0]);
-        paint.name = 'PaintLayer_' + node.name;
-        paint.position.copy(node.position); paint.quaternion.copy(node.quaternion); paint.scale.copy(node.scale);
-        paint.renderOrder = nativeMaterials.some(material=>material.userData.keepSurfaceColor) ? 0 : 2;
-        paint.castShadow = false;
-        paintMeshes.push(paint);
       });
-      paintMeshes.forEach(mesh => bodyGrp.add(mesh));
       carMasterGroup.updateWorldMatrix(true, true);
       const engineBounds = new THREE.Box3().setFromObject(groupsRef.current.engine);
       const engineHeart = carMasterGroup.worldToLocal(engineBounds.getCenter(new THREE.Vector3()));
@@ -1147,7 +1108,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       });
       carMasterGroup.remove(root);
       modelReadyRef.current = true;
-      setModelLoading(false);
+      firstModelFramePending = true;
     }, (event) => {
       if (!disposed && event.lengthComputable && event.total > 0) setModelProgress(Math.min(100, Math.round(event.loaded / event.total * 100)));
     }, (err) => { if (!disposed) { setModelError(true); setModelLoading(false); } console.error('BMW model load error', err); });
@@ -1166,7 +1127,8 @@ export const ThreeCarScene: React.FC<Props> = ({
     const scanPodium = new THREE.Color(0x101e30);
     const idleRing = new THREE.Color(0xc3c8d0);
     const scanRing = new THREE.Color(0x477da3);
-    let fillProgress = 0;
+    let fillProgress = solidTargetRef.current;
+    visual.fill.value = fillProgress;
     let scanPhase = 0;
     let previousTime = 0;
     let inViewport = true;
@@ -1188,7 +1150,11 @@ export const ThreeCarScene: React.FC<Props> = ({
       // ფარები ინთება როცა მანქანა მკაფიო/მყარი ხდება
       if (headlightMat) headlightMat.emissiveIntensity = 0.12 + fillProgress * .85;
       if (taillightMat) taillightMat.emissiveIntensity = 0.12 + fillProgress * .75;
-      bodyMaterialsRef.current.forEach(mat => { mat.depthWrite = false; });
+      bodyMaterialsRef.current.forEach(mat => {
+        const translucent = visual.fill.value < .999;
+        if(mat.transparent !== translucent){mat.transparent=translucent;mat.needsUpdate=true;}
+        mat.depthWrite=!translucent;
+      });
 
       const sequence = sequenceRef.current;
       if (sequence.active && modelReadyRef.current) {
@@ -1398,9 +1364,16 @@ export const ThreeCarScene: React.FC<Props> = ({
       carMasterGroup.updateWorldMatrix(true, false);
       visual.carInverse.value.copy(carMasterGroup.matrixWorld).invert();
 
+      for(const id of ['engine','ecu','cooling','suspension','battery','ignition_coil','oxygen_sensor','coolant_sensor','throttle_sensor','fuel_injectors','fuel_pump','intake_sensor','knock_sensor','map_sensor']){
+        const group=groupsRef.current[id];if(group)group.visible=visual.fill.value<.999||curExp>.01;
+      }
       controls.update();
       canopy.visible = camera.position.y < canopy.position.y - .3;
       renderer.render(scene, camera);
+      if (firstModelFramePending) {
+        firstModelFramePending = false;
+        requestAnimationFrame(() => { if (!disposed) setModelLoading(false); });
+      }
     };
 
     animate();
@@ -1488,8 +1461,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       <div className="absolute bottom-2 left-3 z-20 max-w-[65%] text-[11px] text-slate-500 pointer-events-auto">
         BMW M4 · 3D ვიზუალიზაცია · <a className="underline" href={`${import.meta.env.BASE_URL}models/bmw-diagnostic-credits.json`} target="_blank" rel="noreferrer">3D ავტორები</a>
       </div>
-      {modelLoading && !modelError && <div role="status" className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center"><span className="rounded-full bg-white/90 px-4 py-2 text-sm text-slate-600 shadow-sm">{modelProgress === 100 ? '3D მოდელი მზადდება…' : modelProgress === null ? '3D მოდელი იტვირთება…' : `3D მოდელი იტვირთება… ${modelProgress}%`}</span></div>}
-      {modelError && <div role="alert" className="absolute inset-0 z-30 grid place-items-center bg-white/95 text-sm text-navy">3D მოდელი ვერ ჩაიტვირთა. განაახლეთ გვერდი.</div>}
+      <CarScenePoster hidden={!modelLoading && !modelError} message={modelError ? '3D ვერ ჩაიტვირთა — ნაჩვენებია ფოტო' : modelProgress === 100 ? '3D მოდელი მზადდება…' : modelProgress === null ? '3D მოდელი იტვირთება…' : `3D მოდელი იტვირთება… ${modelProgress}%`} />
       {/* 1. TOP FLOATING CONTROL HUD BAR */}
       <div ref={topControlsRef} className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-col lg:flex-row lg:flex-wrap lg:items-center lg:justify-between gap-2 pointer-events-none">
         

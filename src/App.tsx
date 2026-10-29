@@ -1,3 +1,4 @@
+import { CarScenePoster } from './components/CarScenePoster';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { VEHICLE_PRESETS, OWNER_VEHICLES, VISITOR_INITIAL_VEHICLE } from './constants/vehicles';
@@ -1065,7 +1066,7 @@ export const App: React.FC = () => {
 
         {/* Sub-department Views */}
         {activeTab === 'obd' && (
-          <React.Suspense fallback={<div className="min-h-[430px] rounded-3xl bg-white/60 grid place-items-center text-slate-500" role="status">დიაგნოსტიკა იტვირთება…</div>}>
+          <React.Suspense fallback={<div className="relative h-[540px] sm:h-[620px] md:h-[640px] rounded-3xl overflow-hidden"><CarScenePoster message="დიაგნოსტიკა იტვირთება…" /></div>}>
           <ObdModule
             vehicle={vehicle}
             telemetry={telemetry}

@@ -124,10 +124,11 @@ export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full
   return (
     <div className={`relative ${className} overflow-hidden bg-slate-950 flex items-center justify-center select-none group`}>
       <img
-        src={imgSrc}
+        src={imgSrc.startsWith('/avatars/') ? `${import.meta.env.BASE_URL}${imgSrc.slice(1)}` : imgSrc}
         alt={matchedPreset ? matchedPreset.title : "Driver Avatar"}
         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        loading="lazy"
+        loading="eager"
+        fetchPriority="high"
       />
       {/* Security holographic sheen overlay */}
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
