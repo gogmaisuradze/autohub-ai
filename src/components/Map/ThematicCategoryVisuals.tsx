@@ -9,231 +9,442 @@ interface VisualProps {
   badge?: string;
 }
 
+/**
+ * Authentic, grounded (დაჯდარი), refined (დახვეწილი) official traffic road signs (საგზაო ნიშნები).
+ * Follows Vienna Convention / Georgian standard road signage aesthetics:
+ * - High-precision vector geometry
+ * - Authentic highway sign colors (Vienna Blue #1D4ED8, Traffic Red #DC2626, Traffic Amber #F59E0B, Service Green #047857)
+ * - Corner mounting rivets
+ * - Authentic inner white border margin
+ * - Clear, elegant road typography (sans-serif, bold, high-contrast)
+ * - No neon glows, no laser arcs — pure official road signage.
+ */
 export const ThematicCategoryVisual: React.FC<VisualProps> = ({
   categoryKey,
-  isSelected = false,
-  isFiltered = false
+  isSelected = false
 }) => {
   return (
-    <div className="relative w-full h-full bg-[#182235] flex items-center justify-center p-3 select-none">
-      {/* Subtle Matte Background Texture */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
+    <div
+      className={`relative w-full h-full flex items-center justify-center p-2.5 sm:p-3 select-none overflow-hidden transition-colors duration-300 ${
+        isSelected
+          ? 'bg-gradient-to-b from-[#162238] to-[#0D1525]'
+          : 'bg-gradient-to-b from-[#243044] to-[#172232]'
+      }`}
+    >
+      {/* Subtle road asphalt / metallic signplate sheen */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.08),transparent_75%)] pointer-events-none" />
 
-      {/* Road Sign Plates */}
       {(() => {
         switch (categoryKey) {
           case 'radar':
-            // Official Radar / Speed Camera Sign (White disc with red border 80 km/h + Blue Camera Plate)
+            // Official Speed Camera / Radar Sign (Vienna 5.27 & 3.24)
             return (
-              <div className="flex items-center justify-center gap-3">
-                {/* Standard White Disc Speed Limit Sign */}
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white border-4 sm:border-[5px] border-[#DC2626] flex items-center justify-center shadow-md shrink-0">
-                  <span className="text-xl sm:text-2xl font-black text-slate-950 font-sans tracking-tight">
-                    80
-                  </span>
-                </div>
+              <svg className="w-full h-full max-w-[260px] max-h-[145px] drop-shadow-md" viewBox="0 0 260 145">
+                {/* Main Blue Highway Signplate */}
+                <rect x="10" y="8" width="240" height="129" rx="14" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="3" />
+                <rect x="14" y="12" width="232" height="121" rx="11" fill="none" stroke="#FFFFFF" strokeWidth="1" strokeOpacity="0.6" />
 
-                {/* Standard Blue Camera Plate (საგზაო ნიშანი 5.27/7.14) */}
-                <div className="w-20 h-16 sm:w-24 sm:h-20 rounded-xl bg-[#1E40AF] border-2 border-white p-1.5 flex flex-col items-center justify-center shadow-md shrink-0">
-                  {/* Camera pictogram */}
-                  <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm8 11a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" />
-                  </svg>
-                  <span className="text-[8px] sm:text-[9px] font-bold text-white tracking-widest mt-0.5 uppercase">
-                    RADAR
-                  </span>
-                </div>
-              </div>
+                {/* Corner Mounting Rivets */}
+                <circle cx="22" cy="20" r="2.5" fill="#CBD5E1" />
+                <circle cx="238" cy="20" r="2.5" fill="#CBD5E1" />
+                <circle cx="22" cy="125" r="2.5" fill="#CBD5E1" />
+                <circle cx="238" cy="125" r="2.5" fill="#CBD5E1" />
+
+                {/* Speed Limit Disc 80 km/h (Left) */}
+                <circle cx="68" cy="72" r="38" fill="#FFFFFF" stroke="#DC2626" strokeWidth="8" />
+                <text x="68" y="82" fill="#0F172A" fontSize="30" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle">80</text>
+
+                {/* Official Speed Camera Pictogram (Right) */}
+                <g fill="#FFFFFF" transform="translate(132, 34)">
+                  {/* Camera Body */}
+                  <rect x="10" y="18" width="60" height="42" rx="6" />
+                  {/* Camera Top Flash / Sensor */}
+                  <polygon points="26,18 36,8 54,8 60,18" />
+                  <circle cx="50" cy="13" r="2.5" fill="#1D4ED8" />
+                  {/* Lens */}
+                  <circle cx="40" cy="39" r="14" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="3" />
+                  <circle cx="40" cy="39" r="6" fill="#FFFFFF" />
+                  {/* Radar Wave emissions */}
+                  <path d="M76 28 A 18 18 0 0 1 76 50" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M84 22 A 28 28 0 0 1 84 56" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.7" />
+                </g>
+
+                {/* Official Road Label */}
+                <text x="172" y="116" fill="#FFFFFF" fontSize="11" fontWeight="800" fontFamily="system-ui, sans-serif" textAnchor="middle" letterSpacing="1">
+                  რადარი • 5.27
+                </text>
+              </svg>
             );
 
           case 'traffic_jam':
-            // Official Road Warning Sign: Congestion / Traffic Jam (საგზაო ნიშანი 1.34)
+            // Official Warning Sign 1.34 (საცობი / ტრანსპორტის შეფერხება)
             return (
-              <div className="flex flex-col items-center justify-center">
-                <svg className="w-24 h-22 sm:w-28 sm:h-24 drop-shadow-md" viewBox="0 0 100 86">
+              <svg className="w-full h-full max-w-[260px] max-h-[145px] drop-shadow-md" viewBox="0 0 260 145">
+                {/* Triangular Warning Signplate */}
+                <g transform="translate(70, 6)">
                   {/* Outer Red Triangle */}
-                  <polygon points="50,4 96,82 4,82" fill="#DC2626" />
-                  {/* Inner Yellow / White Triangle */}
-                  <polygon points="50,14 88,76 12,76" fill="#FFFFFF" />
-                  {/* 3 Queued Cars Pictogram in Solid Black */}
+                  <polygon points="60,4 120,118 0,118" fill="#DC2626" stroke="#991B1B" strokeWidth="2" strokeLinejoin="round" />
+                  {/* Inner White Plate */}
+                  <polygon points="60,18 108,110 12,110" fill="#FFFFFF" />
+
+                  {/* 3 Queued Vehicles in Solid Black (Standard Vienna Convention) */}
                   <g fill="#0F172A">
-                    {/* Car 1 */}
-                    <rect x="35" y="60" width="30" height="9" rx="2" />
-                    <circle cx="42" cy="70" r="2.5" fill="#0F172A" />
-                    <circle cx="58" cy="70" r="2.5" fill="#0F172A" />
-                    <path d="M40,60 L44,53 L56,53 L60,60 Z" />
-                    {/* Car 2 (higher) */}
-                    <rect x="39" y="44" width="22" height="7" rx="1.5" />
-                    <path d="M43,44 L46,39 L54,39 L57,44 Z" />
-                    {/* Car 3 (lead) */}
-                    <rect x="42" y="32" width="16" height="5" rx="1" />
+                    {/* Bottom Car */}
+                    <rect x="36" y="85" width="48" height="14" rx="3" />
+                    <circle cx="48" cy="100" r="3.5" />
+                    <circle cx="72" cy="100" r="3.5" />
+                    <path d="M43,85 L49,74 L71,74 L77,85 Z" />
+
+                    {/* Middle Car */}
+                    <rect x="42" y="60" width="36" height="11" rx="2" />
+                    <path d="M48,60 L52,52 L68,52 L72,60 Z" />
+
+                    {/* Top Car */}
+                    <rect x="47" y="42" width="26" height="8" rx="1.5" />
+                    <path d="M51,42 L54,36 L66,36 L69,42 Z" />
                   </g>
-                </svg>
-                <span className="mt-1 px-2.5 py-0.5 rounded-md bg-white/10 text-slate-200 text-[10px] font-bold tracking-wide uppercase">
-                  საცობი • TRAFFIC
-                </span>
-              </div>
+                </g>
+
+                {/* Official Road Sub-plate */}
+                <rect x="55" y="124" width="150" height="18" rx="4" fill="#0F172A" stroke="#FFFFFF" strokeWidth="1.5" />
+                <text x="130" y="137" fill="#FFFFFF" fontSize="10" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle" letterSpacing="0.8">
+                  საცობი • JAM (1.34)
+                </text>
+              </svg>
             );
 
           case 'fuel':
-            // Official Blue Highway Service Sign: Gas Station (ნიშანი 7.1)
+            // Official Blue Highway Service Sign 7.1 (ავტოგასამართი სადგური)
             return (
-              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#1E40AF] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
-                <div className="w-full flex justify-between items-center px-1">
-                  <span className="text-[8px] font-mono font-bold text-white/80">7.1</span>
-                  <span className="text-[8px] font-bold text-amber-300">GULF • WISSOL</span>
-                </div>
-                {/* Standard fuel pump pictogram */}
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.5 5.5v12a1.5 1.5 0 0 1-3 0v-6.5a1 1 0 0 0-1-1H14V4h-1v6H6a2 2 0 0 0-2 2v8h10v-5h1.5a2.5 2.5 0 0 0 2.5-2.5V8.83a3 3 0 0 0 1-2.33 3 3 0 0 0-3-3zM7 6h5v3H7V6z" />
-                </svg>
-                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
-                  ავტოგასამართი
-                </span>
-              </div>
+              <svg className="w-full h-full max-w-[260px] max-h-[145px] drop-shadow-md" viewBox="0 0 260 145">
+                {/* Main Blue Plate */}
+                <rect x="15" y="8" width="230" height="129" rx="14" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="3" />
+                <rect x="19" y="12" width="222" height="121" rx="11" fill="none" stroke="#FFFFFF" strokeWidth="1" strokeOpacity="0.6" />
+
+                {/* Corner Rivets */}
+                <circle cx="26" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="26" cy="126" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="126" r="2.5" fill="#CBD5E1" />
+
+                {/* Left: Classic Gas Pump Dispenser Icon */}
+                <g fill="#FFFFFF" transform="translate(36, 24)">
+                  <rect x="10" y="14" width="40" height="66" rx="4" />
+                  <rect x="16" y="22" width="28" height="20" rx="2" fill="#1D4ED8" />
+                  <text x="30" y="36" fill="#FFFFFF" fontSize="10" fontWeight="900" textAnchor="middle">95</text>
+                  <rect x="14" y="80" width="32" height="5" rx="1" />
+                  {/* Hose & Nozzle */}
+                  <path d="M50 26 C 62 26, 68 40, 68 60 L 68 76 L 63 76 L 63 56 C 63 44, 58 36, 50 36" fill="#FFFFFF" />
+                  <rect x="61" y="44" width="10" height="14" rx="2" fill="#FFFFFF" />
+                  <path d="M66 44 L 66 34 L 60 30" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" fill="none" />
+                </g>
+
+                {/* Right: Road Identification & Brand badges */}
+                <g transform="translate(132, 38)">
+                  <rect x="0" y="0" width="98" height="26" rx="6" fill="#FFFFFF" />
+                  <text x="49" y="18" fill="#1D4ED8" fontSize="13" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    GULF • WISSOL
+                  </text>
+
+                  <rect x="0" y="32" width="98" height="22" rx="5" fill="#FFFFFF" fillOpacity="0.15" stroke="#FFFFFF" strokeWidth="1" />
+                  <text x="49" y="47" fill="#FFFFFF" fontSize="10" fontWeight="800" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    SOCAR • ROMP.
+                  </text>
+
+                  <text x="49" y="76" fill="#FDE047" fontSize="11" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle" letterSpacing="0.8">
+                    ავტოგასამართი 7.1
+                  </text>
+                </g>
+              </svg>
             );
 
           case 'charging':
-            // Official Highway Service Sign: EV Charging Station
+            // Official Green Highway Service Sign: Electric Vehicle Charging
             return (
-              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#047857] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
-                <div className="w-full flex justify-between items-center px-1">
-                  <span className="text-[8px] font-mono font-bold text-white/80">EV</span>
-                  <span className="text-[8px] font-bold text-emerald-200">DC / AC</span>
-                </div>
-                {/* Electric vehicle + plug pictogram */}
-                <div className="flex items-center justify-center gap-1">
-                  <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.08 3.11H5.77L6.85 7zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z" />
-                    <circle cx="7.5" cy="14.5" r="1.5" />
-                    <circle cx="16.5" cy="14.5" r="1.5" />
-                  </svg>
-                  <span className="text-xl font-bold text-amber-300">⚡</span>
-                </div>
-                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
-                  EV დამტენი
-                </span>
-              </div>
+              <svg className="w-full h-full max-w-[260px] max-h-[145px] drop-shadow-md" viewBox="0 0 260 145">
+                {/* Main Green Plate */}
+                <rect x="15" y="8" width="230" height="129" rx="14" fill="#047857" stroke="#FFFFFF" strokeWidth="3" />
+                <rect x="19" y="12" width="222" height="121" rx="11" fill="none" stroke="#FFFFFF" strokeWidth="1" strokeOpacity="0.6" />
+
+                {/* Corner Rivets */}
+                <circle cx="26" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="26" cy="126" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="126" r="2.5" fill="#CBD5E1" />
+
+                {/* EV Car & Charging Plug Symbol */}
+                <g fill="#FFFFFF" transform="translate(34, 28)">
+                  {/* Car Profile */}
+                  <path d="M10 50 L 16 36 L 44 36 L 56 50 L 72 50 C 75 50, 78 53, 78 57 L 78 68 L 74 68 C 74 64, 70 60, 65 60 C 60 60, 56 64, 56 68 L 26 68 C 26 64, 22 60, 17 60 C 12 60, 8 64, 8 68 L 4 68 C 2 68, 0 66, 0 63 L 0 54 C 0 52, 2 50, 4 50 Z" />
+                  <circle cx="17" cy="68" r="7" fill="#047857" stroke="#FFFFFF" strokeWidth="3" />
+                  <circle cx="65" cy="68" r="7" fill="#047857" stroke="#FFFFFF" strokeWidth="3" />
+                  <circle cx="24" cy="43" r="4" fill="#047857" />
+                  <circle cx="42" cy="43" r="4" fill="#047857" />
+
+                  {/* Charging Plug with Lightning */}
+                  <rect x="86" y="24" width="24" height="38" rx="4" />
+                  <line x1="92" y1="14" x2="92" y2="24" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" />
+                  <line x1="104" y1="14" x2="104" y2="24" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" />
+                  <path d="M98 62 L 98 76 L 76 76" fill="none" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" />
+                  {/* Lightning icon inside charger */}
+                  <polygon points="98,30 94,42 99,42 97,54 104,40 99,40" fill="#047857" />
+                </g>
+
+                {/* Right Labels */}
+                <g transform="translate(150, 42)">
+                  <rect x="0" y="0" width="84" height="24" rx="5" fill="#FFFFFF" />
+                  <text x="42" y="17" fill="#047857" fontSize="12" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    EV FAST
+                  </text>
+
+                  <text x="42" y="44" fill="#A7F3D0" fontSize="11" fontWeight="800" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    CCS2 • 150 kW
+                  </text>
+
+                  <text x="42" y="68" fill="#FFFFFF" fontSize="10" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle" letterSpacing="0.8">
+                    დამტენი სადგური
+                  </text>
+                </g>
+              </svg>
             );
 
           case 'service':
-            // Official Blue Highway Service Sign: Auto Repair Workshop (ნიშანი 7.4)
+            // Official Blue Highway Service Sign 7.4 (ტექნიკური მომსახურება)
             return (
-              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#1E40AF] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
-                <div className="w-full flex justify-between items-center px-1">
-                  <span className="text-[8px] font-mono font-bold text-white/80">7.4</span>
-                  <span className="text-[8px] font-bold text-white/80">SERVICE</span>
-                </div>
-                {/* Crossed wrench and hammer pictogram */}
-                <svg className="w-8 h-8 sm:w-9 sm:h-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                </svg>
-                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
-                  ავტოსერვისი
-                </span>
-              </div>
+              <svg className="w-full h-full max-w-[260px] max-h-[145px] drop-shadow-md" viewBox="0 0 260 145">
+                <rect x="15" y="8" width="230" height="129" rx="14" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="3" />
+                <rect x="19" y="12" width="222" height="121" rx="11" fill="none" stroke="#FFFFFF" strokeWidth="1" strokeOpacity="0.6" />
+
+                <circle cx="26" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="26" cy="126" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="126" r="2.5" fill="#CBD5E1" />
+
+                {/* Crossed Wrench & Hammer Sign Pictogram */}
+                <g fill="#FFFFFF" transform="translate(42, 22)">
+                  <circle cx="45" cy="45" r="38" fill="#FFFFFF" fillOpacity="0.12" />
+                  {/* Wrench */}
+                  <g transform="rotate(45, 45, 45)">
+                    <rect x="41" y="10" width="8" height="70" rx="3" />
+                    <circle cx="45" cy="16" r="14" fill="#FFFFFF" />
+                    <polygon points="45,4 49,18 41,18" fill="#1D4ED8" />
+                    <circle cx="45" cy="16" r="7" fill="#1D4ED8" />
+                  </g>
+                  {/* Hammer */}
+                  <g transform="rotate(-45, 45, 45)">
+                    <rect x="41" y="12" width="8" height="68" rx="2" />
+                    <rect x="31" y="12" width="28" height="14" rx="3" fill="#FFFFFF" />
+                  </g>
+                </g>
+
+                {/* Right Labels */}
+                <g transform="translate(142, 40)">
+                  <rect x="0" y="0" width="94" height="24" rx="5" fill="#FFFFFF" />
+                  <text x="47" y="17" fill="#1D4ED8" fontSize="12" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    SERVICE 7.4
+                  </text>
+
+                  <text x="47" y="44" fill="#BFDBFE" fontSize="11" fontWeight="800" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    ვულკანიზაცია
+                  </text>
+
+                  <text x="47" y="68" fill="#FFFFFF" fontSize="10" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle" letterSpacing="0.8">
+                    დიაგნოსტიკა • სავალი
+                  </text>
+                </g>
+              </svg>
             );
 
           case 'car_wash':
-            // Official Blue Highway Service Sign: Car Wash (ნიშანი 7.3)
+            // Official Blue Highway Service Sign 7.3 (ავტომობილების რეცხვა)
             return (
-              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#1E40AF] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
-                <div className="w-full flex justify-between items-center px-1">
-                  <span className="text-[8px] font-mono font-bold text-white/80">7.3</span>
-                  <span className="text-[8px] font-bold text-sky-200">WASH</span>
-                </div>
-                {/* Car wash shower pictogram */}
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.92 9.01C18.72 8.42 18.16 8 17.5 8h-11c-.66 0-1.21.42-1.42 1.01L3 15v6c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-6l-2.08-5.99zM6.85 10h10.29l1.08 3.11H5.77L6.85 10zM19 19H5v-3.66l.12-.34h13.77l.11.34V19z" />
-                  <circle cx="12" cy="3" r="1.5" />
-                  <circle cx="8" cy="5" r="1" />
-                  <circle cx="16" cy="5" r="1" />
-                </svg>
-                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
-                  ავტოსამრეცხაო
-                </span>
-              </div>
+              <svg className="w-full h-full max-w-[260px] max-h-[145px] drop-shadow-md" viewBox="0 0 260 145">
+                <rect x="15" y="8" width="230" height="129" rx="14" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="3" />
+                <rect x="19" y="12" width="222" height="121" rx="11" fill="none" stroke="#FFFFFF" strokeWidth="1" strokeOpacity="0.6" />
+
+                <circle cx="26" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="26" cy="126" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="126" r="2.5" fill="#CBD5E1" />
+
+                {/* Car Silhouette with Overhead Shower Spray */}
+                <g fill="#FFFFFF" transform="translate(36, 26)">
+                  {/* Overhead Showerhead */}
+                  <rect x="26" y="8" width="36" height="7" rx="2" />
+                  <line x1="44" y1="2" x2="44" y2="8" stroke="#FFFFFF" strokeWidth="3" />
+                  {/* Water Droplet Rays */}
+                  <circle cx="32" cy="22" r="2" />
+                  <circle cx="44" cy="22" r="2" />
+                  <circle cx="56" cy="22" r="2" />
+                  <circle cx="26" cy="30" r="1.8" />
+                  <circle cx="38" cy="30" r="1.8" />
+                  <circle cx="50" cy="30" r="1.8" />
+                  <circle cx="62" cy="30" r="1.8" />
+
+                  {/* Car Profile */}
+                  <path d="M12 56 L 22 42 L 56 42 L 68 56 L 80 56 C 83 56, 86 59, 86 63 L 86 74 L 80 74 C 80 70, 76 66, 71 66 C 66 66, 62 70, 62 74 L 30 74 C 30 70, 26 66, 21 66 C 16 66, 12 70, 12 74 L 6 74 C 3 74, 1 72, 1 69 L 1 60 C 1 58, 3 56, 6 56 Z" />
+                  <circle cx="21" cy="74" r="6" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="3" />
+                  <circle cx="71" cy="74" r="6" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="3" />
+                </g>
+
+                {/* Right Labels */}
+                <g transform="translate(142, 40)">
+                  <rect x="0" y="0" width="94" height="24" rx="5" fill="#FFFFFF" />
+                  <text x="47" y="17" fill="#1D4ED8" fontSize="12" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    WASH 7.3
+                  </text>
+
+                  <text x="47" y="44" fill="#BAE6FD" fontSize="11" fontWeight="800" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    თვითმომსახურება
+                  </text>
+
+                  <text x="47" y="68" fill="#FFFFFF" fontSize="10" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle" letterSpacing="0.8">
+                    ტურბო-ქაფი • 902
+                  </text>
+                </g>
+              </svg>
             );
 
           case 'parts':
-            // Official Blue Service Sign: Spare Parts & Store
+            // Official Blue Service Sign: Spare Parts & Component Store
             return (
-              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#1E40AF] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
-                <div className="w-full flex justify-between items-center px-1">
-                  <span className="text-[8px] font-mono font-bold text-white/80">PARTS</span>
-                  <span className="text-[8px] font-bold text-amber-300">OEM</span>
-                </div>
-                {/* Gear / Mechanical part pictogram */}
-                <svg className="w-8 h-8 sm:w-9 sm:h-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
-                  ავტონაწილები
-                </span>
-              </div>
+              <svg className="w-full h-full max-w-[260px] max-h-[145px] drop-shadow-md" viewBox="0 0 260 145">
+                <rect x="15" y="8" width="230" height="129" rx="14" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="3" />
+                <rect x="19" y="12" width="222" height="121" rx="11" fill="none" stroke="#FFFFFF" strokeWidth="1" strokeOpacity="0.6" />
+
+                <circle cx="26" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="26" cy="126" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="126" r="2.5" fill="#CBD5E1" />
+
+                {/* Precision Mechanical Gear & Piston Pictogram */}
+                <g fill="#FFFFFF" transform="translate(42, 25)">
+                  {/* Outer gear ring */}
+                  <circle cx="44" cy="44" r="32" fill="none" stroke="#FFFFFF" strokeWidth="6" strokeDasharray="14 9" />
+                  <circle cx="44" cy="44" r="22" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="4" />
+                  <circle cx="44" cy="44" r="8" fill="#FFFFFF" />
+                  {/* Offset mini gear */}
+                  <circle cx="70" cy="62" r="14" fill="none" stroke="#FFFFFF" strokeWidth="4" strokeDasharray="8 5" />
+                  <circle cx="70" cy="62" r="5" fill="#FFFFFF" />
+                </g>
+
+                {/* Right Labels */}
+                <g transform="translate(142, 40)">
+                  <rect x="0" y="0" width="94" height="24" rx="5" fill="#FFFFFF" />
+                  <text x="47" y="17" fill="#1D4ED8" fontSize="12" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    OEM PARTS
+                  </text>
+
+                  <text x="47" y="44" fill="#E9D5FF" fontSize="11" fontWeight="800" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    ორიგინალი ნაწილები
+                  </text>
+
+                  <text x="47" y="68" fill="#FFFFFF" fontSize="10" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle" letterSpacing="0.8">
+                    ზეთები • დეტალები
+                  </text>
+                </g>
+              </svg>
             );
 
           case 'road_repair':
-            // Official Road Warning Sign: Road Works (საგზაო ნიშანი 1.25)
+            // Official Warning Sign 1.25 (საგზაო სამუშაოები)
             return (
-              <div className="flex flex-col items-center justify-center">
-                <svg className="w-24 h-22 sm:w-28 sm:h-24 drop-shadow-md" viewBox="0 0 100 86">
+              <svg className="w-full h-full max-w-[260px] max-h-[145px] drop-shadow-md" viewBox="0 0 260 145">
+                <g transform="translate(70, 6)">
                   {/* Outer Red Triangle */}
-                  <polygon points="50,4 96,82 4,82" fill="#DC2626" />
-                  {/* Inner Yellow Triangle (Road works warning sign) */}
-                  <polygon points="50,14 88,76 12,76" fill="#FBBF24" />
-                  {/* Worker with shovel pictogram */}
+                  <polygon points="60,4 120,118 0,118" fill="#DC2626" stroke="#991B1B" strokeWidth="2" strokeLinejoin="round" />
+                  {/* Inner Traffic Amber/Yellow Plate */}
+                  <polygon points="60,18 108,110 12,110" fill="#F59E0B" />
+
+                  {/* Vienna Convention Worker with Shovel in Solid Black */}
                   <g fill="#0F172A">
-                    <circle cx="56" cy="36" r="4.5" />
-                    <path d="M52,43 L45,55 L38,55 L38,58 L47,58 L54,47 L58,54 L52,70 L56,70 L61,56 L64,68 L68,68 L64,52 L57,43 Z" />
-                    <line x1="38" y1="58" x2="33" y2="72" stroke="#0F172A" strokeWidth="2.5" />
-                    <polygon points="30,70 36,70 33,75" />
+                    <circle cx="68" cy="42" r="5.5" />
+                    <path d="M64,50 L56,66 L47,66 L47,70 L58,70 L66,56 L72,64 L65,86 L70,86 L76,68 L80,82 L85,82 L79,62 L71,50 Z" />
+                    {/* Shovel Handle & Blade */}
+                    <line x1="47" y1="70" x2="38" y2="88" stroke="#0F172A" strokeWidth="3" />
+                    <polygon points="34,86 42,86 38,94" />
+                    {/* Soil pile */}
+                    <path d="M26,94 Q 38,82 50,94 Z" />
                   </g>
-                </svg>
-                <span className="mt-1 px-2.5 py-0.5 rounded-md bg-white/10 text-slate-200 text-[10px] font-bold tracking-wide uppercase">
-                  რემონტი • ROAD WORKS
-                </span>
-              </div>
+                </g>
+
+                {/* Sub-plate */}
+                <rect x="45" y="124" width="170" height="18" rx="4" fill="#0F172A" stroke="#FFFFFF" strokeWidth="1.5" />
+                <text x="130" y="137" fill="#FFFFFF" fontSize="10" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle" letterSpacing="0.8">
+                  სამუშაოები • WORKS (1.25)
+                </text>
+              </svg>
             );
 
           case 'hazard':
-            // Official Road Warning Sign: Other Hazards / Caution (საგზაო ნიშანი 1.33)
+            // Official Warning Sign 1.33 (სხვა საგზაო საფრთხეები)
             return (
-              <div className="flex flex-col items-center justify-center">
-                <svg className="w-24 h-22 sm:w-28 sm:h-24 drop-shadow-md" viewBox="0 0 100 86">
+              <svg className="w-full h-full max-w-[260px] max-h-[145px] drop-shadow-md" viewBox="0 0 260 145">
+                <g transform="translate(70, 6)">
                   {/* Outer Red Triangle */}
-                  <polygon points="50,4 96,82 4,82" fill="#DC2626" />
-                  {/* Inner Yellow Triangle */}
-                  <polygon points="50,14 88,76 12,76" fill="#FBBF24" />
-                  {/* Exclamation point pictogram */}
+                  <polygon points="60,4 120,118 0,118" fill="#DC2626" stroke="#991B1B" strokeWidth="2" strokeLinejoin="round" />
+                  {/* Inner Yellow Plate */}
+                  <polygon points="60,18 108,110 12,110" fill="#F59E0B" />
+
+                  {/* Standard Exclamation Point '!' in Solid Black */}
                   <g fill="#0F172A">
-                    <rect x="47" y="32" width="6" height="24" rx="3" />
-                    <circle cx="50" cy="65" r="4" />
+                    <rect x="55" y="38" width="10" height="38" rx="5" />
+                    <circle cx="60" cy="90" r="6" />
                   </g>
-                </svg>
-                <span className="mt-1 px-2.5 py-0.5 rounded-md bg-white/10 text-slate-200 text-[10px] font-bold tracking-wide uppercase">
-                  საფრთხე • CAUTION
-                </span>
-              </div>
+                </g>
+
+                {/* Sub-plate */}
+                <rect x="45" y="124" width="170" height="18" rx="4" fill="#0F172A" stroke="#FFFFFF" strokeWidth="1.5" />
+                <text x="130" y="137" fill="#FFFFFF" fontSize="10" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle" letterSpacing="0.8">
+                  საფრთხე • CAUTION (1.33)
+                </text>
+              </svg>
             );
 
           case 'showroom':
-            // Official Blue Highway Information Sign: Dealership / Showroom
+            // Official Blue Highway Information Sign: Dealership & Showrooms
             return (
-              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#1E40AF] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
-                <div className="w-full flex justify-between items-center px-1">
-                  <span className="text-[8px] font-mono font-bold text-white/80">DEALER</span>
-                  <span className="text-[8px] font-bold text-amber-300">AUTO</span>
-                </div>
-                {/* Official Dealership Building & Car silhouette */}
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" />
-                </svg>
-                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
-                  ავტოსალონი
-                </span>
-              </div>
+              <svg className="w-full h-full max-w-[260px] max-h-[145px] drop-shadow-md" viewBox="0 0 260 145">
+                <rect x="15" y="8" width="230" height="129" rx="14" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="3" />
+                <rect x="19" y="12" width="222" height="121" rx="11" fill="none" stroke="#FFFFFF" strokeWidth="1" strokeOpacity="0.6" />
+
+                <circle cx="26" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="19" r="2.5" fill="#CBD5E1" />
+                <circle cx="26" cy="126" r="2.5" fill="#CBD5E1" />
+                <circle cx="234" cy="126" r="2.5" fill="#CBD5E1" />
+
+                {/* Dealership Pavilion Architecture & Luxury Car Emblem */}
+                <g fill="#FFFFFF" transform="translate(38, 25)">
+                  {/* Pavilion Roof & Columns */}
+                  <polygon points="10,24 45,8 80,24" />
+                  <rect x="14" y="24" width="62" height="4" />
+                  <rect x="18" y="28" width="8" height="42" />
+                  <rect x="36" y="28" width="8" height="42" />
+                  <rect x="54" y="28" width="8" height="42" />
+                  <rect x="68" y="28" width="8" height="42" />
+                  <rect x="12" y="70" width="70" height="6" rx="1" />
+
+                  {/* Center Star / Quality Crest */}
+                  <circle cx="45" cy="50" r="10" fill="#1D4ED8" stroke="#FFFFFF" strokeWidth="2.5" />
+                  <polygon points="45,43 47,48 52,48 48,51 50,56 45,53 40,56 42,51 38,48 43,48" fill="#FBBF24" />
+                </g>
+
+                {/* Right Labels */}
+                <g transform="translate(142, 40)">
+                  <rect x="0" y="0" width="94" height="24" rx="5" fill="#FFFFFF" />
+                  <text x="47" y="17" fill="#1D4ED8" fontSize="12" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    DEALERSHIP
+                  </text>
+
+                  <text x="47" y="44" fill="#FEF08A" fontSize="11" fontWeight="800" fontFamily="system-ui, sans-serif" textAnchor="middle">
+                    ოფიციალური სალონი
+                  </text>
+
+                  <text x="47" y="68" fill="#FFFFFF" fontSize="10" fontWeight="900" fontFamily="system-ui, sans-serif" textAnchor="middle" letterSpacing="0.8">
+                    ავტოსალონები • 122
+                  </text>
+                </g>
+              </svg>
             );
 
           default:
