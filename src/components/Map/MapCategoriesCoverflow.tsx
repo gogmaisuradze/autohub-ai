@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import React, { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import {
   Car,
   Construction,
@@ -20,9 +20,12 @@ import {
   Play,
   CheckCircle2,
   Layers,
-  Sparkles
+  Sparkles,
+  MousePointer,
+  RotateCw
 } from "lucide-react";
 import { sounds } from "../../services/soundEffects";
+import { ThematicCategoryVisual } from "./ThematicCategoryVisuals";
 
 export type MapCategoryKey =
   | 'traffic_jam'
@@ -40,12 +43,12 @@ export interface MapCategoryItem {
   key: MapCategoryKey;
   groupTitle: string;
   title: string;
+  shortName: string;
   subtitle: string;
   badge: string;
   badgeColor: string;
   accent: string;
   icon: React.ComponentType<{ size?: number | string; className?: string }>;
-  image: string;
   description: string;
   countText: string;
 }
@@ -55,12 +58,12 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     key: 'radar',
     groupTitle: 'მოძრაობა & უსაფრთხოება',
     title: 'რადარები & კამერები',
+    shortName: 'რადარები',
     subtitle: 'სიჩქარის & შუქნიშნის კამერები',
     badge: '260 კამერა',
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
     accent: '#F59E0B',
     icon: Camera,
-    image: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1200&q=80',
     description: 'საქართველოს მასშტაბით სიჩქარის სტაციონარული, სექციური და ჭკვიანი შუქნიშნის კამერები 300მ წინასწარი ხმოვანი გაფრთხილებით.',
     countText: '260 აქტიური წერტილი'
   },
@@ -68,12 +71,12 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     key: 'traffic_jam',
     groupTitle: 'მოძრაობა & საცობები',
     title: 'საცობები (Live)',
+    shortName: 'საცობები',
     subtitle: 'მძიმე შეფერხებები & ალტერნატივები',
     badge: 'LIVE 12',
     badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-400/40',
     accent: '#EF4444',
     icon: Car,
-    image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=1200&q=80',
     description: 'თბილისისა და რეგიონების მძიმე საცობები რეალურ დროში, ალტერნატიული სწრაფი მარშრუტები და მოძრაობის დინამიკა.',
     countText: '12 აქტიური საცობი'
   },
@@ -81,12 +84,12 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     key: 'fuel',
     groupTitle: 'საწვავი & ენერგია',
     title: 'ავტოგასამართი & ფასები',
+    shortName: 'საწვავი',
     subtitle: 'Gulf, Wissol, Socar, Rompetrol, Lukoil',
     badge: '1 421 ლოკაცია',
     badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
     accent: '#10B981',
     icon: Fuel,
-    image: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=1200&q=80',
     description: 'საწვავის განახლებული ფასები: Gulf, Wissol, Socar, Rompetrol, Lukoil, Portal. პრემიუმი, რეგულარი, დიზელი და გაზი.',
     countText: '1 421 სადგური'
   },
@@ -94,12 +97,12 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     key: 'charging',
     groupTitle: 'საწვავი & ენერგია',
     title: 'EV დამტენები',
+    shortName: 'დამტენები',
     subtitle: 'ელექტრომობილების სწრაფი დამტენები',
     badge: '254 სადგური',
     badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40',
     accent: '#06B6D4',
     icon: Zap,
-    image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1200&q=80',
     description: 'ელექტრომობილების სწრაფი DC და AC დამტენები (CCS2, Chademo, Type 2, GB/T, Tesla) მთელ საქართველოში.',
     countText: '254 დამტენი ჰაბი'
   },
@@ -107,12 +110,12 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     key: 'service',
     groupTitle: 'ავტოსერვისი & მოვლა',
     title: 'სერვისი & ვულკანიზაცია',
+    shortName: 'სერვისი',
     subtitle: 'დიაგნოსტიკა, სავალი ნაწილი, საბურავები',
     badge: '1 344 სერვისი',
     badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40',
     accent: '#6366F1',
     icon: Wrench,
-    image: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1200&q=80',
     description: 'სავალი ნაწილის შეკეთება, კომპიუტერული დიაგნოსტიკა, ძრავის ოსტატები, ზეთის შეცვლა და 24/7 ვულკანიზაცია.',
     countText: '1 344 პროფესიონალი'
   },
@@ -120,12 +123,12 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     key: 'car_wash',
     groupTitle: 'ავტოსერვისი & მოვლა',
     title: 'ავტოსამრეცხაო',
+    shortName: 'სამრეცხაო',
     subtitle: 'თვითმომსახურება & ქიმწმენდა',
     badge: '902 ობიექტი',
     badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-400/40',
     accent: '#0EA5E9',
     icon: Droplets,
-    image: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&w=1200&q=80',
     description: 'თვითმომსახურების ბოქსები, ტურბო-ქაფი, უკონტაქტო რეცხვა, ავტო-დითეილინგი და ქიმწმენდა.',
     countText: '902 ავტოსამრეცხაო'
   },
@@ -133,12 +136,12 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     key: 'parts',
     groupTitle: 'ნაწილები & სალონები',
     title: 'ავტონაწილები',
+    shortName: 'ნაწილები',
     subtitle: 'ნაწილები, დეტალები & ზეთები',
     badge: '619 მაღაზია',
     badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-400/40',
     accent: '#A855F7',
     icon: Cog,
-    image: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=1200&q=80',
     description: 'ახალი და მეორადი ორიგინალი ნაწილები, ძრავის ზეთები, სამუხრუჭე ხუნდები, ფილტრები და აქსესუარები.',
     countText: '619 ავტომაღაზია'
   },
@@ -146,12 +149,12 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     key: 'road_repair',
     groupTitle: 'მოძრაობა & საცობები',
     title: 'ქუჩის რემონტი',
+    shortName: 'რემონტი',
     subtitle: 'საგზაო სამუშაოები & შეზღუდვები',
     badge: '14 მონაკვეთი',
     badgeColor: 'bg-orange-500/20 text-orange-300 border-orange-400/40',
     accent: '#F97316',
     icon: Construction,
-    image: 'https://images.unsplash.com/photo-1541888946425-d0fbb186c5f7?auto=format&fit=crop&w=1200&q=80',
     description: 'საგზაო სამუშაოები, გადათხრილი ქუჩები, ზოლების შევიწროება და დროებითი შემოვლითი გზები.',
     countText: '14 რემონტი'
   },
@@ -159,12 +162,12 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     key: 'hazard',
     groupTitle: 'მოძრაობა & უსაფრთხოება',
     title: 'საგზაო საფრთხე',
+    shortName: 'საფრთხე',
     subtitle: 'შემთხვევები & შეფერხებები',
     badge: 'Live საფრთხე',
     badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-400/40',
     accent: '#E11D48',
     icon: AlertTriangle,
-    image: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80',
     description: 'საგზაო შემთხვევები, მოყინული მონაკვეთები, ნისლი, ქვათაცვენა და გაფრთხილებები.',
     countText: 'ცოცხალი შეტყობინებები'
   },
@@ -172,12 +175,12 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     key: 'showroom',
     groupTitle: 'ნაწილები & სალონები',
     title: 'ავტოსალონები',
+    shortName: 'სალონები',
     subtitle: 'ოფიციალური დილერები & ცენტრები',
     badge: '122 ცენტრი',
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
     accent: '#D97706',
     icon: Building2,
-    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
     description: 'ოფიციალური იმპორტიორები, პრემიუმ ავტოსალონები და ავტომობილების სავაჭრო ცენტრები გარანტიით.',
     countText: '122 ავტოსალონი'
   }
@@ -211,6 +214,7 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
   const stage = useRef<HTMLDivElement>(null);
   const gesture = useRef<{ x: number; y: number; time: number; horizontal: boolean } | null>(null);
   const suppressClickUntil = useRef(0);
+  const wheelThrottleRef = useRef<number>(0);
   const id = useId();
 
   // If outside filter changes to a category, sync the index
@@ -271,6 +275,7 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
     setDrag(0);
   };
 
+  // Clicking ANY card (active or adjacent) transitions to it or toggles filter
   const handleCardClick = (item: MapCategoryItem, slotIndex: number) => {
     if (performance.now() < suppressClickUntil.current) return;
     sounds.playClick();
@@ -282,8 +287,26 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
         onSelectCategory(item.key);
       }
     } else {
+      // Jump straight to clicked card & activate filter
       setIndex(slotIndex);
       onSelectCategory(item.key);
+    }
+  };
+
+  // Wheel / Trackpad scroll advance ("გადასქროლვით იცვლებოდეს")
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (Math.abs(delta) < 14) return;
+
+    const now = performance.now();
+    if (now - wheelThrottleRef.current < 260) return;
+    wheelThrottleRef.current = now;
+
+    sounds.playClick();
+    if (delta > 0) {
+      setIndex(c => c + 1);
+    } else {
+      setIndex(c => c - 1);
     }
   };
 
@@ -311,17 +334,25 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
     }
   };
 
+  // Flick / Swipe gesture handling ("ასევე გაკვრით გადასვლა შეიძლებოდეს")
   const pointerUp = (event: PointerEvent<HTMLDivElement>, cancel = false) => {
     const start = gesture.current;
     gesture.current = null;
     if (start?.horizontal) {
       const dx = event.clientX - start.x;
-      const velocity = Math.abs(dx) / Math.max(1, performance.now() - start.time);
-      if (!cancel && (Math.abs(dx) > Math.min(50, cardWidth * 0.18) || (Math.abs(dx) > 14 && velocity > 0.35))) {
+      const dt = Math.max(1, performance.now() - start.time);
+      const velocity = Math.abs(dx) / dt;
+
+      // Quick flick ("გაკვრით") OR standard drag distance threshold
+      const isFlick = velocity > 0.25 && Math.abs(dx) > 16;
+      const isThreshold = Math.abs(dx) > Math.min(45, cardWidth * 0.16);
+
+      if (!cancel && (isFlick || isThreshold)) {
         sounds.playClick();
-        setIndex(current => current + (dx < 0 ? 1 : -1));
+        const stepCount = Math.abs(dx) > cardWidth * 0.85 && velocity > 0.7 ? 2 : 1;
+        setIndex(current => current + (dx < 0 ? stepCount : -stepCount));
       }
-      suppressClickUntil.current = performance.now() + 300;
+      suppressClickUntil.current = performance.now() + 250;
     }
     setDrag(0);
     setDragging(false);
@@ -370,7 +401,7 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
               </span>
             </h4>
             <p className="text-[11px] text-slate-400">
-              გადაფურცლეთ 3D ბარათები ან დააწკაპუნეთ რუკაზე ობიექტების გასაფილტრად
+              გადაფურცლეთ გაკვრით (flick), ისქროლეთ ან დააწკაპუნეთ ნებისმიერ ბარათზე
             </p>
           </div>
         </div>
@@ -395,9 +426,10 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 3D Coverflow Stage */}
+      {/* 3D Coverflow Stage with Wheel Scrolling support */}
       <div
         ref={stage}
+        onWheel={handleWheel}
         data-dragging={dragging || undefined}
         onPointerDown={pointerDown}
         onPointerMove={pointerMove}
@@ -427,10 +459,11 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
             <div
               key={slot}
               onClick={() => handleCardClick(item, slot)}
-              className={`absolute top-1/2 -translate-y-1/2 rounded-2xl p-3 sm:p-3.5 transition-all duration-500 cursor-pointer select-none border backdrop-blur-md ${
+              title={isSelected ? "დააწკაპუნეთ გასაფილტრად" : `გადასვლა: ${item.title}`}
+              className={`absolute top-1/2 -translate-y-1/2 rounded-2xl p-3 sm:p-3.5 transition-all duration-500 cursor-pointer select-none border backdrop-blur-md group ${
                 isSelected
-                  ? 'border-gold bg-[#151f33]/95 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_25px_rgba(245,158,11,0.35)] ring-2 ring-gold/40 z-30'
-                  : 'border-white/15 bg-[#121a2d]/85 shadow-[0_15px_30px_rgba(0,0,0,0.4)] opacity-85 hover:opacity-100 hover:border-white/30 z-10'
+                  ? 'border-gold bg-[#151f33]/95 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_25px_rgba(245,158,11,0.35)] ring-2 ring-gold/40 z-30 scale-100'
+                  : 'border-white/15 bg-[#121a2d]/85 shadow-[0_15px_30px_rgba(0,0,0,0.4)] opacity-85 hover:opacity-100 hover:border-gold/50 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] z-10'
               }`}
               style={{
                 width: `${cardWidth}px`,
@@ -452,25 +485,25 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
                 </span>
               </div>
 
-              {/* Card Poster Image with Thematic Gradient Overlay */}
-              <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-slate-900 border border-white/10 group">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  draggable={false}
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+              {/* Custom Thematic Visual Artwork (No generic cover photo!) */}
+              <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-slate-900 border border-white/10 group-hover:border-gold/40 transition-colors shadow-inner">
+                <ThematicCategoryVisual
+                  categoryKey={item.key}
+                  isSelected={isSelected}
+                  isFiltered={isFiltered}
+                  countText={item.countText}
+                  badge={item.badge}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent pointer-events-none" />
 
-                {/* Floating Tag over Image */}
-                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white">
-                  <span className="text-xs font-black drop-shadow-md flex items-center gap-1.5">
+                {/* Floating Tag over Visual */}
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white pointer-events-none">
+                  <span className="text-[11px] font-black drop-shadow bg-slate-950/80 px-2 py-0.5 rounded-md border border-white/10 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
                     <span>{item.countText}</span>
                   </span>
                   {isFiltered && (
                     <span className="px-2 py-0.5 rounded-md bg-emerald-500 text-slate-950 font-black text-[10px] flex items-center gap-1 shadow-sm">
-                      <CheckCircle2 size={11} /> აქტიური
+                      <CheckCircle2 size={11} /> გაფილტრულია
                     </span>
                   )}
                 </div>
@@ -488,10 +521,10 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
                         ? 'bg-gold text-navy border-gold shadow-xs'
                         : isSelected
                           ? 'bg-white/15 text-gold border-gold/40'
-                          : 'bg-white/5 text-slate-300 border-white/10'
+                          : 'bg-white/5 text-slate-300 border-white/10 group-hover:bg-gold/20 group-hover:text-gold'
                     }`}
                   >
-                    {isFiltered ? 'გაფილტრულია' : isSelected ? 'არჩევა' : 'დათვალიერება'}
+                    {isFiltered ? 'გაფილტრულია' : isSelected ? 'არჩევა' : 'დააწკაპუნეთ'}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 line-clamp-1">
@@ -595,14 +628,79 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* Hint text */}
-        <p className="text-[11px] text-slate-400 flex items-center gap-2">
-          <span>გადაათრიეთ (Drag) თითით ან მაუსით</span>
+        {/* Dynamic Navigation Hints */}
+        <p className="text-[11px] text-slate-400 flex items-center gap-2 flex-wrap justify-center">
+          <span className="flex items-center gap-1"><MousePointer size={12} className="text-gold" /> გაკვრა (Flick)</span>
+          <span className="text-slate-600">•</span>
+          <span className="flex items-center gap-1"><RotateCw size={12} className="text-gold" /> მაუსით სქროლი</span>
           <span className="text-slate-600">•</span>
           <ArrowLeft size={11} />
           <ArrowRight size={11} />
-          <span>ან გამოიყენეთ კლავიატურის ისრები</span>
+          <span>ისრებით მართვა</span>
         </p>
+      </div>
+
+      {/* ======================================================== */}
+      {/* Bottom Horizontal Quick-Nav Icon Strip (10 Categories)   */}
+      {/* ======================================================== */}
+      <div className="relative z-10 w-full pt-3 mt-3 border-t border-white/10">
+        <div className="flex items-center justify-between pb-2 px-1">
+          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+            <span>სწრაფი კატეგორიები (ნებისმიერზე დაჭერით გადასვლა)</span>
+          </span>
+          <span className="text-[10px] text-gold font-mono font-bold">
+            10 კატეგორია
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar sm:justify-center">
+          {items.map((cat, i) => {
+            const isSelected = activeIndex === i;
+            const isFiltered = activeCategoryKey === cat.key;
+            const Icon = cat.icon;
+
+            return (
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setIndex(i);
+                  onSelectCategory(cat.key);
+                }}
+                title={`${cat.title} (${cat.badge})`}
+                className={`group relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shrink-0 active:scale-95 ${
+                  isSelected
+                    ? 'bg-gold text-slate-950 border-gold shadow-md shadow-gold/25 font-black scale-105 ring-2 ring-gold/40'
+                    : isFiltered
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50'
+                      : 'bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border-white/10 hover:border-white/20'
+                }`}
+              >
+                <Icon
+                  size={14}
+                  className={`shrink-0 transition-transform group-hover:scale-110 ${
+                    isSelected ? 'text-slate-950' : isFiltered ? 'text-emerald-400' : 'text-gold'
+                  }`}
+                />
+                <span className="whitespace-nowrap text-[11px] font-sans">
+                  {cat.shortName}
+                </span>
+                <span
+                  className={`text-[9px] font-mono px-1.5 py-0.5 rounded-full font-black ${
+                    isSelected
+                      ? 'bg-slate-950 text-gold'
+                      : isFiltered
+                        ? 'bg-emerald-400 text-slate-950'
+                        : 'bg-white/10 text-slate-400'
+                  }`}
+                >
+                  {cat.badge.split(' ')[0]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
