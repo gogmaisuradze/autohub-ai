@@ -747,9 +747,6 @@ export const ThreeCarScene: React.FC<Props> = ({
     });
     const showroomDots=new THREE.Points(dotsGeometry,dotsMaterial);showroomDots.name='ShowroomConstellationDots';scene.add(showroomDots);
 
-    const showroomBeltMaterial = new THREE.MeshBasicMaterial({ color: 0x315061 });
-    const showroomBelt = new THREE.Mesh(new THREE.TorusGeometry(27.95, .014, 6, 128), showroomBeltMaterial);
-    showroomBelt.rotation.x = Math.PI / 2; showroomBelt.position.y = 1.2; scene.add(showroomBelt);
     const canopy = new THREE.Group();canopy.position.y=4.1;
     const neonCore = new THREE.MeshBasicMaterial({color:new THREE.Color(.91,.96,1).multiplyScalar(1.1),toneMapped:false});
     const neonHalo = new THREE.MeshBasicMaterial({color:0xfff3df,transparent:true,opacity:.045,depthWrite:false});
@@ -1885,7 +1882,6 @@ export const ThreeCarScene: React.FC<Props> = ({
       podiumMat.color.copy(idlePodium).lerp(scanPodium, focus);
       backdropMaterial.color.set(0x17191e).lerp(new THREE.Color(0x081323), focus);
       goldRingMat.color.copy(idleRing).lerp(scanRing, focus);
-      showroomBeltMaterial.color.set(0x315061).lerp(new THREE.Color(0x203951), focus);
       (gridHelper.material as THREE.Material).opacity = THREE.MathUtils.lerp(.35, .10, focus);
       if (scanning && !reducedMotion) scanPhase = (scanPhase + delta / 2.0) % 1;
       visual.scanZ.value = reducedMotion ? 0 : THREE.MathUtils.lerp(-2.65, 2.65, .5 - .5 * Math.cos(scanPhase * Math.PI * 2));
