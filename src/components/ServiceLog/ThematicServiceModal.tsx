@@ -376,8 +376,13 @@ export const ThematicServiceModal: React.FC<Props> = ({
     setIntervalKm(def.defaultIntervalKm);
     const defCost = def.defaultCostGel || 240;
     setCostGel(defCost);
-    setPartCostGel(Math.round(defCost * 0.75));
-    setLaborCostGel(Math.round(defCost * 0.25));
+    if (vKey === 'pti') {
+      setPartCostGel(0);
+      setLaborCostGel(defCost);
+    } else {
+      setPartCostGel(Math.round(defCost * 0.75));
+      setLaborCostGel(Math.round(defCost * 0.25));
+    }
 
     // Apply specific preset defaults
     if (!disableAutoFillPresets && def.defaultValues) {
@@ -396,6 +401,24 @@ export const ThematicServiceModal: React.FC<Props> = ({
       if (v.coolant_freezing_point_c !== undefined) setCoolantFreezingPointC(v.coolant_freezing_point_c);
       if (v.brake_fluid_dot) setBrakeFluidDot(v.brake_fluid_dot);
       if (v.insurance_company) setInsuranceCompany(v.insurance_company);
+      if (v.pti_reminder_enabled !== undefined) setPtiReminderEnabled(v.pti_reminder_enabled);
+      if (v.pti_reminder_days) setPtiReminderDays(v.pti_reminder_days);
+      if (v.pti_center) setPtiCenter(v.pti_center);
+      if (v.pti_cert_number) setPtiCertNumber(v.pti_cert_number);
+      if (v.pti_status) setPtiStatus(v.pti_status);
+      if (v.pti_expiry_date) setPtiExpiryDate(v.pti_expiry_date);
+    }
+
+    if (vKey === 'pti') {
+      if (vehicle?.pti_expiry_date) {
+        setPtiExpiryDate(vehicle.pti_expiry_date);
+      } else if (!ptiExpiryDate) {
+        const today = new Date().toISOString().split('T')[0];
+        setPtiExpiryDate(calculateDefaultExpiry(today, 1));
+      }
+      if (vehicle?.tech_passport && !ptiCertNumber) {
+        setPtiCertNumber(`PTI-${vehicle.tech_passport}`);
+      }
     }
 
     // Auto-integrate vehicle OBD specs if vehicle profile exists
@@ -1375,6 +1398,60 @@ export const ThematicServiceModal: React.FC<Props> = ({
             {/* ================= STEP 1: CATEGORY, VARIANT & TITLE ================= */}
             {currentStep === 1 && (
               <div className="space-y-5 animate-fade-in">
+                {/* 0. Top Featured Quick Selection: ტექ-დათვალიერება PTI Georgia */}
+                <div className={`p-4 rounded-2xl border transition-all ${
+                  category === 'legal' && selectedVariant === 'pti'
+                    ? 'bg-gradient-to-r from-teal-500/15 via-emerald-500/10 to-teal-500/15 border-teal-500/50 ring-2 ring-teal-500/30 shadow-sm'
+                    : 'bg-gradient-to-r from-teal-50/80 via-slate-50 to-emerald-50/80 hover:from-teal-100/70 hover:to-emerald-100/70 border-teal-200/90'
+                }`}>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
+                        category === 'legal' && selectedVariant === 'pti'
+                          ? 'bg-teal-600 text-white shadow-md scale-105'
+                          : 'bg-teal-100 text-teal-800'
+                      }`}>
+                        <FileCheck className="w-5 h-5 stroke-[2.5]" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-black text-xs sm:text-sm text-navy">
+                            ტექ-დათვალიერება (PTI Georgia)
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                            სავალდებულო • 365 დღე
+                          </span>
+                          {category === 'legal' && selectedVariant === 'pti' && (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-600 text-white flex items-center gap-1 shadow-xs">
+                              <Check size={10} className="stroke-[3]" />
+                              <span>არჩეულია</span>
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium mt-0.5 line-clamp-1">
+                          საქართველოს პერიოდული ტექ-ინსპექტირება, შეხსენების ტაიმერი & Greenway / AutoTest სერტიფიკატი
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        applyVariantPreset('pti', 'legal');
+                      }}
+                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 shadow-xs ${
+                        category === 'legal' && selectedVariant === 'pti'
+                          ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-md'
+                          : 'bg-navy text-gold hover:bg-slate-800 hover:scale-[1.02]'
+                      }`}
+                    >
+                      <Sparkles size={13} className={category === 'legal' && selectedVariant === 'pti' ? 'text-white' : 'text-gold'} />
+                      <span>{category === 'legal' && selectedVariant === 'pti' ? 'PTI გააქტიურებულია' : '+ ტექ-დათვალიერების არჩევა'}</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* 1. Six Primary Categories */}
                 <div>
                   <div className="flex items-center justify-between mb-2">

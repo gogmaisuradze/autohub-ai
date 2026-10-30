@@ -422,6 +422,21 @@ export const ServiceLogModule: React.FC<Props> = ({
                   <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
                     ზეთი, ხუნდები, ფილტრი, PTI
                   </p>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        sounds.playClick();
+                        handleOpenAddModal('legal', 'pti');
+                      }}
+                      className="px-2 py-0.5 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-800 text-[10px] font-black border border-teal-300 flex items-center gap-1 transition-all hover:scale-105 active:scale-95"
+                      title="ტექ-დათვალიერება (PTI) 1-კლიკით შექმნა"
+                    >
+                      <FileCheck size={11} className="text-teal-700 stroke-[2.5]" />
+                      <span>+ PTI ტექ-დათვალიერება</span>
+                    </button>
+                  </div>
                   <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
                     ● {services.length} რეგისტრირებული
                   </span>
@@ -613,6 +628,49 @@ export const ServiceLogModule: React.FC<Props> = ({
             </div>
           </div>
         )}
+
+        {/* Quick Service Creation Shortcuts on Top Board */}
+        <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:p-3 rounded-2xl bg-[#FAFBFD] border border-slate-200/80 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} className="text-gold shrink-0" />
+            <span className="text-xs font-black text-navy uppercase tracking-wider">
+              სწრაფი შექმნის დაფა:
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleOpenAddModal('legal', 'pti')}
+              className="px-3 py-1.5 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 text-teal-900 border border-teal-300 text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+              title="ტექ-დათვალიერების (PTI) დამატება"
+            >
+              <FileCheck size={14} className="text-teal-700 stroke-[2.5]" />
+              <span>+ ტექ-დათვალიერება PTI</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-teal-200/80 text-teal-900 font-mono">1 წელი</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOpenAddModal('fluids', 'engine_oil')}
+              className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+              title="ძრავის ზეთის შეცვლის დამატება"
+            >
+              <Droplets size={13} className="text-amber-600" />
+              <span>+ ძრავის ზეთი</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOpenAddModal('chassis', 'brake_pads')}
+              className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-900 border border-blue-300 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+              title="სამუხრუჭე ხუნდების დამატება"
+            >
+              <CircleDot size={13} className="text-blue-600" />
+              <span>+ ხუნდები</span>
+            </button>
+          </div>
+        </div>
 
         {/* 3. Action Footer Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">

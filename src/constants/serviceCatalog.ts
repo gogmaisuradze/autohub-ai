@@ -85,8 +85,8 @@ export const SERVICE_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'legal',
-    name_ge: 'იურიდიული და სადაზღვევო ვადები',
-    name_en: 'Legal & Insurance',
+    name_ge: 'ტექ-დათვალიერება (PTI) & იურიდიული',
+    name_en: 'PTI & Legal',
     subtitle_ge: 'ტექ-ინსპექტირება PTI, კასკო/სავალდებულო, პარკირება & მართვის მოწმობა',
     color: 'text-teal-600',
     badgeBg: 'bg-teal-500/10',
