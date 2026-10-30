@@ -399,13 +399,11 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     try {
       const hash = window.location.hash.replace('#', '') as TabType;
-      if (hash === 'garage') return 'fines';
-      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'settings', 'exam'].includes(hash)) {
+      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'garage', 'settings', 'exam'].includes(hash)) {
         return hash;
       }
       const saved = localStorage.getItem('autohub_active_tab') as TabType;
-      if (saved === 'garage') return 'fines';
-      if (saved && ['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'settings', 'exam'].includes(saved)) {
+      if (saved && ['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'garage', 'settings', 'exam'].includes(saved)) {
         return saved;
       }
       return 'home'; // Default to Home landing view where Google walkthrough & Orbit start
@@ -520,7 +518,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     const syncHash = () => {
       const next = window.location.hash.slice(1) as TabType;
-      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'settings', 'exam'].includes(next)) {
+      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'garage', 'settings', 'exam'].includes(next)) {
         if (next === 'obd') {
           handleTabChange('obd');
         } else {

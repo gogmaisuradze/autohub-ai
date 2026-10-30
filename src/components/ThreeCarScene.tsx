@@ -998,6 +998,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     const hoverPointer = new THREE.Vector2();
     const hoverRay = new THREE.Raycaster();
     let hoverInside=false, hoverDragging=false, hoverX=0, hoverY=0, lastHoverCheck=0;
+    let downPos = { x: 0, y: 0 };
     const hideHover = () => { hoverInside=false; tooltip.style.display='none'; };
     const onHoverMove = (event: PointerEvent) => {
       if(event.pointerType==='touch'||event.buttons||hoverDragging){hideHover();return;}
@@ -1005,8 +1006,19 @@ export const ThreeCarScene: React.FC<Props> = ({
       hoverX=event.clientX-rect.left;hoverY=event.clientY-rect.top;
       hoverPointer.set(hoverX/rect.width*2-1,-hoverY/rect.height*2+1);hoverInside=true;
     };
-    const onHoverDown = () => {hoverDragging=true;hideHover();};
-    const onHoverUp = (event: PointerEvent) => { hoverDragging=false; onHoverMove(event); };
+    const onHoverDown = (event: PointerEvent) => {
+      downPos = { x: event.clientX, y: event.clientY };
+      hoverDragging = true;
+    };
+    const onHoverUp = (event: PointerEvent) => {
+      const dist = Math.hypot(event.clientX - downPos.x, event.clientY - downPos.y);
+      hoverDragging = false;
+      if (dist > 8) {
+        hideHover();
+      } else {
+        onHoverMove(event);
+      }
+    };
     renderer.domElement.addEventListener('pointermove',onHoverMove);
     renderer.domElement.addEventListener('pointerleave',hideHover);
     renderer.domElement.addEventListener('pointerdown',onHoverDown);
@@ -1264,11 +1276,27 @@ export const ThreeCarScene: React.FC<Props> = ({
         bodyGrp.attach(mesh);
       }));
 
-      // მინები — ყოველთვის გამჭვირვ. (საქარე მინა/ფანჯრები)
+      // მინები — ავთენტური ქარხნული ტონირებული საავტომობილო მინა (საქარე მინა/ფანჯრები)
       const windowMat = new THREE.MeshPhysicalMaterial({
-        color: 0x222b34, transmission: 0.0, opacity: 0.10, transparent: true,
-        roughness: 0.05, ior: 1.5, metalness: 0.0, clearcoat: 1.0, depthWrite: false
+        color: 0x16202c,
+        transmission: 0.12,
+        opacity: 0.72,
+        transparent: true,
+        roughness: 0.06,
+        ior: 1.52,
+        metalness: 0.08,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.04,
+        depthWrite: true,
+        side: THREE.DoubleSide
       });
+      windowMat.userData = {
+        ghostOpacity: 0.35,
+        solidColor: 0x16202c,
+        keepSurfaceColor: true,
+        solidRoughness: 0.06,
+        solidMetalness: 0.08
+      };
       windowMaterial = windowMat;
       meshesOf('Body_Glass').forEach(m => {
         // The downloaded model includes its roof panel in the glass mesh.
@@ -1323,6 +1351,9 @@ export const ThreeCarScene: React.FC<Props> = ({
           roofMesh.name = 'BMW_Roof_Panel';
           roofMesh.matrix.copy(m.matrix); roofMesh.matrix.decompose(roofMesh.position, roofMesh.quaternion, roofMesh.scale);
           m.parent?.add(roofMesh); bodyGrp.attach(roofMesh);
+        }
+        if (windows.length) {
+          m.geometry = subset(windows);
         }
         geometry.dispose();
         m.material = windowMat; bodyGrp.attach(m);
@@ -1639,7 +1670,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       fillProgress = THREE.MathUtils.clamp(fillProgress + Math.sign(solidTargetRef.current - fillProgress) * Math.min(Math.abs(solidTargetRef.current - fillProgress), fillStep), 0, 1);
       visual.fill.value = fillProgress * fillProgress * (3 - 2 * fillProgress);
       visual.lift.value = currentExplodeRef.current * 1.10;
-      if (windowMaterial) windowMaterial.opacity = THREE.MathUtils.lerp(.10, .56, visual.fill.value);
+      if (windowMaterial) windowMaterial.opacity = THREE.MathUtils.lerp(0.32, 0.76, visual.fill.value);
       // ფარები ინთება როცა მანქანა მკაფიო/მყარი ხდება
       if (headlightMat) headlightMat.emissiveIntensity = 0.12 + fillProgress * .85;
       if (taillightMat) taillightMat.emissiveIntensity = 0.12 + fillProgress * .75;

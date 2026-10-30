@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { VehicleProfile } from '../types';
 import { sounds } from '../services/soundEffects';
 import { VEHICLE_PRESETS } from '../constants/vehicles';
@@ -54,10 +54,27 @@ export const Header: React.FC<Props> = ({
   onOpenTour
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
   const vehicleList = allVehicles && allVehicles.length > 0 ? allVehicles : VEHICLE_PRESETS;
   const isGe = lang === 'ge';
   const hasSelectedVehicle = Boolean(vehicle && vehicle.id && vehicle.brand);
+
+  useEffect(() => {
+    if (!dropdownOpen && !langDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+        setDropdownOpen(false);
+      }
+      if (langDropdownRef.current && !langDropdownRef.current.contains(target)) {
+        setLangDropdownOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
+  }, [dropdownOpen, langDropdownOpen]);
 
   const languages = [
     { code: 'ge' as const, flag: '🇬🇪', label: 'ქართული', title: 'GE' },
@@ -65,13 +82,31 @@ export const Header: React.FC<Props> = ({
   ];
 
   const renderGarageDropdown = () => (
-    <div className="absolute left-0 right-0 sm:left-auto sm:right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-xs sm:w-72 rounded-3xl neu-card p-2 shadow-2xl z-50 animate-fade-in border border-slate-200 bg-white">
+    <div
+      ref={dropdownRef}
+      className="absolute left-0 right-0 sm:left-auto sm:right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-xs sm:w-72 rounded-3xl neu-card p-2 shadow-2xl z-50 animate-fade-in border border-slate-200 bg-white"
+    >
       <div className="px-3 py-2 text-[10px] font-mono uppercase text-slate-400 border-b border-slate-100 flex items-center justify-between">
         <span>{isGe ? 'გარაჟი / მანქანის შეცვლა' : 'Garage / Change Car'}</span>
         <span className="font-bold text-gold">
           {vehicleList.length} {isGe ? 'ავტომობილი' : 'Vehicles'}
         </span>
       </div>
+
+      {/* Button to navigate directly to Garage & Vehicle Profile */}
+      <button
+        type="button"
+        onClick={() => {
+          sounds.playSuccess();
+          onSelectTab?.('garage');
+          setDropdownOpen(false);
+        }}
+        className="w-full my-1.5 py-2.5 px-3 rounded-2xl bg-navy text-white hover:bg-slate-800 text-xs font-black flex items-center justify-center gap-2 transition-all shadow-sm border border-gold/40"
+      >
+        <Car size={15} className="text-gold shrink-0" />
+        <span className="truncate">{isGe ? '🚗 ჩემი გარაჟი & პროფილის ნახვა' : '🚗 My Garage & View Profile'}</span>
+      </button>
+
       {vehicleList.map((preset) => (
         <div
           key={preset.id}
@@ -85,6 +120,7 @@ export const Header: React.FC<Props> = ({
             onClick={() => {
               sounds.playSuccess();
               onChangeVehicle(preset);
+              onSelectTab?.('garage');
               setDropdownOpen(false);
             }}
             className="flex-1 cursor-pointer min-w-0"
