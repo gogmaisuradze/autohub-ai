@@ -1129,7 +1129,7 @@ export const App: React.FC = () => {
       </div>
 
       {/* Cover Advertising Banner (Wider panoramic layout for grand automotive photography) */}
-      {activeTab !== 'exam' && <div id="cover-banner-section" data-tour="cover-banner" className="hidden md:block w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
+      <div id="cover-banner-section" data-tour="cover-banner" className="hidden md:block w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
         <CoverAdBanner
           onNavigateTab={handleTabChange}
           onOpenBookingModal={() => handleOpenBookingModal()}
@@ -1138,7 +1138,7 @@ export const App: React.FC = () => {
           onScrollPastBanner={() => scrollToMainContent(950)}
           isTourActive={isSiteTourActive}
         />
-      </div>}
+      </div>
 
       {/* 3. Main Content Container (Unified wide layout matching CoverAdBanner) */}
       <main id="main-content" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-16 sm:pb-24 overflow-x-hidden">
@@ -1208,7 +1208,7 @@ export const App: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 hidden sm:block">
-                    შსს მომსახურების სააგენტოს ოფიციალური თეორიული საგამოცდო ბილეთები (921 კითხვა)
+                    შსს მომსახურების სააგენტოს ოფიციალური თეორიული საგამოცდო ბილეთები
                   </p>
                 </div>
               </div>
@@ -1233,10 +1233,7 @@ export const App: React.FC = () => {
                 </button>
                 <div className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-white text-navy shadow-xs border border-slate-200/80 flex items-center gap-1.5">
                   <GraduationCap size={14} className="text-amber-500" />
-                  <span>ბილეთები & გამოცდა</span>
-                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-amber-100 text-amber-900">
-                    921
-                  </span>
+                  <span>მართვის მოწმობის ბილეთები</span>
                 </div>
               </div>
             </div>

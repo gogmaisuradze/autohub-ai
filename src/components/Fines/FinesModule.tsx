@@ -708,10 +708,7 @@ export const FinesModule: React.FC<Props> = ({
             className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-navy hover:bg-white transition-all flex items-center gap-1.5"
           >
             <GraduationCap size={14} className="text-amber-500" />
-            <span>ბილეთები & გამოცდა</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-amber-100 text-amber-900">
-              921
-            </span>
+            <span>მართვის მოწმობის ბილეთები</span>
           </button>
         </div>
       </div>

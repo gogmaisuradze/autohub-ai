@@ -267,7 +267,7 @@ export const Navigation: React.FC<Props> = ({
                         )}
                       </button>
 
-                      {/* 2. ბილეთები */}
+                      {/* 2. მართვის მოწმობის ბილეთები */}
                       <button
                         type="button"
                         onClick={() => {
@@ -289,17 +289,13 @@ export const Navigation: React.FC<Props> = ({
                           </div>
                           <div className="min-w-0">
                             <div className="text-xs font-bold text-navy truncate">
-                              {isGe ? 'ბილეთები' : 'Exam Tickets'}
+                              {isGe ? 'მართვის მოწმობის ბილეთები' : 'Driver License Tickets'}
                             </div>
                             <div className="text-[10px] text-slate-500 truncate">
                               {isGe ? 'მართვის მოწმობა 2026' : 'Driver license theory'}
                             </div>
                           </div>
                         </div>
-
-                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 shrink-0 ml-1">
-                          921
-                        </span>
                       </button>
                     </div>,
                     document.body

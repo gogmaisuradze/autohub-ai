@@ -696,7 +696,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     const backdrop = new THREE.Mesh(backdropGeometry, backdropMaterial);
     backdrop.position.y = 1.2; scene.add(backdrop);
     // Constellation reference adapted to a spherical, dots-only showroom backdrop.
-    // One static GPU draw call: no extra canvas loop, text, links or pointer handlers.
+    // The reference dots run in the existing GPU scene, without a second animation loop.
     const dotPositions: number[] = [], dotColors: number[] = [];
     const warmGold = new THREE.Color(0xcaa95a), paleGold = new THREE.Color(0xe9dfc6);
     for (let ring=0; ring<28; ring++) {
@@ -713,14 +713,38 @@ export const ThreeCarScene: React.FC<Props> = ({
     const dotsGeometry = new THREE.BufferGeometry();
     dotsGeometry.setAttribute('position',new THREE.Float32BufferAttribute(dotPositions,3));
     dotsGeometry.setAttribute('color',new THREE.Float32BufferAttribute(dotColors,3));
-    const dotCanvas = document.createElement('canvas'); dotCanvas.width=dotCanvas.height=32;
-    const dotContext=dotCanvas.getContext('2d')!;
-    const dotGradient=dotContext.createRadialGradient(16,16,0,16,16,16);
-    dotGradient.addColorStop(0,'rgba(255,255,255,1)');dotGradient.addColorStop(.35,'rgba(255,255,255,.85)');dotGradient.addColorStop(1,'rgba(255,255,255,0)');
-    dotContext.fillStyle=dotGradient;dotContext.fillRect(0,0,32,32);
-    const dotTexture=new THREE.CanvasTexture(dotCanvas);
-    const dotsMaterial=new THREE.PointsMaterial({map:dotTexture,size:.20,vertexColors:true,
-      transparent:true,opacity:.55,depthWrite:false,sizeAttenuation:true,toneMapped:false});
+    const constellationUniforms = {
+      uTime:{value:0},uPointer:{value:new THREE.Vector2(-10,-10)},uHover:{value:0},
+      uPixelRatio:{value:Math.min(window.devicePixelRatio||1,1.5)}
+    };
+    const dotsMaterial = new THREE.ShaderMaterial({
+      uniforms:constellationUniforms,vertexColors:true,transparent:true,depthWrite:false,
+      vertexShader:`
+        uniform float uTime,uHover,uPixelRatio; uniform vec2 uPointer;
+        varying vec3 vDotColor; varying float vOpacity;
+        void main(){
+          vec4 clip=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+          vec2 screen=clip.xy/max(abs(clip.w),.001);
+          vec2 delta=screen-uPointer;
+          float distanceToPointer=length(delta);
+          float influence=(1.0-smoothstep(.02,.33,distanceToPointer))*uHover;
+          // Soft repulsion and return to the grid, matching the supplied reference.
+          clip.xy+=normalize(delta+vec2(.0001))*influence*.055*clip.w;
+          float pulse=.5+.5*sin(uTime*1.1+position.x*.6+position.y*.8);
+          gl_Position=clip;
+          gl_PointSize=(2.4+pulse*.5+influence*1.8)*uPixelRatio;
+          vDotColor=mix(color,vec3(1.0,.77,.30),influence);
+          vOpacity=.34+pulse*.18+influence*.25;
+        }`,
+      fragmentShader:`
+        varying vec3 vDotColor; varying float vOpacity;
+        void main(){
+          float radius=length(gl_PointCoord-vec2(.5));
+          float alpha=(1.0-smoothstep(.12,.5,radius))*vOpacity;
+          if(alpha<.015)discard;
+          gl_FragColor=vec4(vDotColor,alpha);
+        }`
+    });
     const showroomDots=new THREE.Points(dotsGeometry,dotsMaterial);showroomDots.name='ShowroomConstellationDots';scene.add(showroomDots);
 
     const showroomBeltMaterial = new THREE.MeshBasicMaterial({ color: 0x315061 });
@@ -1915,6 +1939,9 @@ export const ThreeCarScene: React.FC<Props> = ({
           tooltip.style.top=`${Math.max(6,Math.min(hoverY+14,rect.height-tooltip.offsetHeight-6))}px`;
         }else tooltip.style.display='none';
       }
+      constellationUniforms.uTime.value=reducedMotion?0:elapsedTime;
+      constellationUniforms.uPointer.value.copy(hoverPointer);
+      constellationUniforms.uHover.value+=(Number(hoverInside&&!reducedMotion)-constellationUniforms.uHover.value)*.10;
       renderer.render(scene, camera);
       if (firstModelFramePending) {
         firstModelFramePending = false;
@@ -1944,7 +1971,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       sequenceCallbacks.current.onSequenceBusyChange?.(false);
       cancelAnimationFrame(animId);
       viewportObserver.disconnect();
-      dotsGeometry.dispose(); dotsMaterial.dispose(); dotTexture.dispose();
+      dotsGeometry.dispose(); dotsMaterial.dispose();
       floorMirror.getRenderTarget().dispose();
       showroomEnvironment.dispose();
       environmentTarget.dispose();
