@@ -306,7 +306,6 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
 
   // Clicking ANY card (active or adjacent) transitions to it or toggles filter
   const handleCardClick = (item: MapCategoryItem, slotIndex: number) => {
-    if (performance.now() < suppressClickUntil.current) return;
     sounds.playClick();
     if (slotIndex === index) {
       if (activeCategoryKey === item.key) {
@@ -315,8 +314,17 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
         onSelectCategory(item.key);
       }
     } else {
+      // Bring clicked background card forward to center AND activate filter on live map!
       setIndex(slotIndex);
       onSelectCategory(item.key);
+    }
+  };
+
+  // Smooth scroll to the live map container if requested
+  const scrollMapIntoView = () => {
+    const el = document.getElementById('map') || document.querySelector('.leaflet-container');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   };
 
@@ -351,7 +359,8 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
       gesture.current = null;
       return;
     }
-    if (!start.horizontal && Math.abs(dx) > 8) {
+    // High drag threshold (20px) to prevent micro-clicks from being dropped
+    if (!start.horizontal && Math.abs(dx) > 20) {
       start.horizontal = true;
       event.currentTarget.setPointerCapture(event.pointerId);
       setDragging(true);
@@ -371,20 +380,35 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
       const velocity = Math.abs(dx) / dt;
 
       // Quick flick ("გაკვრით") OR standard drag distance threshold
-      const isFlick = velocity > 0.22 && Math.abs(dx) > 16;
+      const isFlick = velocity > 0.22 && Math.abs(dx) > 18;
       const isThreshold = Math.abs(dx) > Math.min(42, cardWidth * 0.15);
 
       if (!cancel && (isFlick || isThreshold)) {
         sounds.playClick();
         const stepCount = Math.abs(dx) > cardWidth * 0.8 && velocity > 0.65 ? 2 : 1;
         setIndex(current => current + (dx < 0 ? stepCount : -stepCount));
-        suppressClickUntil.current = performance.now() + 180;
       }
     }
     setDrag(0);
     setDragging(false);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  // Click anywhere on empty stage background to navigate
+  const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (dragging) return;
+    // If target is the stage background or floor shadow
+    if (e.target === stage.current || (e.target as HTMLElement).classList.contains('stage-floor-shadow')) {
+      const rect = stage.current?.getBoundingClientRect();
+      if (!rect) return;
+      const clickX = e.clientX - rect.left;
+      if (clickX < rect.width * 0.35) {
+        select(index - 1);
+      } else if (clickX > rect.width * 0.65) {
+        select(index + 1);
+      }
     }
   };
 
@@ -411,19 +435,26 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
     >
       {/* Top Banner Row: Section Title & All-Categories Button (AutoHub Light Palette) */}
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
-        <div className="flex items-center gap-2.5">
-          <span className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 border border-amber-500/30 flex items-center justify-center font-bold text-sm shadow-2xs">
+        <div
+          onClick={() => {
+            sounds.playClick();
+            onSelectCategory('all');
+          }}
+          className="flex items-center gap-2.5 cursor-pointer group"
+          title="დააწკაპუნეთ ყველა ობიექტის ერთად საჩვენებლად"
+        >
+          <span className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 border border-amber-500/30 flex items-center justify-center font-bold text-sm shadow-2xs group-hover:scale-105 transition-transform">
             <Sparkles size={16} />
           </span>
           <div>
-            <h4 className="text-sm sm:text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
-              <span>საგზაო კატეგორიები (3D დინამიკა)</span>
+            <h4 className="text-sm sm:text-base font-black tracking-tight text-slate-900 flex items-center gap-2 group-hover:text-amber-600 transition-colors">
+              <span>საგზაო კატეგორიები (3D Coverflow)</span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 uppercase font-bold">
-                Coverflow
+                Live რუკა
               </span>
             </h4>
             <p className="text-[11px] text-slate-500 font-medium">
-              აპრობირებული საგზაო ნიშნები • გადაფურცლეთ გაკვრით, სქროლით ან დააწკაპუნეთ ბარათზე
+              რუკის ნიშნები • ნებისმიერ ბარათზე დაჭერით გადასვლა და ფილტრაცია
             </p>
           </div>
         </div>
@@ -436,7 +467,8 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
               sounds.playClick();
               onSelectCategory('all');
             }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border-2 shadow-2xs active:scale-95 ${
+            title="ყველა კატეგორიის ერთად ჩვენება"
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border-2 shadow-2xs active:scale-95 cursor-pointer ${
               activeCategoryKey === 'all'
                 ? 'bg-[#1A2232] text-amber-400 border-amber-400 font-black shadow-md shadow-slate-900/15 ring-2 ring-amber-400/20'
                 : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border-slate-200/90'
@@ -448,9 +480,10 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 3D Coverflow Stage with Wheel Scrolling support */}
+      {/* 3D Coverflow Stage with Wheel Scrolling support & Prominent Floating Chevrons */}
       <div
         ref={stage}
+        onClick={handleStageClick}
         onWheel={handleWheel}
         data-dragging={dragging || undefined}
         onPointerDown={pointerDown}
@@ -459,13 +492,41 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
         onPointerCancel={event => pointerUp(event, true)}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className="relative min-h-[300px] sm:min-h-[335px] flex items-center justify-center perspective-[1100px] transform-style-3d touch-pan-y select-none cursor-grab active:cursor-grabbing my-2"
+        className="relative min-h-[310px] sm:min-h-[345px] flex items-center justify-center perspective-[1100px] transform-style-3d touch-pan-y select-none cursor-grab active:cursor-grabbing my-2"
         style={{ perspective: "1100px", transformStyle: "preserve-3d" }}
       >
         {/* Soft realistic floor drop shadow */}
         <div
-          className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[70%] max-w-[460px] h-[26px] rounded-full bg-slate-400/30 blur-md pointer-events-none"
+          className="stage-floor-shadow absolute bottom-2 left-1/2 -translate-x-1/2 w-[70%] max-w-[460px] h-[26px] rounded-full bg-slate-400/30 blur-md pointer-events-none"
         />
+
+        {/* Prominent Floating Stage Arrow Left */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            select(index - 1);
+          }}
+          aria-label="წინა კატეგორია"
+          title="წინა კატეგორია"
+          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-40 w-10 sm:w-11 h-10 sm:h-11 rounded-full bg-white/95 hover:bg-white text-slate-800 hover:text-navy border-2 border-slate-200/90 shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-90 cursor-pointer"
+        >
+          <ChevronLeft size={22} className="text-slate-800" />
+        </button>
+
+        {/* Prominent Floating Stage Arrow Right */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            select(index + 1);
+          }}
+          aria-label="შემდეგი კატეგორია"
+          title="შემდეგი კატეგორია"
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-40 w-10 sm:w-11 h-10 sm:h-11 rounded-full bg-white/95 hover:bg-white text-slate-800 hover:text-navy border-2 border-slate-200/90 shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-90 cursor-pointer"
+        >
+          <ChevronRight size={22} className="text-slate-800" />
+        </button>
 
         {slots.map(slot => {
           const item = items[wrap(slot, items.length)];
@@ -476,7 +537,7 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
           const isSelected = slot === index;
           const isFiltered = activeCategoryKey === item.key;
           const ItemIcon = item.icon;
-          const zIndex = isSelected ? 50 : Math.max(1, 40 - Math.round(abs * 10));
+          const zIndex = isSelected ? 35 : Math.max(1, 30 - Math.round(abs * 8));
 
           return (
             <div
@@ -486,10 +547,10 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
                 handleCardClick(item, slot);
               }}
               title={isSelected ? "დააწკაპუნეთ გასაფილტრად" : `დააწკაპუნეთ წინ გამოსატანად: ${item.title}`}
-              className={`absolute top-1/2 -translate-y-1/2 rounded-2xl p-3 sm:p-3.5 transition-all duration-500 cursor-pointer select-none border-2 group ${
+              className={`absolute top-1/2 -translate-y-1/2 rounded-2xl p-3 sm:p-3.5 transition-all duration-500 cursor-pointer select-none border-2 group hover:z-50 ${
                 isSelected
-                  ? 'border-amber-400 bg-[#1A2232] text-white shadow-xl shadow-slate-900/25 ring-4 ring-amber-400/25 scale-100'
-                  : 'border-slate-200/90 bg-white/95 text-slate-800 shadow-md hover:border-amber-400/80 hover:shadow-xl hover:scale-[1.03] opacity-85 hover:opacity-100 hover:ring-2 hover:ring-amber-400/20'
+                  ? 'border-amber-400 bg-[#1A2232] text-white shadow-2xl shadow-slate-900/30 ring-4 ring-amber-400/25 scale-100'
+                  : 'border-slate-200/90 bg-white/95 text-slate-800 shadow-md hover:border-amber-400 hover:shadow-2xl hover:scale-[1.04] opacity-85 hover:opacity-100 hover:ring-2 hover:ring-amber-400/20'
               }`}
               style={{
                 width: `${cardWidth}px`,
@@ -607,7 +668,18 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
 
       {/* Bottom Controls Bar: Active Info + Dock Navigation */}
       <div className="relative z-10 flex flex-col items-center gap-2.5 pt-2 border-t border-slate-200/80">
-        <div className="text-center max-w-xl">
+        <div
+          onClick={() => {
+            sounds.playClick();
+            if (isCurrentActiveFilter) {
+              onSelectCategory('all');
+            } else {
+              onSelectCategory(active.key);
+            }
+          }}
+          className="text-center max-w-xl cursor-pointer hover:opacity-85 transition-opacity"
+          title="დააწკაპუნეთ რუკაზე გასაფილტრად"
+        >
           <div className="flex items-center justify-center gap-2">
             <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
               <span>{active.title}</span>
@@ -625,11 +697,16 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
         <div className="flex flex-wrap items-center justify-center gap-3">
           <div className="flex items-center gap-2.5 px-3 py-1 rounded-full bg-slate-100/90 border border-slate-200 shadow-2xs">
             {/* Position indicator */}
-            <span className="text-xs font-mono font-bold text-slate-600 border-r border-slate-300 pr-2.5">
+            <button
+              type="button"
+              onClick={() => select(index + 1)}
+              title="შემდეგ კატეგორიაზე გადასვლა"
+              className="text-xs font-mono font-bold text-slate-600 border-r border-slate-300 pr-2.5 hover:text-navy cursor-pointer transition-colors"
+            >
               <span className="text-amber-600 font-black">{String(activeIndex + 1).padStart(2, "0")}</span>
               <span className="text-slate-400 mx-1">/</span>
               <span>{String(items.length).padStart(2, "0")}</span>
-            </span>
+            </button>
 
             {/* Transport Arrows */}
             <div className="flex items-center gap-1">
@@ -675,9 +752,11 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
                 onSelectCategory('all');
               } else {
                 onSelectCategory(active.key);
+                scrollMapIntoView();
               }
             }}
-            className={`px-4 py-2 rounded-xl text-xs font-black shadow-sm flex items-center gap-1.5 transition-all active:scale-95 border-2 ${
+            title="რუკაზე ამ კატეგორიის ობიექტების გაფილტვრა და ჩვენება"
+            className={`px-4 py-2 rounded-xl text-xs font-black shadow-sm flex items-center gap-1.5 transition-all active:scale-95 border-2 cursor-pointer ${
               isCurrentActiveFilter
                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500'
                 : 'bg-[#1A2232] hover:bg-slate-800 text-amber-400 border-amber-400 shadow-md shadow-slate-900/15'
@@ -698,15 +777,19 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
         </div>
 
         {/* Dynamic Navigation Hints */}
-        <p className="text-[10px] text-slate-500 flex items-center gap-2 flex-wrap justify-center font-medium">
-          <span className="flex items-center gap-1"><MousePointer size={11} className="text-amber-600" /> გაკვრა (Flick)</span>
+        <div
+          onClick={() => select(index + 1)}
+          className="text-[10px] text-slate-500 flex items-center gap-2 flex-wrap justify-center font-medium cursor-pointer hover:text-slate-800 transition-colors"
+          title="დააწკაპუნეთ შემდეგ კატეგორიაზე გადასასვლელად"
+        >
+          <span className="flex items-center gap-1"><MousePointer size={11} className="text-amber-600" /> ნებისმიერ ბარათზე დაჭერა</span>
           <span className="text-slate-300">•</span>
           <span className="flex items-center gap-1"><RotateCw size={11} className="text-amber-600" /> მაუსით სქროლი</span>
           <span className="text-slate-300">•</span>
           <ArrowLeft size={10} />
           <ArrowRight size={10} />
           <span>ისრებით მართვა</span>
-        </p>
+        </div>
       </div>
 
       {/* ======================================================== */}
