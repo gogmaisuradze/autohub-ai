@@ -1422,41 +1422,20 @@ export const ThreeCarScene: React.FC<Props> = ({
         }
         const subset = (ids: number[]) => { const out = geometry.clone(); out.clearGroups(); out.setIndex(ids); return out; };
         subsets.forEach((ids, side) => {
-          const seat = new THREE.Mesh(subset(ids), leather); seat.name = side === 0 ? 'RearBench' : side > 0 ? 'SeatLeft' : 'SeatRight';
-          seat.position.copy(mesh.position); seat.quaternion.copy(mesh.quaternion); seat.scale.copy(mesh.scale);
-          // Replace the open, low-detail rear shell with closed cushions below.
-          if (side === 0) { seat.geometry.dispose(); return; }
-          mesh.parent!.add(seat); seat.castShadow = true; seat.receiveShadow = true; addSeat(seat, side, false);
+          const isRear = side === 0;
+          const seat = new THREE.Mesh(subset(ids), leather);
+          seat.name = isRear ? 'RearBench' : side > 0 ? 'SeatLeft' : 'SeatRight';
+          seat.position.copy(mesh.position);
+          seat.quaternion.copy(mesh.quaternion);
+          seat.scale.copy(mesh.scale);
+          mesh.parent!.add(seat);
+          seat.castShadow = true;
+          seat.receiveShadow = true;
+          addSeat(seat, side, isRear);
         });
         if (subsets.size) mesh.geometry = subset(keep);
         geometry.dispose();
       });
-
-      // Closed rear upholstery: two cushions, split backrests and head restraints.
-      const roundedUpholstery = (w: number, h: number, d: number, radius: number) => {
-        const geometry = new THREE.BoxGeometry(w,h,d,6,6,6);
-        const positions = geometry.getAttribute('position');
-        const inner = new THREE.Vector3(w/2-radius,h/2-radius,d/2-radius);
-        const vertex = new THREE.Vector3(), core = new THREE.Vector3();
-        for (let i=0;i<positions.count;i++) {
-          vertex.fromBufferAttribute(positions,i);
-          core.set(THREE.MathUtils.clamp(vertex.x,-inner.x,inner.x),THREE.MathUtils.clamp(vertex.y,-inner.y,inner.y),THREE.MathUtils.clamp(vertex.z,-inner.z,inner.z));
-          vertex.sub(core).normalize().multiplyScalar(radius).add(core);
-          positions.setXYZ(i,vertex.x,vertex.y,vertex.z);
-        }
-        geometry.computeVertexNormals(); return geometry;
-      };
-      const rearPiece = (name: string, dimensions: [number,number,number], position: [number,number,number], tilt = 0) => {
-        const mesh = new THREE.Mesh(roundedUpholstery(...dimensions,.045),leather);
-        mesh.name=name; mesh.position.set(...position); mesh.rotation.x=tilt;
-        carMasterGroup.add(mesh); mesh.castShadow=true; mesh.receiveShadow=true; addSeat(mesh,0,true);
-      };
-      [-1,1].forEach(side => {
-        rearPiece(`RearCushion_${side}`,[.61,.18,.62],[side*.325,.48,-.83]);
-        rearPiece(`RearBackrest_${side}`,[.61,.62,.16],[side*.325,.86,-1.13],-.14);
-        rearPiece(`RearHeadrest_${side}`,[.30,.20,.14],[side*.325,1.20,-1.19]);
-      });
-      rearPiece('RearCentreBolster',[.11,.26,.55],[0,.53,-.84]);
 
       // თავფარები — ანათებს თეთრ-ცისფრად
       const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xddeeff, emissiveIntensity: 0.3, roughness: 0.12, metalness: 0.0 });
@@ -1685,8 +1664,8 @@ export const ThreeCarScene: React.FC<Props> = ({
           sequence.initialCamPos = camera.position.clone();
           controls.target.copy(targetForegroundLook);
         }
-        if (sequence.elapsed < 2.4 && !sequence.revealing) {
-          const approach = THREE.MathUtils.smoothstep(sequence.elapsed, 0, 2.4);
+        if (sequence.elapsed < 1.2 && !sequence.revealing) {
+          const approach = THREE.MathUtils.smoothstep(sequence.elapsed, 0, 1.2);
           const startPos = sequence.initialCamPos || camera.position;
           camera.position.lerpVectors(startPos, targetForegroundCam, approach);
           controls.target.lerpVectors(controls.target, targetForegroundLook, approach * 0.15);
@@ -1699,7 +1678,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         }
         if (!sequence.revealing) {
           sequence.elapsed += delta;
-          const turn = Math.min(sequence.elapsed / 18, 1);
+          const turn = Math.min(sequence.elapsed / 3.8, 1);
           const eased = turn * turn * (3 - 2 * turn);
           carMasterGroup.rotation.y = sequence.startAngle + Math.PI * 2 * eased;
           if (turn >= 1 && !liveStateRef.current.isScanning) {
@@ -1748,7 +1727,12 @@ export const ThreeCarScene: React.FC<Props> = ({
 
       // Cabin parts return exactly to their original transform when assembled.
       cabinParts.forEach(({group, side, rear}) => {
-        group.position.set(rear ? 0 : side * 1.25 * curExp, .18 * curExp, rear ? -1.05 * curExp : 0);
+        if (rear) {
+          // Rear bench remains strictly grounded to the chassis floor - never rises up
+          group.position.set(0, 0, 0);
+        } else {
+          group.position.set(side * 0.45 * curExp, 0, 0);
+        }
       });
 
       // Displace Internal Aggregates according to their explosion vectors
@@ -1872,7 +1856,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       goldRingMat.color.copy(idleRing).lerp(scanRing, focus);
       showroomBeltMaterial.color.set(0x315061).lerp(new THREE.Color(0x203951), focus);
       (gridHelper.material as THREE.Material).opacity = THREE.MathUtils.lerp(.35, .10, focus);
-      if (scanning && !reducedMotion) scanPhase = (scanPhase + delta / 8.5) % 1;
+      if (scanning && !reducedMotion) scanPhase = (scanPhase + delta / 2.0) % 1;
       visual.scanZ.value = reducedMotion ? 0 : THREE.MathUtils.lerp(-2.65, 2.65, .5 - .5 * Math.cos(scanPhase * Math.PI * 2));
       laserRig.visible = visual.scanStrength.value > .005;
       scanLayerMeshes.forEach(mesh => { mesh.visible = visual.scanStrength.value > .03; });
