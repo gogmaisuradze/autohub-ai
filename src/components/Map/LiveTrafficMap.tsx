@@ -7,12 +7,14 @@ import { loadCameras, getGeorgiaRegionName } from '../../services/cameraService'
 import { mapDataService } from '../../services/mapDataService';
 import { getPreferredLocation, watchPreferredLocation, LocationFix } from '../../services/locationService';
 import AddReportModal from './AddReportModal';
+import { MapCategoriesCoverflow } from './MapCategoriesCoverflow';
 import {
   Navigation,
   Compass,
   Plus,
   Shield,
   Camera,
+  Sparkles,
   AlertTriangle,
   Fuel,
   Building2,
@@ -736,6 +738,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [communityReports, setCommunityReports] = useState<MapReport[]>([]);
   const [backendPois, setBackendPois] = useState<MapReport[]>([]);
   const [filterType, setFilterType] = useState<MapPointType | 'all' | 'none'>('radar');
+  const [categoryViewMode, setCategoryViewMode] = useState<'coverflow' | 'grid'>('coverflow');
   const [selectedReport, setSelectedReport] = useState<MapReport | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFix, setLocationFix] = useState<LocationFix | null>(null);
@@ -1968,69 +1971,125 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </div>
         </div>
 
-        {/* Category Cards Section — 4 თანაბრად გადანაწილებული კატეგორია (2-2 იკონით) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {categoryGroups.map(group => (
-            <div
-              key={group.id}
-              className={`p-3.5 rounded-2xl border ${group.color} space-y-2.5 shadow-2xs`}
+        {/* Category Controls & Switcher: 3D Coverflow vs Classic Grid */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span>ობიექტების კატეგორიები</span>
+            </span>
+            <span className="text-[11px] font-mono text-slate-500 font-semibold hidden md:inline-block">
+              (რადარები, საცობები, საწვავი, EV დამტენები, სერვისები)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 p-1 bg-white/95 rounded-2xl border border-slate-200/90 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setCategoryViewMode('coverflow');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                categoryViewMode === 'coverflow'
+                  ? 'bg-navy text-gold shadow-sm font-black ring-1 ring-gold/40'
+                  : 'text-slate-600 hover:text-navy hover:bg-slate-100'
+              }`}
             >
-              <div className="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center justify-between px-1">
-                <span>{group.title}</span>
-              </div>
-              <div className="grid grid-cols-1 gap-2">
-                {group.items.map(opt => {
-                  const isActive = filterType === opt.key;
-                  const Icon = opt.icon;
-                  return (
-                    <button
-                      key={opt.key}
-                      onClick={() => {
-                        sounds.playClick();
-                        setFilterType(isActive ? 'all' : opt.key);
-                        setSelectedReport(null);
-                      }}
-                      className={`w-full p-2.5 sm:p-3 rounded-xl transition-all duration-200 flex items-center justify-between gap-2.5 text-left ${
-                        isActive
-                          ? 'bg-[#1A2232] text-white border-2 border-gold shadow-md shadow-navy/25 scale-[1.02] ring-2 ring-gold/25 font-black'
-                          : 'bg-white/95 hover:bg-white text-slate-800 border-2 border-slate-200/90 shadow-2xs hover:border-slate-300 hover:shadow-xs hover:-translate-y-0.5'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-colors ${
-                            isActive
-                              ? 'bg-gold/20 text-gold border-gold/40'
-                              : opt.accent
-                          }`}
-                        >
-                          <Icon size={16} />
-                        </div>
-                        <div className="min-w-0">
-                          <div className={`text-xs truncate ${isActive ? 'text-white font-black' : 'text-slate-900 font-bold'}`}>
-                            {opt.label}
-                          </div>
-                          <div className={`text-[10px] truncate ${isActive ? 'text-gold/80' : 'text-slate-500'}`}>
-                            {opt.desc}
-                          </div>
-                        </div>
-                      </div>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold shrink-0 transition-colors ${
+              <Sparkles size={13} className={categoryViewMode === 'coverflow' ? 'text-gold' : 'text-slate-400'} />
+              <span>3D Coverflow</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setCategoryViewMode('grid');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                categoryViewMode === 'grid'
+                  ? 'bg-navy text-gold shadow-sm font-black ring-1 ring-gold/40'
+                  : 'text-slate-600 hover:text-navy hover:bg-slate-100'
+              }`}
+            >
+              <Layers size={13} className={categoryViewMode === 'grid' ? 'text-gold' : 'text-slate-400'} />
+              <span>კლასიკური ბადე</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Category Section: 3D Coverflow vs 4-Column Grid */}
+        {categoryViewMode === 'coverflow' ? (
+          <MapCategoriesCoverflow
+            activeCategoryKey={filterType}
+            onSelectCategory={(key) => {
+              setFilterType(key);
+              setSelectedReport(null);
+            }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {categoryGroups.map(group => (
+              <div
+                key={group.id}
+                className={`p-3.5 rounded-2xl border ${group.color} space-y-2.5 shadow-2xs`}
+              >
+                <div className="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center justify-between px-1">
+                  <span>{group.title}</span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {group.items.map(opt => {
+                    const isActive = filterType === opt.key;
+                    const Icon = opt.icon;
+                    return (
+                      <button
+                        key={opt.key}
+                        onClick={() => {
+                          sounds.playClick();
+                          setFilterType(isActive ? 'all' : opt.key);
+                          setSelectedReport(null);
+                        }}
+                        className={`w-full p-2.5 sm:p-3 rounded-xl transition-all duration-200 flex items-center justify-between gap-2.5 text-left ${
                           isActive
-                            ? 'bg-gold text-navy font-black shadow-2xs'
-                            : 'bg-slate-100 text-slate-700 border border-slate-200'
+                            ? 'bg-[#1A2232] text-white border-2 border-gold shadow-md shadow-navy/25 scale-[1.02] ring-2 ring-gold/25 font-black'
+                            : 'bg-white/95 hover:bg-white text-slate-800 border-2 border-slate-200/90 shadow-2xs hover:border-slate-300 hover:shadow-xs hover:-translate-y-0.5'
                         }`}
                       >
-                        {opt.badge}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-colors ${
+                              isActive
+                                ? 'bg-gold/20 text-gold border-gold/40'
+                                : opt.accent
+                            }`}
+                          >
+                            <Icon size={16} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className={`text-xs truncate ${isActive ? 'text-white font-black' : 'text-slate-900 font-bold'}`}>
+                              {opt.label}
+                            </div>
+                            <div className={`text-[10px] truncate ${isActive ? 'text-gold/80' : 'text-slate-500'}`}>
+                              {opt.desc}
+                            </div>
+                          </div>
+                        </div>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold shrink-0 transition-colors ${
+                            isActive
+                              ? 'bg-gold text-navy font-black shadow-2xs'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}
+                        >
+                          {opt.badge}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Bottom Bar: "ყველა ობიექტი" Toggle + Quick Search */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200/80">
