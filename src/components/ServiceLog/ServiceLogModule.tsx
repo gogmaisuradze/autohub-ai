@@ -288,7 +288,7 @@ export const ServiceLogModule: React.FC<Props> = ({
       {/* ======================================================== */}
       {/* 0. SMART SERVICE DECK (ანალოგიური ნეომორფული სტილი)      */}
       {/* ======================================================== */}
-      <div className="p-5 sm:p-6 lg:p-7 rounded-3xl neu-card shadow-neu-card border border-white/80 bg-[#ECEAE5] text-navy space-y-5 transition-all">
+      <div data-tour="service-header-stats" className="p-5 sm:p-6 lg:p-7 rounded-3xl neu-card shadow-neu-card border border-white/80 bg-[#ECEAE5] text-navy space-y-5 transition-all">
         
         {/* Header Bar */}
         <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
@@ -342,7 +342,7 @@ export const ServiceLogModule: React.FC<Props> = ({
           <label className="text-xs font-black text-navy uppercase tracking-wider block mb-2.5">
             სერვისის მართვა & რესურსები:
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div data-tour="service-deck-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             
             {/* Card 1: მანქანის პროფილი */}
             <div
@@ -862,7 +862,7 @@ export const ServiceLogModule: React.FC<Props> = ({
       )}
 
       {/* 3. Category Filter Chips & Pre-made Answers Toggle Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
+      <div data-tour="service-category-filter" className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full sm:max-w-[70%] scrollbar-none">
           <button
             onClick={() => {
@@ -1042,7 +1042,7 @@ export const ServiceLogModule: React.FC<Props> = ({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div data-tour="service-cards-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredServices.map((item) => {
             const isCritical = item.health_percentage <= 20;
             const isWarning = item.health_percentage <= 45 && !isCritical;

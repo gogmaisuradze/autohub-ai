@@ -18,7 +18,21 @@ import {
   ShieldAlert,
   HelpCircle,
   RotateCcw,
-  Move
+  Move,
+  Cpu,
+  FileText,
+  ParkingSquare,
+  Navigation as NavigationIcon,
+  Wrench,
+  GraduationCap,
+  Award,
+  Trash2,
+  Construction,
+  ShieldCheck,
+  MapPin,
+  Calendar,
+  MessageSquare,
+  CreditCard
 } from 'lucide-react';
 
 export interface TourStep {
@@ -33,84 +47,577 @@ export interface TourStep {
   placement?: 'bottom' | 'top' | 'center-bottom' | 'bottom-right' | 'top-right' | 'left-bottom' | 'left' | 'auto';
 }
 
-const TOUR_STEPS: TourStep[] = [
-  {
-    id: 'vehicle-profile',
-    targetSelector: '[data-tour="header-vehicle"]',
-    title: 'ავტომობილის პროფილი & გარაჟი',
-    subtitle: 'GARAGE & VEHICLE SWITCHER',
-    badge: '1 / 7',
-    description: 'აქ ჩანს თქვენი არჩეული ავტომობილი. დაწკაპუნებით შეგიძლიათ გადართოთ მანქანები, შეცვალოთ სახელმწიფო ნომერი, გარბენი ან დაამატოთ ახალი ავტომობილი გარაჟში.',
-    icon: Car,
-    requiredTab: 'home',
-    placement: 'bottom'
+export interface TabMeta {
+  id: TabType;
+  name_ge: string;
+  icon: string;
+  summary: string;
+}
+
+export const TAB_TOUR_METADATA: Record<TabType, TabMeta> = {
+  home: {
+    id: 'home',
+    name_ge: 'მთავარი გვერდი',
+    icon: '🏠',
+    summary: 'თქვენ გაეცანით AutoHub-ის მთავარი გვერდის ყველა ძირითად სერვისსა და შესაძლებლობას.'
   },
-  {
-    id: 'navigation-menu',
-    targetSelector: '[data-tour="navigation-menu"]',
-    title: 'ნავიგაციის მენიუ & განყოფილებები',
-    subtitle: 'MAIN NAVIGATION BAR',
-    badge: '2 / 7',
-    description: 'მთავარი მენიუს ღილაკებით მყისიერად გადადიხართ ნებისმიერ განყოფილებაზე: მთავარი, OBD დიაგნოსტიკა, საპატრულო ჯარიმები, პარკინგი, სერვის-დღიური, რადარების რუკა და მეტი.',
-    icon: Compass,
-    requiredTab: 'home',
-    placement: 'bottom'
+  obd: {
+    id: 'obd',
+    name_ge: 'OBD-II დიაგნოსტიკა',
+    icon: '⚡',
+    summary: 'თქვენ გაეცანით 3D ინტერაქტიულ დიაგნოსტიკას, Check Engine-ის ჩაქრობას, DTC კოდებსა და ცოცხალ ტელემეტრიას.'
   },
-  {
-    id: 'cover-banner',
-    targetSelector: '[data-tour="cover-banner"]',
-    title: 'ციფრული სერვისების ქავერ-ბანერი',
-    subtitle: '7 DIGITAL SERVICES & GLAMOUR COVERS',
-    badge: '3 / 7',
-    description: 'AutoHub-ის 7 ძირითადი ციფრული სერვისი თემატური ავტო-ფოტოებითა და ცოცხალი ვიჯეტებით. ზედა ღილაკებით შეგიძლიათ სწრაფად გადართოთ სერვისები და გახსნათ შესაბამისი მოდული.',
-    icon: Layers,
-    requiredTab: 'home',
-    placement: 'bottom-right'
+  fines: {
+    id: 'fines',
+    name_ge: 'საპატრულო ჯარიმები & მართვის მოწმობა',
+    icon: '🛡️',
+    summary: 'თქვენ გაეცანით საპატრულო ჯარიმების 20%-იან ფასდაკლებას, 100-ქულიან ციფრულ პასპორტსა და საგამოცდო ბილეთებს.'
   },
-  {
-    id: 'orbit-carousel',
-    targetSelector: '[data-tour="orbit-carousel"]',
-    title: 'სერვისების ორბიტალური მართვა',
-    subtitle: 'INTERACTIVE ORBIT TRACK',
-    badge: '4 / 7',
-    description: 'დაატრიალეთ სერვისების მოცულობითი ბურთები, ცენტრალურ ფანჯარაში იხილეთ სტატუსი და გადადით შესაბამის მოდულში ღილაკით "გადასვლა".',
-    icon: Sparkles,
-    requiredTab: 'home',
-    placement: 'bottom-right'
+  parking: {
+    id: 'parking',
+    name_ge: 'მუნიციპალური პარკინგი',
+    icon: '🅿️',
+    summary: 'თქვენ გაეცანით მუნიციპალური პარკირების ზონების რუკას (A, B, C), ქალაქების არჩევასა და ცოცხალ ტაიმერს.'
   },
-  {
-    id: 'department-cards',
-    targetSelector: '[data-tour="department-cards"]',
-    title: 'განყოფილებების ბარათები & სტატუსი',
-    subtitle: 'DEPARTMENT HUBS & SHORTCUTS',
-    badge: '5 / 7',
-    description: 'თქვენი ავტომობილის ცოცხალი მონაცემები: Check Engine შეცდომების რაოდენობა, გადასახდელი საპატრულო ჯარიმები 20%-იანი ფასდაკლებით და ძრავის ზეთის დარჩენილი რესურსი.',
-    icon: ShieldAlert,
-    requiredTab: 'home',
-    placement: 'bottom-right'
+  map: {
+    id: 'map',
+    name_ge: 'ცოცხალი საგზაო რუკა & რადარები',
+    icon: '🗺️',
+    summary: 'თქვენ გაეცანით ცოცხალ საგზაო რუკას, საცობების 12 Live წერტილს, ალტერნატიულ მოკლე გზებსა და რადარებს.'
   },
-  {
-    id: 'obd-status',
-    targetSelector: '[data-tour="obd-status"]',
-    title: 'OBD-II ადაპტერის დაკავშირება',
-    subtitle: 'BLUETOOTH / WI-FI SCANNER',
-    badge: '6 / 7',
-    description: 'ამ ღილაკით აკავშირებთ Bluetooth ან Wi-Fi ELM327 ადაპტერს. ჩართვისას ინდიკატორი მწვანედ აინთება და პირდაპირ ამოიკითხავს შეცდომებს.',
-    icon: Activity,
-    requiredTab: 'home',
-    placement: 'bottom-right'
+  service: {
+    id: 'service',
+    name_ge: 'სერვის-წიგნაკი & OEM კატალოგი',
+    icon: '🔧',
+    summary: 'თქვენ გაეცანით ციფრულ სერვის-წიგნაკს, რესურსების კალკულატორსა და PTI ტექ-დათვალიერების მართვას.'
   },
-  {
-    id: 'ai-floating-widget',
-    targetSelector: '[data-tour="ai-floating-widget"]',
-    title: 'AI მექანიკოსი & ასისტენტი 24/7',
-    subtitle: '24/7 SMART AUTO ASSISTANT',
-    badge: '7 / 7',
-    description: 'თქვენი პერსონალური ხელოვნური ინტელექტი: დააჭირეთ ქვედა მარჯვენა ღილაკს ნებისმიერ დროს, ჰკითხეთ ნაწილების ფასები, შეცდომების მიზეზები და მიიღეთ რჩევები ქართულად!',
-    icon: Bot,
-    requiredTab: 'home',
-    placement: 'left-bottom'
+  exam: {
+    id: 'exam',
+    name_ge: 'მართვის მოწმობის ბილეთები 2026',
+    icon: '🎓',
+    summary: 'თქვენ გაეცანით მართვის მოწმობის 2026 წლის ოფიციალურ ბილეთებს, აკადემიურ რანგებსა და რეალურ სიმულატორს.'
+  },
+  ai: {
+    id: 'ai',
+    name_ge: 'AI მექანიკოსი 24/7',
+    icon: '🤖',
+    summary: 'თქვენ გაეცანით AI მექანიკოსთან კონსულტაციას, ხმოვან ასისტენტსა და მზა შეკითხვებს.'
+  },
+  garage: {
+    id: 'garage',
+    name_ge: 'ჩემი გარაჟი',
+    icon: '🚗',
+    summary: 'თქვენ გაეცანით ავტოპარკის მართვასა და ავტომობილის დეტალურ პროფილს.'
+  },
+  settings: {
+    id: 'settings',
+    name_ge: 'პარამეტრები',
+    icon: '⚙️',
+    summary: 'თქვენ გაეცანით სისტემურ პარამეტრებსა და კონფიგურაციას.'
   }
+};
+
+export const PAGE_TOUR_STEPS: Record<TabType, TourStep[]> = {
+  // 1. HOME DASHBOARD TOUR (7 STEPS)
+  home: [
+    {
+      id: 'vehicle-profile',
+      targetSelector: '[data-tour="header-vehicle"]',
+      title: 'ავტომობილის პროფილი & გარაჟი',
+      subtitle: 'GARAGE & VEHICLE SWITCHER',
+      badge: '1 / 7',
+      description: 'აქ ჩანს თქვენი არჩეული ავტომობილი. დაწკაპუნებით შეგიძლიათ გადართოთ მანქანები, შეცვალოთ სახელმწიფო ნომერი, გარბენი ან დაამატოთ ახალი ავტომობილი გარაჟში.',
+      icon: Car,
+      requiredTab: 'home',
+      placement: 'bottom'
+    },
+    {
+      id: 'navigation-menu',
+      targetSelector: '[data-tour="navigation-menu"]',
+      title: 'ნავიგაციის მენიუ & განყოფილებები',
+      subtitle: 'MAIN NAVIGATION BAR',
+      badge: '2 / 7',
+      description: 'მთავარი მენიუს ღილაკებით მყისიერად გადადიხართ ნებისმიერ განყოფილებაზე: მთავარი, OBD დიაგნოსტიკა, საპატრულო ჯარიმები, პარკინგი, სერვის-დღიური, რადარების რუკა და მეტი.',
+      icon: Compass,
+      requiredTab: 'home',
+      placement: 'bottom'
+    },
+    {
+      id: 'cover-banner',
+      targetSelector: '[data-tour="cover-banner"]',
+      title: 'ციფრული სერვისების ქავერ-ბანერი',
+      subtitle: '7 DIGITAL SERVICES & GLAMOUR COVERS',
+      badge: '3 / 7',
+      description: 'AutoHub-ის 7 ძირითადი ციფრული სერვისი თემატური ავტო-ფოტოებითა და ცოცხალი ვიჯეტებით. ზედა ღილაკებით შეგიძლიათ სწრაფად გადართოთ სერვისები და გახსნათ შესაბამისი მოდული.',
+      icon: Layers,
+      requiredTab: 'home',
+      placement: 'bottom-right'
+    },
+    {
+      id: 'orbit-carousel',
+      targetSelector: '[data-tour="orbit-carousel"]',
+      title: 'სერვისების ორბიტალური მართვა',
+      subtitle: 'INTERACTIVE ORBIT TRACK',
+      badge: '4 / 7',
+      description: 'დაატრიალეთ სერვისების მოცულობითი ბურთები, ცენტრალურ ფანჯარაში იხილეთ სტატუსი და გადადით შესაბამის მოდულში ღილაკით "გადასვლა".',
+      icon: Sparkles,
+      requiredTab: 'home',
+      placement: 'bottom-right'
+    },
+    {
+      id: 'department-cards',
+      targetSelector: '[data-tour="department-cards"]',
+      title: 'განყოფილებების ბარათები & სტატუსი',
+      subtitle: 'DEPARTMENT HUBS & SHORTCUTS',
+      badge: '5 / 7',
+      description: 'თქვენი ავტომობილის ცოცხალი მონაცემები: Check Engine შეცდომების რაოდენობა, გადასახდელი საპატრულო ჯარიმები 20%-იანი ფასდაკლებით და ძრავის ზეთის დარჩენილი რესურსი.',
+      icon: ShieldAlert,
+      requiredTab: 'home',
+      placement: 'bottom-right'
+    },
+    {
+      id: 'obd-status',
+      targetSelector: '[data-tour="obd-status"]',
+      title: 'OBD-II ადაპტერის დაკავშირება',
+      subtitle: 'BLUETOOTH / WI-FI SCANNER',
+      badge: '6 / 7',
+      description: 'ამ ღილაკით აკავშირებთ Bluetooth ან Wi-Fi ELM327 ადაპტერს. ჩართვისას ინდიკატორი მწვანედ აინთება და პირდაპირ ამოიკითხავს შეცდომებს.',
+      icon: Activity,
+      requiredTab: 'home',
+      placement: 'bottom-right'
+    },
+    {
+      id: 'ai-floating-widget',
+      targetSelector: '[data-tour="ai-floating-widget"]',
+      title: 'AI მექანიკოსი & ასისტენტი 24/7',
+      subtitle: '24/7 SMART AUTO ASSISTANT',
+      badge: '7 / 7',
+      description: 'თქვენი პერსონალური ხელოვნური ინტელექტი: დააჭირეთ ქვედა მარჯვენა ღილაკს ნებისმიერ დროს, ჰკითხეთ ნაწილების ფასები, შეცდომების მიზეზები და მიიღეთ რჩევები ქართულად!',
+      icon: Bot,
+      requiredTab: 'home',
+      placement: 'left-bottom'
+    }
+  ],
+
+  // 2. OBD-II DIAGNOSTICS TOUR (5 STEPS)
+  obd: [
+    {
+      id: 'obd-studio',
+      targetSelector: '[data-tour="obd-studio"]',
+      title: '3D ინტერაქტიული სტუდია & სკანირება',
+      subtitle: '3D CAR SCANNING & DIAGNOSTICS',
+      badge: '1 / 5',
+      description: 'ავტომობილის რეალურ-დროში 3D მოდელი. დააწკაპუნეთ მანქანის ნებისმიერ კვანძზე (ძრავი, მუხრუჭები, გამონაბოლქვი, ელექტროობა) ან გაუშვით სრული სკანირება One-Touch Scan ღილაკით.',
+      icon: Cpu,
+      requiredTab: 'obd',
+      placement: 'bottom'
+    },
+    {
+      id: 'obd-results',
+      targetSelector: '[data-tour="obd-results"]',
+      title: 'დიაგნოსტიკის პასუხები & Check Engine',
+      subtitle: 'DIAGNOSTIC RESULTS & FAULT ANALYSIS',
+      badge: '2 / 5',
+      description: 'სისტემა დეტალურად აანალიზებს ბორტ-კომპიუტერის შეცდომებს. ნახავთ კონკრეტულ ხარვეზს, სიმძიმის დონეს, რჩევებსა და სავარაუდო შეკეთების ხარჯს ლარებში.',
+      icon: ShieldAlert,
+      requiredTab: 'obd',
+      placement: 'bottom'
+    },
+    {
+      id: 'obd-action-buttons',
+      targetSelector: '[data-tour="obd-action-buttons"]',
+      title: 'ჩეკის ჩაქრობა & AI კონსულტაცია',
+      subtitle: 'ECU RESET & AI DIAGNOSIS',
+      badge: '3 / 5',
+      description: 'ღილაკით "გასუფთავება" შეგიძლიათ წაშალოთ დაგროვილი DTC შეცდომები და ჩააქროთ Check Engine. AI მექანიკოსთან კონსულტაცია კი მოგცემთ ზუსტ რეკომენდაციებს ქართულად.',
+      icon: Trash2,
+      requiredTab: 'obd',
+      placement: 'top'
+    },
+    {
+      id: 'obd-telemetry',
+      targetSelector: '[data-tour="obd-telemetry"]',
+      title: 'ცოცხალი ტელემეტრია & მაჩვენებლები',
+      subtitle: 'LIVE SENSORS & PIDS',
+      badge: '4 / 5',
+      description: '10 Hz სიხშირით განახლებადი ცოცხალი სენსორები: ძრავის ბრუნი (RPM), სიჩქარე, გამაგრილებელი სითხის ტემპერატურა, ზეთის წნევა და აკუმულატორის ვოლტაჟი.',
+      icon: Activity,
+      requiredTab: 'obd',
+      placement: 'top'
+    },
+    {
+      id: 'obd-dtc-board',
+      targetSelector: '[data-tour="obd-dtc-board"]',
+      title: 'DTC ხარვეზების დაფა',
+      subtitle: 'DIAGNOSTIC TROUBLE CODES',
+      badge: '5 / 5',
+      description: 'სტანდარტული OBD-II კოდების სრული ჩამონათვალი (P, B, C, U ჯგუფები). თითოეულ კოდზე დაჭერით იხილავთ აღწერას, სიმძიმესა და გადაჭრის გზებს.',
+      icon: Layers,
+      requiredTab: 'obd',
+      placement: 'top'
+    }
+  ],
+
+  // 3. TRAFFIC FINES & DRIVER PROFILE TOUR (4 STEPS)
+  fines: [
+    {
+      id: 'fines-passport',
+      targetSelector: '[data-tour="fines-passport"]',
+      title: 'მართვის მოწმობის ციფრული პასპორტი',
+      subtitle: 'DRIVER BIOMETRIC PASSPORT',
+      badge: '1 / 4',
+      description: 'ოფიციალური ქართული მართვის მოწმობის ბარათი: მძღოლის ფოტო, პირადი ნომერი, კატეგორიები (B, A, C) და 100-ქულიანი საპატრულო ბალანსის წრიული ინდიკატორი.',
+      icon: ShieldCheck,
+      requiredTab: 'fines',
+      placement: 'bottom'
+    },
+    {
+      id: 'fines-summary',
+      targetSelector: '[data-tour="fines-summary"]',
+      title: 'ჯარიმების სწრაფი გადახდა & ფასდაკლება',
+      subtitle: 'QUICK PAY & 20% DISCOUNT',
+      badge: '2 / 4',
+      description: 'საპატრულო პოლიციისა და ქალაქის კამერების ჯარიმების გადახდის პანელი. იხილეთ ჯამური თანხა და გამოიყენეთ კანონით გათვალისწინებული 20%-იანი ფასდაკლება.',
+      icon: CreditCard,
+      requiredTab: 'fines',
+      placement: 'bottom'
+    },
+    {
+      id: 'fines-exam',
+      targetSelector: '[data-tour="fines-exam"]',
+      title: 'მართვის მოწმობის ბილეთები & სიმულატორი',
+      subtitle: 'DRIVING EXAM 2026 PLATFORM',
+      badge: '3 / 4',
+      description: 'შსს მომსახურების სააგენტოს 921 ოფიციალური საგამოცდო ბილეთი, ადაპტური სწავლება, აკადემიური რეგალიები და 30-წუთიანი რეალური საგამოცდო სიმულატორი.',
+      icon: GraduationCap,
+      requiredTab: 'fines',
+      placement: 'bottom'
+    },
+    {
+      id: 'fines-list',
+      targetSelector: '[data-tour="fines-list"]',
+      title: 'ჯარიმების დეტალური სია & ქვითრები',
+      subtitle: 'ACTIVE FINES & PHOTO EVIDENCE',
+      badge: '4 / 4',
+      description: 'თითოეული ჯარიმის ქვითარი: დარღვევის ფოტო-ვიდეო მასალა, ადგილი, სიჩქარის გადაჭარბება, ქულების ჩამოჭრა და გასაჩივრების ოფცია.',
+      icon: FileText,
+      requiredTab: 'fines',
+      placement: 'top'
+    }
+  ],
+
+  // 4. MUNICIPAL PARKING TOUR (4 STEPS)
+  parking: [
+    {
+      id: 'parking-monitor',
+      targetSelector: '[data-tour="parking-monitor"]',
+      title: 'ცოცხალი პარკირების ტაიმერი & დაწყება',
+      subtitle: 'LIVE PARKING SESSION & TIMER',
+      badge: '1 / 4',
+      description: 'ერთი დაჭერით იწყებთ ან წყვეტთ პარკირებას. ცოცხალი ტაიმერი გიჩვენებთ გასულ წუთებს, 15 უფასო წუთის ლიმიტსა და დარიცხულ საფასურს რეალურ დროში.',
+      icon: ParkingSquare,
+      requiredTab: 'parking',
+      placement: 'bottom'
+    },
+    {
+      id: 'parking-map',
+      targetSelector: '[data-tour="parking-map"]',
+      title: 'პარკირების ზონების ინტერაქტიული რუკა',
+      subtitle: 'INTERACTIVE PARKING ZONES MAP',
+      badge: '2 / 4',
+      description: 'რუკაზე მკაფიოდ ჩანს საათობრივი ზონალური პარკირების A, B და C ზონები, ფერადი შემოხაზულობები, თავისუფალი ადგილები და საპარკინგე სლოტები.',
+      icon: MapPin,
+      requiredTab: 'parking',
+      placement: 'bottom'
+    },
+    {
+      id: 'parking-city',
+      targetSelector: '[data-tour="parking-city"]',
+      title: 'ქალაქის არჩევა (თბილისი, ბათუმი, ქუთაისი)',
+      subtitle: 'MUNICIPAL CITIES & REGIONS',
+      badge: '3 / 4',
+      description: 'ოფიციალური გერბებითა და ლოგოებით შეგიძლიათ მყისიერად გადართოთ ქალაქები: თბილისის სატრანსპორტო კომპანია (TTC), ბათუმის ავტოტრანსპორტი და ქუთაისის პარკინგი.',
+      icon: Compass,
+      requiredTab: 'parking',
+      placement: 'top'
+    },
+    {
+      id: 'parking-profile-passes',
+      targetSelector: '[data-tour="parking-profile-passes"]',
+      title: 'საპარკინგე პროფილი & აბონემენტები',
+      subtitle: 'TARIFFS & SUBSCRIPTION PASSES',
+      badge: '4 / 4',
+      description: 'აქტიური ავტომობილის პარკირების სტატუსი, დღიური, კვირის, 6-თვიანი და 1-წლიანი მუნიციპალური საშვები შეღავათიანი პაკეტებით.',
+      icon: Layers,
+      requiredTab: 'parking',
+      placement: 'top'
+    }
+  ],
+
+  // 5. LIVE TRAFFIC MAP & RADARS TOUR (4 STEPS)
+  map: [
+    {
+      id: 'map-controls',
+      targetSelector: '[data-tour="map-controls"]',
+      title: 'რუკის მართვა & სატელიტი',
+      subtitle: 'MAP CONTROLS & SATELLITE SWITCHER',
+      badge: '1 / 4',
+      description: 'გადართეთ ხედები: ჩვეულებრივი რუკა, Dark Matter ღამის რეჟიმი და მაღალი რეზოლუციის Google Satellite სატელიტური ხედი ქართული ქუჩების წარწერებით.',
+      icon: NavigationIcon,
+      requiredTab: 'map',
+      placement: 'bottom'
+    },
+    {
+      id: 'map-traffic-filters',
+      targetSelector: '[data-tour="map-traffic-filters"]',
+      title: 'საცობები, ქუჩის რემონტი & ალტერნატივები',
+      subtitle: 'TRAFFIC JAMS, REPAIRS & SHORTCUTS',
+      badge: '2 / 4',
+      description: 'სპეციალური ღილაკებით ჩართეთ საცობების 12 Live ლოკაცია, 14 ქუჩის სარემონტო ზონა და მწვანე უმოკლესი ალტერნატიული შემოვლითი გზები!',
+      icon: Construction,
+      requiredTab: 'map',
+      placement: 'bottom'
+    },
+    {
+      id: 'map-canvas',
+      targetSelector: '[data-tour="map-canvas"]',
+      title: 'ინტერაქტიული რუკა & რადარები',
+      subtitle: 'RADARS, CAMERAS & STATIONS',
+      badge: '3 / 4',
+      description: 'თბილისისა და საქართველოს გზების 9,000-ზე მეტი ობიექტი: სიჩქარის მზომი რადარები, სექციური კამერები, Wissol/Gulf/Rompetrol საწვავის ფასები და EV დამტენები.',
+      icon: MapPin,
+      requiredTab: 'map',
+      placement: 'top'
+    },
+    {
+      id: 'map-report-btn',
+      targetSelector: '[data-tour="map-report-btn"]',
+      title: 'საგზაო შეტყობინების დამატება',
+      subtitle: 'COMMUNITY REPORTING & HAZARDS',
+      badge: '4 / 4',
+      description: 'გააფრთხილეთ სხვა მძღოლები! დააჭირეთ "+ შეტყობინებას" პატრულის ეკიპაჟის, ავარიის, საცობის ან გზის დაზიანების დასაფიქსირებლად.',
+      icon: Zap,
+      requiredTab: 'map',
+      placement: 'bottom-right'
+    }
+  ],
+
+  // 6. SERVICE LOG & OEM CATALOG TOUR (4 STEPS)
+  service: [
+    {
+      id: 'service-header-stats',
+      targetSelector: '[data-tour="service-header-stats"]',
+      title: 'ციფრული სერვის-წიგნაკი & გარბენი',
+      subtitle: 'SERVICE DECK & MILEAGE',
+      badge: '1 / 4',
+      description: 'ავტომობილის გეგმიური მომსახურება ქარხნული OEM ინტერვალებით. აქ ჩანს მიმდინარე გარბენი და მომსახურების კალენდარი.',
+      icon: Wrench,
+      requiredTab: 'service',
+      placement: 'bottom'
+    },
+    {
+      id: 'service-deck-cards',
+      targetSelector: '[data-tour="service-deck-cards"]',
+      title: '4 ინტერაქტიული ბარათი',
+      subtitle: 'SMART SERVICE MANAGEMENT CARDS',
+      badge: '2 / 4',
+      description: 'მანქანის ქარხნული პროფილი, რესურსების AI კალკულატორი, ოფიციალური PTI ტექ-დათვალიერება და ავტო-ექიმთან ონლაინ ჩაწერა.',
+      icon: Layers,
+      requiredTab: 'service',
+      placement: 'bottom'
+    },
+    {
+      id: 'service-category-filter',
+      targetSelector: '[data-tour="service-category-filter"]',
+      title: 'კატეგორიების ფილტრი & მზა პასუხები',
+      subtitle: 'CATEGORIES & PRESET ANSWERS',
+      badge: '3 / 4',
+      description: 'ძრავი და ზეთი, სამუხრუჭე სისტემა, სავალი ნაწილი, ელექტროობა და სითხეები. შეგიძლიათ ჩართოთ/გამორთოთ მზა პასუხები და გამორთული ფანჯრები.',
+      icon: Sparkles,
+      requiredTab: 'service',
+      placement: 'top'
+    },
+    {
+      id: 'service-cards-grid',
+      targetSelector: '[data-tour="service-cards-grid"]',
+      title: 'სერვის-კომპონენტების ბარათები & რესურსი',
+      subtitle: 'SERVICE ITEMS & RESOURCE TRACKER',
+      badge: '4 / 4',
+      description: 'თითოეული დეტალის დარჩენილი რესურსი (%), გამოცვლის თარიღი, შეხსენების ზარი და AI ოსტატთან კონსულტაციის ღილაკი.',
+      icon: Activity,
+      requiredTab: 'service',
+      placement: 'top'
+    }
+  ],
+
+  // 7. DRIVING EXAM TICKETS 2026 PLATFORM TOUR (4 STEPS)
+  exam: [
+    {
+      id: 'exam-academic-analysis',
+      targetSelector: '[data-tour="exam-academic-analysis"]',
+      title: 'აკადემიური რანგი & პროგრესის ანალიზი',
+      subtitle: 'ACADEMIC RANK & KNOWLEDGE MATRIX',
+      badge: '1 / 4',
+      description: 'ინტელექტუალური ალგორითმი ამოიცნობს თქვენს მომზადების დონეს: მაგისტრი, დოქტორი, აკადემიკოსი ან ჩაინიკი! იხილეთ ცოდნის პროცენტი და შეცდომების გამეორება.',
+      icon: Award,
+      requiredTab: 'exam',
+      placement: 'bottom'
+    },
+    {
+      id: 'exam-category-tabs',
+      targetSelector: '[data-tour="exam-category-tabs"]',
+      title: 'კატეგორიების პაკეტები (B, A, C, D, AM)',
+      subtitle: 'OFFICIAL 2026 QUESTION PACKS',
+      badge: '2 / 4',
+      description: 'შსს მომსახურების სააგენტოს ოფიციალური ბაზა. მარტივად გადართეთ მსუბუქი (B - 921 ბილეთი), მოტოციკლი (A - 760), სატვირთო (C) თუ მოპედი.',
+      icon: Layers,
+      requiredTab: 'exam',
+      placement: 'bottom'
+    },
+    {
+      id: 'exam-modes-grid',
+      targetSelector: '[data-tour="exam-modes-grid"]',
+      title: '4 საგამოცდო რეჟიმი & სიმულაცია',
+      subtitle: 'EXAM MODES & ADAPTIVE STUDY',
+      badge: '3 / 4',
+      description: 'რეალური გამოცდა (30 წთ / 30 კითხვა / მაქს. 3 შეცდომა), ადაპტური სწავლება 15 კითხვა, შეცდომების გამეორება და მონიშნული თემების ვარჯიში.',
+      icon: GraduationCap,
+      requiredTab: 'exam',
+      placement: 'bottom'
+    },
+    {
+      id: 'exam-topics-grid',
+      targetSelector: '[data-tour="exam-topics-grid"]',
+      title: '32 ოფიციალური თემა (prava.ge)',
+      subtitle: '32 THEMATIC SUBJECTS PRAVA.GE',
+      badge: '4 / 4',
+      description: 'მოძრაობის წესები, მაფრთხილებელი, პრიორიტეტისა და ამკრძალავი ნიშნები, შუქნიშნები, მანევრირება და უსაფრთხოება.',
+      icon: Compass,
+      requiredTab: 'exam',
+      placement: 'top'
+    }
+  ],
+
+  // 8. AI MECHANIC ASSISTANT TOUR (3 STEPS)
+  ai: [
+    {
+      id: 'ai-chat-header',
+      targetSelector: '[data-tour="ai-chat-header"]',
+      title: 'AI მექანიკოსი 24/7',
+      subtitle: 'AI CHAT & VEHICLE CONTEXT',
+      badge: '1 / 3',
+      description: 'თქვენი პირადი ციფრული ოსტატი. ფლობს სრულ ინფორმაციას თქვენი ავტომობილის მოდელზე, შეცდომის კოდებსა და სერვისებზე.',
+      icon: Bot,
+      requiredTab: 'ai',
+      placement: 'bottom'
+    },
+    {
+      id: 'ai-chat-presets',
+      targetSelector: '[data-tour="ai-chat-presets"]',
+      title: 'სწრაფი შეკითხვები & თემები',
+      subtitle: 'QUICK AUTO PROMPTS',
+      badge: '2 / 3',
+      description: 'ერთი დაჭერით გაიგეთ ნაწილების ფასები, სერვისცენტრების მისამართები და დიაგნოსტიკის რჩევები ქართულ ენაზე.',
+      icon: Sparkles,
+      requiredTab: 'ai',
+      placement: 'bottom'
+    },
+    {
+      id: 'ai-chat-input',
+      targetSelector: '[data-tour="ai-chat-input"]',
+      title: 'შეკითხვის დასმა & ხმოვანი მართვა',
+      subtitle: 'ASK QUESTION & VOICE ASSISTANT',
+      badge: '3 / 3',
+      description: 'ჩაწერეთ შეკითხვა, ისაუბრეთ ხმით მიკროფონის ღილაკით და მოუსმინეთ მექანიკოსის პასუხს ქართულად!',
+      icon: MessageSquare,
+      requiredTab: 'ai',
+      placement: 'top'
+    }
+  ],
+
+  // 9. GARAGE & VEHICLE FLEET TOUR (3 STEPS)
+  garage: [
+    {
+      id: 'garage-header',
+      targetSelector: '[data-tour="garage-header"]',
+      title: 'ჩემი გარაჟი & ავტოპარკი',
+      subtitle: 'GARAGE & VEHICLE FLEET',
+      badge: '1 / 3',
+      description: 'თქვენი ავტოპარკის მართვის ცენტრი: აქ შეგიძლიათ გადართოთ ავტომობილები და მართვის მოწმობის პროფილი.',
+      icon: Car,
+      requiredTab: 'garage',
+      placement: 'bottom'
+    },
+    {
+      id: 'garage-add-car',
+      targetSelector: '[data-tour="garage-add-car"]',
+      title: 'ახალი მანქანის დამატება',
+      subtitle: 'ADD NEW VEHICLE',
+      badge: '2 / 3',
+      description: 'დაამატეთ ახალი ავტომობილი მარკის, მოდელის, გამოშვების წლისა და სახელმწიფო ნომრის მითითებით.',
+      icon: Layers,
+      requiredTab: 'garage',
+      placement: 'bottom-right'
+    },
+    {
+      id: 'garage-profile',
+      targetSelector: '[data-tour="garage-profile"]',
+      title: 'ავტომობილის პროფილი & მონაცემები',
+      subtitle: 'ACTIVE VEHICLE SPECIFICATIONS',
+      badge: '3 / 3',
+      description: 'აქტიური ავტომობილის სრული მონაცემები: გარბენი, ძრავი, VIN კოდი და ტექნიკური პარამეტრები.',
+      icon: ShieldCheck,
+      requiredTab: 'garage',
+      placement: 'top'
+    }
+  ],
+
+  // 10. SETTINGS (FALLBACK TO GARAGE STEPS)
+  settings: [
+    {
+      id: 'garage-header',
+      targetSelector: '[data-tour="garage-header"]',
+      title: 'ჩემი გარაჟი & პარამეტრები',
+      subtitle: 'GARAGE & SETTINGS',
+      badge: '1 / 3',
+      description: 'თქვენი ავტოპარკის მართვის ცენტრი: აქ შეგიძლიათ გადართოთ ავტომობილები და მართვის მოწმობის პროფილი.',
+      icon: Car,
+      requiredTab: 'garage',
+      placement: 'bottom'
+    },
+    {
+      id: 'garage-add-car',
+      targetSelector: '[data-tour="garage-add-car"]',
+      title: 'ახალი მანქანის დამატება',
+      subtitle: 'ADD NEW VEHICLE',
+      badge: '2 / 3',
+      description: 'დაამატეთ ახალი ავტომობილი მარკის, მოდელის, გამოშვების წლისა და სახელმწიფო ნომრის მითითებით.',
+      icon: Layers,
+      requiredTab: 'garage',
+      placement: 'bottom-right'
+    },
+    {
+      id: 'garage-profile',
+      targetSelector: '[data-tour="garage-profile"]',
+      title: 'ავტომობილის პროფილი & მონაცემები',
+      subtitle: 'ACTIVE VEHICLE SPECIFICATIONS',
+      badge: '3 / 3',
+      description: 'აქტიური ავტომობილის სრული მონაცემები: გარბენი, ძრავი, VIN კოდი და ტექნიკური პარამეტრები.',
+      icon: ShieldCheck,
+      requiredTab: 'garage',
+      placement: 'top'
+    }
+  ]
+};
+
+const EXPLORE_TABS: { id: TabType; name_ge: string; icon: string }[] = [
+  { id: 'home', name_ge: 'მთავარი', icon: '🏠' },
+  { id: 'obd', name_ge: 'დიაგნოსტიკა', icon: '⚡' },
+  { id: 'fines', name_ge: 'ჯარიმები', icon: '🛡️' },
+  { id: 'parking', name_ge: 'პარკინგი', icon: '🅿️' },
+  { id: 'map', name_ge: 'რუკა', icon: '🗺️' },
+  { id: 'service', name_ge: 'სერვისი', icon: '🔧' },
+  { id: 'exam', name_ge: 'ბილეთები', icon: '🎓' }
 ];
 
 interface Props {
@@ -118,13 +625,15 @@ interface Props {
   onNavigateTab: (tab: TabType) => void;
   externalTrigger?: number;
   onTourActiveChange?: (active: boolean) => void;
+  onTourCompleted?: () => void;
 }
 
 export const InteractiveSiteTour: React.FC<Props> = ({
   currentTab,
   onNavigateTab,
   externalTrigger,
-  onTourActiveChange
+  onTourActiveChange,
+  onTourCompleted
 }) => {
   // Draggable constraint container ref (locks window strictly inside viewport)
   const dragConstraintsRef = useRef<HTMLDivElement>(null);
@@ -132,6 +641,9 @@ export const InteractiveSiteTour: React.FC<Props> = ({
   const [cardHeight, setCardHeight] = useState(280);
   const [userCustomPos, setUserCustomPos] = useState<{ x: number; y: number } | null>(null);
   const [isStepTransitioning, setIsStepTransitioning] = useState(false);
+
+  // State: Active tab being toured
+  const [activeTourTab, setActiveTourTab] = useState<TabType>(currentTab || 'home');
 
   // State: Cloud Bot Prompt (ღრუბლის ფანჯარა ბოტი)
   const [isCloudPromptOpen, setIsCloudPromptOpen] = useState(false);
@@ -141,6 +653,16 @@ export const InteractiveSiteTour: React.FC<Props> = ({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [isCompletedModalOpen, setIsCompletedModalOpen] = useState(false);
+
+  // Helper to get steps for any tab safely
+  const getStepsForTab = useCallback((tab?: TabType): TourStep[] => {
+    const key = tab || 'home';
+    return PAGE_TOUR_STEPS[key] || PAGE_TOUR_STEPS.home;
+  }, []);
+
+  const activeSteps = getStepsForTab(activeTourTab);
+  const currentStep = activeSteps[currentStepIndex] || activeSteps[0];
+  const StepIcon = currentStep?.icon || Sparkles;
 
   // Notify parent of tour state changes
   useEffect(() => {
@@ -183,25 +705,48 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     } catch {}
   }, []);
 
-  // Respond to manual external triggers (e.g. from Header help button)
-  useEffect(() => {
-    if (externalTrigger && externalTrigger > 0) {
-      startTour();
+  // Helper to find visible target element even if multiple elements share a data-tour attribute
+  const findVisibleTarget = useCallback((selector: string): HTMLElement | null => {
+    const list = document.querySelectorAll(selector);
+    for (let i = 0; i < list.length; i++) {
+      const el = list[i] as HTMLElement;
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) return el;
     }
-  }, [externalTrigger]);
+    return document.querySelector(selector) as HTMLElement | null;
+  }, []);
 
-  const startTour = useCallback(() => {
+  // Start tour for the CURRENT page or an explicitly requested tab
+  const startTour = useCallback((targetTab?: TabType) => {
     sounds.playSuccess();
-    const el = document.querySelector(TOUR_STEPS[0].targetSelector);
-    if (el) {
-      setTargetRect(el.getBoundingClientRect());
-    }
+    const tabToStart = targetTab || currentTab || 'home';
+    setActiveTourTab(tabToStart);
+    const steps = getStepsForTab(tabToStart);
+
     setIsCloudPromptOpen(false);
     setIsCompletedModalOpen(false);
     setCurrentStepIndex(0);
+    setUserCustomPos(null);
     setIsTourActive(true);
-    onNavigateTab('home');
-  }, [onNavigateTab]);
+
+    if (currentTab !== tabToStart) {
+      onNavigateTab(tabToStart);
+    }
+
+    setTimeout(() => {
+      const el = findVisibleTarget(steps[0].targetSelector);
+      if (el) {
+        setTargetRect(el.getBoundingClientRect());
+      }
+    }, 150);
+  }, [currentTab, onNavigateTab, findVisibleTarget, getStepsForTab]);
+
+  // Respond to manual external triggers (from Header "გიდი" button)
+  useEffect(() => {
+    if (externalTrigger && externalTrigger > 0) {
+      startTour(currentTab || 'home');
+    }
+  }, [externalTrigger]);
 
   const dismissCloudPrompt = () => {
     sounds.playClick();
@@ -217,22 +762,12 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     setTargetRect(null);
   };
 
-  // Helper to find visible target element even if multiple elements share a data-tour attribute (e.g. desktop vs mobile nav)
-  const findVisibleTarget = useCallback((selector: string): HTMLElement | null => {
-    const list = document.querySelectorAll(selector);
-    for (let i = 0; i < list.length; i++) {
-      const el = list[i] as HTMLElement;
-      const rect = el.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) return el;
-    }
-    return document.querySelector(selector) as HTMLElement | null;
-  }, []);
-
   // Update target element's bounding rectangle on step change, resize, or scroll
   const updateTargetRect = useCallback(() => {
     if (!isTourActive) return;
 
-    const step = TOUR_STEPS[currentStepIndex];
+    const steps = getStepsForTab(activeTourTab);
+    const step = steps[currentStepIndex];
     if (!step) return;
 
     const el = findVisibleTarget(step.targetSelector);
@@ -240,7 +775,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       const rect = el.getBoundingClientRect();
       setTargetRect(rect);
     }
-  }, [isTourActive, currentStepIndex, findVisibleTarget]);
+  }, [isTourActive, activeTourTab, currentStepIndex, findVisibleTarget, getStepsForTab]);
 
   // Handle smooth element transitions when step changes
   useEffect(() => {
@@ -252,7 +787,8 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       updateTargetRect();
     }, 450);
 
-    const step = TOUR_STEPS[currentStepIndex];
+    const steps = getStepsForTab(activeTourTab);
+    const step = steps[currentStepIndex];
     if (!step) return () => clearTimeout(transitionTimer);
 
     // Only switch tabs if the step requires a different tab
@@ -270,8 +806,6 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       const stickyHeader = document.getElementById('sticky-header');
       const headerH = stickyHeader ? stickyHeader.offsetHeight : 120;
 
-      // Safe view boundaries: element is comfortably in view if its top is below
-      // the sticky header with headroom and not pushed below screen
       const minVisibleTop = headerH + 12;
       const isComfortable = rect.top >= minVisibleTop && rect.top <= window.innerHeight * 0.45;
 
@@ -291,12 +825,16 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     // Immediate alignment
     alignToTarget();
 
+    // Re-check after 200ms in case element rendered dynamically
+    const recheckTimer = setTimeout(alignToTarget, 220);
+
     return () => {
       clearTimeout(transitionTimer);
+      clearTimeout(recheckTimer);
     };
-  }, [isTourActive, currentStepIndex, currentTab, onNavigateTab, updateTargetRect, findVisibleTarget]);
+  }, [isTourActive, currentStepIndex, activeTourTab, currentTab, onNavigateTab, updateTargetRect, findVisibleTarget, getStepsForTab]);
 
-  // Recalculate position on scroll & resize smoothly using requestAnimationFrame (No jitter)
+  // Recalculate position on scroll & resize smoothly using requestAnimationFrame
   useEffect(() => {
     if (!isTourActive) return;
 
@@ -349,14 +887,14 @@ export const InteractiveSiteTour: React.FC<Props> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isTourActive, currentStepIndex]);
+  }, [isTourActive, currentStepIndex, activeTourTab]);
 
   const handleNext = () => {
     sounds.playClick();
-    if (currentStepIndex < TOUR_STEPS.length - 1) {
+    const steps = getStepsForTab(activeTourTab);
+    if (currentStepIndex < steps.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
     } else {
-      // Completed all steps!
       completeTour();
     }
   };
@@ -376,7 +914,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
 
     try {
       sessionStorage.setItem('autohub_cloud_guide_dismissed', 'true');
-      localStorage.setItem('autohub_tour_completed', 'true');
+      localStorage.setItem(`autohub_tour_completed_${activeTourTab}`, 'true');
     } catch {}
 
     // Confetti celebration!
@@ -389,12 +927,9 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     } catch {}
   };
 
-  const currentStep = TOUR_STEPS[currentStepIndex];
-  const StepIcon = currentStep?.icon || Sparkles;
-
   // Calculate Popover Position with smooth, stable coordinates that never flip or jump
   const getPopoverCoords = () => {
-    const popoverWidth = Math.min(360, window.innerWidth - 32);
+    const popoverWidth = Math.min(370, window.innerWidth - 32);
     const popoverHeight = Math.max(270, cardHeight);
     const margin = 14;
     const pad = 16;
@@ -416,11 +951,9 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     let top = 0;
 
     if (preferredPlacement === 'left-bottom' || preferredPlacement === 'left') {
-      // Place to the left of target, docked cleanly at the bottom
       left = targetRect.left - popoverWidth - margin;
       top = maxTop;
       if (left < pad) {
-        // Fallback for narrow mobile screens: place above target
         left = pad;
         top = Math.max(pad, targetRect.top - popoverHeight - margin);
       }
@@ -448,7 +981,6 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       top = maxTop;
       left = (window.innerWidth - popoverWidth) / 2;
     } else {
-      // Auto placement
       const spaceBelow = window.innerHeight - targetRect.bottom;
       const spaceAbove = targetRect.top;
 
@@ -465,7 +997,6 @@ export const InteractiveSiteTour: React.FC<Props> = ({
       }
     }
 
-    // Strict boundary clamping so it NEVER goes off screen
     top = Math.max(pad, Math.min(top, maxTop));
     left = Math.max(pad, Math.min(left, maxLeft));
 
@@ -477,6 +1008,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
   };
 
   const popoverCoords = getPopoverCoords();
+  const currentTabMeta = TAB_TOUR_METADATA[activeTourTab] || TAB_TOUR_METADATA.home;
 
   return (
     <>
@@ -496,7 +1028,6 @@ export const InteractiveSiteTour: React.FC<Props> = ({
               {/* Header with Bot Mascot & Close Button */}
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-3">
-                  {/* Floating Animated Robot Mascot */}
                   <motion.div
                     animate={{ y: [0, -5, 0] }}
                     transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
@@ -534,7 +1065,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
 
               {/* Bot Question / Cloud Text */}
               <p className="text-xs sm:text-sm text-slate-100 font-medium leading-relaxed mb-4">
-                მე ვარ თქვენი პერსონალური ასისტენტი. გსურთ დაგეხმაროთ საიტში გარკვევაში და გაჩვენოთ ყველა სერვისი, ღილაკი და ფანჯარა?
+                მე ვარ თქვენი პერსონალური ასისტენტი. გსურთ ჩავატარო {TAB_TOUR_METADATA[currentTab || 'home']?.name_ge || 'ამ გვერდის'}-ის ინტერაქტიული ტური და გაჩვენოთ ყველა ფუნქცია?
               </p>
 
               {/* Action Buttons: "არა, მადლობა" vs "დიახ, დავიწყოთ!" */}
@@ -549,7 +1080,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
 
                 <button
                   type="button"
-                  onClick={startTour}
+                  onClick={() => startTour(currentTab || 'home')}
                   className="flex-1 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-xs font-black shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
                 >
                   <span>დავიწყოთ!</span>
@@ -557,7 +1088,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
                 </button>
               </div>
 
-              {/* Speech Cloud Pointer Tail (pointing downward right) */}
+              {/* Speech Cloud Pointer Tail */}
               <div className="absolute -bottom-3 right-8 w-6 h-6 bg-slate-900 border-r-2 border-b-2 border-gold transform rotate-45 shadow-sm"></div>
             </div>
           </motion.div>
@@ -605,7 +1136,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
             onClick={closeTour}
           />
 
-          {/* Viewport Bounds Container for Drag Constraints (Strictly locks window inside screen) */}
+          {/* Viewport Bounds Container for Drag Constraints */}
           <div
             ref={dragConstraintsRef}
             className="fixed inset-3 sm:inset-4 pointer-events-none z-[9987]"
@@ -636,7 +1167,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
             className="border-2 border-gold shadow-[0_0_20px_rgba(252,163,17,0.55)] pointer-events-none"
           />
 
-          {/* Floating Explanation Card (Draggable Walkthrough Window - Smooth, bounded & movable) */}
+          {/* Floating Explanation Card */}
           <motion.div
             ref={cardRef}
             drag
@@ -682,7 +1213,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
               scale: 1.02,
               boxShadow: '0 30px 70px rgba(0,0,0,0.85)'
             }}
-            className="rounded-3xl p-3 sm:p-3.5 bg-slate-900/95 backdrop-blur-2xl border-2 border-gold shadow-[0_25px_60px_rgba(0,0,0,0.75)] text-white pointer-events-auto max-h-[min(500px,calc(100vh-32px))] overflow-y-auto select-none touch-none flex flex-col justify-between"
+            className="rounded-3xl p-3 sm:p-3.5 bg-slate-900/95 backdrop-blur-2xl border-2 border-gold shadow-[0_25px_60px_rgba(0,0,0,0.75)] text-white pointer-events-auto max-h-[min(520px,calc(100vh-32px))] overflow-y-auto select-none touch-none flex flex-col justify-between"
           >
             {/* Top Drag Grip Handle & Move Indicator */}
             <div
@@ -691,7 +1222,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
             >
               <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 group-hover:text-gold transition-colors">
                 <Move size={12} className="text-gold/80 group-hover:scale-110 transition-transform" />
-                <span className="uppercase tracking-wider">გადაადგილება</span>
+                <span className="uppercase tracking-wider">{currentTabMeta.name_ge}</span>
                 {userCustomPos && (
                   <button
                     type="button"
@@ -760,7 +1291,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
 
                 {/* Progress Dots Indicator */}
                 <div className="flex items-center justify-center gap-1.5 py-1 mb-1">
-                  {TOUR_STEPS.map((s, idx) => (
+                  {activeSteps.map((s, idx) => (
                     <span
                       key={s.id}
                       className={`h-1.5 rounded-full transition-all ${
@@ -807,7 +1338,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
                       onClick={handleNext}
                       className="px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-xs font-black shadow-md hover:shadow-gold/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span>{currentStepIndex === TOUR_STEPS.length - 1 ? 'დასრულება 🎉' : 'შემდეგი'}</span>
+                      <span>{currentStepIndex === activeSteps.length - 1 ? 'დასრულება 🎉' : 'შემდეგი'}</span>
                       <ArrowRight size={13} />
                     </button>
                   </div>
@@ -837,20 +1368,48 @@ export const InteractiveSiteTour: React.FC<Props> = ({
               </span>
 
               <h3 className="text-xl font-black text-white mt-2">
-                გილოცავთ! თქვენ მზად ხართ 🚀
+                გილოცავთ! {currentTabMeta.name_ge} ათვისებულია 🚀
               </h3>
 
               <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed my-3">
-                თქვენ გაეცანით AutoHub-ის ყველა ძირითად ფუნქციას, ფანჯარასა და ღილაკს. ნებისმიერ დროს შეგიძლიათ ხელახლა ჩართოთ ტური საიტის ზედა მენიუდან.
+                {currentTabMeta.summary} ნებისმიერ დროს შეგიძლიათ ხელახლა ჩართოთ ტური ზედა მენიუს "გიდი" ღილაკით.
               </p>
 
               <button
                 type="button"
-                onClick={() => setIsCompletedModalOpen(false)}
+                onClick={() => {
+                  sounds.playSuccess();
+                  setIsCompletedModalOpen(false);
+                  onTourCompleted?.();
+                }}
                 className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 text-sm font-black shadow-lg hover:shadow-gold/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                დავიწყოთ მუშაობა!
+                მშვენიერია, დავიწყოთ!
               </button>
+
+              {/* Other Pages Tour Shortcuts */}
+              <div className="pt-4 mt-4 border-t border-white/10 text-left">
+                <span className="text-[11px] font-bold text-slate-400 block mb-2">
+                  გსურთ სხვა გვერდის ტურის გავლაც?
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {EXPLORE_TABS.filter(t => t.id !== activeTourTab).map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setIsCompletedModalOpen(false);
+                        startTour(t.id);
+                      }}
+                      className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white/10 hover:bg-gold/20 hover:text-gold text-slate-200 border border-white/15 transition-all flex items-center gap-1 cursor-pointer hover:border-gold/50"
+                    >
+                      <span>{t.icon}</span>
+                      <span>{t.name_ge}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

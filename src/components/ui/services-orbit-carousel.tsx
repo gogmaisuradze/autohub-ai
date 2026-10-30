@@ -27,6 +27,7 @@ interface Props {
   lang?: 'ge' | 'en';
   vehicle?: VehicleProfile;
   isTourActive?: boolean;
+  triggerSpin?: number;
 }
 
 export const ServicesOrbitCarousel: React.FC<Props> = ({
@@ -36,7 +37,8 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   onSelectDepartment,
   lang = 'ge',
   vehicle,
-  isTourActive = false
+  isTourActive = false,
+  triggerSpin
 }) => {
   const isGe = lang === 'ge';
   const pendingFines = fines.filter(f => f.status === 'pending');
@@ -61,8 +63,8 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     {
       id: 2,
       tab: 'fines' as TabType,
-      title: isGe ? 'ჯარიმები' : 'Fines',
-      name: isGe ? 'საპატრულო ჯარიმები' : 'Police Video Fines',
+      title: isGe ? 'საპატრულო' : 'Patrol',
+      name: isGe ? 'საპატრულო & ბილეთები' : 'Police Fines & Exam',
       role: isGe ? 'ვიდეოკამერების მონიტორინგი' : 'Smart Traffic Monitoring',
       icon: ShieldAlert,
       badgeText: pendingFines.length > 0 ? (isGe ? `${pendingFines.length} აქტიური` : `${pendingFines.length} Active`) : (isGe ? 'სუფთაა' : 'Clean'),
@@ -215,21 +217,73 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     return () => el.removeEventListener('touchmove', handleNativeTouchMove);
   }, []);
 
+  const [spinAngle, setSpinAngle] = useState(0);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [isStoppedAfterSpin, setIsStoppedAfterSpin] = useState(false);
+  const spinAnimRef = useRef<number | null>(null);
+
+  // Full 360-degree rotation animation triggered when intro walkthrough completes
+  useEffect(() => {
+    if (!triggerSpin || triggerSpin <= 0) return;
+
+    if (spinAnimRef.current !== null) {
+      cancelAnimationFrame(spinAnimRef.current);
+    }
+
+    setIsSpinning(true);
+    setIsStoppedAfterSpin(true);
+    setActiveIndex(0);
+    sounds.playScanSweep();
+
+    const startTime = performance.now();
+    const duration = 1600; // 1.6s full rotation
+
+    const easeInOutCubic = (t: number) =>
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    const step = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = easeInOutCubic(progress);
+
+      setSpinAngle(eased * 360);
+
+      if (progress < 1) {
+        spinAnimRef.current = requestAnimationFrame(step);
+      } else {
+        setSpinAngle(0);
+        setIsSpinning(false);
+        spinAnimRef.current = null;
+        sounds.playClick();
+      }
+    };
+
+    spinAnimRef.current = requestAnimationFrame(step);
+
+    return () => {
+      if (spinAnimRef.current !== null) {
+        cancelAnimationFrame(spinAnimRef.current);
+      }
+    };
+  }, [triggerSpin]);
+
   const getRotation = useCallback(
     (index: number): number => {
       const base = (index - activeIndex) * (360 / hubServices.length);
-      return base + dragAngle;
+      return base + dragAngle + spinAngle;
     },
-    [activeIndex, hubServices.length, dragAngle]
+    [activeIndex, hubServices.length, dragAngle, spinAngle]
   );
 
   const next = () => {
     sounds.playClick();
+    setIsStoppedAfterSpin(false);
     setActiveIndex((i) => (i + 1) % hubServices.length);
   };
 
   const prev = () => {
     sounds.playClick();
+    setIsStoppedAfterSpin(false);
     setActiveIndex((i) => (i - 1 + hubServices.length) % hubServices.length);
   };
 
@@ -335,12 +389,12 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   };
 
   useEffect(() => {
-    if (isHovering || isTourActive || isDragging) return;
+    if (isHovering || isTourActive || isDragging || isSpinning || isStoppedAfterSpin) return;
     const interval = setInterval(() => {
       setActiveIndex((i) => (i + 1) % hubServices.length);
     }, 6000);
     return () => clearInterval(interval);
-  }, [isHovering, isTourActive, isDragging, hubServices.length]);
+  }, [isHovering, isTourActive, isDragging, isSpinning, isStoppedAfterSpin, hubServices.length]);
 
   const activeService = hubServices[activeIndex];
   const ActiveIcon = activeService.icon;
@@ -383,6 +437,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     if (isDraggingRef.current || Math.abs(dragAngle) > 6) return;
 
     sounds.playClick();
+    setIsStoppedAfterSpin(false);
     if (index === activeIndex) {
       onSelectDepartment(tab);
     } else {
@@ -525,7 +580,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
                 transform: `rotate(${rotation}deg) translateY(-${radius}px)`,
               }}
               transition={
-                isDragging
+                isDragging || isSpinning
                   ? { type: "tween", duration: 0 }
                   : {
                       type: "spring",
@@ -547,7 +602,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
               <motion.div
                 animate={{ rotate: -rotation }}
                 transition={
-                  isDragging
+                  isDragging || isSpinning
                     ? { type: "tween", duration: 0 }
                     : {
                         type: "spring",

@@ -874,7 +874,7 @@ export const ParkingModule: React.FC<Props> = ({
       {/* ======================================================== */}
       {/* 0. SMART PARKING DECK (იგივე სტილი და ფერები რაც OBD ბანერში) */}
       {/* ======================================================== */}
-      <div className="p-5 sm:p-6 lg:p-7 rounded-3xl neu-card shadow-neu-card border border-white/80 bg-[#ECEAE5] text-navy space-y-5 transition-all">
+      <div data-tour="parking-monitor" className="p-5 sm:p-6 lg:p-7 rounded-3xl neu-card shadow-neu-card border border-white/80 bg-[#ECEAE5] text-navy space-y-5 transition-all">
         
         {/* Header Bar */}
         <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
@@ -1343,7 +1343,7 @@ export const ParkingModule: React.FC<Props> = ({
       {/* ======================================================== */}
       {/* 1. INTERACTIVE PARKING ZONES MAP (პირველივე მთავარი აქცენტი) */}
       {/* ======================================================== */}
-      <div id="parking-zones-map-section" className="space-y-2">
+      <div id="parking-zones-map-section" data-tour="parking-map" className="space-y-2">
         <ParkingZonesMap
           city={selectedCity}
           selectedZoneId={parkingLocationInput.match(/#([A-Za-z]?\d+)/)?.[1]?.toUpperCase()}
@@ -1353,9 +1353,207 @@ export const ParkingModule: React.FC<Props> = ({
       </div>
 
       {/* ======================================================== */}
+      {/* 1.5. AUTHENTIC CITY & REGION SELECTOR (TBILISI, BATUMI & KUTAISI) */}
+      {/* რუკის ქვემოთ ნაწილში, გერბებითა და სტილისტიკით          */}
+      {/* ======================================================== */}
+      <div id="parking-city-selector-section" data-tour="parking-city" className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border border-white space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl neu-circle flex items-center justify-center text-navy shadow-sm shrink-0 bg-white border border-slate-100">
+              <MapPin size={20} className="text-gold" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-black text-navy">
+                  ქალაქის / რეგიონის არჩევა & შეცვლა
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-gold/15 text-navy border border-gold/30">
+                  {CITIES.find(c => c.id === selectedCity)?.name_ge}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-mono mt-0.5">
+                თბილისი • ბათუმი • ქუთაისი • ოფიციალური გერბები & ლოგოები
+              </p>
+            </div>
+          </div>
+
+          <span className="text-xs font-mono font-bold text-slate-500">
+            საქართველოს მუნიციპალური პარკირების სისტემა
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          {CITIES.map(c => {
+            const isSelected = selectedCity === c.id;
+
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setSelectedCity(c.id);
+                  const firstZone = CITY_ZONES[c.id][0];
+                  setSelectedZone(firstZone.id);
+                  setParkingLocationInput(CITY_QUICK_LOCATIONS[c.id][0]);
+                }}
+                className={`p-3.5 sm:p-4.5 rounded-3xl text-left border transition-all flex flex-col justify-between group relative overflow-hidden cursor-pointer ${
+                  isSelected
+                    ? 'bg-navy text-white border-gold shadow-lg ring-2 ring-gold/40 scale-[1.02]'
+                    : 'bg-white hover:bg-slate-50 text-navy border-slate-200 shadow-xs hover:border-slate-300'
+                }`}
+              >
+                {/* Top: Official Municipal Logo / Emblem + Selection Status */}
+                <div className="flex items-start justify-between gap-2 mb-2.5 w-full">
+                  <div className={`h-14 sm:h-16 px-3 py-1.5 rounded-2xl flex items-center justify-center transition-all ${
+                    isSelected
+                      ? 'bg-white p-2 shadow-sm ring-2 ring-gold/40'
+                      : 'bg-white p-2 shadow-xs border border-slate-200'
+                  }`}>
+                    <img
+                      src={c.logoBase64}
+                      alt={c.name_ge}
+                      className="max-h-12 max-w-[130px] object-contain"
+                    />
+                  </div>
+
+                  {/* Selection Status Badge */}
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider ${
+                      isSelected
+                        ? 'bg-gold text-navy font-black shadow-xs'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {isSelected ? '✓ არჩეულია' : 'ოფიციალური'}
+                    </span>
+                    {isSelected && (
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse ring-2 ring-white/40" />
+                    )}
+                  </div>
+                </div>
+
+                {/* City Details */}
+                <div className="w-full">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-black text-sm sm:text-base tracking-wide block">{c.name_ge}</span>
+                    <span className={`text-[10px] font-mono ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>
+                      ({c.name_en})
+                    </span>
+                  </div>
+                  <span className={`text-[10px] font-mono font-bold block mt-0.5 ${isSelected ? 'text-gold' : 'text-slate-500'}`}>
+                    {c.region_ge}
+                  </span>
+                  <span className={`text-[11px] font-medium mt-1 block truncate ${isSelected ? 'text-slate-200' : 'text-slate-600'}`}>
+                    {c.subtitle}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Selected City Municipal Official Brand Banner */}
+        {selectedCity === 'tbilisi' && (
+          <div className="p-3.5 sm:p-4 bg-gradient-to-r from-blue-50/90 via-white to-amber-50/40 rounded-2xl border border-blue-200/70 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <div className="h-12 sm:h-14 px-3 py-1 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center justify-center shrink-0">
+                <img
+                  src={TBILISI_PARKING_LOGO_B64}
+                  alt="თბილისის პარკინგი"
+                  className="max-h-10 max-w-[140px] object-contain"
+                />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs sm:text-sm font-black text-navy">
+                    თბილისის მუნიციპალური პარკინგი
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    ოფიციალური სისტემა
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  დედაქალაქის ზონალურ-საათობრივი პარკირების გადახდა • A, B, C ზონები
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+              <span className="px-2.5 py-1 rounded-xl bg-white text-navy font-mono font-bold text-xs border border-slate-200 shadow-2xs">
+                ⏱️ 15 წთ უფასო
+              </span>
+            </div>
+          </div>
+        )}
+
+        {selectedCity === 'batumi' && (
+          <div className="p-3.5 sm:p-4 bg-gradient-to-r from-teal-50/90 via-white to-blue-50/40 rounded-2xl border border-teal-200/70 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <div className="h-12 sm:h-14 px-3 py-1 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center justify-center shrink-0">
+                <img
+                  src={BATUMI_PARKING_LOGO_B64}
+                  alt="ბათუმის მუნიციპალური ინსპექცია"
+                  className="max-h-10 max-w-[140px] object-contain"
+                />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs sm:text-sm font-black text-navy">
+                    ბათუმის მუნიციპალური ინსპექცია & პარკინგი
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                    ოფიციალური სისტემა
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  ბათუმის სანაპირო და ცენტრალური ზონები • სტანდარტული და საათობრივი ტარიფები
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+              <span className="px-2.5 py-1 rounded-xl bg-white text-navy font-mono font-bold text-xs border border-slate-200 shadow-2xs">
+                ⏱️ 15 წთ უფასო
+              </span>
+            </div>
+          </div>
+        )}
+
+        {selectedCity === 'kutaisi' && (
+          <div className="p-3.5 sm:p-4 bg-gradient-to-r from-emerald-50/90 via-white to-amber-50/40 rounded-2xl border border-emerald-200/70 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <div className="h-12 sm:h-14 px-3 py-1 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center justify-center shrink-0">
+                <img
+                  src={KUTAISI_PARKING_LOGO_B64}
+                  alt="ქუთაისის მერია & პარკინგი"
+                  className="max-h-10 max-w-[140px] object-contain"
+                />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs sm:text-sm font-black text-navy">
+                    ქუთაისის მუნიციპალური პარკირების სამსახური
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    ოფიციალური სისტემა
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  იმერეთის რეგიონის ცენტრი • ცენტრალური მოედანი & მუნიციპალური ლოტები
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+              <span className="px-2.5 py-1 rounded-xl bg-white text-navy font-mono font-bold text-xs border border-slate-200 shadow-2xs">
+                ⏱️ 15 წთ უფასო
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ======================================================== */}
       {/* 2. DEDICATED PARKING PROFILE & ADDED VEHICLES CAROUSEL    */}
       {/* ======================================================== */}
-      <div className="p-5 sm:p-7 rounded-3xl neu-card shadow-neu-card border border-white space-y-5">
+      <div data-tour="parking-profile-passes" className="p-5 sm:p-7 rounded-3xl neu-card shadow-neu-card border border-white space-y-5">
         
         {/* Top: Profile Header & Active Car Info */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-5 border-b border-slate-200/80">

@@ -507,7 +507,7 @@ export const AiMechanicChat: React.FC<Props> = ({
       <div className="h-[500px] sm:h-[620px] flex flex-col rounded-3xl neu-card shadow-neu-card overflow-hidden relative border border-white">
         
         {/* Header Bar */}
-        <div className="p-3 sm:p-4 bg-white border-b border-slate-100 flex items-center justify-between">
+        <div data-tour="ai-chat-header" className="p-3 sm:p-4 bg-white border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5 sm:gap-3">
             <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full neu-circle flex items-center justify-center font-bold text-navy shadow-sm shrink-0">
               <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-gold" />
@@ -613,7 +613,7 @@ export const AiMechanicChat: React.FC<Props> = ({
 
         {/* Quick Prompts Slider / Pre-made answers */}
         {showQuickPrompts ? (
-          <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2 animate-fade-in">
+          <div data-tour="ai-chat-presets" className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2 animate-fade-in">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
               <span className="text-[10px] text-slate-400 font-bold shrink-0">მზა კითხვები:</span>
               {quickPrompts.map((qp, index) => (
@@ -646,7 +646,7 @@ export const AiMechanicChat: React.FC<Props> = ({
         )}
 
         {/* Chat Input Box */}
-        <div className="p-3 bg-white border-t border-slate-100 flex items-center gap-2">
+        <div data-tour="ai-chat-input" className="p-3 bg-white border-t border-slate-100 flex items-center gap-2">
           <button
             onClick={toggleSpeechRecognition}
             className={`w-11 h-11 rounded-full neu-circle flex items-center justify-center transition-all ${

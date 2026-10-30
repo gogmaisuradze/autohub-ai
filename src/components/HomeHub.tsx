@@ -32,6 +32,7 @@ interface Props {
   onNavigateToAiClarification?: (initialPrompt?: string) => void;
   bookings?: ServiceBookingItem[];
   isTourActive?: boolean;
+  orbitSpinTrigger?: number;
 }
 
 export const HomeHub: React.FC<Props> = ({
@@ -44,7 +45,8 @@ export const HomeHub: React.FC<Props> = ({
   onOpenFieldPrompt,
   onNavigateToAiClarification,
   bookings = [],
-  isTourActive = false
+  isTourActive = false,
+  orbitSpinTrigger
 }) => {
   const pendingFines = fines.filter(f => f.status === 'pending');
   const totalFineDiscounted = pendingFines.reduce((acc, f) => acc + f.discounted_amount_gel, 0);
@@ -82,8 +84,8 @@ export const HomeHub: React.FC<Props> = ({
     },
     {
       id: 'fines' as TabType,
-      title: 'ჯარიმები',
-      subtitle: 'ვიდეოჯარიმები, მოწმობა და ბილეთები',
+      title: 'საპატრულო',
+      subtitle: 'ვიდეოჯარიმები და მართვის მოწმობის ბილეთები',
       icon: ShieldAlert,
       badgeText: pendingFines.length > 0 ? `${pendingFines.length}` : 'OK',
       badgeColor: pendingFines.length > 0 ? 'bg-gold text-navy font-bold shadow-gold-soft' : 'bg-emerald-500 text-white font-bold shadow-sm',
@@ -187,7 +189,7 @@ export const HomeHub: React.FC<Props> = ({
       )}
 
       {/* 2. ORBITING SERVICES CAROUSEL (ორბიტის ფანჯარა ელეგანტური ბექგრაუნდით) */}
-      <div data-tour="orbit-carousel" className="scroll-mt-32 rounded-3xl sm:rounded-[2.2rem] px-2 py-3.5 sm:p-6 bg-gradient-to-b from-[#F8FAFD] via-[#F2F5F9] to-[#EAEFF6] border border-white/90 shadow-[inset_4px_4px_14px_rgba(135,148,168,0.28),inset_-4px_-4px_14px_rgba(255,255,255,1)] relative overflow-hidden no-scrollbar flex flex-col items-center justify-center">
+      <div data-tour="orbit-carousel" id="orbit-carousel-section" className="scroll-mt-32 rounded-3xl sm:rounded-[2.2rem] px-2 py-3.5 sm:p-6 bg-gradient-to-b from-[#F8FAFD] via-[#F2F5F9] to-[#EAEFF6] border border-white/90 shadow-[inset_4px_4px_14px_rgba(135,148,168,0.28),inset_-4px_-4px_14px_rgba(255,255,255,1)] relative overflow-hidden no-scrollbar flex flex-col items-center justify-center">
         <div className="w-full flex items-center justify-between px-2 sm:px-4 mb-2">
           <div>
             <span className="text-[11px] sm:text-xs font-bold text-gold uppercase tracking-wider block">
@@ -210,6 +212,7 @@ export const HomeHub: React.FC<Props> = ({
           onSelectDepartment={onSelectDepartment}
           vehicle={vehicle}
           isTourActive={isTourActive}
+          triggerSpin={orbitSpinTrigger}
         />
       </div>
 

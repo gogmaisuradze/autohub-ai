@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {convert} from './update-cameras.mjs';
+const data={elements:[{type:'node',id:1,lat:41.7,lon:44.8,tags:{highway:'speed_camera',maxspeed:'60'}},{type:'node',id:2,lat:41.8,lon:44.9},{type:'node',id:3,lat:41.9,lon:45,tags:{man_made:'surveillance'}},{type:'relation',id:9,tags:{type:'enforcement',enforcement:'traffic_signals'},members:[{type:'node',ref:2,role:'device'},{type:'node',ref:3,role:'from'}]}]};
+const geo=convert(data);
+assert.equal(geo.features.length,2);
+assert.deepEqual(geo.features[0].geometry.coordinates,[44.8,41.7]);
+assert.equal(geo.features[1].properties.enforcement,'traffic_signals');
+assert.throws(()=>convert({elements:[],remark:'timeout'}));
+assert.equal(convert({elements:[...data.elements,data.elements[0]]}).features.length,2);
+console.log('Camera conversion checks passed: coordinates, relation device, deduplication, surveillance exclusion, partial errors');

@@ -1,10 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { sounds } from '../../services/soundEffects';
+import { selectStudyRound, selectExamRound } from './adaptiveStudy';
+import {
+  ExamLearningAnalysis,
+  readLearningHistory,
+  recordLearningAnswer,
+  LearningHistory,
+  getAcademicRank,
+  setAcademicOverride,
+  ACADEMIC_RANKS,
+  AcademicRank
+} from './ExamLearningAnalysis';
 import {
   Award,
   Clock,
-  AlertCircle,
   CheckCircle2,
   XCircle,
   RotateCcw,
@@ -12,16 +22,21 @@ import {
   ArrowRight,
   ArrowLeft,
   Sparkles,
-  ExternalLink,
-  ChevronRight,
-  Play,
+  Zap,
+  Filter,
+  Search,
+  Check,
   CheckSquare,
   Square,
-  SlidersHorizontal,
-  Car,
-  Check,
   HelpCircle,
-  FileText
+  FileText,
+  Image as ImageIcon,
+  Flame,
+  ShieldCheck,
+  ChevronRight,
+  Crown,
+  GraduationCap,
+  AlertTriangle
 } from 'lucide-react';
 import { DRIVER_LICENSE_NOTEBOOK_URL } from './GarageModule';
 
@@ -77,6 +92,8 @@ export interface ExamQuestion {
   correct: number;
   exp: string;
   imageUrl?: string;
+  officialTicketId?: number;
+  imageFile?: string;
 }
 
 export const EXAM_QUESTIONS: ExamQuestion[] = [
@@ -213,19 +230,107 @@ export const EXAM_QUESTIONS: ExamQuestion[] = [
 ];
 
 export const DrivingExamWidget: React.FC = () => {
-  // Category Selector: default Category 1 = B, B1 (921 questions)
+  // Category Selector: B (921), A (760), C (954), D (845), AM (327)
   const [activeCategory, setActiveCategory] = useState<'B' | 'A' | 'C' | 'D' | 'AM'>('B');
-  
-  // Subject Selection State (Checkboxes for all 32 subjects)
+  // Media Filter: All, With Photo, Without Photo (Text only)
+  const [mediaFilter, setMediaFilter] = useState<'all' | 'with_image' | 'without_image'>('all');
+  // Topic search filter
+  const [topicSearch, setTopicSearch] = useState('');
+
+  const [learningHistory, setLearningHistory] = useState<LearningHistory>(() => readLearningHistory('B'));
+  const [historySaved, setHistorySaved] = useState(true);
+  const [sessionMode, setSessionMode] = useState<'practice' | 'exam'>('practice');
+  const answeredRef = useRef<Set<number>>(new Set());
+
+  // Ref to question container for smooth auto-scrolling
+  const questionCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setLearningHistory(readLearningHistory(activeCategory));
+    setHistorySaved(true);
+  }, [activeCategory]);
+
+  // Subject Selection State (Checkboxes for 32 subjects)
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<number[]>([1, 3, 4, 5, 10, 20]);
-  
+
   // App View State
   const [viewMode, setViewMode] = useState<'subject_picker' | 'exam' | 'practice' | 'results'>('subject_picker');
   const [currentIdx, setCurrentIdx] = useState<number>(0);
   const [errorsCount, setErrorsCount] = useState<number>(0);
-  const [timeLeft, setTimeLeft] = useState<number>(1800); // 30 mins
+  const [timeLeft, setTimeLeft] = useState<number>(1800); // 30 mins (exam mode)
   const [answers, setAnswers] = useState<{ [qIdx: number]: number }>({});
   const [activeQuestions, setActiveQuestions] = useState<ExamQuestion[]>(EXAM_QUESTIONS);
+
+  // Dynamic promotion / demotion alert state
+  const [academicAlert, setAcademicAlert] = useState<{
+    type: 'promoted' | 'demoted';
+    title: string;
+    desc: string;
+    regalia: string;
+    icon: string;
+  } | null>(null);
+
+  const questionCache = useRef<Record<string, Promise<ExamQuestion[]>>>({});
+  const [categoryQuestions, setCategoryQuestions] = useState<ExamQuestion[]>([]);
+  const [questionLoadError, setQuestionLoadError] = useState(false);
+
+  const loadCategoryQuestions = (category: string): Promise<ExamQuestion[]> => {
+    if (!questionCache.current[category]) {
+      questionCache.current[category] = fetch(`${import.meta.env.BASE_URL}data/driving-exam/questions-${category}.json`)
+        .then(response => {
+          if (!response.ok) throw new Error('Question bank unavailable');
+          return response.json();
+        })
+        .then((questions: ExamQuestion[]) => {
+          if (!Array.isArray(questions) || !questions.length) throw new Error('Empty question bank');
+          return questions;
+        })
+        .catch(error => {
+          delete questionCache.current[category];
+          throw error;
+        });
+    }
+    return questionCache.current[category];
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    setCategoryQuestions([]);
+    setQuestionLoadError(false);
+    loadCategoryQuestions(activeCategory)
+      .then(questions => {
+        if (!cancelled) setCategoryQuestions(questions);
+      })
+      .catch(() => {
+        if (!cancelled) setQuestionLoadError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCategory]);
+
+  // Filter pool by media type (All, Photos only, Text only)
+  const filterPoolByMedia = (pool: ExamQuestion[]) => {
+    if (mediaFilter === 'with_image') {
+      return pool.filter(q => !!q.imageFile || !!q.imageUrl);
+    }
+    if (mediaFilter === 'without_image') {
+      return pool.filter(q => !q.imageFile && !q.imageUrl);
+    }
+    return pool;
+  };
+
+  // Available subjects with question count based on current category
+  const availableSubjects = PRAVA_SUBJECTS.map(subject => ({
+    ...subject,
+    questionCount: categoryQuestions.filter(q => q.topicId === subject.id).length
+  }));
+
+  // Filtered subjects for search
+  const displayedSubjects = availableSubjects.filter(s =>
+    topicSearch.trim() === '' ||
+    s.title.toLowerCase().includes(topicSearch.toLowerCase())
+  );
 
   const timerRef = useRef<any>(null);
 
@@ -239,7 +344,7 @@ export const DrivingExamWidget: React.FC = () => {
   useEffect(() => {
     if (viewMode === 'exam') {
       timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
+        setTimeLeft(prev => {
           if (prev <= 1) {
             if (timerRef.current) clearInterval(timerRef.current);
             sounds.playWarning();
@@ -258,82 +363,191 @@ export const DrivingExamWidget: React.FC = () => {
     };
   }, [viewMode]);
 
-  // Toggle Single Subject
+  // ==========================================================
+  // AUTO-SCROLL TO QUESTION CARD ON QUESTION CHANGE
+  // ==========================================================
+  useEffect(() => {
+    if (viewMode === 'practice' || viewMode === 'exam') {
+      const scrollTimeout = setTimeout(() => {
+        if (questionCardRef.current) {
+          const topOffset = 85;
+          const targetY = questionCardRef.current.getBoundingClientRect().top + window.pageYOffset - topOffset;
+          window.scrollTo({
+            top: Math.max(0, targetY),
+            behavior: 'smooth'
+          });
+        }
+      }, 40);
+      return () => clearTimeout(scrollTimeout);
+    }
+  }, [currentIdx, viewMode]);
+
+  // Subject Selection Toggles
   const handleToggleSubject = (subjectId: number) => {
     sounds.playClick();
-    setSelectedSubjectIds(prev => 
+    setSelectedSubjectIds(prev =>
       prev.includes(subjectId)
         ? prev.filter(id => id !== subjectId)
         : [...prev, subjectId]
     );
   };
 
-  // Select All Subjects
   const handleSelectAll = () => {
     sounds.playClick();
-    setSelectedSubjectIds(PRAVA_SUBJECTS.map(s => s.id));
+    setSelectedSubjectIds(availableSubjects.map(s => s.id));
   };
 
-  // Clear All Subjects
   const handleClearAll = () => {
     sounds.playClick();
     setSelectedSubjectIds([]);
   };
 
-  // Start Practicing Selected Subjects
-  const handleStartSelectedPractice = () => {
+  // Helper to launch a test session
+  const startSession = (questions: ExamQuestion[], mode: 'exam' | 'practice', customTime = 1800) => {
+    setActiveQuestions(questions);
+    setCurrentIdx(0);
+    setErrorsCount(0);
+    setTimeLeft(customTime);
+    setAnswers({});
+    answeredRef.current.clear();
+    setSessionMode(mode);
+    setViewMode(mode);
+    setAcademicAlert(null);
+  };
+
+  // 1. Official 30-min Exam Simulator (30 questions, 30 min, max 3 errors, unpredictable mix)
+  const handleStartExam = async () => {
+    sounds.playClick();
+    let questionPool: ExamQuestion[];
+    try {
+      questionPool = await loadCategoryQuestions(activeCategory);
+    } catch {
+      setQuestionLoadError(true);
+      return;
+    }
+    const filtered = filterPoolByMedia(questionPool);
+    const pool = [...(filtered.length >= 30 ? filtered : questionPool)];
+    // Unpredictable official exam quota with anti-clustering
+    const generated = selectExamRound(pool, 30);
+    startSession(generated, 'exam', 1800);
+  };
+
+  // 2. Express Test (15 questions, quick 15 min check, unpredictable adaptive mix)
+  const handleStartExpress = async () => {
+    sounds.playClick();
+    let questionPool: ExamQuestion[];
+    try {
+      questionPool = await loadCategoryQuestions(activeCategory);
+    } catch {
+      setQuestionLoadError(true);
+      return;
+    }
+    const filtered = filterPoolByMedia(questionPool);
+    const pool = [...(filtered.length >= 15 ? filtered : questionPool)];
+    const generated = selectStudyRound(pool, learningHistory, 15);
+    startSession(generated, 'exam', 900);
+  };
+
+  // 3. Marathon Test (60 questions endurance, unpredictable spaced sequence)
+  const handleStartMarathon = async () => {
+    sounds.playClick();
+    let questionPool: ExamQuestion[];
+    try {
+      questionPool = await loadCategoryQuestions(activeCategory);
+    } catch {
+      setQuestionLoadError(true);
+      return;
+    }
+    const filtered = filterPoolByMedia(questionPool);
+    const pool = [...(filtered.length >= 60 ? filtered : questionPool)];
+    const generated = selectStudyRound(pool, learningHistory, Math.min(60, pool.length));
+    startSession(generated, 'practice', 3600);
+  };
+
+  // 4. Adaptive Smart Study (15 questions combining mistakes, unseen, revision)
+  const handleStartSmartStudy = async () => {
+    sounds.playClick();
+    try {
+      const questionPool = await loadCategoryQuestions(activeCategory);
+      const filtered = filterPoolByMedia(questionPool);
+      const pool = filtered.length >= 15 ? filtered : questionPool;
+      const questions = selectStudyRound(pool, learningHistory, 15);
+      startSession(questions, 'practice');
+    } catch {
+      setQuestionLoadError(true);
+    }
+  };
+
+  // 5. Review Unresolved Mistakes
+  const handleReviewMistakes = async (ids: number[]) => {
+    try {
+      const pool = await loadCategoryQuestions(activeCategory);
+      const idSet = new Set(ids);
+      const questions = pool.filter(q => idSet.has(q.id));
+      if (!questions.length) return;
+      startSession(questions, 'practice');
+    } catch {
+      setQuestionLoadError(true);
+    }
+  };
+
+  // 6. Selected Subjects Practice
+  const handleStartSelectedPractice = async () => {
     if (selectedSubjectIds.length === 0) {
-      alert('გთხოვთ მონიშნოთ მინიმუმ 1 საგანი / თემა დასაწყებად.');
+      alert('გთხოვთ მონიშნოთ მინიმუმ 1 თემა დასაწყებად.');
       return;
     }
     sounds.playClick();
-    const filtered = EXAM_QUESTIONS.filter(q => selectedSubjectIds.includes(q.topicId));
-    const questionsToUse = filtered.length > 0 ? filtered : EXAM_QUESTIONS;
-    setActiveQuestions(questionsToUse);
-    setCurrentIdx(0);
-    setErrorsCount(0);
-    setAnswers({});
-    setViewMode('practice');
+    try {
+      const questionPool = await loadCategoryQuestions(activeCategory);
+      const filteredMedia = filterPoolByMedia(questionPool);
+      const filtered = filteredMedia.filter(q => selectedSubjectIds.includes(q.topicId));
+      const poolToUse = filtered.length > 0 ? filtered : questionPool.filter(q => selectedSubjectIds.includes(q.topicId));
+      if (!poolToUse.length) {
+        alert('არჩეულ ფილტრში კითხვები არ მოიძებნა.');
+        return;
+      }
+      startSession(poolToUse, 'practice');
+    } catch {
+      setQuestionLoadError(true);
+    }
   };
 
-  // Single Subject Practice One-Touch
-  const handleStartSingleSubject = (subjectId: number) => {
+  // 7. Single Subject One-Touch
+  const handleStartSingleSubject = async (subjectId: number) => {
     sounds.playClick();
-    const filtered = EXAM_QUESTIONS.filter(q => q.topicId === subjectId);
-    const questionsToUse = filtered.length > 0 ? filtered : EXAM_QUESTIONS;
-    setActiveQuestions(questionsToUse);
-    setCurrentIdx(0);
-    setErrorsCount(0);
-    setAnswers({});
-    setViewMode('practice');
+    try {
+      const questionPool = await loadCategoryQuestions(activeCategory);
+      const filteredMedia = filterPoolByMedia(questionPool);
+      const filtered = filteredMedia.filter(q => q.topicId === subjectId);
+      const poolToUse = filtered.length > 0 ? filtered : questionPool.filter(q => q.topicId === subjectId);
+      if (!poolToUse.length) {
+        alert('ამ თემაში კითხვები არ მოიძებნა.');
+        return;
+      }
+      startSession(poolToUse, 'practice');
+    } catch {
+      setQuestionLoadError(true);
+    }
   };
 
-  // Start Official 30-min Exam Simulator Mode (30 min, 30 questions, max 3 errors)
-  const handleStartExam = () => {
+  // Reset academic status override (returns to calculated percentage)
+  const handleResetRankOverride = () => {
     sounds.playClick();
-    const pool = [...EXAM_QUESTIONS];
-    const generated = Array.from({ length: 30 }, (_, i) => {
-      const template = pool[i % pool.length];
-      return {
-        ...template,
-        id: i + 1
-      };
-    });
-
-    setActiveQuestions(generated);
-    setCurrentIdx(0);
-    setErrorsCount(0);
-    setTimeLeft(1800);
-    setAnswers({});
-    setViewMode('exam');
+    setAcademicOverride(activeCategory, null);
+    setAcademicAlert(null);
   };
 
   // Answer handler
   const handleAnswer = (optionIdx: number) => {
-    if (answers[currentIdx] !== undefined) return;
+    if (answers[currentIdx] !== undefined || answeredRef.current.has(currentIdx)) return;
+    answeredRef.current.add(currentIdx);
 
     const currentQ = activeQuestions[currentIdx];
     const isCorrect = optionIdx === currentQ.correct;
+    const progress = recordLearningAnswer(activeCategory, currentQ.id, currentQ.topicId, isCorrect, learningHistory);
+    setLearningHistory(progress.history);
+    setHistorySaved(progress.saved);
 
     setAnswers(prev => ({ ...prev, [currentIdx]: optionIdx }));
 
@@ -344,8 +558,16 @@ export const DrivingExamWidget: React.FC = () => {
       const newErrors = errorsCount + 1;
       setErrorsCount(newErrors);
 
-      // In exam mode: max 3 errors. 4th error = FAIL
+      // In exam mode: max 3 errors. 4th error = FAIL & Demotion to Chainiki
       if (viewMode === 'exam' && newErrors >= 4) {
+        setAcademicOverride(activeCategory, 'chainiki');
+        setAcademicAlert({
+          type: 'demoted',
+          title: 'გაქვეითება: „ჩაინიკი მძღოლი“ 🫖',
+          desc: 'გამოცდაზე დაფიქსირდა 4 კრიტიკული შეცდომა! თქვენ ჩამოქვეითდით ყველაზე დაბალ საფეხურზე.',
+          regalia: ACADEMIC_RANKS.chainiki.regalia,
+          icon: '🫖'
+        });
         if (timerRef.current) clearInterval(timerRef.current);
         setTimeout(() => {
           setViewMode('results');
@@ -361,11 +583,35 @@ export const DrivingExamWidget: React.FC = () => {
     if (currentIdx < activeQuestions.length - 1) {
       setCurrentIdx(prev => prev + 1);
     } else {
-      if (viewMode === 'exam') {
-        if (errorsCount <= 3) {
-          confetti({ particleCount: 80, spread: 65, origin: { y: 0.6 } });
-          sounds.playSuccess();
-        }
+      // Round completed - evaluate promotion / demotion
+      const totalAns = Object.keys(answers).length;
+      const totalErr = errorsCount;
+      const isFlawless = totalErr === 0 && totalAns >= 10;
+
+      if (isFlawless) {
+        // 100% flawless round -> Highest Academic Rank & Regalia!
+        setAcademicOverride(activeCategory, 'akademikosi');
+        setAcademicAlert({
+          type: 'promoted',
+          title: 'სრული ტრიუმფი: „საგზაო მოძრაობის აკადემიკოსი“ 👑',
+          desc: `საოცარია! ${totalAns}-დან ${totalAns}-ვე კითხვას უშეცდომოდ გაეცით პასუხი (100% სიზუსტე)! გამოუცნობმა ალგორითმმა ვერაფერი დაგაკლოთ — მოგენიჭათ უმაღლესი რეგალია.`,
+          regalia: ACADEMIC_RANKS.akademikosi.regalia,
+          icon: '👑'
+        });
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+        sounds.playSuccess();
+      } else if (viewMode === 'exam' && totalErr <= 3) {
+        confetti({ particleCount: 80, spread: 65, origin: { y: 0.6 } });
+        sounds.playSuccess();
+      } else if (totalErr >= 4) {
+        setAcademicOverride(activeCategory, 'chainiki');
+        setAcademicAlert({
+          type: 'demoted',
+          title: 'გაქვეითება: „ჩაინიკი მძღოლი“ 🫖',
+          desc: 'შეცდომების რაოდენობა კრიტიკულია (4+ შეცდომა). თქვენ გაქვეითდით ყველაზე დაბალ საფეხურზე.',
+          regalia: ACADEMIC_RANKS.chainiki.regalia,
+          icon: '🫖'
+        });
       }
       setViewMode('results');
     }
@@ -379,7 +625,7 @@ export const DrivingExamWidget: React.FC = () => {
     }
   };
 
-  // Return to Subject Picker
+  // Return to Subject Picker / Hub
   const handleToSubjectPicker = () => {
     sounds.playClick();
     if (timerRef.current) clearInterval(timerRef.current);
@@ -391,7 +637,7 @@ export const DrivingExamWidget: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = ev => {
       const base64 = ev.target?.result as string;
       setActiveQuestions(prev => prev.map(q => q.id === qId ? { ...q, imageUrl: base64 } : q));
       sounds.playSuccess();
@@ -400,10 +646,16 @@ export const DrivingExamWidget: React.FC = () => {
   };
 
   const currentQ = activeQuestions[currentIdx] || activeQuestions[0];
+  const questionImageUrl = currentQ?.imageUrl || (currentQ?.imageFile
+    ? `${import.meta.env.BASE_URL}data/driving-exam/images/${encodeURIComponent(currentQ.imageFile)}`
+    : undefined);
   const currentAnswer = answers[currentIdx];
   const isAnswered = currentAnswer !== undefined;
 
-  // Keyboard ArrowLeft / ArrowRight navigation for exam questions
+  // Find topic name for current question
+  const currentTopic = PRAVA_SUBJECTS.find(s => s.id === currentQ?.topicId);
+
+  // Keyboard Navigation: keys 1..4 for options, Enter/Right for next, Left for prev
   useEffect(() => {
     if (viewMode !== 'practice' && viewMode !== 'exam') return;
 
@@ -418,292 +670,452 @@ export const DrivingExamWidget: React.FC = () => {
         return;
       }
 
-      if (e.key === 'ArrowLeft') {
-        if (viewMode === 'practice' && currentIdx > 0) {
-          e.preventDefault();
-          handlePrev();
+      // Keys 1, 2, 3, 4
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        const optIdx = parseInt(e.key, 10) - 1;
+        if (currentQ && optIdx < currentQ.options.length) {
+          if (answers[currentIdx] === undefined && !answeredRef.current.has(currentIdx)) {
+            e.preventDefault();
+            handleAnswer(optIdx);
+          }
         }
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
         if (isAnswered) {
           e.preventDefault();
           handleNext();
+        }
+      } else if (e.key === 'ArrowLeft') {
+        if (viewMode === 'practice' && currentIdx > 0) {
+          e.preventDefault();
+          handlePrev();
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [viewMode, currentIdx, isAnswered, activeQuestions.length]);
+  }, [viewMode, currentIdx, isAnswered, activeQuestions, answers]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = (timeLeft % 60).toString().padStart(2, '0');
-  const isPassed = errorsCount <= 3 && timeLeft > 0;
+  const answeredCount = Object.keys(answers).length;
+  const correctCount = Object.entries(answers).filter(
+    ([index, option]) => activeQuestions[Number(index)]?.correct === option
+  ).length;
+  const isPassed = answeredCount === activeQuestions.length && errorsCount <= 3 && timeLeft > 0;
+
+  // Cumulative learning calculations & Academic Rank
+  const learningRecords = Object.values(learningHistory);
+  const cumulativeAttempts = learningRecords.reduce((acc, r) => acc + r.attempts, 0);
+  const cumulativeMistakes = learningRecords.reduce((acc, r) => acc + r.mistakes, 0);
+  const cumulativeCorrect = Math.max(0, cumulativeAttempts - cumulativeMistakes);
+  const academicRank: AcademicRank = getAcademicRank(cumulativeAttempts, cumulativeCorrect, activeCategory);
 
   // Selected Questions Sum
-  const totalSelectedQuestionCount = PRAVA_SUBJECTS
+  const totalSelectedQuestionCount = availableSubjects
     .filter(s => selectedSubjectIds.includes(s.id))
     .reduce((acc, s) => acc + s.questionCount, 0);
 
+  // Category counts
+  const totalCategoryCount = categoryQuestions.length;
+  const withPhotoCount = categoryQuestions.filter(q => !!q.imageFile || !!q.imageUrl).length;
+  const withoutPhotoCount = categoryQuestions.filter(q => !q.imageFile && !q.imageUrl).length;
+
   return (
-    <div id="driving-exam-widget" className="space-y-6">
+    <div id="driving-exam-widget" className="space-y-4">
 
       {/* ======================================================== */}
-      {/* 1. PRAVA.GE CLONE: SUBJECT PICKER (საგნების არჩევა)     */}
+      {/* 1. TOP LEARNING ANALYSIS & PROGRESS DIAGRAM              */}
+      {/* ======================================================== */}
+      {(viewMode === 'subject_picker' || viewMode === 'results') && (
+        <div data-tour="exam-academic-analysis">
+          <ExamLearningAnalysis
+            history={learningHistory}
+            subjects={PRAVA_SUBJECTS}
+            total={categoryQuestions.length}
+            onPractice={handleReviewMistakes}
+            saved={historySaved}
+            category={activeCategory}
+          />
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 2. SUBJECT PICKER & TICKET CONFIGURATION HUB             */}
       {/* ======================================================== */}
       {viewMode === 'subject_picker' && (
-        <div className="p-5 sm:p-7 rounded-3xl neu-card shadow-neu-card border border-white space-y-6">
-          
-          {/* Header Bar: Prava.ge Brand + Notebook & External Links */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-200/80">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-navy via-slate-800 to-navy text-gold flex items-center justify-center font-black text-xl shadow-md">
-                🚦
+        <section className="p-4 sm:p-6 rounded-3xl neu-card border border-white/80 space-y-5 shadow-neu-card">
+
+          {/* Header & Category Switcher */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🚗</span>
+                <h2 className="text-lg sm:text-xl font-black text-navy tracking-tight">
+                  საგამოცდო ბილეთების პაკეტები & თემები
+                </h2>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-black text-navy tracking-tight">
-                    prava.ge • საგნების არჩევა (Subject Picker)
-                  </h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    Category 1
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  საქართველოს შსს მომსახურების სააგენტოს თეორიული გამოცდის მოსამზადებელი პორტალი
-                </p>
-              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                საქართველოს შსს მომსახურების სააგენტოს ოფიციალური საგამოცდო ბაზა 2026
+              </p>
             </div>
 
-            {/* Quick Link Buttons: Google Notebook & prava.ge direct */}
-            <div className="flex items-center gap-2">
-              <a
-                href={DRIVER_LICENSE_NOTEBOOK_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => sounds.playClick()}
-                className="btn-stitch-primary px-3.5 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 shadow-sm"
-                title="ჩემი პრავის კონსპექტი Google Notebook-ში"
-              >
-                <BookOpen size={14} />
-                <span>ჩემი კონსპექტი ↗</span>
-                <ExternalLink size={12} />
-              </a>
-
-              <a
-                href={PRAVA_GE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => sounds.playClick()}
-                className="btn-stitch-soft px-3.5 py-2 text-xs font-bold text-navy hover:text-gold flex items-center gap-1.5"
-                title="prava.ge-ს ორიგინალი ვებგვერდი"
-              >
-                <span>prava.ge ↗</span>
-                <ExternalLink size={12} />
-              </a>
-            </div>
-          </div>
-
-          {/* Category Switcher Tabs (B, B1 / A, A1 / C, C1 / D, D1 / AM) */}
-          <div className="space-y-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              მართვის მოწმობის კატეგორიები:
-            </span>
-            <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200/80">
+            {/* Category Selector Tabs */}
+            <div data-tour="exam-category-tabs" className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-slate-100/90 border border-slate-200/80">
               {[
-                { id: 'B' as const, label: 'B, B1 კატეგორია (მსუბუქი ავტომობილი)', count: '921 ბილეთი' },
-                { id: 'AM' as const, label: 'AM (მოპედი)', count: '328 ბილეთი' },
-                { id: 'A' as const, label: 'A, A1 (მოტოციკლი)', count: '864 ბილეთი' },
-                { id: 'C' as const, label: 'C, C1 (სატვირთო)', count: '450 ბილეთი' },
-                { id: 'D' as const, label: 'D, D1 (ავტობუსი)', count: '380 ბილეთი' }
-              ].map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    sounds.playClick();
-                    setActiveCategory(cat.id);
-                  }}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                    activeCategory === cat.id
-                      ? 'bg-navy text-gold shadow-sm'
-                      : 'text-slate-600 hover:text-navy hover:bg-white/80'
-                  }`}
-                >
-                  <span>{cat.label}</span>
-                  <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                    activeCategory === cat.id ? 'bg-gold/20 text-gold' : 'bg-slate-200 text-slate-500'
-                  }`}>
-                    {cat.count}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Action Toolbar: Multi-select controls & Quick Exam Start */}
-          <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleSelectAll}
-                className="btn-stitch-soft px-3 py-1.5 text-xs font-bold flex items-center gap-1.5"
-              >
-                <CheckSquare size={14} className="text-emerald-600" />
-                <span>ყველას მონიშვნა</span>
-              </button>
-
-              <button
-                onClick={handleClearAll}
-                className="btn-stitch-soft px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1.5"
-              >
-                <Square size={14} />
-                <span>გასუფთავება</span>
-              </button>
-
-              <span className="text-xs font-mono font-bold text-slate-600 ml-1">
-                მონიშნულია: <strong className="text-navy">{selectedSubjectIds.length}</strong> / 32 საგანი
-                <span className="text-slate-400 ml-1">({totalSelectedQuestionCount} ბილეთი)</span>
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              {/* Practice Selected Subjects Button */}
-              <button
-                onClick={handleStartSelectedPractice}
-                disabled={selectedSubjectIds.length === 0}
-                className="btn-stitch-primary px-5 py-2.5 text-xs font-black flex items-center justify-center gap-2 flex-1 sm:flex-none shadow-gold-soft disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Play size={15} className="fill-navy" />
-                <span>შერჩეულის გავლა ({totalSelectedQuestionCount} ბილეთი)</span>
-              </button>
-
-              {/* Real Exam Simulator CTA */}
-              <button
-                onClick={handleStartExam}
-                className="btn-stitch-navy px-5 py-2.5 text-xs font-black flex items-center justify-center gap-2 flex-1 sm:flex-none shadow-sm"
-              >
-                <Clock size={15} className="text-gold" />
-                <span>⏱️ გამოცდა (30 წთ)</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Prava.ge Subject Cards Grid (32 Official Subjects) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <SlidersHorizontal size={14} className="text-gold" />
-                <span>32 ოფიციალური საგამოცდო საგანი / თემა</span>
-              </h4>
-              <span className="text-xs font-mono font-bold text-slate-400">
-                სულ 921 ბილეთი B კატეგორიაში
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {PRAVA_SUBJECTS.map((subject) => {
-                const isSelected = selectedSubjectIds.includes(subject.id);
+                { cat: 'B', label: 'B / B1', desc: 'მსუბუქი', count: 921, icon: '🚗' },
+                { cat: 'A', label: 'A / A1', desc: 'მოტოციკლი', count: 760, icon: '🏍️' },
+                { cat: 'C', label: 'C / C1', desc: 'სატვირთო', count: 954, icon: '🚚' },
+                { cat: 'D', label: 'D / D1', desc: 'ავტობუსი', count: 845, icon: '🚌' },
+                { cat: 'AM', label: 'AM', desc: 'მოპედი', count: 327, icon: '🛵' }
+              ].map(item => {
+                const isActive = activeCategory === item.cat;
                 return (
-                  <div
-                    key={subject.id}
-                    onClick={() => handleToggleSubject(subject.id)}
-                    className={`p-3.5 rounded-2xl transition-all cursor-pointer border flex flex-col justify-between group ${
-                      isSelected
-                        ? 'bg-amber-50/70 border-gold shadow-sm ring-1 ring-gold/40'
-                        : 'bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-xs'
+                  <button
+                    key={item.cat}
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setActiveCategory(item.cat as typeof activeCategory);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      isActive
+                        ? 'bg-navy text-white shadow-xs'
+                        : 'text-slate-600 hover:text-navy hover:bg-white/60'
                     }`}
                   >
-                    <div>
-                      {/* Card Top: Checkbox & Question count badge */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
-                          isSelected ? 'bg-gold text-navy' : 'border border-slate-300 text-transparent'
-                        }`}>
-                          <Check size={13} strokeWidth={3} />
-                        </div>
-                        <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 font-mono text-[10px] font-bold group-hover:bg-gold/20 group-hover:text-amber-900 transition-colors">
-                          {subject.questionCount} ბილეთი
-                        </span>
-                      </div>
-
-                      {/* Subject Title */}
-                      <h5 className="font-extrabold text-xs text-navy leading-snug group-hover:text-amber-900 transition-colors line-clamp-2">
-                        {subject.title}
-                      </h5>
-                    </div>
-
-                    {/* Quick Single Subject Launch */}
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400 font-bold">
-                        {isSelected ? '● მონიშნულია' : 'დააჭირეთ მონიშვნას'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartSingleSubject(subject.id);
-                        }}
-                        className="px-2 py-1 rounded-lg text-[10px] font-black text-navy bg-white hover:bg-gold hover:text-navy border border-slate-200 transition-colors flex items-center gap-1 shadow-2xs"
-                        title="ამ კონკრეტული საგნის გავლა"
-                      >
-                        <span>გავლა</span>
-                        <ChevronRight size={12} />
-                      </button>
-                    </div>
-                  </div>
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {item.count}
+                    </span>
+                  </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Footer note on legislation */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-3 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span><strong>prava.ge სინქრონიზაცია:</strong> ბილეთები შეესაბამება საქართველოს საგზაო მოძრაობის კანონსა და მომსახურების სააგენტოს ბაზას.</span>
+          {/* Media Type Filter Strip */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50/80 border border-slate-100">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+              <Filter size={14} className="text-gold" />
+              <span>ბილეთების ტიპი:</span>
             </div>
-            <a
-              href={PRAVA_GE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] font-mono font-bold text-navy hover:text-gold flex items-center gap-1"
-            >
-              <span>prava.ge/subjectpicker?category=1</span>
-              <ExternalLink size={11} />
-            </a>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { key: 'all', label: 'ყველა ბილეთი', count: totalCategoryCount || 921, icon: '🌐' },
+                { key: 'with_image', label: 'ფოტოებიანი ბილეთები', count: withPhotoCount || 588, icon: '📷' },
+                { key: 'without_image', label: 'ტექსტური / ულითო ბილეთები', count: withoutPhotoCount || 333, icon: '📝' }
+              ].map(f => {
+                const isSelected = mediaFilter === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setMediaFilter(f.key as typeof mediaFilter);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                      isSelected
+                        ? 'bg-white text-navy border-gold shadow-xs ring-1 ring-gold/40'
+                        : 'bg-white/60 text-slate-600 border-slate-200/70 hover:bg-white'
+                    }`}
+                  >
+                    <span>{f.icon}</span>
+                    <span>{f.label}</span>
+                    <span className="text-[10px] font-mono text-slate-400">({f.count})</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-        </div>
+          {/* ======================================================== */}
+          {/* Quick Start Mode Cards Grid                              */}
+          {/* ======================================================== */}
+          <div data-tour="exam-modes-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Card 1: Official Exam Simulator */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-navy via-slate-900 to-navy text-white space-y-3 relative overflow-hidden shadow-md flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-lg bg-gold/20 text-gold text-[10px] font-black uppercase tracking-wider">
+                    ოფიციალური
+                  </span>
+                  <Award size={16} className="text-gold" />
+                </div>
+                <h3 className="text-base font-black">გამოცდის სიმულაცია</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  30 კითხვა · 30 წუთი · მაქს. 3 შეცდომა. ზუსტად როგორც სააგენტოში.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleStartExam}
+                className="w-full mt-2 py-2.5 rounded-xl bg-gold hover:bg-gold/90 text-navy font-black text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <span>დაწყება (30 წთ)</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+
+            {/* Card 2: Express Test */}
+            <div className="p-4 rounded-2xl bg-white/90 border border-slate-200/80 space-y-3 shadow-xs flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-lg bg-blue-100 text-blue-800 text-[10px] font-black uppercase tracking-wider">
+                    სწრაფი
+                  </span>
+                  <Zap size={16} className="text-blue-600" />
+                </div>
+                <h3 className="text-base font-black text-navy">ექსპრეს ტესტი</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  15 კითხვა · 15 წუთი. იდეალურია სწრაფი ცოდნის შესამოწმებლად.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleStartExpress}
+                className="w-full mt-2 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy font-black text-xs transition-colors flex items-center justify-center gap-1.5"
+              >
+                <span>ექსპრეს რაუნდი</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+
+            {/* Card 3: Smart Adaptive Study */}
+            <div className="p-4 rounded-2xl bg-white/90 border border-slate-200/80 space-y-3 shadow-xs flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider">
+                    სმარტ-სწავლა
+                  </span>
+                  <Sparkles size={16} className="text-amber-500" />
+                </div>
+                <h3 className="text-base font-black text-navy">ადაპტური სწავლა</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  15 კითხვა: თქვენი შეცდომები, ახალი ბილეთები და განმეორება.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleStartSmartStudy}
+                className="w-full mt-2 py-2.5 rounded-xl btn-stitch-primary font-black text-xs transition-colors flex items-center justify-center gap-1.5"
+              >
+                <span>სწავლის დაწყება</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+
+            {/* Card 4: Marathon */}
+            <div className="p-4 rounded-2xl bg-white/90 border border-slate-200/80 space-y-3 shadow-xs flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-lg bg-rose-100 text-rose-800 text-[10px] font-black uppercase tracking-wider">
+                    გამძლეობა
+                  </span>
+                  <Flame size={16} className="text-rose-600" />
+                </div>
+                <h3 className="text-base font-black text-navy">მარათონი (60 ბილეთი)</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  ინტენსიური ვარჯიში 60 უწყვეტი ბილეთით შეცდომების გარეშე.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleStartMarathon}
+                className="w-full mt-2 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy font-black text-xs transition-colors flex items-center justify-center gap-1.5"
+              >
+                <span>მარათონის დაწყება</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* ======================================================== */}
+          {/* Topic-by-Topic Study (32 Topics)                         */}
+          {/* ======================================================== */}
+          <div data-tour="exam-topics-grid" className="space-y-3 pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-black text-navy uppercase tracking-wider flex items-center gap-2">
+                  <BookOpen size={16} className="text-gold" />
+                  <span>თემატური სწავლება (32 ოფიციალური თემა)</span>
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  მონიშნეთ თქვენთვის სასურველი თემები ან გაიარეთ თითოეული ცალ-ცალკე
+                </p>
+              </div>
+
+              {/* Topic Search & Actions */}
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={topicSearch}
+                    onChange={e => setTopicSearch(e.target.value)}
+                    placeholder="თემის ძიება..."
+                    className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs bg-white text-navy focus:outline-none focus:ring-1 focus:ring-navy w-36 sm:w-44"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 transition-colors"
+                >
+                  ყველა
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 transition-colors"
+                >
+                  გასუფთავება
+                </button>
+              </div>
+            </div>
+
+            {/* Topics Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-96 overflow-y-auto pr-1 scrollbar-thin">
+              {displayedSubjects.map(sub => {
+                const isSelected = selectedSubjectIds.includes(sub.id);
+                return (
+                  <div
+                    key={sub.id}
+                    onClick={() => handleToggleSubject(sub.id)}
+                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+                      isSelected
+                        ? 'bg-navy/5 border-navy/30 ring-1 ring-navy/20'
+                        : 'bg-white border-slate-200/80 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-navy text-white' : 'border border-slate-300 text-transparent'
+                      }`}>
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-navy truncate" title={sub.title}>
+                          {sub.title}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          {sub.questionCount} ბილეთი
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleStartSingleSubject(sub.id);
+                      }}
+                      className="shrink-0 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-gold/20 hover:text-navy text-[10px] font-black text-slate-600 transition-colors"
+                      title="ამ თემის გავლა"
+                    >
+                      დაწყება →
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom Practice Selected Button */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <span className="text-xs text-slate-500 font-medium">
+                მონიშნულია <strong className="text-navy">{selectedSubjectIds.length}</strong> თემა ({totalSelectedQuestionCount} ბილეთი)
+              </span>
+
+              <button
+                type="button"
+                onClick={handleStartSelectedPractice}
+                disabled={selectedSubjectIds.length === 0}
+                className="btn-stitch-primary px-5 py-2.5 text-xs font-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <span>მონიშნული თემების გავლა ({totalSelectedQuestionCount})</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+
+          {questionLoadError && (
+            <p role="alert" className="text-xs text-rose-600 font-bold">
+              ბილეთების ჩატვირთვა ვერ მოხერხდა. გთხოვთ გადაამოწმოთ კავშირი და სცადოთ ხელახლა.
+            </p>
+          )}
+        </section>
       )}
 
       {/* ======================================================== */}
-      {/* 2. QUESTION PRACTICE & EXAM RUNNER                      */}
+      {/* 3. QUESTION PRACTICE & EXAM RUNNER                      */}
       {/* ======================================================== */}
       {(viewMode === 'exam' || viewMode === 'practice') && (
-        <div className="p-6 sm:p-8 rounded-3xl neu-card shadow-neu-card border border-white space-y-6 animate-fade-in">
-          
+        <div
+          ref={questionCardRef}
+          className="p-3 sm:p-6 rounded-3xl neu-card shadow-neu-card border border-white/80 space-y-4 animate-fade-in"
+        >
           {/* Top Control Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
             <button
               onClick={handleToSubjectPicker}
-              className="btn-stitch-soft px-4 py-2 text-xs font-bold flex items-center gap-1.5"
+              className="btn-stitch-soft px-3.5 py-2 text-xs font-bold flex items-center gap-1.5 transition-colors"
             >
               <ArrowLeft size={14} />
-              <span>← საგნების არჩევა (prava.ge)</span>
+              <span>← მთავარზე დაბრუნება</span>
             </button>
 
-            {/* Badges for Exam vs Practice */}
-            <div className="flex items-center gap-2.5">
+            {/* Badges for Exam vs Practice & Academic Rank */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Academic Rank Pill */}
+              <div
+                className={`px-3 py-1.5 rounded-2xl text-xs font-black flex items-center gap-1.5 shadow-xs border ${academicRank.badgeColor}`}
+                title={`აკადემიური სტატუსი: ${academicRank.title} (${academicRank.regalia})`}
+              >
+                <span>{academicRank.icon}</span>
+                <span className="hidden sm:inline">{academicRank.title}</span>
+              </div>
+
+              {/* Dynamic Live Round Score Counter */}
+              <div
+                className="px-3 py-1.5 rounded-2xl bg-white text-navy border border-slate-200/90 font-mono font-bold text-xs flex items-center gap-1.5 shadow-2xs"
+                title="ამ რაუნდში სწორი პასუხების რაოდენობა"
+              >
+                <span>🎯</span>
+                <span>{correctCount} / {answeredCount} სწორი</span>
+                {answeredCount > 0 && (
+                  <span className="text-[10px] text-slate-400">
+                    ({Math.round((correctCount / answeredCount) * 100)}%)
+                  </span>
+                )}
+              </div>
+
+              {/* Unpredictable Adaptive Algorithm Badge */}
+              <div
+                className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-2xl bg-amber-50 text-amber-900 text-[11px] font-bold border border-amber-200/80 shadow-2xs"
+                title="გამოუცნობი ალგორითმი: ანტი-კლასტერირება, მახე-კითხვები და გადანაცვლებული ბილეთები"
+              >
+                <Sparkles size={12} className="text-gold" />
+                <span>გამოუცნობი ალგორითმი</span>
+              </div>
+
               {viewMode === 'exam' && (
                 <>
-                  <div className={`px-3.5 py-1.5 rounded-2xl font-mono font-black text-xs flex items-center gap-1.5 shadow-sm ${
+                  <div className={`px-3 py-1.5 rounded-2xl font-mono font-black text-xs flex items-center gap-1.5 shadow-xs ${
                     timeLeft < 300
-                      ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                      ? 'bg-rose-100 text-rose-800 border border-rose-300 animate-pulse'
                       : 'bg-amber-100 text-amber-900 border border-amber-300'
                   }`}>
                     <Clock size={14} />
                     <span>⏱️ {minutes}:{seconds}</span>
                   </div>
 
-                  <div className={`px-3.5 py-1.5 rounded-2xl font-mono font-black text-xs flex items-center gap-1.5 shadow-sm ${
+                  <div className={`px-3 py-1.5 rounded-2xl font-mono font-black text-xs flex items-center gap-1.5 shadow-xs ${
                     errorsCount >= 3
                       ? 'bg-rose-500 text-white'
                       : errorsCount > 0
@@ -717,79 +1129,136 @@ export const DrivingExamWidget: React.FC = () => {
               )}
 
               {viewMode === 'practice' && (
-                <div className="px-3.5 py-1.5 rounded-2xl bg-blue-100 text-blue-900 font-bold text-xs">
-                  📖 შერჩეული საგნების სწავლის რეჟიმი
+                <div className="px-3 py-1.5 rounded-2xl bg-blue-100 text-blue-900 font-bold text-xs flex items-center gap-1.5">
+                  <BookOpen size={14} />
+                  <span>სასწავლო რაუნდი · კატეგორია {activeCategory}</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Progress Bar & Counter */}
-          <div className="space-y-2">
+          {/* Question Navigator Strip (1..30 pills) */}
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs font-bold text-slate-500">
               <span className="text-navy font-black">
                 კითხვა {currentIdx + 1} / {activeQuestions.length}
               </span>
-              <span className="font-mono">
-                {Math.round(((currentIdx + 1) / activeQuestions.length) * 100)}% შესრულებულია
+              <span className="font-mono text-slate-600">
+                {answeredCount}/{activeQuestions.length} ({Math.round((answeredCount / activeQuestions.length) * 100)}%)
               </span>
             </div>
 
-            <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+            {/* Progress Bar */}
+            <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
               <div
                 className="h-full bg-gold transition-all duration-300 rounded-full"
-                style={{ width: `${((currentIdx + 1) / activeQuestions.length) * 100}%` }}
+                style={{ width: `${(answeredCount / activeQuestions.length) * 100}%` }}
               />
+            </div>
+
+            {/* Numbered Pills Horizontal Scroll Strip */}
+            <div className="flex items-center gap-1.5 overflow-x-auto py-2 px-1 scrollbar-thin">
+              {activeQuestions.map((q, idx) => {
+                const isCurrent = idx === currentIdx;
+                const ans = answers[idx];
+                const isAns = ans !== undefined;
+                const isCor = isAns && ans === q.correct;
+
+                let pillColor = 'bg-white text-slate-700 border-slate-200 hover:border-slate-300';
+                if (isCurrent) {
+                  pillColor = 'bg-navy text-white font-black ring-2 ring-gold shadow-xs border-navy';
+                } else if (isAns) {
+                  if (viewMode === 'exam') {
+                    pillColor = 'bg-slate-200 text-slate-800 border-slate-300 font-bold';
+                  } else {
+                    pillColor = isCor
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold'
+                      : 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
+                  }
+                }
+
+                return (
+                  <button
+                    key={q.id || idx}
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setCurrentIdx(idx);
+                    }}
+                    className={`h-7 min-w-[28px] px-1.5 shrink-0 rounded-lg text-xs font-mono transition-all flex items-center justify-center border shadow-2xs ${pillColor}`}
+                    title={`კითხვა #${idx + 1}`}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Question Text Card */}
-          <div className="p-5 sm:p-6 rounded-2xl neu-surface border border-white space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono font-bold uppercase text-gold">
-                ● ბილეთის შეკითხვა #{currentQ.id} (თემა #{currentQ.topicId})
-              </span>
+          {/* ======================================================== */}
+          {/* Question Text & Media Card                               */}
+          {/* ======================================================== */}
+          <div className="p-4 sm:p-6 rounded-2xl neu-surface border border-white space-y-3">
+            {/* Meta tags: Ticket ID, Topic, Photo status */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100/90 pb-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-mono font-bold uppercase text-gold bg-gold/10 px-2 py-0.5 rounded-md">
+                  ● ბილეთი #{currentQ.id}
+                </span>
+                <span className="text-[11px] font-bold text-slate-600">
+                  {currentTopic ? currentTopic.title : `თემა #${currentQ.topicId}`}
+                </span>
+                <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                  {questionImageUrl ? '📷 ილუსტრაციით' : '📝 ტექსტური ბილეთი'}
+                </span>
+              </div>
+
               <label className="cursor-pointer text-[11px] font-bold text-navy hover:text-gold flex items-center gap-1.5 transition-colors">
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => handleUploadQuestionImage(e, currentQ.id)}
+                  onChange={e => handleUploadQuestionImage(e, currentQ.id)}
                 />
                 <span className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-gold/20 text-slate-700 hover:text-navy border border-slate-200 transition-colors">
-                  {currentQ.imageUrl ? 'ფოტოს შეცვლა 📷' : '+ ფოტოს მიბმა 📷'}
+                  {questionImageUrl ? 'ფოტოს შეცვლა 📷' : '+ ფოტოს მიბმა 📷'}
                 </span>
               </label>
             </div>
 
-            {/* Optional Road Illustration / Diagram Photo */}
-            {currentQ.imageUrl && (
-              <div className="rounded-2xl overflow-hidden border border-slate-200/90 max-h-72 flex items-center justify-center bg-slate-900 shadow-inner my-2">
+            {/* Road Illustration / Diagram Photo */}
+            {questionImageUrl && (
+              <div className="rounded-2xl overflow-hidden border border-slate-200/90 max-h-80 flex items-center justify-center bg-slate-900 shadow-inner my-2">
                 <img
-                  src={currentQ.imageUrl}
+                  src={questionImageUrl}
+                  loading="eager"
+                  decoding="async"
                   alt={`საგამოცდო ილუსტრაცია #${currentQ.id}`}
-                  className="max-h-72 w-auto object-contain"
+                  className="max-h-80 w-auto object-contain"
                 />
               </div>
             )}
 
-            <h4 className="text-base sm:text-lg font-black text-navy leading-snug">
+            {/* Question Text */}
+            <h4 className="text-base sm:text-lg font-black text-navy leading-snug pt-1">
               {currentQ.text}
             </h4>
           </div>
 
-          {/* Multiple Choice Options List */}
-          <div className="space-y-3">
+          {/* ======================================================== */}
+          {/* Multiple Choice Options List                             */}
+          {/* ======================================================== */}
+          <div className="space-y-2.5">
             {currentQ.options.map((opt, idx) => {
-              let btnStyle = 'neu-btn text-slate-700 hover:text-navy border border-slate-200/80 bg-white';
-              
+              let btnStyle = 'neu-btn text-slate-800 hover:text-navy border border-slate-200/90 bg-white hover:border-navy/30';
+
               if (isAnswered) {
                 if (idx === currentQ.correct) {
-                  btnStyle = 'bg-emerald-50 text-emerald-900 border-2 border-emerald-500 font-bold shadow-sm';
+                  btnStyle = 'bg-emerald-50 text-emerald-950 border-2 border-emerald-500 font-bold shadow-xs';
                 } else if (currentAnswer === idx) {
-                  btnStyle = 'bg-rose-50 text-rose-900 border-2 border-rose-500 font-bold shadow-sm';
+                  btnStyle = 'bg-rose-50 text-rose-950 border-2 border-rose-500 font-bold shadow-xs';
                 } else {
-                  btnStyle = 'opacity-50 border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed';
+                  btnStyle = 'opacity-40 border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed';
                 }
               }
 
@@ -798,21 +1267,28 @@ export const DrivingExamWidget: React.FC = () => {
                   key={idx}
                   disabled={isAnswered}
                   onClick={() => handleAnswer(idx)}
-                  className={`w-full text-left p-4 rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-between gap-3 ${btnStyle}`}
+                  className={`w-full text-left p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-between gap-3 ${btnStyle}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-lg neu-circle flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-6 h-6 rounded-lg neu-circle flex items-center justify-center font-mono font-bold text-xs shrink-0 text-navy bg-slate-100">
                       {idx + 1}
                     </span>
-                    <span>{opt}</span>
+                    <span className="leading-snug">{opt}</span>
                   </div>
 
-                  {isAnswered && idx === currentQ.correct && (
-                    <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-                  )}
-                  {isAnswered && currentAnswer === idx && idx !== currentQ.correct && (
-                    <XCircle size={18} className="text-rose-600 shrink-0" />
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {!isAnswered && (
+                      <span className="hidden sm:inline-block text-[10px] font-mono text-slate-300 font-semibold uppercase">
+                        [{idx + 1}]
+                      </span>
+                    )}
+                    {isAnswered && idx === currentQ.correct && (
+                      <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                    )}
+                    {isAnswered && currentAnswer === idx && idx !== currentQ.correct && (
+                      <XCircle size={18} className="text-rose-600 shrink-0" />
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -820,7 +1296,7 @@ export const DrivingExamWidget: React.FC = () => {
 
           {/* Instant Explanation Box */}
           {isAnswered && (
-            <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1 animate-fade-in shadow-xs">
+            <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1.5 animate-fade-in shadow-2xs">
               <div className="flex items-center gap-1.5 font-black text-amber-900">
                 <Sparkles size={14} className="text-gold" />
                 <span>საგამოცდო განმარტება & კანონი:</span>
@@ -831,10 +1307,21 @@ export const DrivingExamWidget: React.FC = () => {
             </div>
           )}
 
+          {/* Round Accuracy & Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 pt-1 border-t border-slate-100" aria-live="polite">
+            <span>
+              სიზუსტე: <strong className="text-navy">{answeredCount ? `${Math.round((100 * correctCount) / answeredCount)}%` : '—'}</strong> ({correctCount} სწორი / {answeredCount} პასუხი)
+            </span>
+            <span className="hidden sm:inline-block text-[11px] text-slate-400">
+              კლავიატურა: [1-4] არჩევა · [Enter / →] შემდეგი
+            </span>
+          </div>
+
           {/* Navigation Action Buttons Footer */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-200/80">
+          <div className="flex items-center justify-between pt-3 border-t border-slate-200/80">
             {viewMode === 'practice' ? (
               <button
+                type="button"
                 onClick={handlePrev}
                 disabled={currentIdx === 0}
                 className="btn-stitch-soft px-4 py-2.5 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
@@ -845,9 +1332,10 @@ export const DrivingExamWidget: React.FC = () => {
             ) : <div />}
 
             <button
+              type="button"
               onClick={handleNext}
               disabled={!isAnswered}
-              className={`px-6 py-3 rounded-2xl text-xs font-black flex items-center gap-2 transition-all ${
+              className={`px-6 py-3 rounded-2xl text-xs font-black flex items-center gap-2 transition-all shadow-xs ${
                 isAnswered
                   ? 'btn-stitch-primary'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'
@@ -862,39 +1350,103 @@ export const DrivingExamWidget: React.FC = () => {
       )}
 
       {/* ======================================================== */}
-      {/* 3. EXAM RESULTS & REVIEW VIEW                           */}
+      {/* 4. EXAM RESULTS & REVIEW VIEW                           */}
       {/* ======================================================== */}
       {viewMode === 'results' && (
         <div className="p-6 sm:p-8 rounded-3xl neu-card shadow-neu-card border border-white text-center space-y-6 animate-fade-in">
-          
+
           <div className="w-20 h-20 rounded-3xl neu-circle flex items-center justify-center mx-auto text-3xl shadow-md">
-            {isPassed ? '🎉' : '❌'}
+            {sessionMode === 'practice' ? '📖' : isPassed ? '🎉' : '❌'}
           </div>
 
           <div className="max-w-md mx-auto space-y-2">
             <h3 className="text-xl sm:text-2xl font-black text-navy">
-              {isPassed ? 'გილოცავთ! გამოცდა ჩაბარებულია!' : 'სამწუხაროდ, გამოცდა ვერ ჩაბარდა'}
+              {sessionMode === 'practice'
+                ? 'სწავლის რაუნდი დასრულდა'
+                : isPassed
+                ? 'გილოცავთ! გამოცდა ჩაბარებულია!'
+                : 'გამოცდა ვერ ჩაბარდა'}
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              {isPassed
-                ? 'თქვენ წარმატებით დაძლიეთ თეორიული გამოცდის სიმულატორი დასაშვებ 3 შეცდომის ლიმიტში.'
+              {sessionMode === 'practice'
+                ? 'შედეგები შენახულია თქვენს სწავლის ისტორიაში. ქვემოთ შეგიძლიათ გადახედოთ ანალიზს და გაიმეოროთ შეცდომები.'
+                : isPassed
+                ? 'თქვენ წარმატებით დაძლიეთ თეორიული გამოცდის სიმულატორი დასაშვები 3 შეცდომის ლიმიტში.'
                 : 'დაფიქსირდა 4 ან მეტი შეცდომა ან ამოიწურა 30-წუთიანი საგამოცდო დრო.'}
             </p>
           </div>
+
+          {/* Academic Promotion / Demotion Alert Banner */}
+          {academicAlert ? (
+            <div className={`p-4 sm:p-5 rounded-2xl border text-left max-w-xl mx-auto space-y-2 animate-fade-in shadow-sm ${
+              academicAlert.type === 'promoted'
+                ? 'bg-gradient-to-r from-amber-400/20 via-gold/15 to-amber-200/20 border-amber-300 ring-2 ring-gold/40'
+                : 'bg-rose-50 border-rose-300 ring-1 ring-rose-400/30'
+            }`}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{academicAlert.icon}</span>
+                  <span className="text-sm font-black text-navy">{academicAlert.title}</span>
+                </div>
+                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
+                  academicAlert.type === 'promoted' ? 'bg-amber-400 text-navy' : 'bg-rose-200 text-rose-900'
+                }`}>
+                  {academicAlert.type === 'promoted' ? 'უმაღლესი რეგალია' : 'გაქვეითება'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                {academicAlert.desc}
+              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/60 text-[11px]">
+                <span className="font-bold text-navy flex items-center gap-1.5">
+                  <Award size={13} className="text-gold" />
+                  <span>რეგალია: {academicAlert.regalia}</span>
+                </span>
+                {academicAlert.type === 'demoted' && (
+                  <button
+                    type="button"
+                    onClick={handleResetRankOverride}
+                    className="text-[10px] text-rose-700 font-bold hover:underline"
+                  >
+                    სტატუსის განულება ↺
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className={`p-4 rounded-2xl border text-left max-w-xl mx-auto flex items-center justify-between gap-3 ${academicRank.badgeColor}`}>
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">{academicRank.icon}</span>
+                <div>
+                  <div className="text-xs font-black">{academicRank.title}</div>
+                  <div className="text-[11px] opacity-80">{academicRank.regalia}</div>
+                </div>
+              </div>
+              {academicRank.id === 'chainiki' && (
+                <button
+                  type="button"
+                  onClick={handleResetRankOverride}
+                  className="px-2.5 py-1 rounded-xl bg-white/80 hover:bg-white text-[10px] font-bold text-rose-800 shadow-2xs"
+                >
+                  განულება ↺
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Results Metric Chips */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl mx-auto">
             <div className="p-3.5 rounded-2xl neu-surface border border-white">
               <span className="text-[10px] text-slate-400 font-bold block uppercase">სტატუსი</span>
               <span className={`text-sm font-black ${isPassed ? 'text-emerald-700' : 'text-rose-600'}`}>
-                {isPassed ? 'ჩაბარებულია' : 'ჩაიჭრა'}
+                {sessionMode === 'practice' ? 'სწავლა' : isPassed ? 'ჩაბარებულია' : 'ჩაიჭრა'}
               </span>
             </div>
 
             <div className="p-3.5 rounded-2xl neu-surface border border-white">
               <span className="text-[10px] text-slate-400 font-bold block uppercase">შეცდომები</span>
               <span className="text-sm font-black font-mono text-navy">
-                {errorsCount} / 3 (ლიმიტი)
+                {errorsCount}{sessionMode === 'exam' ? ' / 3 (ლიმიტი)' : ' შეცდომა'}
               </span>
             </div>
 
@@ -908,14 +1460,26 @@ export const DrivingExamWidget: React.FC = () => {
             <div className="p-3.5 rounded-2xl neu-surface border border-white">
               <span className="text-[10px] text-slate-400 font-bold block uppercase">კითხვები</span>
               <span className="text-sm font-black font-mono text-emerald-700">
-                {activeQuestions.length - errorsCount} / {activeQuestions.length}
+                {correctCount} სწორი / {answeredCount} პასუხი
               </span>
             </div>
+          </div>
+
+          {/* Cumulative Academic Overview Banner */}
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 max-w-xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="font-bold text-slate-600 flex items-center gap-1.5">
+              <span>📊</span>
+              <span>საერთო აკადემიური ბაზა ({activeCategory} კატეგორია):</span>
+            </span>
+            <span className="font-mono font-black text-navy">
+              {cumulativeCorrect} სწორი / {cumulativeAttempts} ნაპასუხები ({cumulativeAttempts > 0 ? Math.round((cumulativeCorrect / cumulativeAttempts) * 100) : 0}% სიზუსტე)
+            </span>
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
             <button
+              type="button"
               onClick={handleStartExam}
               className="btn-stitch-primary px-6 py-3.5 text-xs font-black flex items-center gap-2 shadow-gold-soft"
             >
@@ -924,11 +1488,21 @@ export const DrivingExamWidget: React.FC = () => {
             </button>
 
             <button
+              type="button"
+              onClick={handleStartSmartStudy}
+              className="btn-stitch-soft px-6 py-3.5 text-xs font-black flex items-center gap-2"
+            >
+              <Sparkles size={15} className="text-gold" />
+              <span>ადაპტური სწავლის რაუნდი →</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleToSubjectPicker}
               className="btn-stitch-navy px-6 py-3.5 text-xs font-black flex items-center gap-2 shadow-sm"
             >
               <BookOpen size={15} className="text-gold" />
-              <span>საგნების არჩევაზე დაბრუნება</span>
+              <span>სწავლის მთავარზე დაბრუნება</span>
             </button>
           </div>
 

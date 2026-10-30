@@ -332,7 +332,7 @@ export const GarageModule: React.FC<Props> = ({
     <div className="space-y-6">
       
       {/* 1. Header Bar with Sub-Tab Navigation */}
-      <div className="p-5 rounded-3xl neu-card shadow-neu-card flex flex-wrap items-center justify-between gap-4">
+      <div data-tour="garage-header" className="p-5 rounded-3xl neu-card shadow-neu-card flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl neu-circle flex items-center justify-center text-gold shadow-sm">
             <Car className="w-6 h-6 text-navy" />
@@ -441,6 +441,7 @@ export const GarageModule: React.FC<Props> = ({
 
           {/* Add New Vehicle Button */}
           <button
+            data-tour="garage-add-car"
             onClick={() => {
               sounds.playClick();
               onOpenAddModal();
@@ -783,7 +784,7 @@ export const GarageModule: React.FC<Props> = ({
           </div>
 
           {/* Active Vehicle Hero Showcase Card */}
-          <div className="p-6 rounded-3xl neu-card shadow-neu-card border border-white relative overflow-hidden">
+          <div data-tour="garage-profile" className="p-6 rounded-3xl neu-card shadow-neu-card border border-white relative overflow-hidden">
             <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
               <div>
                 <div className="flex items-center gap-2 mb-1">

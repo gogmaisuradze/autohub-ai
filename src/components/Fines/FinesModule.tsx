@@ -42,10 +42,10 @@ import {
   Trash2,
   Crown,
   GraduationCap,
+  BookOpen,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import DrivingExamWidget from '../Garage/DrivingExamWidget';
 
 interface Props {
   vehicle: VehicleProfile;
@@ -53,6 +53,7 @@ interface Props {
   onUpdateFines: (fines: FineItem[]) => void;
   onUpdateVehicle: (updated: Partial<VehicleProfile>) => void;
   onNavigateToParking?: () => void;
+  onOpenDrivingExam?: () => void;
   onOpenFieldPrompt?: (field: PromptFieldType) => void;
   onNavigateToAiClarification?: (initialPrompt?: string) => void;
 }
@@ -132,7 +133,7 @@ export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full
       />
       {/* Security holographic sheen overlay */}
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
-      
+
       {/* Biometric ID corner target brackets */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none p-1.5 text-gold/70" viewBox="0 0 100 120">
         <path d="M 6 16 L 6 6 L 16 6" fill="none" stroke="currentColor" strokeWidth="1.2" />
@@ -157,6 +158,7 @@ export const FinesModule: React.FC<Props> = ({
   onUpdateFines,
   onUpdateVehicle,
   onNavigateToParking,
+  onOpenDrivingExam,
   onOpenFieldPrompt,
   onNavigateToAiClarification
 }) => {
@@ -173,7 +175,6 @@ export const FinesModule: React.FC<Props> = ({
   const [personalNumberInput, setPersonalNumberInput] = useState(vehicle.driver_personal_number || '');
   const [driverNameInput, setDriverNameInput] = useState(vehicle.driver_name || '');
   const [showPointsGuide, setShowPointsGuide] = useState(false);
-  const [isExamSectionOpen, setIsExamSectionOpen] = useState(false);
 
   // Direct Ticket Search & Pay State
   const [ticketSearchInput, setTicketSearchInput] = useState('');
@@ -666,11 +667,60 @@ export const FinesModule: React.FC<Props> = ({
         className="hidden"
       />
 
+      {/* Top Patrol Sub-Navigation Switcher */}
+      <div className="bg-white/90 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 text-white flex items-center justify-center font-black shadow-xs">
+            <ShieldAlert size={20} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 font-mono">საპატრულო</span>
+              <span className="text-slate-300">/</span>
+              <h1 className="text-base sm:text-lg font-black text-navy">ვიდეოჯარიმები & ქვითრები</h1>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+                Police.ge Live
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 hidden sm:block">
+              საპატრულო პოლიციის კამერების ჯარიმები, 100-ქულიანი სისტემა და -20% ფასდაკლების ტაიმერი
+            </p>
+          </div>
+        </div>
+
+        {/* Sub-page Switcher Pills */}
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/80">
+          <div className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-white text-navy shadow-xs border border-slate-200/80 flex items-center gap-1.5">
+            <ShieldAlert size={14} className="text-rose-500" />
+            <span>საპატრულო ჯარიმები</span>
+            {pendingFines.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-rose-500 text-white">
+                {pendingFines.length}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              onOpenDrivingExam?.();
+            }}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-navy hover:bg-white transition-all flex items-center gap-1.5"
+          >
+            <GraduationCap size={14} className="text-amber-500" />
+            <span>ბილეთები & გამოცდა</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-amber-100 text-amber-900">
+              921
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* ======================================================== */}
       {/* 1. AUTHENTIC PASSPORT & DRIVER PROFILE CARD (RECTANGULAR) */}
       {/* ======================================================== */}
-      <div className="rounded-2xl neu-card shadow-neu-card border border-slate-200/90 overflow-hidden relative">
-        
+      <div data-tour="fines-passport" className="rounded-2xl neu-card shadow-neu-card border border-slate-200/90 overflow-hidden relative">
+
         {/* Authentic Passport Header Ribbon (Compact) */}
         <div className="bg-gradient-to-r from-navy via-slate-900 to-navy text-white px-4 sm:px-6 py-2 border-b border-gold/30 flex flex-wrap items-center justify-between gap-2 shadow-xs">
           <div className="flex items-center gap-2.5">
@@ -696,15 +746,15 @@ export const FinesModule: React.FC<Props> = ({
 
         {/* 3-Column Passport Body (Compact Rectangular Proportions) */}
         <div className="p-3.5 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-stretch relative">
-          
+
           {/* =================================================== */}
           {/* A. LEFT COLUMN: ENLARGED PHOTO, NAME, VEHICLE (5)   */}
           {/* =================================================== */}
           <div className="lg:col-span-5 space-y-3.5 border-b lg:border-b-0 lg:border-r border-slate-200/80 pb-4 lg:pb-0 lg:pr-5">
-            
+
             {/* Top: Driver Biometric Photo & Personal Name Dual-Script */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-              
+
               {/* Biometric Photo Frame (Enlarged Portrait Proportion) */}
               <div className="flex flex-col items-center shrink-0">
                 <div className="relative group">
@@ -842,12 +892,7 @@ export const FinesModule: React.FC<Props> = ({
                       type="button"
                       onClick={() => {
                         sounds.playClick();
-                        setIsExamSectionOpen(!isExamSectionOpen);
-                        if (!isExamSectionOpen) {
-                          setTimeout(() => {
-                            document.getElementById('driving-exam-section')?.scrollIntoView({ behavior: 'smooth' });
-                          }, 100);
-                        }
+                        onOpenDrivingExam?.();
                       }}
                       className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-full border border-amber-300 transition-all cursor-pointer text-[9px] shadow-2xs"
                       title="საგამოცდო ბილეთების გახსნა"
@@ -930,7 +975,7 @@ export const FinesModule: React.FC<Props> = ({
           {/* B. MIDDLE COLUMN: PROMINENT CIRCULAR POINTS GAUGE (4 cols)     */}
           {/* ============================================================== */}
           <div className="lg:col-span-4 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-slate-200/80 pb-5 lg:pb-0 lg:px-4 relative overflow-hidden rounded-2xl bg-slate-50/50">
-            
+
             {/* Contour Wave Guilloche Security Watermark (Authentic Security Line Art) */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-25">
               <svg className="w-full h-full" viewBox="0 0 320 320" preserveAspectRatio="none" fill="none">
@@ -1027,7 +1072,7 @@ export const FinesModule: React.FC<Props> = ({
           {/* C. RIGHT COLUMN: FULL VERIFICATION WINDOW IN TINTED PALETTE (3) */}
           {/* ============================================================== */}
           <div className="lg:col-span-3 rounded-xl bg-gradient-to-br from-slate-900 via-[#0B1528] to-slate-950 text-white p-3 sm:p-3.5 border border-slate-700/80 shadow-lg flex flex-col justify-between space-y-2.5 relative overflow-hidden">
-            
+
             {/* Tonal Accent Watermark Blurs */}
             <div className="absolute -top-12 -right-12 w-28 h-28 bg-gold/10 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute -bottom-12 -left-12 w-28 h-28 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -1106,14 +1151,15 @@ export const FinesModule: React.FC<Props> = ({
             </div>
 
             {/* Action Buttons: Check & Pay */}
-            <div className="space-y-1.5 pt-0.5">
+            <div className="space-y-2 pt-0.5">
               <button
                 onClick={handleRefreshFines}
                 disabled={isRefreshing}
-                className="w-full py-2 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-gold text-[11px] font-bold flex items-center justify-center gap-1.5 border border-slate-700/80 transition-all shadow-xs"
+                className="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-slate-100 active:scale-[0.98] text-slate-950 font-black text-xs flex items-center justify-center gap-2 border-2 border-slate-200/90 shadow-sm hover:shadow transition-all cursor-pointer"
+                title="police.ge ბაზაში ჯარიმების შემოწმება"
               >
-                <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin text-gold' : 'text-gold'}`} />
-                <span>{isRefreshing ? 'მოწმდება...' : 'შემოწმება (police.ge)'}</span>
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-slate-900' : 'text-slate-800'}`} />
+                <span className="tracking-wide">{isRefreshing ? 'მოწმდება...' : 'შეამოწმე (police.ge)'}</span>
               </button>
 
               <button
@@ -1145,79 +1191,7 @@ export const FinesModule: React.FC<Props> = ({
       </div>
 
       {/* ======================================================== */}
-      {/* 1.5 DRIVING EXAM TICKETS & THEORY PLATFORM (ბილეთები 2026) */}
-      {/* ======================================================== */}
-      <div id="driving-exam-section" className="p-4 sm:p-5 rounded-3xl border transition-all bg-gradient-to-br from-slate-900 via-navy to-slate-950 text-white border-gold/40 shadow-xl space-y-3.5">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border bg-gold/15 text-gold border-gold/30">
-              <GraduationCap className="w-6 h-6 text-gold" />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-xs">
-                  🎓 საგამოცდო ბილეთები 2026
-                </span>
-                <span className="text-xs font-mono text-slate-300">
-                  921 ოფიციალური ბილეთი
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-slate-300">
-                  32 თემა • prava.ge
-                </span>
-              </div>
-              <h3 className="text-sm sm:text-base font-black mt-1 text-white tracking-tight">
-                მართვის მოწმობის თეორიული გამოცდის სიმულატორი
-              </h3>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              setIsExamSectionOpen(!isExamSectionOpen);
-            }}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md shrink-0 flex items-center justify-center gap-2 ${
-              isExamSectionOpen
-                ? 'bg-white/15 text-white border border-white/20'
-                : 'bg-gold hover:bg-gold/90 text-slate-950 shadow-gold/20'
-            }`}
-          >
-            <span>{isExamSectionOpen ? 'ბილეთების ჩაკეცვა' : 'ბილეთების გახსნა & ტესტირება'}</span>
-            {isExamSectionOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
-        </div>
-
-        {/* Quick 4-Item Theory & License Categories Overview */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
-          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-            <span className="text-[10px] text-slate-400 block uppercase">B კატეგორია</span>
-            <span className="text-xs sm:text-sm font-black text-gold block mt-0.5">921 ბილეთი</span>
-          </div>
-          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-            <span className="text-[10px] text-slate-400 block uppercase">გამოცდის დრო</span>
-            <span className="text-xs sm:text-sm font-black text-white block mt-0.5">30 წთ / 30 კითხვა</span>
-          </div>
-          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-            <span className="text-[10px] text-slate-400 block uppercase">შეცდომის ლიმიტი</span>
-            <span className="text-xs sm:text-sm font-black text-emerald-400 block mt-0.5">მაქს. 3 შეცდომა</span>
-          </div>
-          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-            <span className="text-[10px] text-slate-400 block uppercase">სტატუსი</span>
-            <span className="text-xs sm:text-sm font-black text-amber-300 block mt-0.5">2026 წლის ბაზა</span>
-          </div>
-        </div>
-
-        {/* Embedded Full Driving Exam Widget */}
-        {isExamSectionOpen && (
-          <div className="pt-2 animate-fade-in">
-            <DrivingExamWidget />
-          </div>
-        )}
-      </div>
-
-      {/* ======================================================== */}
-      {/* 2.1 PROFILE COMPLETION INDICATOR (ბილეთების ქვემოთ)      */}
+      {/* 2. PROFILE COMPLETION INDICATOR                           */}
       {/* ======================================================== */}
       <div className={`p-4 sm:p-5 rounded-3xl neu-card border transition-all ${
         hasMissingRequirements
@@ -1433,7 +1407,7 @@ export const FinesModule: React.FC<Props> = ({
       {/* ======================================================== */}
       {/* 3. QUICK PAY BY TICKET NUMBER (ქვითრის ნომრით გადახდა)   */}
       {/* ======================================================== */}
-      <div className="p-5 rounded-3xl neu-card shadow-neu-card border border-white">
+      <div data-tour="fines-summary" className="p-5 rounded-3xl neu-card shadow-neu-card border border-white">
         <form onSubmit={handleSearchAndPayTicket} className="flex flex-wrap items-center gap-3">
           <div className="w-10 h-10 rounded-2xl neu-circle flex items-center justify-center text-gold shrink-0">
             <FileText className="w-5 h-5" />
@@ -1557,9 +1531,188 @@ export const FinesModule: React.FC<Props> = ({
       </div>
 
       {/* ======================================================== */}
+      {/* 3.5 DRIVING EXAM TICKETS & THEORY PLATFORM (ბილეთები 2026) */}
+      {/* ======================================================== */}
+      <div
+        id="driving-exam-section"
+        data-tour="fines-exam"
+        className="relative p-5 sm:p-7 rounded-[2rem] border-2 transition-all bg-gradient-to-br from-[#0c1222] via-[#11192e] to-[#080d1a] text-white border-gold/50 shadow-2xl space-y-5 overflow-hidden group"
+      >
+        {/* Thematic Ambient Glows */}
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-gold/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+
+        {/* Thematic Road & Speedometer Subtle SVG Watermark */}
+        <div className="absolute right-4 bottom-2 opacity-[0.07] pointer-events-none select-none hidden lg:block">
+          <svg width="280" height="150" viewBox="0 0 280 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 140 C 50 30, 230 30, 260 140" stroke="currentColor" strokeWidth="8" strokeDasharray="10 10" />
+            <circle cx="140" cy="140" r="85" stroke="currentColor" strokeWidth="4" />
+            <line x1="140" y1="140" x2="200" y2="75" stroke="#f59e0b" strokeWidth="6" strokeLinecap="round" />
+            <circle cx="140" cy="140" r="14" fill="#f59e0b" />
+          </svg>
+        </div>
+
+        {/* Main Content Row */}
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 pb-4 border-b border-white/10">
+
+          {/* Left Side: Icon & Big Titles */}
+          <div className="flex items-start sm:items-center gap-4">
+            {/* Thematic Icon Shield */}
+            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 border border-gold/60 bg-gradient-to-br from-amber-400/25 via-gold/15 to-navy shadow-lg shadow-gold/10 ring-2 ring-gold/20">
+              <span className="text-2xl sm:text-3xl">🎓</span>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-gold text-navy flex items-center justify-center font-bold text-xs shadow-sm">
+                🚗
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              {/* Badges Strip */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 rounded-full text-[11px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-gold text-slate-950 shadow-xs flex items-center gap-1.5">
+                  <Sparkles size={12} className="text-navy" />
+                  <span>საგამოცდო ბაზა 2026</span>
+                </span>
+                <span className="text-xs font-mono font-bold text-amber-200/90 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
+                  921 ოფიციალური ბილეთი
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-white/10 text-slate-300 border border-white/10 hidden sm:inline-block">
+                  32 ოფიციალური თემა • prava.ge
+                </span>
+              </div>
+
+              {/* Large Requested Title */}
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-tight pt-0.5 flex flex-wrap items-center gap-2">
+                <span>მართვის მოწმობის ბილეთები</span>
+                <span className="text-xs sm:text-sm font-black px-2.5 py-0.5 rounded-xl bg-gold/20 text-gold border border-gold/40">
+                  A · B · C · D · AM
+                </span>
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                საქართველოს შსს მომსახურების სააგენტოს თეორიული გამოცდის სრული სიმულატორი, გამოუცნობი ადაპტური ალგორითმი და აკადემიური მზადების რანგები.
+              </p>
+            </div>
+          </div>
+
+          {/* Right Side: Thematic Driver's License Card Visual & Action Button */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
+            {/* Thematic Mini Driver's License Card Visual */}
+            <div className="hidden md:flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-slate-900/90 to-navy/90 border border-gold/40 shadow-lg backdrop-blur-md">
+              <div className="w-11 h-14 rounded-xl bg-gradient-to-br from-blue-900 via-slate-900 to-slate-950 border border-white/20 p-1 flex flex-col justify-between items-center relative overflow-hidden">
+                <div className="w-full flex items-center justify-between text-[7px] font-bold text-white/90">
+                  <span>GE</span>
+                  <span>🇬🇪</span>
+                </div>
+                <div className="w-6 h-6 rounded-full bg-slate-700/80 border border-gold/40 flex items-center justify-center text-[10px]">
+                  👤
+                </div>
+                <div className="text-[6px] font-mono text-gold font-bold">DRIVING</div>
+              </div>
+              <div className="space-y-0.5 text-left pr-1">
+                <div className="text-[9px] font-mono font-black text-gold uppercase tracking-wider">
+                  GEORGIA • მართვის მოწმობა
+                </div>
+                <div className="text-xs font-black text-white">
+                  B1 / B კატეგორია
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-300">
+                  <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">თეორია 100%</span>
+                  <span>• 30 კითხვა</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Launch Button */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                onOpenDrivingExam?.();
+              }}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-black shadow-gold-soft shrink-0 bg-gradient-to-r from-amber-400 via-gold to-amber-500 hover:from-amber-300 hover:to-gold text-slate-950 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-amber-300"
+            >
+              <BookOpen size={16} />
+              <span>ბილეთების გახსნა →</span>
+            </button>
+          </div>
+
+        </div>
+
+        {/* Categories Preview Pills Strip */}
+        <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+          <span className="text-[11px] text-slate-400 font-bold mr-1">კატეგორიები:</span>
+          {[
+            { cat: 'B / B1', desc: 'მსუბუქი', count: 921, icon: '🚗', active: true },
+            { cat: 'A / A1', desc: 'მოტოციკლი', count: 760, icon: '🏍️' },
+            { cat: 'C / C1', desc: 'სატვირთო', count: 954, icon: '🚚' },
+            { cat: 'D / D1', desc: 'ავტობუსი', count: 845, icon: '🚌' },
+            { cat: 'AM', desc: 'მოპედი', count: 327, icon: '🛵' }
+          ].map(c => (
+            <button
+              key={c.cat}
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                onOpenDrivingExam?.();
+              }}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border transition-all ${
+                c.active
+                  ? 'bg-gold/20 text-gold border-gold/50 shadow-2xs'
+                  : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <span>{c.icon}</span>
+              <span>{c.cat}</span>
+              <span className="opacity-70 text-[10px]">({c.count})</span>
+            </button>
+          ))}
+        </div>
+
+        {/* 4 Thematic Metric Tiles */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
+            <span className="text-[10px] text-slate-400 block uppercase font-bold flex items-center gap-1">
+              <span>🚗</span>
+              <span>B კატეგორია</span>
+            </span>
+            <span className="text-sm sm:text-base font-black text-gold block mt-1">921 ბილეთი</span>
+            <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">588 ილუსტრირებული</span>
+          </div>
+
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
+            <span className="text-[10px] text-slate-400 block uppercase font-bold flex items-center gap-1">
+              <Clock size={11} className="text-white" />
+              <span>საგამოცდო დრო</span>
+            </span>
+            <span className="text-sm sm:text-base font-black text-white block mt-1">30 წთ / 30 კითხვა</span>
+            <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">ოფიციალური ტაიმერი</span>
+          </div>
+
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
+            <span className="text-[10px] text-slate-400 block uppercase font-bold flex items-center gap-1">
+              <ShieldCheck size={11} className="text-emerald-400" />
+              <span>შეცდომის ლიმიტი</span>
+            </span>
+            <span className="text-sm sm:text-base font-black text-emerald-400 block mt-1">მაქს. 3 შეცდომა</span>
+            <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">მე-4 შეცდომა ჩაჭრაა</span>
+          </div>
+
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
+            <span className="text-[10px] text-slate-400 block uppercase font-bold flex items-center gap-1">
+              <Award size={11} className="text-amber-300" />
+              <span>აკადემიური სტატუსი</span>
+            </span>
+            <span className="text-sm sm:text-base font-black text-amber-300 block mt-1">2026 წლის ბაზა</span>
+            <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">ჩაინიკიდან 👑 აკადემიკოსამდე</span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ======================================================== */}
       {/* 4. FINES CARDS LIST (WITH POINTS & RECEIPT PAYMENT)      */}
       {/* ======================================================== */}
-      <div className="space-y-4">
+      <div data-tour="fines-list" className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-sm font-extrabold text-navy flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-gold" />
@@ -1597,9 +1750,9 @@ export const FinesModule: React.FC<Props> = ({
               <button
                 onClick={handleRefreshFines}
                 disabled={isRefreshing}
-                className="btn-stitch-primary px-5 py-2.5 text-xs font-black flex items-center gap-2 shadow-sm"
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs border border-slate-700 shadow-sm hover:shadow flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
               >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-slate-300' : 'text-slate-200'}`} />
                 <span>{isRefreshing ? 'მოწმდება...' : 'police.ge ხელახალი შემოწმება'}</span>
               </button>
 
@@ -1740,7 +1893,7 @@ export const FinesModule: React.FC<Props> = ({
 
                   {/* Pricing & All Realistic Test Action Buttons */}
                   <div className="pt-3 border-t border-slate-100 space-y-2.5">
-                    
+
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="flex items-baseline gap-2">
@@ -1854,7 +2007,7 @@ export const FinesModule: React.FC<Props> = ({
       {/* 5. TICKET PAYMENT MODAL (ქვითრის ონლაინ გადახდა)          */}
       {/* ======================================================== */}
       {selectedFineForPayment && (
-        <div 
+        <div
           onClick={(e) => {
             if (e.target === e.currentTarget && !isProcessingPayment) {
               setSelectedFineForPayment(null);
@@ -1862,11 +2015,11 @@ export const FinesModule: React.FC<Props> = ({
           }}
           className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto cursor-pointer"
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             className="bg-[#EDF1F7] rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border border-white space-y-5 my-8 cursor-default"
           >
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-3">
@@ -2081,7 +2234,7 @@ export const FinesModule: React.FC<Props> = ({
       {/* 6. OFFICIAL PAYMENT RECEIPT MODAL (ოფიციალური ჩეკი)       */}
       {/* ======================================================== */}
       {receiptFine && (
-        <div 
+        <div
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setReceiptFine(null);
@@ -2089,11 +2242,11 @@ export const FinesModule: React.FC<Props> = ({
           }}
           className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto cursor-pointer"
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-2 border-emerald-500/30 space-y-5 my-8 cursor-default"
           >
-            
+
             {/* Header / Seal */}
             <div className="text-center space-y-2">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">

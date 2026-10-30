@@ -10,7 +10,9 @@ import {
   MapPin,
   Send,
   Navigation,
-  CheckCircle2
+  CheckCircle2,
+  Car,
+  Construction
 } from 'lucide-react';
 
 interface Props {
@@ -57,9 +59,23 @@ export const AddReportModal: React.FC<Props> = ({
       color: 'bg-amber-600/15 text-amber-600 border-amber-400'
     },
     {
+      type: 'traffic_jam' as MapPointType,
+      label: 'საცობი',
+      sub: 'მძიმე შეფერხება',
+      icon: Car,
+      color: 'bg-rose-600/15 text-rose-600 border-rose-400'
+    },
+    {
+      type: 'road_repair' as MapPointType,
+      label: 'ქუჩის რემონტი',
+      sub: 'საგზაო სამუშაოები',
+      icon: Construction,
+      color: 'bg-amber-600/15 text-amber-600 border-amber-400'
+    },
+    {
       type: 'hazard' as MapPointType,
       label: 'საფრთხე',
-      sub: 'ავარია / სარემონტო',
+      sub: 'ავარია / დაბრკოლება',
       icon: AlertTriangle,
       color: 'bg-rose-600/15 text-rose-600 border-rose-400'
     },

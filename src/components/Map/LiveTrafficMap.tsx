@@ -29,8 +29,421 @@ import {
   Zap,
   Wrench,
   Droplets,
-  Cog
+  Cog,
+  Lock,
+  Unlock,
+  MousePointerClick,
+  ChevronDown,
+  X,
+  Construction,
+  GitFork,
+  ArrowUpRight
 } from 'lucide-react';
+
+export interface AlternativeRouteItem {
+  id: string;
+  title: string;
+  corridor: string;
+  causeType: 'traffic_jam' | 'road_repair';
+  congestedName: string;
+  congestedTimeMin: number;
+  congestedDistKm: number;
+  congestedDelayMin: number;
+  congestedCoords: [number, number][];
+
+  altName: string;
+  altTimeMin: number;
+  altDistKm: number;
+  timeSavedMin: number;
+  distSavedKm: number;
+  altBypassStreets: string[];
+  altCoords: [number, number][];
+
+  origin: { name: string; lat: number; lng: number };
+  destination: { name: string; lat: number; lng: number };
+}
+
+export const ALTERNATIVE_ROUTES: AlternativeRouteItem[] = [
+  {
+    id: 'route-heroes-sq',
+    title: 'გმირთა მოედანი ⇄ სანაპირო',
+    corridor: 'ცენტრი · ვარაზისხევი / სანაპირო',
+    causeType: 'traffic_jam',
+    congestedName: 'კოსტავა → გმირთა მოედნის კვანძი → მარჯვენა სანაპირო',
+    congestedTimeMin: 32,
+    congestedDistKm: 4.9,
+    congestedDelayMin: 18,
+    congestedCoords: [
+      [41.7010, 44.7920],
+      [41.7065, 44.7880],
+      [41.7120, 44.7820],
+      [41.7170, 44.7860],
+      [41.7230, 44.7880],
+      [41.7280, 44.7850]
+    ],
+    altName: 'ვარაზისხევი → თამარაშვილი → გოთუას ქუჩა → სააკაძე',
+    altTimeMin: 14,
+    altDistKm: 3.8,
+    timeSavedMin: 18,
+    distSavedKm: 1.1,
+    altBypassStreets: ['ვარაზისხევი', 'თამარაშვილის ქ.', 'გოთუას ქ.', 'სააკაძის დაღმართი', 'მტკვრის სანაპირო'],
+    altCoords: [
+      [41.7010, 44.7920],
+      [41.7080, 44.7780],
+      [41.7160, 44.7720],
+      [41.7220, 44.7740],
+      [41.7260, 44.7810],
+      [41.7280, 44.7850]
+    ],
+    origin: { name: 'რუსთაველი / კოსტავა', lat: 41.7010, lng: 44.7920 },
+    destination: { name: 'მტკვრის მარჯვენა სანაპირო', lat: 41.7280, lng: 44.7850 }
+  },
+  {
+    id: 'route-tsereteli',
+    title: 'წერეთლის გამზირი ⇄ დიდუბე',
+    corridor: 'დიდუბე · რემონტის შემოვლა',
+    causeType: 'road_repair',
+    congestedName: 'წერეთლის გამზირის ცენტრი (1 ზოლიანი რემონტი)',
+    congestedTimeMin: 38,
+    congestedDistKm: 4.2,
+    congestedDelayMin: 23,
+    congestedCoords: [
+      [41.7230, 44.7920],
+      [41.7290, 44.7870],
+      [41.7350, 44.7820],
+      [41.7420, 44.7780],
+      [41.7490, 44.7740]
+    ],
+    altName: 'აგლაძის ქუჩა → ელიავას შემოვლითი → მარცხენა სანაპირო',
+    altTimeMin: 15,
+    altDistKm: 3.5,
+    timeSavedMin: 23,
+    distSavedKm: 0.7,
+    altBypassStreets: ['აგლაძის ქუჩა', 'ელიავას ბაზრობის შემოვლითი', 'მარცხენა სანაპირო', 'დიდუბის ხიდი'],
+    altCoords: [
+      [41.7230, 44.7920],
+      [41.7260, 44.7830],
+      [41.7330, 44.7770],
+      [41.7410, 44.7730],
+      [41.7490, 44.7740]
+    ],
+    origin: { name: 'წერეთლის დასაწყისი / დინამო', lat: 41.7230, lng: 44.7920 },
+    destination: { name: 'დიდუბის მეტრო / ავტოსადგური', lat: 41.7490, lng: 44.7740 }
+  },
+  {
+    id: 'route-chavchavadze',
+    title: 'ჭავჭავაძის გამზირი ⇄ საბურთალო',
+    corridor: 'ვაკე-საბურთალო · საცობის შემოვლა',
+    causeType: 'traffic_jam',
+    congestedName: 'ჭავჭავაძის გამზირი (შუქნიშნები & ავტობუსის ზოლი)',
+    congestedTimeMin: 28,
+    congestedDistKm: 5.1,
+    congestedDelayMin: 15,
+    congestedCoords: [
+      [41.7090, 44.7780],
+      [41.7100, 44.7670],
+      [41.7105, 44.7570],
+      [41.7150, 44.7480],
+      [41.7220, 44.7420]
+    ],
+    altName: 'ფალიაშვილი / აბაშიძე → თამარაშვილი → უნივერსიტეტის ქუჩა',
+    altTimeMin: 13,
+    altDistKm: 3.9,
+    timeSavedMin: 15,
+    distSavedKm: 1.2,
+    altBypassStreets: ['ფალიაშვილის ქ.', 'მიშველაძის ქ.', 'თამარაშვილის ქ.', 'უნივერსიტეტის ქ.'],
+    altCoords: [
+      [41.7090, 44.7780],
+      [41.7070, 44.7680],
+      [41.7120, 44.7520],
+      [41.7180, 44.7460],
+      [41.7220, 44.7420]
+    ],
+    origin: { name: 'ვაკის დასაწყისი / მრგვალი ბაღი', lat: 41.7090, lng: 44.7780 },
+    destination: { name: 'დელისის კვანძი / ქავთარაძე', lat: 41.7220, lng: 44.7420 }
+  },
+  {
+    id: 'route-digomi',
+    title: 'აღმაშენებლის ხეივანი ⇄ დიღომი',
+    corridor: 'დიღმის მასივი · მაგისტრალის შემოვლა',
+    causeType: 'traffic_jam',
+    congestedName: 'აღმაშენებლის ხეივნის ცენტრალური ტრასა (საცობი ქალაქიდან)',
+    congestedTimeMin: 26,
+    congestedDistKm: 6.2,
+    congestedDelayMin: 14,
+    congestedCoords: [
+      [41.7640, 44.7750],
+      [41.7720, 44.7710],
+      [41.7810, 44.7660],
+      [41.7920, 44.7610]
+    ],
+    altName: 'ლუბლიანას ქუჩა → ჩაჩავას ქუჩა → რობაქიძის გამზირი',
+    altTimeMin: 12,
+    altDistKm: 4.7,
+    timeSavedMin: 14,
+    distSavedKm: 1.5,
+    altBypassStreets: ['რობაქიძის გამზ.', 'ბელიაშვილის ქ.', 'ლუბლიანას ქ.', 'ჩაჩავას ქ.'],
+    altCoords: [
+      [41.7640, 44.7750],
+      [41.7700, 44.7800],
+      [41.7780, 44.7760],
+      [41.7870, 44.7680],
+      [41.7920, 44.7610]
+    ],
+    origin: { name: 'რობაქიძის ხიდი', lat: 41.7640, lng: 44.7750 },
+    destination: { name: 'თბილისის გასასვლელი / თბილისი მოლი', lat: 41.7920, lng: 44.7610 }
+  },
+  {
+    id: 'route-kakheti',
+    title: 'კახეთის გზატკეცილი ⇄ აეროპორტი',
+    corridor: 'ისანი-სამგორი · აეროპორტის მიმართულება',
+    causeType: 'traffic_jam',
+    congestedName: 'სამგორის ესტაკადა → კახეთის გზატკეცილი (საცობი)',
+    congestedTimeMin: 35,
+    congestedDistKm: 11.5,
+    congestedDelayMin: 17,
+    congestedCoords: [
+      [41.6910, 44.8520],
+      [41.6880, 44.8680],
+      [41.6820, 44.8900],
+      [41.6750, 44.9200],
+      [41.6690, 44.9540]
+    ],
+    altName: 'მოსკოვის გამზირი → სამგორის შემოვლითი გზატკეცილი',
+    altTimeMin: 18,
+    altDistKm: 9.6,
+    timeSavedMin: 17,
+    distSavedKm: 1.9,
+    altBypassStreets: ['მოსკოვის გამზირი', 'აფრიკის დასახლების გზატკეცილი', 'აეროპორტის შემოვლა'],
+    altCoords: [
+      [41.6910, 44.8520],
+      [41.6780, 44.8620],
+      [41.6710, 44.8950],
+      [41.6680, 44.9300],
+      [41.6690, 44.9540]
+    ],
+    origin: { name: 'ისნის მეტრო / კვანძი', lat: 41.6910, lng: 44.8520 },
+    destination: { name: 'თბილისის საერთაშორისო აეროპორტი', lat: 41.6690, lng: 44.9540 }
+  },
+  {
+    id: 'route-rikoti',
+    title: 'რიკოთის უღელტეხილი (რემონტის შემოვლა)',
+    corridor: 'აღმოსავლეთ-დასავლეთ მაგისტრალი E60',
+    causeType: 'road_repair',
+    congestedName: 'ძველი რიკოთის გზა (სამშენებლო შეზღუდვები, 1 ზოლი)',
+    congestedTimeMin: 55,
+    congestedDistKm: 28.0,
+    congestedDelayMin: 25,
+    congestedCoords: [
+      [42.0450, 43.4600],
+      [42.0520, 43.4750],
+      [42.0620, 43.4860],
+      [42.0720, 43.5020],
+      [42.0800, 43.5250]
+    ],
+    altName: 'ახალი ჩქაროსნული ავტობანი & გვირაბი (უბისა-ხევი)',
+    altTimeMin: 30,
+    altDistKm: 24.2,
+    timeSavedMin: 25,
+    distSavedKm: 3.8,
+    altBypassStreets: ['ახალი რიკოთის ჩქაროსნული გვირაბი', 'უბისას ესტაკადა', 'ხევის ახალი მონაკვეთი'],
+    altCoords: [
+      [42.0450, 43.4600],
+      [42.0550, 43.4720],
+      [42.0650, 43.4900],
+      [42.0750, 43.5100],
+      [42.0800, 43.5250]
+    ],
+    origin: { name: 'სურამი / რიკოთის დასაწყისი', lat: 42.0450, lng: 43.4600 },
+    destination: { name: 'ზესტაფონი / რიკოთის გასასვლელი', lat: 42.0800, lng: 43.5250 }
+  }
+];
+
+export const INITIAL_TRAFFIC_JAMS: MapReport[] = [
+  {
+    id: 'jam-1',
+    type: 'traffic_jam',
+    title: 'გმირთა მოედანი / ვარაზისხევი',
+    description: 'მძიმე საცობი პიკის საათში. მოძრაობა შენელებულია 6 კმ/სთ-მდე. რეკომენდებულია ალტერნატიული მოკლე გზა.',
+    lat: 41.7120,
+    lng: 44.7820,
+    timestamp: Date.now() - 1000 * 60 * 12,
+    confirmations: 24,
+    delay_minutes: 18,
+    severity: 'heavy',
+    alternativeRouteId: 'route-heroes-sq',
+    active: true
+  },
+  {
+    id: 'jam-2',
+    type: 'traffic_jam',
+    title: 'წერეთლის გამზირი (გამოფენასთან)',
+    description: 'გადატვირთული მოძრაობა და შეფერხება. შეფერხება +22 წთ. სიჩქარე: ~5 კმ/სთ.',
+    lat: 41.7340,
+    lng: 44.7830,
+    timestamp: Date.now() - 1000 * 60 * 8,
+    confirmations: 31,
+    delay_minutes: 22,
+    severity: 'heavy',
+    alternativeRouteId: 'route-tsereteli',
+    active: true
+  },
+  {
+    id: 'jam-3',
+    type: 'traffic_jam',
+    title: 'ჭავჭავაძის გამზირი (ვაკის პარკი)',
+    description: 'ნელი მოძრაობა შუქნიშნების კვანძზე, დაგვიანება +14 წთ.',
+    lat: 41.7100,
+    lng: 44.7620,
+    timestamp: Date.now() - 1000 * 60 * 15,
+    confirmations: 18,
+    delay_minutes: 14,
+    severity: 'moderate',
+    alternativeRouteId: 'route-chavchavadze',
+    active: true
+  },
+  {
+    id: 'jam-4',
+    type: 'traffic_jam',
+    title: 'მარჯვენა სანაპირო (იუსტიციის სახლთან)',
+    description: 'საცობი სანაპიროზე, მოძრაობა შეფერხებულია მშრალი ხიდის მიმართულებით.',
+    lat: 41.6980,
+    lng: 44.8050,
+    timestamp: Date.now() - 1000 * 60 * 20,
+    confirmations: 15,
+    delay_minutes: 16,
+    severity: 'heavy',
+    alternativeRouteId: 'route-heroes-sq',
+    active: true
+  },
+  {
+    id: 'jam-5',
+    type: 'traffic_jam',
+    title: 'კახეთის გზატკეცილი (სამგორი)',
+    description: 'სატრანსპორტო ნაკადის შეფერხება აეროპორტის მიმართულებით, +12 წთ.',
+    lat: 41.6880,
+    lng: 44.8650,
+    timestamp: Date.now() - 1000 * 60 * 25,
+    confirmations: 12,
+    delay_minutes: 12,
+    severity: 'moderate',
+    alternativeRouteId: 'route-kakheti',
+    active: true
+  },
+  {
+    id: 'jam-6',
+    type: 'traffic_jam',
+    title: 'აღმაშენებლის ხეივანი (დიღომი)',
+    description: 'საცობი ქალაქიდან გასასვლელში, საშუალო შეფერხება +11 წთ.',
+    lat: 41.7780,
+    lng: 44.7670,
+    timestamp: Date.now() - 1000 * 60 * 18,
+    confirmations: 16,
+    delay_minutes: 11,
+    severity: 'moderate',
+    alternativeRouteId: 'route-digomi',
+    active: true
+  },
+  {
+    id: 'jam-7',
+    type: 'traffic_jam',
+    title: 'ბათუმი · გოგოლის ქუჩა (შემოსასვლელი)',
+    description: 'მძიმე საცობი ბათუმის ცენტრისკენ მიმავალ ზოლზე, +14 წთ.',
+    lat: 41.6420,
+    lng: 41.6580,
+    timestamp: Date.now() - 1000 * 60 * 30,
+    confirmations: 19,
+    delay_minutes: 14,
+    severity: 'heavy',
+    active: true
+  }
+];
+
+export const INITIAL_ROAD_REPAIRS: MapReport[] = [
+  {
+    id: 'repair-1',
+    type: 'road_repair',
+    title: 'წერეთლის გამზირის კაპიტალური რეაბილიტაცია',
+    description: 'მიმდინარეობს ასფალტის დაგება & მიწისქვეშა კომუნიკაციები. სავალი ნაწილი შევიწროებულია 1 ზოლამდე.',
+    lat: 41.7310,
+    lng: 44.7860,
+    timestamp: Date.now() - 1000 * 60 * 45,
+    confirmations: 42,
+    road_repair_kind: 'ასფალტის დაგება & მილები',
+    delay_minutes: 24,
+    alternativeRouteId: 'route-tsereteli',
+    active: true
+  },
+  {
+    id: 'repair-2',
+    type: 'road_repair',
+    title: 'მელიქიშვილის გამზირი / კოსტავა',
+    description: 'საგზაო საფარის რეკონსტრუქცია და ბორდიურების მოწყობა, მოძრაობა შეზღუდულია.',
+    lat: 41.7080,
+    lng: 44.7860,
+    timestamp: Date.now() - 1000 * 60 * 60,
+    confirmations: 28,
+    road_repair_kind: 'საგზაო საფარი',
+    delay_minutes: 16,
+    alternativeRouteId: 'route-heroes-sq',
+    active: true
+  },
+  {
+    id: 'repair-3',
+    type: 'road_repair',
+    title: 'ვაჟა-ფშაველას გამზირი (VII კვარტალი)',
+    description: 'წყალმომარაგების მილების გამოცვლა. მარჯვენა ზოლი გადაკეტილია.',
+    lat: 41.7220,
+    lng: 44.7380,
+    timestamp: Date.now() - 1000 * 60 * 90,
+    confirmations: 21,
+    road_repair_kind: 'მილების გამოცვლა',
+    delay_minutes: 10,
+    alternativeRouteId: 'route-chavchavadze',
+    active: true
+  },
+  {
+    id: 'repair-4',
+    type: 'road_repair',
+    title: 'დიღმის მასივი · ბელიაშვილის ქუჩა',
+    description: 'გზის საფარის ფრეზირება და ახალი ასფალტის დაგება.',
+    lat: 41.7740,
+    lng: 44.7760,
+    timestamp: Date.now() - 1000 * 60 * 110,
+    confirmations: 17,
+    road_repair_kind: 'ფრეზირება & ასფალტი',
+    delay_minutes: 14,
+    alternativeRouteId: 'route-digomi',
+    active: true
+  },
+  {
+    id: 'repair-5',
+    type: 'road_repair',
+    title: 'რიკოთის უღელტეხილი (ხევი-უბისა)',
+    description: 'ახალი ჩქაროსნული ავტობანისა და გვირაბების სამშენებლო სამუშაოები. მოქმედებს დროებითი შემოვლა.',
+    lat: 42.0620,
+    lng: 43.4860,
+    timestamp: Date.now() - 1000 * 60 * 140,
+    confirmations: 55,
+    road_repair_kind: 'ავტობანის მშენებლობა',
+    delay_minutes: 25,
+    alternativeRouteId: 'route-rikoti',
+    active: true
+  },
+  {
+    id: 'repair-6',
+    type: 'road_repair',
+    title: 'ბათუმი · ჭავჭავაძის ქუჩა',
+    description: 'სანიაღვრე ქსელის მშენებლობა, სავალი ნაწილი შევიწროებულია.',
+    lat: 41.6440,
+    lng: 41.6360,
+    timestamp: Date.now() - 1000 * 60 * 80,
+    confirmations: 14,
+    road_repair_kind: 'სანიაღვრე ქსელი',
+    delay_minutes: 12,
+    active: true
+  }
+];
 
 interface Props {
   vehicle?: VehicleProfile;
@@ -42,9 +455,28 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const markersLayerRef = useRef<any>(null);
   const userMarkerRef = useRef<any>(null);
   const osmLayerRef = useRef<any>(null);
+  const darkLayerRef = useRef<any>(null);
   const satLayerRef = useRef<any>(null);
+  const routesLayerRef = useRef<any>(null);
 
-  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>('street');
+  const [showAlternativeRoutes, setShowAlternativeRoutes] = useState<boolean>(false);
+  const [activeRouteId, setActiveRouteId] = useState<string>('route-heroes-sq');
+
+  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>(() => {
+    try {
+      const saved = localStorage.getItem('autohub_map_theme');
+      if (saved === 'dark' || saved === 'street' || saved === 'satellite') return saved;
+    } catch {}
+    return 'street';
+  });
+
+  const handleThemeChange = (newTheme: 'dark' | 'street' | 'satellite') => {
+    sounds.playClick();
+    setMapTheme(newTheme);
+    try {
+      localStorage.setItem('autohub_map_theme', newTheme);
+    } catch {}
+  };
   const [cameraStatus, setCameraStatus] = useState('მონაცემები იტვირთება…');
   const [reports, setReports] = useState<MapReport[]>([]);
   const [communityReports, setCommunityReports] = useState<MapReport[]>([]);
@@ -65,6 +497,86 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [activeMapView, setActiveMapView] = useState<'autohub_map' | 'waze_live'>('autohub_map');
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Map Scroll & Zoom Isolation states (Prevents trapping page scroll on wheel or touch)
+  const [isMapUnlocked, setIsMapUnlocked] = useState<boolean>(false);
+  const isMapUnlockedRef = useRef<boolean>(false);
+  const [showMapGestureHint, setShowMapGestureHint] = useState<boolean>(false);
+  const mapGestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showTwoFingerOverlay, setShowTwoFingerOverlay] = useState<boolean>(false);
+  const twoFingerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleToggleMapLock = useCallback(() => {
+    sounds.playClick();
+    setIsMapUnlocked(prev => {
+      const next = !prev;
+      isMapUnlockedRef.current = next;
+      if (mapInstanceRef.current) {
+        if (next) {
+          mapInstanceRef.current.scrollWheelZoom.enable();
+        } else {
+          mapInstanceRef.current.scrollWheelZoom.disable();
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  const handleScrollPastMap = useCallback(() => {
+    sounds.playClick();
+    setIsMapUnlocked(false);
+    isMapUnlockedRef.current = false;
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.scrollWheelZoom.disable();
+    }
+    const nextSection =
+      document.getElementById('live-map-bottom-section') ||
+      document.getElementById('map-search-categories') ||
+      document.querySelector('.neu-card');
+    if (nextSection) {
+      const stickyHeaderEl = document.getElementById('sticky-header');
+      const headerHeight = stickyHeaderEl ? stickyHeaderEl.getBoundingClientRect().height : 100;
+      const rect = nextSection.getBoundingClientRect();
+      const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+      const targetY = Math.max(0, rect.top + currentScrollY - headerHeight - 12);
+      window.scrollTo({
+        top: targetY,
+        behavior: 'smooth'
+      });
+    } else {
+      window.scrollBy({ top: 480, behavior: 'smooth' });
+    }
+  }, []);
+
+  // Exit interactive map mode on outside click or Escape key
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (mapContainerRef.current && !mapContainerRef.current.contains(e.target as Node)) {
+        if (isMapUnlockedRef.current) {
+          setIsMapUnlocked(false);
+          isMapUnlockedRef.current = false;
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.scrollWheelZoom.disable();
+          }
+        }
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMapUnlockedRef.current) {
+        setIsMapUnlocked(false);
+        isMapUnlockedRef.current = false;
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.scrollWheelZoom.disable();
+        }
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // 1. Ensure Leaflet is loaded independently and reliably
   useEffect(() => {
@@ -93,7 +605,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     const comm = communityReports.filter(r => !/^(radar-[1-3]|patrol-[1-3]|hazard-[1-2])$/.test(r.id));
     const seen = new Set<string>();
     const merged: MapReport[] = [];
-    for (const p of [...comm, ...backendPois]) {
+    for (const p of [...INITIAL_TRAFFIC_JAMS, ...INITIAL_ROAD_REPAIRS, ...comm, ...backendPois]) {
       if (!seen.has(p.id)) {
         seen.add(p.id);
         merged.push(p);
@@ -225,44 +737,99 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       zoom: 13,
       zoomControl: false,
       attributionControl: true,
-      preferCanvas: true
+      preferCanvas: true,
+      scrollWheelZoom: false // Disable accidental wheel scroll hijacking
     });
+
+    // Cooperative wheel gesture handler: Ctrl/Cmd + wheel allows zoom; normal wheel scrolls the webpage
+    const domEl = mapContainerRef.current;
+    const onMapWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey || isMapUnlockedRef.current) {
+        map.scrollWheelZoom.enable();
+      } else {
+        map.scrollWheelZoom.disable();
+        setShowMapGestureHint(true);
+        if (mapGestureTimerRef.current) clearTimeout(mapGestureTimerRef.current);
+        mapGestureTimerRef.current = setTimeout(() => {
+          setShowMapGestureHint(false);
+        }, 1600);
+      }
+    };
+
+    // 2-finger touch handler: 1 finger scrolls page, 2 fingers drag/zoom map
+    const onMapTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1 && !isMapUnlockedRef.current) {
+        map.dragging.disable();
+        setShowTwoFingerOverlay(true);
+        if (twoFingerTimerRef.current) clearTimeout(twoFingerTimerRef.current);
+        twoFingerTimerRef.current = setTimeout(() => setShowTwoFingerOverlay(false), 1600);
+      } else if (e.touches.length >= 2 || isMapUnlockedRef.current) {
+        map.dragging.enable();
+        map.touchZoom.enable();
+        setShowTwoFingerOverlay(false);
+      }
+    };
+
+    const onMapTouchMove = (e: TouchEvent) => {
+      if (e.touches.length >= 2 || isMapUnlockedRef.current) {
+        map.dragging.enable();
+        map.touchZoom.enable();
+        setShowTwoFingerOverlay(false);
+      }
+    };
+
+    const onMapTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        setShowTwoFingerOverlay(false);
+        map.dragging.enable();
+      }
+    };
+
+    if (domEl) {
+      domEl.addEventListener('wheel', onMapWheel, { passive: true });
+      domEl.addEventListener('touchstart', onMapTouchStart, { passive: true });
+      domEl.addEventListener('touchmove', onMapTouchMove, { passive: true });
+      domEl.addEventListener('touchend', onMapTouchEnd, { passive: true });
+    }
 
     map.on('moveend', () => setMapRevision(v => v + 1));
 
-    // Pre-create and cache both tile layers for instant, lag-free switching
-    // OpenStreetMap standard tiles (identical to Parking page, 100% reliable)
+    // Pre-create and cache all 3 tile layers for instant, lag-free switching
+    // 1. OpenStreetMap standard tiles (100% reliable)
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
     });
     osmLayerRef.current = osmLayer;
 
-    const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
-      attribution: 'Tiles &copy; Esri'
+    // 2. CartoDB Dark Matter (true native dark theme, sleek slate/navy, zero CSS filter lag)
+    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 20,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
+    });
+    darkLayerRef.current = darkLayer;
+
+    // 3. Google Hybrid (crystal clear satellite + road & street name overlays in Georgian!)
+    const satLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      subdomains: ['0', '1', '2', '3'],
+      maxZoom: 20,
+      attribution: 'Map data &copy; Google'
     });
     satLayerRef.current = satLayer;
 
     // Attach initial layer
-    if (mapTheme === 'satellite') {
-      satLayer.addTo(map);
-      satLayer.bringToBack();
-      if (mapContainerRef.current) {
-        mapContainerRef.current.classList.remove('dark-map-tiles');
+    const initialLayer = mapTheme === 'dark' ? darkLayer : mapTheme === 'satellite' ? satLayer : osmLayer;
+    initialLayer.addTo(map);
+    initialLayer.bringToBack();
+    if (mapContainerRef.current) {
+      mapContainerRef.current.classList.remove('dark-map-tiles');
+      if (mapTheme === 'dark') {
+        mapContainerRef.current.style.backgroundColor = '#12161f';
+      } else if (mapTheme === 'satellite') {
         mapContainerRef.current.style.backgroundColor = '#000000';
-      }
-    } else {
-      osmLayer.addTo(map);
-      osmLayer.bringToBack();
-      if (mapContainerRef.current) {
-        if (mapTheme === 'dark') {
-          mapContainerRef.current.classList.add('dark-map-tiles');
-          mapContainerRef.current.style.backgroundColor = '#1a2232';
-        } else {
-          mapContainerRef.current.classList.remove('dark-map-tiles');
-          mapContainerRef.current.style.backgroundColor = '#f8fafc';
-        }
+      } else {
+        mapContainerRef.current.style.backgroundColor = '#f8fafc';
       }
     }
 
@@ -272,6 +839,11 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     // Group layer for all reports
     const markersLayer = L.layerGroup().addTo(map);
     markersLayerRef.current = markersLayer;
+
+    // Group layer for alternative routes polylines
+    const routesLayer = L.layerGroup().addTo(map);
+    routesLayerRef.current = routesLayer;
+
     mapInstanceRef.current = map;
 
     // Map Click handler - allows placing a point directly by clicking
@@ -301,52 +873,66 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     return () => {
       resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
+      if (domEl) {
+        domEl.removeEventListener('wheel', onMapWheel);
+        domEl.removeEventListener('touchstart', onMapTouchStart);
+        domEl.removeEventListener('touchmove', onMapTouchMove);
+        domEl.removeEventListener('touchend', onMapTouchEnd);
+      }
+      if (mapGestureTimerRef.current) clearTimeout(mapGestureTimerRef.current);
+      if (twoFingerTimerRef.current) clearTimeout(twoFingerTimerRef.current);
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
       clearTimeout(t4);
       map.remove();
       mapInstanceRef.current = null;
+      osmLayerRef.current = null;
+      darkLayerRef.current = null;
+      satLayerRef.current = null;
     };
   }, [isLeafletReady]);
 
-  // Instant, lag-free theme switching (toggles cached layer & CSS filter without re-downloading)
+  // Instant, lag-free theme switching (toggles cached native tile layers without re-downloading)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
     const osm = osmLayerRef.current;
+    const dark = darkLayerRef.current;
     const sat = satLayerRef.current;
-    if (!osm || !sat) return;
+    if (!osm || !dark || !sat) return;
 
-    // ახალი ფენა ჯერ დავამატოთ, ძველი მერე მოვხსნათ — რომ რუკა არ „ჩაქრეს" ცვლილებისას
-    if (mapTheme === 'satellite') {
-      if (!map.hasLayer(sat)) sat.addTo(map);
-      sat.bringToBack();
-      if (map.hasLayer(osm)) map.removeLayer(osm);
-      if (mapContainerRef.current) {
-        mapContainerRef.current.classList.remove('dark-map-tiles');
-        mapContainerRef.current.style.backgroundColor = '#000000';
+    const targetLayer = mapTheme === 'dark' ? dark : mapTheme === 'satellite' ? sat : osm;
+
+    // 1. Add target layer FIRST so map never blanks out or flashes grey
+    if (!map.hasLayer(targetLayer)) {
+      targetLayer.addTo(map);
+    }
+    targetLayer.bringToBack();
+
+    // 2. Remove other layers gracefully
+    const allLayers = [osm, dark, sat];
+    allLayers.forEach(l => {
+      if (l !== targetLayer && map.hasLayer(l)) {
+        map.removeLayer(l);
       }
-    } else {
-      // Both 'dark' and 'street' use cached OpenStreetMap
-      if (!map.hasLayer(osm)) osm.addTo(map);
-      osm.bringToBack();
-      if (map.hasLayer(sat)) map.removeLayer(sat);
+    });
 
-      // Instant CSS filter toggle — zero network request, zero lag!
-      if (mapContainerRef.current) {
-        if (mapTheme === 'dark') {
-          mapContainerRef.current.classList.add('dark-map-tiles');
-          mapContainerRef.current.style.backgroundColor = '#1a2232';
-        } else {
-          mapContainerRef.current.classList.remove('dark-map-tiles');
-          mapContainerRef.current.style.backgroundColor = '#f8fafc';
-        }
+    // 3. Update container background color
+    if (mapContainerRef.current) {
+      mapContainerRef.current.classList.remove('dark-map-tiles');
+      if (mapTheme === 'dark') {
+        mapContainerRef.current.style.backgroundColor = '#12161f';
+      } else if (mapTheme === 'satellite') {
+        mapContainerRef.current.style.backgroundColor = '#000000';
+      } else {
+        mapContainerRef.current.style.backgroundColor = '#f8fafc';
       }
     }
-    // ფენის გადართვის შემდეგ ხელახალი დახატვა — თეთრი/ნაცრისფერი ფილების თავიდან ასაცილებლად
-    setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 60);
+
+    // Immediate size invalidation to force rendering
+    setTimeout(() => { try { map.invalidateSize({ pan: false }); } catch (e) {} }, 40);
   }, [mapTheme]);
 
   // Helper: Format relative time in Georgian
@@ -358,6 +944,89 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     if (hours < 24) return `${hours} საათის წინ`;
     return `${Math.floor(hours / 24)} დღის წინ`;
   };
+
+  // 3b. Render Alternative Routes Polylines on Leaflet Map
+  useEffect(() => {
+    if (!mapInstanceRef.current || !routesLayerRef.current) return;
+    const L = (window as any).L;
+    if (!L) return;
+
+    const layer = routesLayerRef.current;
+    layer.clearLayers();
+
+    if (!showAlternativeRoutes) return;
+
+    const selectedRoute = ALTERNATIVE_ROUTES.find(r => r.id === activeRouteId) || ALTERNATIVE_ROUTES[0];
+    if (!selectedRoute) return;
+
+    // 1. Congested / Road repair route: Red dashed line
+    const congLine = L.polyline(selectedRoute.congestedCoords, {
+      color: '#ef4444',
+      weight: 6,
+      opacity: 0.85,
+      dashArray: '8, 8',
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(layer);
+
+    congLine.bindTooltip(`🛑 ძირითადი გზა: ${selectedRoute.congestedTimeMin} წთ (+${selectedRoute.congestedDelayMin} წთ ${selectedRoute.causeType === 'traffic_jam' ? 'საცობი' : 'რემონტი'})`, {
+      permanent: false,
+      direction: 'top',
+      className: 'bg-rose-950 text-white font-bold text-xs px-2.5 py-1 rounded-lg shadow-md border border-rose-400'
+    });
+
+    // 2. Alternative route: Solid glowing emerald green line
+    const altLine = L.polyline(selectedRoute.altCoords, {
+      color: '#10b981',
+      weight: 8,
+      opacity: 0.95,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(layer);
+
+    altLine.bindTooltip(`⚡ ალტერნატიული მოკლე გზა: ${selectedRoute.altTimeMin} წთ (-${selectedRoute.timeSavedMin} წთ მოგება!)`, {
+      permanent: true,
+      direction: 'top',
+      className: 'bg-emerald-900 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-xl border-2 border-emerald-400 ring-2 ring-emerald-500/30'
+    });
+
+    // 3. Start Marker
+    const startIcon = L.divIcon({
+      className: 'route-pin-start',
+      html: `
+        <div class="px-2.5 py-1 rounded-xl bg-[#1A2232] text-white text-[11px] font-black border-2 border-white shadow-lg flex items-center gap-1 whitespace-nowrap">
+          <span>🏁</span>
+          <span>საწყისი</span>
+        </div>
+      `,
+      iconSize: [75, 28],
+      iconAnchor: [37, 14]
+    });
+    L.marker([selectedRoute.origin.lat, selectedRoute.origin.lng], { icon: startIcon }).addTo(layer);
+
+    // 4. Destination Marker
+    const destIcon = L.divIcon({
+      className: 'route-pin-dest',
+      html: `
+        <div class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-[11px] font-black border-2 border-white shadow-lg flex items-center gap-1 whitespace-nowrap animate-bounce">
+          <span>🎯</span>
+          <span>დანიშნულება</span>
+        </div>
+      `,
+      iconSize: [95, 28],
+      iconAnchor: [47, 14]
+    });
+    L.marker([selectedRoute.destination.lat, selectedRoute.destination.lng], { icon: destIcon }).addTo(layer);
+
+    // 5. Fit map bounds to show the complete route
+    try {
+      const allCoords = [...selectedRoute.congestedCoords, ...selectedRoute.altCoords];
+      const bounds = L.latLngBounds(allCoords);
+      mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    } catch (e) {
+      // ignore
+    }
+  }, [showAlternativeRoutes, activeRouteId]);
 
   // 4. Update Markers on reports or filter changes
   useEffect(() => {
@@ -596,6 +1265,36 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             </div>
           `;
           break;
+
+        case 'traffic_jam':
+          markerClass = 'traffic-jam-marker';
+          iconHtml = `
+            <div class="relative flex flex-col items-center cursor-pointer group">
+              <div class="px-2 py-0.5 rounded-full bg-[#D93025] text-white font-mono font-black text-[9px] shadow-sm border border-white -mb-1.5 z-20 whitespace-nowrap animate-pulse">
+                ${item.delay_minutes ? `+${item.delay_minutes} წთ საცობი` : '🔴 საცობი'}
+              </div>
+              <div class="relative w-8 h-8 rounded-full bg-[#D93025] text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 transition-transform z-10">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+              </div>
+              <div class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-[#D93025] -mt-[1px]"></div>
+            </div>
+          `;
+          break;
+
+        case 'road_repair':
+          markerClass = 'road-repair-marker';
+          iconHtml = `
+            <div class="relative flex flex-col items-center cursor-pointer group">
+              <div class="px-2 py-0.5 rounded-full bg-[#E37400] text-white font-mono font-black text-[9px] shadow-sm border border-white -mb-1.5 z-20 whitespace-nowrap">
+                🚧 რემონტი
+              </div>
+              <div class="relative w-8 h-8 rounded-full bg-[#E37400] text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 transition-transform z-10">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              </div>
+              <div class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-[#E37400] -mt-[1px]"></div>
+            </div>
+          `;
+          break;
       }
 
       const customIcon = L.divIcon({
@@ -678,6 +1377,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           <div class="flex items-center justify-between pb-2 border-b border-[#E8EAED]">
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
               item.type === 'patrol' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+              item.type === 'traffic_jam' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+              item.type === 'road_repair' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
               item.type === 'radar' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
               item.type === 'hazard' ? 'bg-red-50 text-red-700 border border-red-200' :
               item.type === 'fuel' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
@@ -689,6 +1390,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
               'bg-amber-50 text-amber-900 border border-amber-200'
             }">
               ${item.type === 'patrol' ? '🚓 საპატრულო ეკიპაჟი' :
+                item.type === 'traffic_jam' ? (item.delay_minutes ? `🔴 საცობი · +${item.delay_minutes} წთ` : '🔴 მძიმე საცობი') :
+                item.type === 'road_repair' ? '🚧 ქუჩის რემონტი' :
                 item.type === 'radar' ? (item.speed_limit_kmh ? `⚡ რადარი · ${item.speed_limit_kmh} კმ/სთ` : '📷 ' + escapeHtml(item.cameraKind || 'რადარი / კამერა')) :
                 item.type === 'hazard' ? '⚠️ საგზაო საფრთხე' :
                 item.type === 'fuel' ? '⛽ ავტოგასამართი' :
@@ -794,9 +1497,25 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const categoryGroups = [
     {
       id: 'safety',
-      title: '🚨 უსაფრთხოება & მოძრაობა',
-      color: 'border-amber-200/90 bg-amber-50/50',
+      title: '🚨 მოძრაობა & საცობები',
+      color: 'border-rose-200/90 bg-rose-50/40',
       items: [
+        {
+          key: 'traffic_jam' as const,
+          label: 'საცობები (Live)',
+          badge: 'Live 12',
+          desc: 'მძიმე შეფერხებები & ალტერნატივები',
+          icon: Car,
+          accent: 'text-rose-600 bg-rose-100/90 border-rose-300'
+        },
+        {
+          key: 'road_repair' as const,
+          label: 'ქუჩის რემონტი',
+          badge: '14',
+          desc: 'საგზაო სამუშაოები & შეზღუდვები',
+          icon: Construction,
+          accent: 'text-amber-700 bg-amber-100/90 border-amber-300'
+        },
         {
           key: 'radar' as const,
           label: 'რადარები & კამერები',
@@ -858,7 +1577,14 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           desc: 'თვითმომსახურება & ქიმწმენდა',
           icon: Droplets,
           accent: 'text-sky-700 bg-sky-100/90 border-sky-300'
-        },
+        }
+      ]
+    },
+    {
+      id: 'market',
+      title: '🏬 ნაწილები & სალონები',
+      color: 'border-purple-200/90 bg-purple-50/50',
+      items: [
         {
           key: 'parts' as const,
           label: 'ავტონაწილები',
@@ -882,7 +1608,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   return (
     <div className="space-y-4">
       {/* 1. Map Top Control Bar (Search, Filters, Geo) — მოცულობითი დაფა */}
-      <div className="p-5 sm:p-6 lg:p-7 rounded-3xl neu-card shadow-neu-card border border-white/90 bg-[#ECEAE5] text-navy space-y-5 transition-all">
+      <div data-tour="map-controls" className="p-5 sm:p-6 lg:p-7 rounded-3xl neu-card shadow-neu-card border border-white/90 bg-[#ECEAE5] text-navy space-y-5 transition-all">
         {/* Header Row: Title, Live indicator & Action buttons */}
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
           
@@ -964,6 +1690,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
             {/* Add Report Button */}
             <button
+              data-tour="map-report-btn"
               onClick={() => {
                 sounds.playClick();
                 setIsAddModalOpen(true);
@@ -976,8 +1703,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </div>
         </div>
 
-        {/* Category Cards Section — მოცულობითი, შესამჩნევი და დაჯგუფებული კატეგორიები */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+        {/* Category Cards Section — 4 თანაბრად გადანაწილებული კატეგორია (2-2 იკონით) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {categoryGroups.map(group => (
             <div
               key={group.id}
@@ -1078,6 +1805,86 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             )}
           </div>
         </div>
+
+        {/* Live Traffic, Street Repairs & Alternative Routes Strip */}
+        <div data-tour="map-traffic-filters" className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-200/80">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Traffic Jams Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setFilterType(filterType === 'traffic_jam' ? 'all' : 'traffic_jam');
+                setSelectedReport(null);
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border-2 ${
+                filterType === 'traffic_jam'
+                  ? 'bg-rose-600 text-white border-rose-700 shadow-md ring-2 ring-rose-400/40 font-black scale-[1.02]'
+                  : 'bg-rose-50/90 text-rose-800 hover:bg-rose-100/90 border-rose-200/90 shadow-2xs'
+              }`}
+            >
+              <Car size={15} className={filterType === 'traffic_jam' ? 'text-white' : 'text-rose-600'} />
+              <span>🔴 საცობები</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-black ${
+                filterType === 'traffic_jam' ? 'bg-white/20 text-white' : 'bg-rose-200/70 text-rose-900'
+              }`}>
+                Live 12
+              </span>
+            </button>
+
+            {/* Street Repairs Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setFilterType(filterType === 'road_repair' ? 'all' : 'road_repair');
+                setSelectedReport(null);
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border-2 ${
+                filterType === 'road_repair'
+                  ? 'bg-amber-600 text-white border-amber-700 shadow-md ring-2 ring-amber-400/40 font-black scale-[1.02]'
+                  : 'bg-amber-50/90 text-amber-900 hover:bg-amber-100/90 border-amber-200/90 shadow-2xs'
+              }`}
+            >
+              <Construction size={15} className={filterType === 'road_repair' ? 'text-white' : 'text-amber-700'} />
+              <span>🚧 ქუჩის რემონტი</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-black ${
+                filterType === 'road_repair' ? 'bg-white/20 text-white' : 'bg-amber-200/70 text-amber-950'
+              }`}>
+                14 ობიექტი
+              </span>
+            </button>
+
+            {/* Alternative Routes (which are shorter) Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setShowAlternativeRoutes(prev => !prev);
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 border-2 shadow-xs ${
+                showAlternativeRoutes
+                  ? 'bg-emerald-600 text-white border-emerald-700 ring-2 ring-emerald-400/50 shadow-md scale-[1.02]'
+                  : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border-emerald-300'
+              }`}
+            >
+              <Zap size={15} className={showAlternativeRoutes ? 'text-white fill-white' : 'text-emerald-600 fill-emerald-500'} />
+              <span>⚡ ალტერნატიული მოკლე გზები</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                showAlternativeRoutes ? 'bg-white/20 text-white' : 'bg-emerald-200 text-emerald-950'
+              }`}>
+                მოკლე & სწრაფი
+              </span>
+            </button>
+          </div>
+
+          {showAlternativeRoutes && (
+            <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 font-bold bg-emerald-100/80 px-3 py-1.5 rounded-xl border border-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span>რუკაზე ნაჩვენებია მწვანე მოკლე ალტერნატივა და წითელი საცობი</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 2. Sleek Map Status Bar */}
@@ -1154,19 +1961,65 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </div>
         </div>
       ) : (
-      <div className="relative w-full min-h-[560px] h-[560px] sm:h-[640px] rounded-3xl overflow-hidden border-2 border-slate-300/80 shadow-xl bg-[#F4F3F0]">
+      <div id="live-traffic-map-canvas" data-tour="map-canvas" className="relative w-full min-h-[560px] h-[560px] sm:h-[640px] rounded-3xl overflow-hidden border-2 border-slate-300/80 shadow-xl bg-[#F4F3F0]">
         
         {/* Leaflet DOM Node */}
         <div
           ref={mapContainerRef}
+          onDoubleClick={handleToggleMapLock}
           className={`w-full h-full z-0 transition-colors duration-300 ${
             mapTheme === 'dark'
-              ? 'bg-[#1a2232] dark-map-tiles'
+              ? 'bg-[#12161f]'
               : mapTheme === 'satellite'
               ? 'bg-black'
               : 'bg-[#f8fafc]'
           }`}
+          title="ორჯერ დაკლიკეთ რუკის ზუმის გასააქტიურებლად/გასათიშად"
         />
+
+        {/* Active Map Zoom Pill Badge */}
+        {isMapUnlocked && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-full bg-slate-950/90 backdrop-blur-md text-emerald-300 border border-emerald-400/50 shadow-xl flex items-center gap-2 animate-fade-in text-xs font-bold pointer-events-auto">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span>რუკის ზუმი ჩართულია • ორჯერ დაკლიკეთ ან დააჭირეთ Esc-ს</span>
+            <button
+              onClick={handleToggleMapLock}
+              className="p-0.5 rounded-full hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
+              title="რუკის ზუმის გამორთვა"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        )}
+
+        {/* 2-Finger Touch Overlay (Google Maps gesture hint) */}
+        {showTwoFingerOverlay && !isMapUnlocked && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/40 backdrop-blur-[2px] pointer-events-none animate-fade-in transition-opacity">
+            <div className="px-5 py-3 rounded-2xl bg-slate-950/90 text-white text-xs sm:text-sm font-bold border border-white/20 shadow-2xl flex items-center gap-2.5">
+              <span className="text-xl">✌️</span>
+              <span>გამოიყენეთ <strong>2 თითი</strong> რუკის სამართავად</span>
+            </div>
+          </div>
+        )}
+
+        {/* Momentary Wheel Scroll Hint */}
+        {showMapGestureHint && !isMapUnlocked && !showTwoFingerOverlay && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-2xl bg-slate-950/90 backdrop-blur-md text-white text-xs font-semibold border border-white/20 shadow-2xl flex items-center gap-2 pointer-events-none animate-fade-in">
+            <MousePointerClick size={16} className="text-gold animate-bounce" />
+            <span>გამოიყენეთ <strong>2 თითი (Pinch)</strong> ან <strong>⌘ / Ctrl + Scroll</strong> რუკის ზუმისთვის</span>
+          </div>
+        )}
+
+        {/* Floating Quick Exit / Scroll Past Button */}
+        <button
+          type="button"
+          onClick={handleScrollPastMap}
+          className="absolute bottom-4 right-4 z-20 px-3.5 py-2 rounded-2xl bg-white/95 hover:bg-white text-navy font-bold text-xs shadow-md border border-slate-200/90 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 group pointer-events-auto"
+          title="სერვისებზე და ფასებზე ჩასვლა"
+        >
+          <span>სერვისებზე ჩასვლა</span>
+          <ChevronDown size={14} className="text-gold group-hover:translate-y-0.5 transition-transform" />
+        </button>
 
         {/* Loading overlay if Leaflet is still preparing */}
         {!isLeafletReady && (
@@ -1183,19 +2036,30 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           onTouchStart={(e) => e.stopPropagation()}
           className="absolute top-4 right-14 z-20 flex items-center gap-1 p-1 rounded-2xl bg-navy/95 backdrop-blur-md border border-slate-700/80 shadow-lg text-xs"
         >
+          {/* Lock / Unlock Toggle Button */}
+          <button
+            type="button"
+            onClick={handleToggleMapLock}
+            className={`px-2 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+              isMapUnlocked ? 'bg-emerald-500 text-white shadow-xs font-black' : 'text-slate-300 hover:text-white'
+            }`}
+            title={isMapUnlocked ? 'რუკის ზუმი აქტიურია (ჩასაკეტად დაკლიკეთ)' : 'რუკის ზუმის განბლოკვა (ორჯერ დაკლიკეთ)'}
+          >
+            {isMapUnlocked ? <Unlock size={11} /> : <Lock size={11} />}
+            <span className="hidden sm:inline">{isMapUnlocked ? 'ზუმი აქტიური' : 'ზუმი ჩაკეტილი'}</span>
+          </button>
           <button
             type="button"
             onPointerDown={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
-              sounds.playClick();
-              setMapTheme('dark');
+              handleThemeChange('dark');
             }}
             className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
               mapTheme === 'dark' ? 'bg-gold text-navy shadow-xs font-black' : 'text-slate-300 hover:text-white'
             }`}
-            title="მუქი Waze რეჟიმი"
+            title="CartoDB Dark Matter მუქი რეჟიმი"
           >
             <span>🌙 მუქი</span>
           </button>
@@ -1205,8 +2069,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
-              sounds.playClick();
-              setMapTheme('street');
+              handleThemeChange('street');
             }}
             className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
               mapTheme === 'street' ? 'bg-gold text-navy shadow-xs font-black' : 'text-slate-300 hover:text-white'
@@ -1221,13 +2084,12 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
-              sounds.playClick();
-              setMapTheme('satellite');
+              handleThemeChange('satellite');
             }}
             className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
               mapTheme === 'satellite' ? 'bg-gold text-navy shadow-xs font-black' : 'text-slate-300 hover:text-white'
             }`}
-            title="Esri სატელიტური აეროფოტო"
+            title="Google Hybrid სატელიტი ქუჩების სახელებით"
           >
             <span>🛰️ სატელიტი</span>
           </button>
@@ -1290,6 +2152,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             <div className="flex items-center justify-between pb-2 border-b border-[#E8EAED]">
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                 selectedReport.type === 'patrol' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                selectedReport.type === 'traffic_jam' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                selectedReport.type === 'road_repair' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
                 selectedReport.type === 'radar' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
                 selectedReport.type === 'hazard' ? 'bg-red-50 text-red-700 border border-red-200' :
                 selectedReport.type === 'fuel' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
@@ -1301,6 +2165,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                 'bg-amber-50 text-amber-900 border border-amber-200'
               }`}>
                 {selectedReport.type === 'patrol' ? '🚓 საპატრულო ეკიპაჟი' :
+                 selectedReport.type === 'traffic_jam' ? (selectedReport.delay_minutes ? `🔴 საცობი · +${selectedReport.delay_minutes} წთ შეფერხება` : '🔴 მძიმე საცობი') :
+                 selectedReport.type === 'road_repair' ? `🚧 ქუჩის რემონტი ${selectedReport.road_repair_kind ? `• ${selectedReport.road_repair_kind}` : ''}` :
                  selectedReport.type === 'radar' ? (selectedReport.speed_limit_kmh ? `⚡ რადარი · ${selectedReport.speed_limit_kmh} კმ/სთ` : '📷 ' + (selectedReport.cameraKind || 'რადარი / კამერა')) :
                  selectedReport.type === 'hazard' ? '⚠️ საგზაო საფრთხე' :
                  selectedReport.type === 'fuel' ? `⛽ ავტოგასამართი ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
@@ -1344,6 +2210,22 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
             {/* Details Box */}
             <div className="mt-2.5 p-2.5 rounded-2xl bg-[#F8F9FA] border border-[#DADCE0] space-y-1.5 text-xs text-[#3C4043]">
+              {selectedReport.delay_minutes && (
+                <div className="flex items-center justify-between">
+                  <span className="text-[#5F6368]">სავარაუდო შეფერხება:</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-mono font-bold text-xs">
+                    ⏱️ +{selectedReport.delay_minutes} წუთი
+                  </span>
+                </div>
+              )}
+              {selectedReport.road_repair_kind && (
+                <div className="flex items-center justify-between">
+                  <span className="text-[#5F6368]">სამუშაოს ტიპი:</span>
+                  <span className="font-bold text-amber-900">
+                    🚧 {selectedReport.road_repair_kind}
+                  </span>
+                </div>
+              )}
               {selectedReport.speed_limit_kmh && (
                 <div className="flex items-center justify-between">
                   <span className="text-[#5F6368]">მაქს. სიჩქარე:</span>
@@ -1375,6 +2257,23 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                 </div>
               )}
             </div>
+
+            {/* Alternative Route CTA if available */}
+            {selectedReport.alternativeRouteId && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setActiveRouteId(selectedReport.alternativeRouteId!);
+                  setShowAlternativeRoutes(true);
+                  setSelectedReport(null);
+                }}
+                className="w-full mt-2.5 py-2.5 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
+              >
+                <Zap size={15} className="text-white fill-white" />
+                <span>⚡ ალტერნატიული მოკლე გზის ნახვა (დაზოგვა!)</span>
+              </button>
+            )}
 
             {/* Navigation & Action Buttons */}
             <div className="mt-3 pt-2.5 border-t border-[#E8EAED] flex items-center justify-between gap-2">
@@ -1411,11 +2310,194 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </div>
         )}
 
+        {/* Alternative Shorter Routes Interactive Floating Card / Drawer */}
+        {showAlternativeRoutes && (
+          <div
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="absolute bottom-3 left-3 right-3 sm:left-4 sm:right-auto sm:max-w-lg z-30 p-4 sm:p-5 rounded-3xl bg-white/98 backdrop-blur-xl border-2 border-emerald-500/80 text-navy shadow-[0_16px_36px_rgba(16,185,129,0.22)] animate-fade-in space-y-3.5"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                  <Zap size={18} className="fill-emerald-600" />
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-navy flex items-center gap-1.5">
+                    <span>ალტერნატიული მოკლე გზები</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      სწრაფი შემოვლა
+                    </span>
+                  </h4>
+                  <p className="text-[10px] sm:text-[11px] text-slate-500">
+                    საცობებისა და რემონტის თავიდან არიდება მოკლე მარშრუტებით
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setShowAlternativeRoutes(false);
+                }}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-navy flex items-center justify-center text-xs transition-colors"
+                title="დახურვა"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Corridor Selector Pills */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                აირჩიეთ მონაკვეთი:
+              </span>
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                {ALTERNATIVE_ROUTES.map(route => {
+                  const isSelected = route.id === activeRouteId;
+                  return (
+                    <button
+                      key={route.id}
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setActiveRouteId(route.id);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all flex items-center gap-1.5 border ${
+                        isSelected
+                          ? 'bg-[#1A2232] text-white border-emerald-500 shadow-sm ring-1 ring-emerald-500'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>{route.causeType === 'traffic_jam' ? '🔴' : '🚧'}</span>
+                      <span>{route.title}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono font-black ${
+                        isSelected ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'
+                      }`}>
+                        -{route.timeSavedMin} წთ
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Active Route Comparison: Congested vs Alternative */}
+            {(() => {
+              const route = ALTERNATIVE_ROUTES.find(r => r.id === activeRouteId) || ALTERNATIVE_ROUTES[0];
+              if (!route) return null;
+
+              const gmapsAltUrl = `https://www.google.com/maps/dir/?api=1&origin=${route.origin.lat},${route.origin.lng}&destination=${route.destination.lat},${route.destination.lng}&travelmode=driving`;
+              const wazeAltUrl = `https://waze.com/ul?ll=${route.destination.lat},${route.destination.lng}&navigate=yes`;
+
+              return (
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2 text-left">
+                    {/* Primary Congested Road */}
+                    <div className="p-2.5 rounded-2xl bg-rose-50/80 border border-rose-200/90 space-y-1">
+                      <div className="flex items-center justify-between text-[10px] font-bold text-rose-800">
+                        <span>🛑 ძირითადი გზა</span>
+                        <span className="font-mono text-rose-700">+{route.congestedDelayMin} წთ</span>
+                      </div>
+                      <div className="text-sm font-black font-mono text-rose-950">
+                        {route.congestedTimeMin} წთ <span className="text-[11px] font-normal text-rose-700 font-sans">({route.congestedDistKm} კმ)</span>
+                      </div>
+                      <p className="text-[10px] text-rose-800/90 line-clamp-2 leading-tight">
+                        {route.congestedName}
+                      </p>
+                    </div>
+
+                    {/* Alternative Shorter Road */}
+                    <div className="p-2.5 rounded-2xl bg-emerald-50/90 border-2 border-emerald-500/90 space-y-1 shadow-2xs">
+                      <div className="flex items-center justify-between text-[10px] font-black text-emerald-800">
+                        <span>⚡ მოკლე ალტერნატივა</span>
+                        <span className="px-1.5 py-0.2 rounded-md bg-emerald-200 text-emerald-950 font-mono text-[9px] font-black">
+                          -{route.timeSavedMin} წთ
+                        </span>
+                      </div>
+                      <div className="text-sm font-black font-mono text-emerald-950 flex items-center gap-1">
+                        <span>{route.altTimeMin} წთ</span>
+                        <span className="text-[11px] font-normal text-emerald-700 font-sans">({route.altDistKm} კმ)</span>
+                      </div>
+                      <p className="text-[10px] font-bold text-emerald-800 line-clamp-2 leading-tight">
+                        {route.distSavedKm > 0 ? `${route.distSavedKm} კმ-ით მოკლე & თავისუფალი!` : 'თავისუფალი მოძრაობა!'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Turn-by-Turn Bypass Recommendation */}
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      შემოვლითი ქუჩების მიმართულება:
+                    </span>
+                    <div className="text-navy font-semibold text-[11px] leading-relaxed flex flex-wrap items-center gap-1">
+                      {route.altBypassStreets.map((st, i) => (
+                        <React.Fragment key={st}>
+                          <span className="px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-navy font-bold">
+                            {st}
+                          </span>
+                          {i < route.altBypassStreets.length - 1 && <span className="text-emerald-600 font-black">→</span>}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Actions: Navigation Links & Focus Map */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        try {
+                          const allCoords = [...route.congestedCoords, ...route.altCoords];
+                          const L = (window as any).L;
+                          if (L && mapInstanceRef.current) {
+                            const bounds = L.latLngBounds(allCoords);
+                            mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+                          }
+                        } catch (e) {}
+                      }}
+                      className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-200 transition-colors"
+                      title="რუკაზე მარშრუტის ცენტრირება"
+                    >
+                      <Navigation size={13} />
+                      <span>რუკაზე ჩვენება</span>
+                    </button>
+
+                    <a
+                      href={gmapsAltUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+                    >
+                      <ExternalLink size={13} />
+                      <span>Google Maps-ით წასვლა</span>
+                    </a>
+
+                    <a
+                      href={wazeAltUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="py-2 px-3 rounded-xl bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#1A73E8] font-bold text-xs flex items-center justify-center gap-1 border border-slate-200 transition-colors"
+                      title="Waze-ში გახსნა"
+                    >
+                      <span>Waze</span>
+                    </a>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
       </div>
       )}
 
       {/* 3. Bottom Legend & Fuel / Showrooms Quick Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div id="live-map-bottom-section" className="grid grid-cols-1 md:grid-cols-2 gap-4 scroll-mt-24">
         
         {/* Live Fuel Station Leaderboard (Best Prices) */}
         <div className="p-4 rounded-3xl neu-card shadow-neu-card border border-white space-y-3">

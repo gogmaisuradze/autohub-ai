@@ -1,0 +1,1 @@
+[out:json][timeout:90];area["ISO3166-1"="GE"]["boundary"="administrative"]["admin_level"="2"]->.ge;(node["highway"="speed_camera"](area.ge);node["enforcement"~"^(maxspeed|average_speed|traffic_signals)$"](area.ge);relation["type"="enforcement"]["enforcement"~"^(maxspeed|average_speed|traffic_signals)$"](area.ge););out body;>;out skel qt;

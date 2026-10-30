@@ -71,7 +71,7 @@ export default function ParkingLocationPicker({ city, initialLot, plate, obdRead
       if (disposed || !mapElement.current) return;
       mapRef.current?.remove();
       const center = selected?.center || (fix ? [fix.lat, fix.lng] : [41.712,44.785]);
-      const map = L.map(mapElement.current, {center, zoom: 18, preferCanvas: true});
+      const map = L.map(mapElement.current, {center, zoom: 18, preferCanvas: true, scrollWheelZoom: false});
       mapRef.current = map;
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'© OpenStreetMap contributors'}).addTo(map);
       if (fix) {

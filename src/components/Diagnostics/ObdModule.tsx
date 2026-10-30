@@ -55,6 +55,7 @@ interface Props {
   onOpenAdapterModal?: () => void;
   autoStartScanTrigger?: number;
   onOpenFieldPrompt?: (field: PromptFieldType) => void;
+  entranceTrigger?: number;
 }
 
 export const ObdModule: React.FC<Props> = ({
@@ -73,7 +74,8 @@ export const ObdModule: React.FC<Props> = ({
   adapterType = 'wifi',
   onOpenAdapterModal,
   autoStartScanTrigger,
-  onOpenFieldPrompt
+  onOpenFieldPrompt,
+  entranceTrigger
 }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [sequenceBusy, setSequenceBusy] = useState(false);
@@ -99,6 +101,28 @@ export const ObdModule: React.FC<Props> = ({
       setSelectedInstructionType(adapterType);
     }
   }, [adapterType]);
+
+  // Ensure the viewport smoothly scrolls to 3D studio window when navigating to Diagnostics
+  useEffect(() => {
+    if (entranceTrigger && entranceTrigger > 0) {
+      const scrollTimer = setTimeout(() => {
+        if (studioSectionRef.current) {
+          const stickyHeaderEl = document.getElementById('sticky-header');
+          const headerHeight = stickyHeaderEl ? stickyHeaderEl.getBoundingClientRect().height : 100;
+          const rect = studioSectionRef.current.getBoundingClientRect();
+          const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+          const targetTop = Math.max(0, rect.top + currentScrollY - headerHeight - 12);
+          if (Math.abs(currentScrollY - targetTop) > 15) {
+            window.scrollTo({
+              top: targetTop,
+              behavior: 'smooth'
+            });
+          }
+        }
+      }, 70);
+      return () => clearTimeout(scrollTimer);
+    }
+  }, [entranceTrigger]);
 
   // OBD ECU Handshake & Auto-Discovery States
   const [isHandshaking, setIsHandshaking] = useState(false);
@@ -1040,7 +1064,7 @@ export const ObdModule: React.FC<Props> = ({
       )}
 
       {/* 2. 3D Studio Viewport */}
-      <div ref={studioSectionRef} id="three-car-studio" className="scroll-mt-20">
+      <div ref={studioSectionRef} id="three-car-studio" data-tour="obd-studio" className="scroll-mt-20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2 px-1">
           <h2 className="text-xs sm:text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
             <Cpu className="w-4 h-4 text-gold shrink-0" />
@@ -1061,11 +1085,12 @@ export const ObdModule: React.FC<Props> = ({
           dtcCodes={dtcCodes}
           onAskAiAboutCode={onAskAiAboutCode}
           vehicle={vehicle}
+          entranceTrigger={entranceTrigger}
         />
       </div>
 
       {/* 2.5. DIAGNOSTIC RESULTS: "რა აანთო Check Engine?" + 2 დიდი ღილაკი */}
-      <div className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border border-white space-y-4 animate-fade-in">
+      <div id="diagnostic-results-section" data-tour="obd-results" className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border border-white space-y-4 animate-fade-in scroll-mt-24">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
           <div className="flex items-center gap-3.5">
             <div className={`w-12 h-12 rounded-2xl neu-circle flex items-center justify-center shrink-0 ${
@@ -1148,7 +1173,7 @@ export const ObdModule: React.FC<Props> = ({
         )}
 
         {/* TWO BIG ACTION BUTTONS: Clear Check Engine & Consult AI Mechanic */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-3">
+        <div data-tour="obd-action-buttons" className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-3">
           {/* Button 1: გასუფთავება (ჩეკის ჩაქრობა) */}
           <button
             onClick={() => {
@@ -1186,7 +1211,7 @@ export const ObdModule: React.FC<Props> = ({
       </div>
 
       {/* 3. Live Gauges */}
-      <div>
+      <div data-tour="obd-telemetry">
         <div className="flex items-center justify-between mb-2 px-1">
           <h2 className="text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
             <Layers className="w-4 h-4 text-gold" />
@@ -1201,7 +1226,7 @@ export const ObdModule: React.FC<Props> = ({
       </div>
 
       {/* 4. DTC Codes Cards */}
-      <div className="space-y-4">
+      <div data-tour="obd-dtc-board" className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-black text-navy flex items-center gap-2">

@@ -29,8 +29,10 @@ import { DtcCode, FineItem, ServiceBookingItem, ServiceItem, TelemetryData, Vehi
 import { n8nService } from './services/n8nService';
 import { sounds } from './services/soundEffects';
 import { generateServicesForVehicle } from './services/vinServiceEngine';
-import { ArrowLeft } from 'lucide-react';
+import { preloadCarModel } from './services/modelPreloader';
+import { ArrowLeft, ShieldAlert, GraduationCap } from 'lucide-react';
 
+const DrivingExamPage = React.lazy(() => import('./components/Garage/DrivingExamWidget'));
 const ObdModule = React.lazy(() => import('./components/Diagnostics/ObdModule'));
 
 const INITIAL_VEHICLE: VehicleProfile = {
@@ -398,24 +400,35 @@ export const App: React.FC = () => {
     try {
       const hash = window.location.hash.replace('#', '') as TabType;
       if (hash === 'garage') return 'fines';
-      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'settings'].includes(hash)) {
+      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'settings', 'exam'].includes(hash)) {
         return hash;
       }
       const saved = localStorage.getItem('autohub_active_tab') as TabType;
       if (saved === 'garage') return 'fines';
-      if (saved && ['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'settings'].includes(saved)) {
+      if (saved && ['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'settings', 'exam'].includes(saved)) {
         return saved;
       }
-      return 'obd'; // Default to OBD/3D Testing screen so user immediately sees the 3D car!
+      return 'home'; // Default to Home landing view where Google walkthrough & Orbit start
     } catch {
-      return 'obd';
+      return 'home';
     }
   });
+
+  // Triggers for Orbit Carousel 360 spin and OBD 3D model entrance fly-in
+  const [orbitSpinTrigger, setOrbitSpinTrigger] = useState(0);
+  const [obdEntranceTrigger, setObdEntranceTrigger] = useState(0);
+
+  // Automatically preload the 3D car model as soon as site opens on the first page
+  useEffect(() => {
+    preloadCarModel().catch((err) => {
+      console.warn('3D car model preload note:', err);
+    });
+  }, []);
 
   // Animation ID reference for smooth organic scrolling
   const scrollAnimRef = useRef<number | null>(null);
 
-  const smoothScrollTo = (targetY: number, duration = 900) => {
+  const smoothScrollTo = (targetY: number, duration = 1100) => {
     if (scrollAnimRef.current !== null) {
       cancelAnimationFrame(scrollAnimRef.current);
       scrollAnimRef.current = null;
@@ -468,7 +481,7 @@ export const App: React.FC = () => {
     scrollAnimRef.current = requestAnimationFrame(step);
   };
 
-  const scrollToMainContent = (duration = 950) => {
+  const scrollToMainContent = (duration = 1100) => {
     const mainEl = document.getElementById('main-content');
     if (!mainEl) return;
 
@@ -477,29 +490,113 @@ export const App: React.FC = () => {
 
     const rect = mainEl.getBoundingClientRect();
     const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
-    const targetY = Math.max(0, rect.top + currentScrollY - headerHeight - 10);
+    const targetY = Math.max(0, rect.top + currentScrollY - headerHeight - 12);
 
     smoothScrollTo(targetY, duration);
   };
 
+  // Dedicated smooth scroll for Diagnostics 3D Studio window
+  const scrollToDiagnosticsStudio = (duration = 1100) => {
+    let attempts = 0;
+    const checkAndScroll = () => {
+      const studioEl =
+        document.getElementById('three-car-studio') ||
+        document.getElementById('main-content');
+      if (studioEl) {
+        const stickyHeaderEl = document.getElementById('sticky-header');
+        const headerHeight = stickyHeaderEl ? stickyHeaderEl.getBoundingClientRect().height : 100;
+        const rect = studioEl.getBoundingClientRect();
+        const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+        const targetY = Math.max(0, rect.top + currentScrollY - headerHeight - 12);
+        smoothScrollTo(targetY, duration);
+      } else if (attempts < 25) {
+        attempts++;
+        setTimeout(checkAndScroll, 40);
+      }
+    };
+    checkAndScroll();
+  };
+
+  useEffect(() => {
+    const syncHash = () => {
+      const next = window.location.hash.slice(1) as TabType;
+      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'settings', 'exam'].includes(next)) {
+        if (next === 'obd') {
+          handleTabChange('obd');
+        } else {
+          setActiveTab(next);
+          try { localStorage.setItem('autohub_active_tab', next); } catch {}
+          setTimeout(() => scrollToMainContent(1100), 40);
+        }
+      }
+    };
+    window.addEventListener('hashchange', syncHash);
+    return () => window.removeEventListener('hashchange', syncHash);
+  }, []);
+
+  // When site is initially loaded directly on Diagnostics (#obd) / 3D model page:
+  // Smoothly scroll down to 3D model studio and trigger the 3D car entrance fly-in from depth
+  useEffect(() => {
+    if (activeTab === 'obd') {
+      const initialObdTimer = setTimeout(() => {
+        scrollToDiagnosticsStudio(1100);
+        setObdEntranceTrigger(prev => prev + 1);
+      }, 350);
+      return () => clearTimeout(initialObdTimer);
+    }
+  }, []);
+
   const handleTabChange = (tab: TabType) => {
-    const isSameTab = tab === activeTab;
     setActiveTab(tab);
     try {
       localStorage.setItem('autohub_active_tab', tab);
       window.location.hash = tab;
     } catch {}
 
-    if (tab === 'home') {
-      if (!isSameTab && !isSiteTourActive) {
-        smoothScrollTo(0, 750);
-      }
-    } else {
-      // Gently glide down past the banner so page content starts cleanly below the sticky navigation
+    if (tab === 'obd') {
+      setObdEntranceTrigger(prev => prev + 1);
       setTimeout(() => {
-        scrollToMainContent(950);
-      }, 40);
+        scrollToDiagnosticsStudio(1100);
+      }, 50);
+      return;
     }
+
+    // On EVERY tab clicked in the main navigation menu, smoothly scroll past the cover banner
+    // so the lower window/content is revealed gracefully
+    setTimeout(() => {
+      scrollToMainContent(1100);
+    }, 40);
+  };
+
+  // Called when initial Google-style walkthrough cards finish and user clicks "დავიწყოთ მუშაობა!"
+  const handleTourCompleted = () => {
+    setActiveTab('home');
+    try {
+      localStorage.setItem('autohub_active_tab', 'home');
+      window.location.hash = 'home';
+    } catch {}
+
+    // Smoothly scroll down to the Orbit Carousel
+    setTimeout(() => {
+      const orbitEl =
+        document.getElementById('orbit-carousel-section') ||
+        document.querySelector('[data-tour="orbit-carousel"]');
+      if (orbitEl) {
+        const rect = orbitEl.getBoundingClientRect();
+        const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+        const stickyHeaderEl = document.getElementById('sticky-header');
+        const headerHeight = stickyHeaderEl ? stickyHeaderEl.getBoundingClientRect().height : 110;
+        const targetY = Math.max(0, rect.top + currentScrollY - headerHeight - 16);
+        smoothScrollTo(targetY, 1100);
+      } else {
+        scrollToMainContent(1100);
+      }
+
+      // Trigger full 360 rotation on the orbit carousel
+      setTimeout(() => {
+        setOrbitSpinTrigger(prev => prev + 1);
+      }, 500);
+    }, 100);
   };
 
   // Global Keyboard Navigation: Alt + ArrowLeft / Alt + ArrowRight for switching main tabs
@@ -517,7 +614,7 @@ export const App: React.FC = () => {
 
       // Alt/Option + ArrowLeft / ArrowRight switches top tabs
       if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-        const tabList: TabType[] = ['home', 'obd', 'fines', 'parking', 'service', 'map'];
+        const tabList: TabType[] = ['home', 'obd', 'fines', 'exam', 'parking', 'service', 'map'];
         const currentIdx = tabList.indexOf(activeTab);
         if (currentIdx !== -1) {
           e.preventDefault();
@@ -1032,7 +1129,7 @@ export const App: React.FC = () => {
       </div>
 
       {/* Cover Advertising Banner (Wider panoramic layout for grand automotive photography) */}
-      <div id="cover-banner-section" data-tour="cover-banner" className="hidden md:block w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
+      {activeTab !== 'exam' && <div id="cover-banner-section" data-tour="cover-banner" className="hidden md:block w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
         <CoverAdBanner
           onNavigateTab={handleTabChange}
           onOpenBookingModal={() => handleOpenBookingModal()}
@@ -1041,7 +1138,7 @@ export const App: React.FC = () => {
           onScrollPastBanner={() => scrollToMainContent(950)}
           isTourActive={isSiteTourActive}
         />
-      </div>
+      </div>}
 
       {/* 3. Main Content Container (Unified wide layout matching CoverAdBanner) */}
       <main id="main-content" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-16 sm:pb-24 overflow-x-hidden">
@@ -1061,6 +1158,7 @@ export const App: React.FC = () => {
               handleTabChange('ai');
             }}
             isTourActive={isSiteTourActive}
+            orbitSpinTrigger={orbitSpinTrigger}
           />
         )}
 
@@ -1087,8 +1185,70 @@ export const App: React.FC = () => {
             onOpenAdapterModal={() => setIsObdAdapterModalOpen(true)}
             autoStartScanTrigger={autoStartScanTrigger}
             onOpenFieldPrompt={handleOpenFieldPrompt}
+            entranceTrigger={obdEntranceTrigger}
           />
           </React.Suspense>
+        )}
+
+        {activeTab === 'exam' && (
+          <div className="max-w-7xl mx-auto space-y-4 animate-fade-in">
+            {/* Top Patrol Sub-Navigation Switcher */}
+            <div className="bg-white/90 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white flex items-center justify-center font-black shadow-xs">
+                  <GraduationCap size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 font-mono">საპატრულო</span>
+                    <span className="text-slate-300">/</span>
+                    <h1 className="text-base sm:text-lg font-black text-navy">მართვის მოწმობის ბილეთები</h1>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-amber-100 text-amber-900 border border-amber-300">
+                      2026 ბაზა
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 hidden sm:block">
+                    შსს მომსახურების სააგენტოს ოფიციალური თეორიული საგამოცდო ბილეთები (921 კითხვა)
+                  </p>
+                </div>
+              </div>
+
+              {/* Sub-page Switcher Pills */}
+              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    handleTabChange('fines');
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-navy hover:bg-white transition-all flex items-center gap-1.5"
+                >
+                  <ShieldAlert size={14} className="text-rose-500" />
+                  <span>საპატრულო ჯარიმები</span>
+                  {fines.filter(f => f.status === 'pending').length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-rose-500 text-white">
+                      {fines.filter(f => f.status === 'pending').length}
+                    </span>
+                  )}
+                </button>
+                <div className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-white text-navy shadow-xs border border-slate-200/80 flex items-center gap-1.5">
+                  <GraduationCap size={14} className="text-amber-500" />
+                  <span>ბილეთები & გამოცდა</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-amber-100 text-amber-900">
+                    921
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <React.Suspense fallback={
+              <div className="p-12 text-center text-sm text-slate-500 font-medium">
+                საგამოცდო ბილეთების ბაზა იტვირთება…
+              </div>
+            }>
+              <DrivingExamPage />
+            </React.Suspense>
+          </div>
         )}
 
         {activeTab === 'fines' && (
@@ -1097,6 +1257,7 @@ export const App: React.FC = () => {
             fines={fines}
             onUpdateFines={setFines}
             onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
+            onOpenDrivingExam={() => handleTabChange('exam')}
             onNavigateToParking={() => handleTabChange('parking')}
             onOpenFieldPrompt={handleOpenFieldPrompt}
             onNavigateToAiClarification={(prompt) => {
@@ -1336,6 +1497,7 @@ export const App: React.FC = () => {
         onNavigateTab={handleTabChange}
         externalTrigger={tourTrigger}
         onTourActiveChange={setIsSiteTourActive}
+        onTourCompleted={handleTourCompleted}
       />
 
       {/* Global 4G OBD Parking Stop Confirmation Modal (when user is outside the Parking tab) */}

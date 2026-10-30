@@ -25,7 +25,9 @@ export const POINT_TYPE_TO_LAYERS: Record<string, string[]> = {
   'showroom': ['showrooms'],
   'parking': [],
   'patrol': [], // Community only (n8n)
-  'hazard': []  // Community only (n8n)
+  'hazard': [],  // Community only (n8n)
+  'traffic_jam': [],
+  'road_repair': []
 };
 
 const LAYER_DEFAULTS: Record<string, string> = {

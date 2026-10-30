@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -8,6 +8,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { DtcCode, VehicleProfile } from '../types';
 import { CarScenePoster } from './CarScenePoster';
 import { sounds } from '../services/soundEffects';
+import { preloadCarModel, getPreloadedCarModel } from '../services/modelPreloader';
 import {
   Layers,
   Sparkles,
@@ -28,7 +29,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Zap
+  Zap,
+  ZoomIn,
+  ZoomOut,
+  MousePointerClick,
+  Lock,
+  Unlock
 } from 'lucide-react';
 
 interface Props {
@@ -42,6 +48,7 @@ interface Props {
   onAskAiAboutCode?: (code: DtcCode) => void;
   vehicle?: VehicleProfile;
   onStartScan?: () => void;
+  entranceTrigger?: number;
 }
 
 interface ComponentDef {
@@ -101,7 +108,8 @@ export const ThreeCarScene: React.FC<Props> = ({
   dtcCodes = [],
   onAskAiAboutCode,
   vehicle,
-  onStartScan
+  onStartScan,
+  entranceTrigger
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -183,11 +191,19 @@ export const ThreeCarScene: React.FC<Props> = ({
   const [activePin, setActivePin] = useState<string | null>(selectedComponent || null);
   const activePinRef = useRef<string | null>(selectedComponent || null);
   useEffect(() => { activePinRef.current = activePin; }, [activePin]);
-  const liveStateRef = useRef({ dtcCodes, isScanning, autoRotate: true });
+  const liveStateRef = useRef({ dtcCodes, isScanning, autoRotate: false });
   liveStateRef.current.dtcCodes = dtcCodes;
   liveStateRef.current.isScanning = isScanning;
-  const [autoRotate, setAutoRotate] = useState<boolean>(true);
+  const [autoRotate, setAutoRotate] = useState<boolean>(false);
   liveStateRef.current.autoRotate = autoRotate;
+
+  const carMasterGroupRef = useRef<THREE.Group | null>(null);
+  const pendingEntranceRef = useRef<boolean>(true);
+  const entranceAnimRef = useRef<{
+    active: boolean;
+    startTime: number;
+    duration: number;
+  }>({ active: false, startTime: 0, duration: 2.4 });
   const [modelError, setModelError] = useState(false);
   const [modelLoading, setModelLoading] = useState(true);
   const [modelProgress, setModelProgress] = useState<number | null>(null);
@@ -202,12 +218,134 @@ export const ThreeCarScene: React.FC<Props> = ({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  // Trigger 3D car entrance fly-in from depth: starts in distance, rotates 360°, stops tilted at -0.30 rad
+  const triggerEntranceFlyIn = useCallback(() => {
+    if (!carMasterGroupRef.current) return;
+    const car = carMasterGroupRef.current;
+    // Set starting position deep in the background, elevated, and small
+    car.position.set(-4.5, 2.6, -16.0);
+    car.scale.set(0.12, 0.12, 0.12);
+    // Begins at tilted beauty angle minus full 360 turn (-0.30 - 2*PI)
+    car.rotation.y = -0.30 - Math.PI * 2;
+    entranceAnimRef.current = {
+      active: true,
+      startTime: performance.now(),
+      duration: 2.4
+    };
+    try { sounds.playScanSweep(); } catch {}
+  }, []);
+
+  // Re-trigger 3D car arrival fly-in animation when entering Diagnostics
+  useEffect(() => {
+    if (entranceTrigger && entranceTrigger > 0) {
+      if (modelReadyRef.current && carMasterGroupRef.current) {
+        // Slightly delay starting the fly-in (260ms) so as the page scroll
+        // glides down to the 3D studio, the car zooms in right before the user's eyes
+        const timer = setTimeout(() => {
+          triggerEntranceFlyIn();
+        }, 260);
+        return () => clearTimeout(timer);
+      } else {
+        pendingEntranceRef.current = true;
+      }
+    }
+  }, [entranceTrigger, triggerEntranceFlyIn]);
   const [isGhostMode, setIsGhostMode] = useState<boolean>(false); // Show the finished paint first; X-ray remains available
   const solidTargetRef = useRef(1);
   const [explodeFactor, setExplodeFactor] = useState<number>(0); // 0 to 1
   const [infoCardOpen, setInfoCardOpen] = useState<boolean>(false);
   const [leftHudOpen, setLeftHudOpen] = useState<boolean>(false);
   const [rightHudOpen, setRightHudOpen] = useState<boolean>(false);
+
+  // Scroll & Zoom Isolation states (Prevents trapping page scroll on wheel or touch)
+  const [isControlsUnlocked, setIsControlsUnlocked] = useState<boolean>(false);
+  const isControlsUnlockedRef = useRef<boolean>(false);
+  const [showGestureHint, setShowGestureHint] = useState<boolean>(false);
+  const gestureHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showTwoFingerOverlay, setShowTwoFingerOverlay] = useState<boolean>(false);
+  const twoFingerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleToggleControlsLock = useCallback(() => {
+    sounds.playClick();
+    setIsControlsUnlocked(prev => {
+      const next = !prev;
+      isControlsUnlockedRef.current = next;
+      if (controlsRef.current) {
+        controlsRef.current.enableZoom = next;
+      }
+      return next;
+    });
+  }, []);
+
+  const handleZoomStep = useCallback((direction: 'in' | 'out') => {
+    if (!cameraRef.current || !controlsRef.current) return;
+    sounds.playClick();
+    const cam = cameraRef.current;
+    const target = controlsRef.current.target;
+    const factor = direction === 'in' ? 0.82 : 1.22;
+    const offset = new THREE.Vector3().subVectors(cam.position, target).multiplyScalar(factor);
+    const newDistance = offset.length();
+    if (newDistance >= controlsRef.current.minDistance && newDistance <= controlsRef.current.maxDistance) {
+      cam.position.copy(target).add(offset);
+      controlsRef.current.update();
+    }
+  }, []);
+
+  const handleScrollPastStudio = useCallback(() => {
+    sounds.playClick();
+    setIsControlsUnlocked(false);
+    isControlsUnlockedRef.current = false;
+    if (controlsRef.current) {
+      controlsRef.current.enableZoom = false;
+    }
+    const nextSection =
+      document.getElementById('diagnostic-results-section') ||
+      document.getElementById('three-car-studio')?.nextElementSibling;
+    if (nextSection) {
+      const stickyHeaderEl = document.getElementById('sticky-header');
+      const headerHeight = stickyHeaderEl ? stickyHeaderEl.getBoundingClientRect().height : 100;
+      const rect = nextSection.getBoundingClientRect();
+      const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+      const targetY = Math.max(0, rect.top + currentScrollY - headerHeight - 12);
+      window.scrollTo({
+        top: targetY,
+        behavior: 'smooth'
+      });
+    } else {
+      window.scrollBy({ top: 480, behavior: 'smooth' });
+    }
+  }, []);
+
+  // Exit interactive mode on outside click or Escape key
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        if (isControlsUnlockedRef.current) {
+          setIsControlsUnlocked(false);
+          isControlsUnlockedRef.current = false;
+          if (controlsRef.current) {
+            controlsRef.current.enableZoom = false;
+          }
+        }
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isControlsUnlockedRef.current) {
+        setIsControlsUnlocked(false);
+        isControlsUnlockedRef.current = false;
+        if (controlsRef.current) {
+          controlsRef.current.enableZoom = false;
+        }
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // References to Three.js elements
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -462,12 +600,66 @@ export const ThreeCarScene: React.FC<Props> = ({
     controls.minDistance = 2.0;
     controls.maxDistance = 22.0;
     controls.maxPolarAngle = Math.PI / 2 + 0.05;
+    // Default wheel zoom disabled so normal page scroll is never trapped!
+    controls.enableZoom = isControlsUnlockedRef.current;
     controlsRef.current = controls;
 
     controls.addEventListener('start', () => {
       targetCamPosRef.current = null;
       targetCamLookRef.current = null;
     });
+
+    // Cooperative wheel & 2-finger touch handling on canvas container
+    const domEl = containerRef.current;
+    const onCanvasWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey || isControlsUnlockedRef.current) {
+        controls.enableZoom = true;
+      } else {
+        controls.enableZoom = false;
+        setShowGestureHint(true);
+        if (gestureHintTimerRef.current) clearTimeout(gestureHintTimerRef.current);
+        gestureHintTimerRef.current = setTimeout(() => {
+          setShowGestureHint(false);
+        }, 1600);
+      }
+    };
+
+    const onCanvasTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1 && !isControlsUnlockedRef.current) {
+        // 1 finger without unlock: disable rotation so webpage scrolls smoothly!
+        controls.enableRotate = false;
+        setShowTwoFingerOverlay(true);
+        if (twoFingerTimerRef.current) clearTimeout(twoFingerTimerRef.current);
+        twoFingerTimerRef.current = setTimeout(() => setShowTwoFingerOverlay(false), 1600);
+      } else if (e.touches.length >= 2 || isControlsUnlockedRef.current) {
+        // 2 fingers (or unlocked): full interactive rotate & pinch-zoom!
+        controls.enableRotate = true;
+        controls.enableZoom = true;
+        setShowTwoFingerOverlay(false);
+      }
+    };
+
+    const onCanvasTouchMove = (e: TouchEvent) => {
+      if (e.touches.length >= 2 || isControlsUnlockedRef.current) {
+        controls.enableRotate = true;
+        controls.enableZoom = true;
+        setShowTwoFingerOverlay(false);
+      }
+    };
+
+    const onCanvasTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        setShowTwoFingerOverlay(false);
+        controls.enableRotate = true;
+      }
+    };
+
+    if (domEl) {
+      domEl.addEventListener('wheel', onCanvasWheel, { passive: true });
+      domEl.addEventListener('touchstart', onCanvasTouchStart, { passive: true });
+      domEl.addEventListener('touchmove', onCanvasTouchMove, { passive: true });
+      domEl.addEventListener('touchend', onCanvasTouchEnd, { passive: true });
+    }
 
     // 5. Studio Lighting Rig (Clean blueprint studio lighting)
     const ambientLight = new THREE.AmbientLight(0xd9efff, 0.65);
@@ -499,13 +691,13 @@ export const ThreeCarScene: React.FC<Props> = ({
     const stageGroup = new THREE.Group();
 
     // Dark spherical showroom with a suspended honeycomb light canopy.
-    const backdropGeometry = new THREE.SphereGeometry(14,64,40);
-    const backdropMaterial = new THREE.MeshStandardMaterial({color:0x17191e,roughness:.55,metalness:.25,side:THREE.BackSide});
-    const backdrop = new THREE.Mesh(backdropGeometry,backdropMaterial);
-    backdrop.position.y=1.2;scene.add(backdrop);
-    const showroomBeltMaterial = new THREE.MeshBasicMaterial({color:0x315061});
-    const showroomBelt = new THREE.Mesh(new THREE.TorusGeometry(13.95,.014,6,128),showroomBeltMaterial);
-    showroomBelt.rotation.x=Math.PI/2;showroomBelt.position.y=1.2;scene.add(showroomBelt);
+    const backdropGeometry = new THREE.SphereGeometry(28, 64, 40);
+    const backdropMaterial = new THREE.MeshStandardMaterial({ color: 0x17191e, roughness: .55, metalness: .25, side: THREE.BackSide });
+    const backdrop = new THREE.Mesh(backdropGeometry, backdropMaterial);
+    backdrop.position.y = 1.2; scene.add(backdrop);
+    const showroomBeltMaterial = new THREE.MeshBasicMaterial({ color: 0x315061 });
+    const showroomBelt = new THREE.Mesh(new THREE.TorusGeometry(27.95, .014, 6, 128), showroomBeltMaterial);
+    showroomBelt.rotation.x = Math.PI / 2; showroomBelt.position.y = 1.2; scene.add(showroomBelt);
     const canopy = new THREE.Group();canopy.position.y=4.1;
     const neonCore = new THREE.MeshBasicMaterial({color:new THREE.Color(.91,.96,1).multiplyScalar(1.1),toneMapped:false});
     const neonHalo = new THREE.MeshBasicMaterial({color:0xfff3df,transparent:true,opacity:.045,depthWrite:false});
@@ -575,6 +767,7 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     // 7. Master Automotive Model Hierarchy
     const carMasterGroup = new THREE.Group();
+    carMasterGroupRef.current = carMasterGroup;
     scene.add(carMasterGroup);
     const fitWholeAssembly = () => {
       carMasterGroup.updateWorldMatrix(true, true);
@@ -639,7 +832,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           uFill: visual.fill, uLift: visual.lift, uScanZ: visual.scanZ,
           uFillOrigin: visual.fillOrigin, uFillReach: visual.fillReach,
           uScanStrength: visual.scanStrength, uCarInverse: visual.carInverse,
-          uGhostColor: { value: ghostColor }, uPaintColor: { value: solidColor },
+          uGhostColor: { value: mat.userData.ghostColor ? new THREE.Color(mat.userData.ghostColor) : ghostColor }, uPaintColor: { value: solidColor },
           uGhostAlpha: { value: mat.userData.ghostOpacity ?? .26 },
           uSolidRoughness: { value: mat.userData.solidRoughness ?? .30 },
           uSolidMetalness: { value: mat.userData.solidMetalness ?? .40 }
@@ -727,9 +920,16 @@ export const ThreeCarScene: React.FC<Props> = ({
     let disposed = false;
     let firstModelFramePending = false;
 
-    gltfLoader.load(`${cleanBase}models/bmw-diagnostic.glb?v=12`, (gltf) => {
-      const root = gltf.scene;
+    const cabinParts: { group: THREE.Group; side: number; rear: boolean; label: THREE.Sprite }[] = [];
+    const processLoadedGltf = (gltf: any) => {
+      const root = gltf.scene.clone(true);
       if (disposed) return;
+      // Assemble at the final transform. World-space attachments made while the
+      // entrance group is scaled to 0.18 would grow 5.56x when it reaches 1.
+      carMasterGroup.position.set(0, 0, 0);
+      carMasterGroup.scale.set(1, 1, 1);
+      carMasterGroup.rotation.set(0, -0.30, 0);
+      carMasterGroup.updateWorldMatrix(true, true);
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
       carMasterGroup.add(root);
       root.updateWorldMatrix(true, true);
@@ -978,6 +1178,9 @@ export const ThreeCarScene: React.FC<Props> = ({
         };
         if (roof.length) {
           const roofGlass = new THREE.MeshPhysicalMaterial({color:0x080c12,roughness:.16,metalness:.05,clearcoat:1,clearcoatRoughness:.1,side:THREE.DoubleSide});
+          roofGlass.userData = { ghostOpacity: .12, solidColor: 0x080c12,
+            keepSurfaceColor: true, solidRoughness: .16, solidMetalness: .05 };
+          bodyMaterialsRef.current.push(roofGlass);
           const roofMesh = new THREE.Mesh(subset(roof), roofGlass);
           roofMesh.name = 'BMW_Roof_Panel';
           roofMesh.matrix.copy(m.matrix); roofMesh.matrix.decompose(roofMesh.position, roofMesh.quaternion, roofMesh.scale);
@@ -1004,9 +1207,9 @@ export const ThreeCarScene: React.FC<Props> = ({
           const native = original as THREE.MeshStandardMaterial;
           const material = new THREE.MeshPhysicalMaterial();
           THREE.MeshStandardMaterial.prototype.copy.call(material,native);
-          material.transparent=true;material.opacity=.10;material.depthWrite=false;
+          material.transparent=true;material.opacity=.38;material.depthWrite=false;
           material.clearcoat=.08;material.clearcoatRoughness=.3;
-          material.userData={ghostOpacity:.10,solidColor:0xffffff,keepSurfaceColor:true,
+          material.userData={ghostOpacity:.38,solidColor:0xffffff,keepSurfaceColor:true,
             solidRoughness:Math.max(.35,native.roughness ?? .6),solidMetalness:native.metalness ?? 0};
           bodyMaterialsRef.current.push(material);
           return material;
@@ -1014,7 +1217,117 @@ export const ThreeCarScene: React.FC<Props> = ({
         mesh.material=Array.isArray(mesh.material)?materials:materials[0];
         mesh.castShadow=true;mesh.receiveShadow=true;bodyGrp.attach(mesh);
       };
-      meshesOf('Body_Interior').forEach(attachNativeDetail);
+      // Fine, restrained leather grain shared by all upholstery surfaces.
+      const grainCanvas = document.createElement('canvas'); grainCanvas.width = grainCanvas.height = 128;
+      const grainCtx = grainCanvas.getContext('2d')!;
+      const grain = grainCtx.createImageData(128,128);
+      let grainSeed = 173;
+      for (let i = 0; i < grain.data.length; i += 4) {
+        grainSeed = (Math.imul(grainSeed,1664525) + 1013904223) >>> 0;
+        const value = 110 + (grainSeed >>> 27);
+        grain.data[i] = grain.data[i+1] = grain.data[i+2] = value; grain.data[i+3] = 255;
+      }
+      grainCtx.putImageData(grain,0,0);
+      const leatherGrain = new THREE.CanvasTexture(grainCanvas);
+      leatherGrain.wrapS = leatherGrain.wrapT = THREE.RepeatWrapping; leatherGrain.repeat.set(8,8);
+      const leather = new THREE.MeshPhysicalMaterial({ color: 0x141619, roughness: .58, metalness: 0,
+        clearcoat: .08, clearcoatRoughness: .55, sheen: .22, sheenColor: new THREE.Color(0x34383d),
+        bumpMap: leatherGrain, bumpScale: .0012, side: THREE.DoubleSide });
+      leather.userData = { keepSurfaceColor: true, solidColor: 0xffffff,
+        ghostColor: 0x171b21, ghostOpacity: .72, solidRoughness: .58, solidMetalness: 0 };
+      bodyMaterialsRef.current.push(leather);
+      const seatGroups = new Map<string, THREE.Group>();
+      const addSeat = (mesh: THREE.Mesh, side: number, rear = false) => {
+        const key = rear ? 'rear_bench' : side > 0 ? 'seat_left' : 'seat_right';
+        let group = seatGroups.get(key);
+        if (!group) {
+          group = new THREE.Group(); group.name = key; carMasterGroup.add(group);
+          seatGroups.set(key, group);
+          const canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = 112;
+          const ctx = canvas.getContext('2d')!;
+          ctx.fillStyle = 'rgba(15,23,42,.92)'; ctx.beginPath(); ctx.roundRect(4,4,632,104,24); ctx.fill();
+          ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3; ctx.stroke();
+          ctx.fillStyle = '#ffffff'; ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText(rear ? 'უკანა სავარძლები' : side > 0 ? 'მარცხენა სავარძელი' : 'მარჯვენა სავარძელი', 320, 68);
+          const texture = new THREE.CanvasTexture(canvas);
+          const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true }));
+          label.position.set(rear ? 0 : side * .38, 1.48, rear ? -.95 : -.12);
+          label.scale.set(.9,.158,1); label.visible = false; label.renderOrder = 20; group.add(label);
+          cabinParts.push({ group, side, rear, label });
+        }
+        group.attach(mesh);
+      };
+      meshesOf('Body_Interior').forEach(mesh => {
+        attachNativeDetail(mesh);
+        // Separate whole connected upholstery islands, rather than slicing triangles.
+        const geometry = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+        const positions = geometry.getAttribute('position');
+        const parent = Array.from({length: positions.count / 3}, (_, i) => i);
+        const find = (i: number): number => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
+        const welded = new Map<string, number>();
+        for (let i = 0; i < positions.count; i++) {
+          const key = [positions.getX(i),positions.getY(i),positions.getZ(i)].map(v => Math.round(v * 10000)).join(',');
+          const other = welded.get(key), triangle = Math.floor(i / 3);
+          if (other === undefined) welded.set(key, triangle); else parent[find(triangle)] = find(other);
+        }
+        const bounds = new Map<number, THREE.Box3>(); const point = new THREE.Vector3();
+        for (let i = 0; i < positions.count; i++) {
+          const key = find(Math.floor(i / 3));
+          if (!bounds.has(key)) bounds.set(key, new THREE.Box3());
+          point.fromBufferAttribute(positions, i).applyMatrix4(mesh.matrixWorld);
+          carMasterGroup.worldToLocal(point); bounds.get(key)!.expandByPoint(point);
+        }
+        const seatSide = new Map<number, number>();
+        bounds.forEach((box, key) => {
+          const front = box.min.y >= .30 && box.max.y <= 1.30 && box.min.z >= -.50 && box.max.z <= .35;
+          if (front && box.min.x >= .105 && box.max.x <= .65) seatSide.set(key, 1);
+          if (front && box.max.x <= -.105 && box.min.x >= -.65) seatSide.set(key, -1);
+          // The rear bench is a single continuous mesh, so keep it intact.
+          if (box.min.y >= .38 && box.max.y <= 1.18 && box.min.z >= -1.37 && box.max.z <= -.47 && box.max.x - box.min.x > 1) seatSide.set(key, 0);
+        });
+        const subsets = new Map<number, number[]>(); const keep: number[] = [];
+        for (let i = 0; i < positions.count; i += 3) {
+          const side = seatSide.get(find(i / 3));
+          if (side === undefined) keep.push(i,i+1,i+2);
+          else { if (!subsets.has(side)) subsets.set(side, []); subsets.get(side)!.push(i,i+1,i+2); }
+        }
+        const subset = (ids: number[]) => { const out = geometry.clone(); out.clearGroups(); out.setIndex(ids); return out; };
+        subsets.forEach((ids, side) => {
+          const seat = new THREE.Mesh(subset(ids), leather); seat.name = side === 0 ? 'RearBench' : side > 0 ? 'SeatLeft' : 'SeatRight';
+          seat.position.copy(mesh.position); seat.quaternion.copy(mesh.quaternion); seat.scale.copy(mesh.scale);
+          // Replace the open, low-detail rear shell with closed cushions below.
+          if (side === 0) { seat.geometry.dispose(); return; }
+          mesh.parent!.add(seat); seat.castShadow = true; seat.receiveShadow = true; addSeat(seat, side, false);
+        });
+        if (subsets.size) mesh.geometry = subset(keep);
+        geometry.dispose();
+      });
+
+      // Closed rear upholstery: two cushions, split backrests and head restraints.
+      const roundedUpholstery = (w: number, h: number, d: number, radius: number) => {
+        const geometry = new THREE.BoxGeometry(w,h,d,6,6,6);
+        const positions = geometry.getAttribute('position');
+        const inner = new THREE.Vector3(w/2-radius,h/2-radius,d/2-radius);
+        const vertex = new THREE.Vector3(), core = new THREE.Vector3();
+        for (let i=0;i<positions.count;i++) {
+          vertex.fromBufferAttribute(positions,i);
+          core.set(THREE.MathUtils.clamp(vertex.x,-inner.x,inner.x),THREE.MathUtils.clamp(vertex.y,-inner.y,inner.y),THREE.MathUtils.clamp(vertex.z,-inner.z,inner.z));
+          vertex.sub(core).normalize().multiplyScalar(radius).add(core);
+          positions.setXYZ(i,vertex.x,vertex.y,vertex.z);
+        }
+        geometry.computeVertexNormals(); return geometry;
+      };
+      const rearPiece = (name: string, dimensions: [number,number,number], position: [number,number,number], tilt = 0) => {
+        const mesh = new THREE.Mesh(roundedUpholstery(...dimensions,.045),leather);
+        mesh.name=name; mesh.position.set(...position); mesh.rotation.x=tilt;
+        carMasterGroup.add(mesh); mesh.castShadow=true; mesh.receiveShadow=true; addSeat(mesh,0,true);
+      };
+      [-1,1].forEach(side => {
+        rearPiece(`RearCushion_${side}`,[.61,.18,.62],[side*.325,.48,-.83]);
+        rearPiece(`RearBackrest_${side}`,[.61,.62,.16],[side*.325,.86,-1.13],-.14);
+        rearPiece(`RearHeadrest_${side}`,[.30,.20,.14],[side*.325,1.20,-1.19]);
+      });
+      rearPiece('RearCentreBolster',[.11,.26,.55],[0,.53,-.84]);
 
       // თავფარები — ანათებს თეთრ-ცისფრად
       const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xddeeff, emissiveIntensity: 0.3, roughness: 0.12, metalness: 0.0 });
@@ -1114,14 +1427,52 @@ export const ThreeCarScene: React.FC<Props> = ({
       carMasterGroup.remove(root);
       modelReadyRef.current = true;
       firstModelFramePending = true;
-    }, (event) => {
-      if (!disposed && event.lengthComputable && event.total > 0) setModelProgress(Math.min(100, Math.round(event.loaded / event.total * 100)));
-    }, (err) => { if (!disposed) { setModelError(true); setModelLoading(false); } console.error('BMW model load error', err); });
 
-    // 3D hotspot pins removed — components light up in their own colour instead
+      // Start entrance fly-in animation from depth
+      if (pendingEntranceRef.current) {
+        pendingEntranceRef.current = false;
+        setTimeout(() => {
+          triggerEntranceFlyIn();
+        }, 180);
+      } else {
+        triggerEntranceFlyIn();
+      }
+    };
 
-    // Initial beauty perspective angle matching user's photo
-    carMasterGroup.rotation.y = -0.30;
+    // Initial arrival fly-in starting position: deep in the background, rotated
+    carMasterGroup.position.set(-4.5, 2.6, -16.0);
+    carMasterGroup.scale.set(0.12, 0.12, 0.12);
+    carMasterGroup.rotation.y = -0.30 - Math.PI * 2;
+
+    // Load from preloaded cache if ready, or await preloader, or fallback to direct load
+    const preloadedGltf = getPreloadedCarModel();
+    if (preloadedGltf && !disposed) {
+      processLoadedGltf(preloadedGltf);
+    } else {
+      preloadCarModel()
+        .then((gltf) => {
+          if (!disposed) processLoadedGltf(gltf);
+        })
+        .catch(() => {
+          if (!disposed) {
+            gltfLoader.load(
+              `${cleanBase}models/bmw-diagnostic.glb?v=12`,
+              (gltf) => {
+                if (!disposed) processLoadedGltf(gltf);
+              },
+              (event) => {
+                if (!disposed && event.lengthComputable && event.total > 0) {
+                  setModelProgress(Math.min(100, Math.round(event.loaded / event.total * 100)));
+                }
+              },
+              (err) => {
+                if (!disposed) { setModelError(true); setModelLoading(false); }
+                console.error('BMW model load error', err);
+              }
+            );
+          }
+        });
+    }
 
     // =========================================================================
     // J. ANIMATION LOOP (Exploded View, Neon Pulsing & Smooth Camera Glide)
@@ -1237,6 +1588,13 @@ export const ThreeCarScene: React.FC<Props> = ({
         groupsRef.current['body'].position.y = curExp * 1.10;
       }
 
+      // Cabin parts return exactly to their original transform when assembled.
+      cabinParts.forEach(({group, side, rear, label}) => {
+        group.position.set(rear ? 0 : side * 1.25 * curExp, .18 * curExp, rear ? -1.05 * curExp : 0);
+        label.visible = curExp > .12;
+        (label.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp((curExp - .12) / .3, 0, 1);
+      });
+
       // Displace Internal Aggregates according to their explosion vectors
       componentsList.forEach(comp => {
         const grp = groupsRef.current[comp.id];
@@ -1311,8 +1669,41 @@ export const ThreeCarScene: React.FC<Props> = ({
         }
       }
 
-      // Auto-turntable spin when not manually interacting
-      if (!sequenceRef.current.active && liveStateRef.current.autoRotate && !targetCamPosRef.current && curExp < 0.05) {
+      // Entrance fly-in animation: Car comes down from depth, rotates, and stops at tilted angle (-0.30)
+      if (entranceAnimRef.current.active && modelReadyRef.current && carMasterGroupRef.current) {
+        const elapsed = (performance.now() - entranceAnimRef.current.startTime) / 1000;
+        const t = Math.min(1, Math.max(0, elapsed / entranceAnimRef.current.duration));
+        const ease = 1 - Math.pow(1 - t, 3); // Organic ease-out cubic
+
+        const car = carMasterGroupRef.current;
+        car.position.x = -4.5 * (1 - ease);
+        car.position.y = 2.6 * (1 - ease);
+        car.position.z = -16.0 * (1 - ease);
+        const currentScale = 0.12 + 0.88 * ease;
+        car.scale.set(currentScale, currentScale, currentScale);
+
+        // Spins 360 degrees as it approaches, decelerating into tilted beauty angle -0.30
+        car.rotation.y = (-0.30 - Math.PI * 2) + (Math.PI * 2) * ease;
+
+        if (t >= 1) {
+          entranceAnimRef.current.active = false;
+          car.position.set(0, 0, 0);
+          car.scale.set(1, 1, 1);
+          car.rotation.y = -0.30;
+          // Strictly stop in the tilted position!
+          liveStateRef.current.autoRotate = false;
+          setAutoRotate(false);
+        }
+      }
+
+      // Auto-turntable spin when not manually interacting and entrance is complete
+      if (
+        !sequenceRef.current.active &&
+        !entranceAnimRef.current.active &&
+        liveStateRef.current.autoRotate &&
+        !targetCamPosRef.current &&
+        curExp < 0.05
+      ) {
         carMasterGroup.rotation.y += 0.0018;
       }
 
@@ -1360,7 +1751,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         carMasterGroup.rotation.x = Math.cos(elapsedTime * 58.0) * (vibAmp * 0.25);
 
 
-      } else {
+      } else if (!entranceAnimRef.current.active) {
         carMasterGroup.position.set(0, 0, 0);
         carMasterGroup.rotation.z = 0;
         carMasterGroup.rotation.x = 0;
@@ -1399,6 +1790,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     return () => {
       disposed = true;
       modelReadyRef.current = false;
+      carMasterGroupRef.current = null;
       sequenceCallbacks.current.onSequenceBusyChange?.(false);
       cancelAnimationFrame(animId);
       viewportObserver.disconnect();
@@ -1411,6 +1803,14 @@ export const ThreeCarScene: React.FC<Props> = ({
         if (o.isMesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: THREE.Material) => m.dispose()); }
       });
       window.removeEventListener('resize', handleResize);
+      if (domEl) {
+        domEl.removeEventListener('wheel', onCanvasWheel);
+        domEl.removeEventListener('touchstart', onCanvasTouchStart);
+        domEl.removeEventListener('touchmove', onCanvasTouchMove);
+        domEl.removeEventListener('touchend', onCanvasTouchEnd);
+      }
+      if (gestureHintTimerRef.current) clearTimeout(gestureHintTimerRef.current);
+      if (twoFingerTimerRef.current) clearTimeout(twoFingerTimerRef.current);
       controls.dispose();
       renderer.dispose();
     };
@@ -1563,6 +1963,42 @@ export const ThreeCarScene: React.FC<Props> = ({
           >
             <Maximize2 size={13} />
           </button>
+
+          {/* Interactive 3D Zoom Lock/Unlock Toggle */}
+          <button
+            onClick={handleToggleControlsLock}
+            className={`w-full lg:w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
+              isControlsUnlocked
+                ? 'bg-emerald-500 text-white shadow-md ring-2 ring-emerald-300'
+                : 'neu-circle text-navy hover:text-gold'
+            }`}
+            title={isControlsUnlocked ? '3D ზუმი ჩართულია (დაკლიკეთ ჩასაკეტად)' : '3D ზუმის განბლოკვა (ორჯერ დაკლიკეთ)'}
+            aria-label="3D ზუმის რეჟიმი"
+            aria-pressed={isControlsUnlocked}
+          >
+            {isControlsUnlocked ? <Unlock size={13} /> : <Lock size={13} />}
+          </button>
+
+          {/* Step Zoom In (+) */}
+          <button
+            onClick={() => handleZoomStep('in')}
+            className="w-full lg:w-11 h-11 rounded-xl neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
+            title="3D მოახლოება (+)"
+            aria-label="3D მოახლოება"
+          >
+            <ZoomIn size={13} />
+          </button>
+
+          {/* Step Zoom Out (-) */}
+          <button
+            onClick={() => handleZoomStep('out')}
+            className="w-full lg:w-11 h-11 rounded-xl neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
+            title="3D დაშორება (-)"
+            aria-label="3D დაშორება"
+          >
+            <ZoomOut size={13} />
+          </button>
+
       {/* 2. EXPLODED VIEW SCRUB SLIDER (Floating Top-Left) */}
       <div className="col-span-4 min-w-0 h-11 lg:w-48 pointer-events-auto bg-white/90 backdrop-blur-md px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
         <Sliders size={12} className="text-gold" />
@@ -1585,7 +2021,56 @@ export const ThreeCarScene: React.FC<Props> = ({
       </div>
 
       {/* 3. 3D WEBGL CANVAS MOUNT */}
-      <div ref={containerRef} className="relative w-full h-full max-w-full overflow-hidden cursor-grab active:cursor-grabbing touch-pan-y" />
+      <div
+        ref={containerRef}
+        onDoubleClick={handleToggleControlsLock}
+        className="relative w-full h-full max-w-full overflow-hidden cursor-grab active:cursor-grabbing touch-pan-y"
+        title="ორჯერ დაკლიკეთ 3D ზუმის გასააქტიურებლად/გასათიშად"
+      />
+
+      {/* Active Interactive 3D Zoom Pill Badge */}
+      {isControlsUnlocked && (
+        <div className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-full bg-slate-950/90 backdrop-blur-md text-emerald-300 border border-emerald-400/50 shadow-xl flex items-center gap-2 animate-fade-in text-xs font-bold pointer-events-auto">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span>3D ზუმი ჩართულია • ორჯერ დაკლიკეთ ან დააჭირეთ Esc-ს</span>
+          <button
+            onClick={handleToggleControlsLock}
+            className="p-1 rounded-full hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
+            title="3D ზუმის გამორთვა"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
+
+      {/* 2-Finger Touch Overlay (Mobile/Tablet Google-style gesture hint) */}
+      {showTwoFingerOverlay && !isControlsUnlocked && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/40 backdrop-blur-[2px] pointer-events-none animate-fade-in transition-opacity">
+          <div className="px-5 py-3 rounded-2xl bg-slate-950/90 text-white text-xs sm:text-sm font-bold border border-white/20 shadow-2xl flex items-center gap-2.5">
+            <span className="text-xl">✌️</span>
+            <span>გამოიყენეთ <strong>2 თითი</strong> 3D მოდელის სამართავად</span>
+          </div>
+        </div>
+      )}
+
+      {/* Momentary Wheel Scroll Hint */}
+      {showGestureHint && !isControlsUnlocked && !showTwoFingerOverlay && (
+        <div className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-2xl bg-slate-950/90 backdrop-blur-md text-white text-xs font-semibold border border-white/20 shadow-2xl flex items-center gap-2 pointer-events-none animate-fade-in">
+          <MousePointerClick size={16} className="text-gold animate-bounce" />
+          <span>გამოიყენეთ <strong>2 თითი (Pinch)</strong> ან <strong>⌘ / Ctrl + Scroll</strong> 3D ზუმისთვის</span>
+        </div>
+      )}
+
+      {/* Floating Quick Exit / Scroll Past Button */}
+      <button
+        type="button"
+        onClick={handleScrollPastStudio}
+        className="absolute bottom-4 right-4 z-20 px-3.5 py-2 rounded-2xl bg-white/95 hover:bg-white text-navy font-bold text-xs shadow-md border border-slate-200/90 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 group pointer-events-auto"
+        title="დიაგნოსტიკის შედეგებზე ჩასვლა"
+      >
+        <span>ქვემოთ ჩასვლა</span>
+        <ChevronDown size={14} className="text-gold group-hover:translate-y-0.5 transition-transform" />
+      </button>
 
       {/* 3A. LEFT HUD PANEL: რას აანალიზებს (სისტემები) */}
       <div style={{ top: controlsHeight + 26, opacity: scanVisualActive ? .32 : 1, transition: 'opacity .8s ease' }} className="absolute left-2.5 sm:left-4 z-20 pointer-events-auto max-w-[230px] sm:max-w-[270px]">

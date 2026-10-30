@@ -244,7 +244,7 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     ],
     ctaText: 'ტესტის დაწყება (2026)',
     secondaryCtaText: 'საგზაო ნიშნების განხილვა',
-    actionTab: 'fines',
+    actionTab: 'exam',
     actionType: 'tab',
     icon: GraduationCap,
     previewType: 'exam_badge'

@@ -24,7 +24,12 @@ import {
   ExternalLink,
   ShieldCheck,
   Compass,
-  Zap
+  Zap,
+  Lock,
+  Unlock,
+  MousePointerClick,
+  ChevronDown,
+  X
 } from 'lucide-react';
 
 interface Props {
@@ -54,17 +59,115 @@ export const ParkingZonesMap: React.FC<Props> = ({
   const mapInstanceRef = useRef<any>(null);
   const polygonLayerGroupRef = useRef<any>(null);
   const markerLayerGroupRef = useRef<any>(null);
-  const tileLayerRef = useRef<any>(null);
+  const tileLayersRef = useRef<{
+    street?: any;
+    dark?: any;
+    satellite?: any;
+  }>({});
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   // States: Map Loader & Theme
   const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>('street');
+  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>(() => {
+    try {
+      const saved = localStorage.getItem('autohub_map_theme');
+      if (saved === 'dark' || saved === 'street' || saved === 'satellite') return saved;
+    } catch {}
+    return 'street';
+  });
+
+  const handleThemeChange = (newTheme: 'dark' | 'street' | 'satellite') => {
+    sounds.playClick();
+    setMapTheme(newTheme);
+    try {
+      localStorage.setItem('autohub_map_theme', newTheme);
+    } catch {}
+  };
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<'all' | 'A' | 'B' | 'C'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [hoveredZone, setHoveredZone] = useState<DelineatedParkingZone | null>(null);
+
+  // Map Scroll & Zoom Isolation states (Prevents trapping page scroll on wheel or touch)
+  const [isMapUnlocked, setIsMapUnlocked] = useState<boolean>(false);
+  const isMapUnlockedRef = useRef<boolean>(false);
+  const [showMapGestureHint, setShowMapGestureHint] = useState<boolean>(false);
+  const mapGestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showTwoFingerOverlay, setShowTwoFingerOverlay] = useState<boolean>(false);
+  const twoFingerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleToggleMapLock = useCallback(() => {
+    sounds.playClick();
+    setIsMapUnlocked(prev => {
+      const next = !prev;
+      isMapUnlockedRef.current = next;
+      if (mapInstanceRef.current) {
+        if (next) {
+          mapInstanceRef.current.scrollWheelZoom.enable();
+        } else {
+          mapInstanceRef.current.scrollWheelZoom.disable();
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  const handleScrollPastMap = useCallback(() => {
+    sounds.playClick();
+    setIsMapUnlocked(false);
+    isMapUnlockedRef.current = false;
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.scrollWheelZoom.disable();
+    }
+    const nextSection =
+      document.getElementById('parking-city-selector-section') ||
+      document.getElementById('parking-zones-list-section') ||
+      document.querySelector('.neu-card');
+    if (nextSection) {
+      const stickyHeaderEl = document.getElementById('sticky-header');
+      const headerHeight = stickyHeaderEl ? stickyHeaderEl.getBoundingClientRect().height : 100;
+      const rect = nextSection.getBoundingClientRect();
+      const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+      const targetY = Math.max(0, rect.top + currentScrollY - headerHeight - 12);
+      window.scrollTo({
+        top: targetY,
+        behavior: 'smooth'
+      });
+    } else {
+      window.scrollBy({ top: 480, behavior: 'smooth' });
+    }
+  }, []);
+
+  // Exit interactive map mode on outside click or Escape key
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (mapContainerRef.current && !mapContainerRef.current.contains(e.target as Node)) {
+        if (isMapUnlockedRef.current) {
+          setIsMapUnlocked(false);
+          isMapUnlockedRef.current = false;
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.scrollWheelZoom.disable();
+          }
+        }
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMapUnlockedRef.current) {
+        setIsMapUnlocked(false);
+        isMapUnlockedRef.current = false;
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.scrollWheelZoom.disable();
+        }
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const cityZones = useMemo(() => getParkingZonesByCity(city), [city]);
   const [mapRevision, setMapRevision] = useState(0);
@@ -80,28 +183,6 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
     return matchesCategory && (matchesLotCode || matchesStreet || matchesBounds);
   }), [cityZones, activeCategoryFilter, searchQuery]);
-
-  // Tile URL Helper with mandatory provider attribution
-  const getTileConfig = (theme: 'dark' | 'street' | 'satellite') => {
-    switch (theme) {
-      case 'dark':
-      case 'street':
-        return {
-          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
-        };
-      case 'satellite':
-        return {
-          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          attribution: '&copy; <a href="https://www.esri.com" target="_blank" rel="noreferrer">Esri</a>, Maxar, Earthstar Geographics'
-        };
-      default:
-        return {
-          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          attribution: '&copy; OpenStreetMap contributors'
-        };
-    }
-  };
 
   // 1. Initialize Map via LeafletLoader
   const initMap = useCallback(async () => {
@@ -128,30 +209,102 @@ export const ParkingZonesMap: React.FC<Props> = ({
         zoom: cityConfig.zoom,
         zoomControl: false,
         attributionControl: true,
-        preferCanvas: true
+        preferCanvas: true,
+        scrollWheelZoom: false // Disable accidental wheel scroll hijacking
       });
+
+      // Cooperative wheel gesture handler: Ctrl/Cmd + wheel allows zoom; normal wheel scrolls the webpage
+      const domEl = mapContainerRef.current;
+      const onMapWheel = (e: WheelEvent) => {
+        if (e.ctrlKey || e.metaKey || isMapUnlockedRef.current) {
+          map.scrollWheelZoom.enable();
+        } else {
+          map.scrollWheelZoom.disable();
+          setShowMapGestureHint(true);
+          if (mapGestureTimerRef.current) clearTimeout(mapGestureTimerRef.current);
+          mapGestureTimerRef.current = setTimeout(() => {
+            setShowMapGestureHint(false);
+          }, 1600);
+        }
+      };
+
+      // 2-finger touch handler: 1 finger scrolls page, 2 fingers drag/zoom map
+      const onMapTouchStart = (e: TouchEvent) => {
+        if (e.touches.length === 1 && !isMapUnlockedRef.current) {
+          map.dragging.disable();
+          setShowTwoFingerOverlay(true);
+          if (twoFingerTimerRef.current) clearTimeout(twoFingerTimerRef.current);
+          twoFingerTimerRef.current = setTimeout(() => setShowTwoFingerOverlay(false), 1600);
+        } else if (e.touches.length >= 2 || isMapUnlockedRef.current) {
+          map.dragging.enable();
+          map.touchZoom.enable();
+          setShowTwoFingerOverlay(false);
+        }
+      };
+
+      const onMapTouchMove = (e: TouchEvent) => {
+        if (e.touches.length >= 2 || isMapUnlockedRef.current) {
+          map.dragging.enable();
+          map.touchZoom.enable();
+          setShowTwoFingerOverlay(false);
+        }
+      };
+
+      const onMapTouchEnd = (e: TouchEvent) => {
+        if (e.touches.length === 0) {
+          setShowTwoFingerOverlay(false);
+          map.dragging.enable();
+        }
+      };
+
+      if (domEl) {
+        domEl.addEventListener('wheel', onMapWheel, { passive: true });
+        domEl.addEventListener('touchstart', onMapTouchStart, { passive: true });
+        domEl.addEventListener('touchmove', onMapTouchMove, { passive: true });
+        domEl.addEventListener('touchend', onMapTouchEnd, { passive: true });
+      }
 
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
       // Attribution position
       map.attributionControl.setPosition('bottomleft');
 
-      const tileConfig = getTileConfig(mapTheme);
-      tileLayerRef.current = L.tileLayer(tileConfig.url, {
+      // Pre-create and cache all 3 tile layers
+      const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: tileConfig.attribution
-      }).addTo(map);
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
+      });
+
+      const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 20,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
+      });
+
+      const satLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        subdomains: ['0', '1', '2', '3'],
+        maxZoom: 20,
+        attribution: 'Map data &copy; Google'
+      });
+
+      tileLayersRef.current = {
+        street: streetLayer,
+        dark: darkLayer,
+        satellite: satLayer
+      };
+
+      const initialLayer = mapTheme === 'dark' ? darkLayer : mapTheme === 'satellite' ? satLayer : streetLayer;
+      initialLayer.addTo(map);
+      initialLayer.bringToBack();
 
       // Apply initial theme styles
       if (mapContainerRef.current) {
+        mapContainerRef.current.classList.remove('dark-map-tiles');
         if (mapTheme === 'dark') {
-          mapContainerRef.current.classList.add('dark-map-tiles');
-          mapContainerRef.current.style.backgroundColor = '#1a2232';
+          mapContainerRef.current.style.backgroundColor = '#12161f';
         } else if (mapTheme === 'satellite') {
-          mapContainerRef.current.classList.remove('dark-map-tiles');
           mapContainerRef.current.style.backgroundColor = '#000000';
         } else {
-          mapContainerRef.current.classList.remove('dark-map-tiles');
           mapContainerRef.current.style.backgroundColor = '#f8fafc';
         }
       }
@@ -197,6 +350,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
+      tileLayersRef.current = {};
     };
   }, [initMap, viewMode]);
 
@@ -209,32 +363,44 @@ export const ParkingZonesMap: React.FC<Props> = ({
     }
   }, [viewMode]);
 
-  // 2. Change Tile Layer when mapTheme changes
+  // 2. Instant, lag-free theme switching (toggles cached native layers)
   useEffect(() => {
-    if (!mapInstanceRef.current || !tileLayerRef.current) return;
-    const L = (window as any).L;
-    if (!L) return;
+    const map = mapInstanceRef.current;
+    if (!map || !tileLayersRef.current) return;
 
-    mapInstanceRef.current.removeLayer(tileLayerRef.current);
-    const tileConfig = getTileConfig(mapTheme);
-    tileLayerRef.current = L.tileLayer(tileConfig.url, {
-      maxZoom: 19,
-      attribution: tileConfig.attribution
-    }).addTo(mapInstanceRef.current);
-    tileLayerRef.current.bringToBack();
+    const layers = tileLayersRef.current;
+    const targetLayer = layers[mapTheme] || layers.street;
+    if (!targetLayer) return;
+
+    // 1. Add target layer FIRST so map never flashes grey or blanks out
+    if (!map.hasLayer(targetLayer)) {
+      targetLayer.addTo(map);
+    }
+    targetLayer.bringToBack();
+
+    // 2. Remove other layers gracefully
+    Object.entries(layers).forEach(([themeKey, layer]) => {
+      if (themeKey !== mapTheme && layer && map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+    });
 
     if (mapContainerRef.current) {
+      mapContainerRef.current.classList.remove('dark-map-tiles');
       if (mapTheme === 'dark') {
-        mapContainerRef.current.classList.add('dark-map-tiles');
-        mapContainerRef.current.style.backgroundColor = '#1a2232';
+        mapContainerRef.current.style.backgroundColor = '#12161f';
       } else if (mapTheme === 'satellite') {
-        mapContainerRef.current.classList.remove('dark-map-tiles');
         mapContainerRef.current.style.backgroundColor = '#000000';
       } else {
-        mapContainerRef.current.classList.remove('dark-map-tiles');
         mapContainerRef.current.style.backgroundColor = '#f8fafc';
       }
     }
+
+    setTimeout(() => {
+      try {
+        map.invalidateSize({ pan: false });
+      } catch {}
+    }, 40);
   }, [mapTheme]);
 
   // 3. Render Polygons & Markers
@@ -562,7 +728,62 @@ export const ParkingZonesMap: React.FC<Props> = ({
         <div className="relative w-full h-[440px] sm:h-[540px] bg-[#FAFBFD]">
           
           {/* Map Mount Point */}
-          <div ref={mapContainerRef} className="w-full h-full z-0" />
+          <div
+            ref={mapContainerRef}
+            onDoubleClick={handleToggleMapLock}
+            className={`w-full h-full z-0 transition-colors duration-300 ${
+              mapTheme === 'dark'
+                ? 'bg-[#12161f]'
+                : mapTheme === 'satellite'
+                ? 'bg-black'
+                : 'bg-[#f8fafc]'
+            }`}
+            title="ორჯერ დაკლიკეთ რუკის ზუმის გასააქტიურებლად/გასათიშად"
+          />
+
+          {/* Active Map Zoom Pill Badge */}
+          {isMapUnlocked && (
+            <div className="absolute top-14 sm:top-3 left-1/2 -translate-x-1/2 z-[410] px-3.5 py-1.5 rounded-full bg-slate-950/90 backdrop-blur-md text-emerald-300 border border-emerald-400/50 shadow-xl flex items-center gap-2 animate-fade-in text-xs font-bold pointer-events-auto">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>რუკის ზუმი ჩართულია • ორჯერ დაკლიკეთ ან დააჭირეთ Esc-ს</span>
+              <button
+                onClick={handleToggleMapLock}
+                className="p-0.5 rounded-full hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
+                title="რუკის ზუმის გამორთვა"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          )}
+
+          {/* 2-Finger Touch Overlay (Google Maps gesture hint) */}
+          {showTwoFingerOverlay && !isMapUnlocked && (
+            <div className="absolute inset-0 z-[410] flex items-center justify-center bg-slate-950/40 backdrop-blur-[2px] pointer-events-none animate-fade-in transition-opacity">
+              <div className="px-5 py-3 rounded-2xl bg-slate-950/90 text-white text-xs sm:text-sm font-bold border border-white/20 shadow-2xl flex items-center gap-2.5">
+                <span className="text-xl">✌️</span>
+                <span>გამოიყენეთ <strong>2 თითი</strong> რუკის სამართავად</span>
+              </div>
+            </div>
+          )}
+
+          {/* Momentary Wheel Scroll Hint */}
+          {showMapGestureHint && !isMapUnlocked && !showTwoFingerOverlay && (
+            <div className="absolute top-14 sm:top-3 left-1/2 -translate-x-1/2 z-[410] px-4 py-2 rounded-2xl bg-slate-950/90 backdrop-blur-md text-white text-xs font-semibold border border-white/20 shadow-2xl flex items-center gap-2 pointer-events-none animate-fade-in">
+              <MousePointerClick size={16} className="text-gold animate-bounce" />
+              <span>გამოიყენეთ <strong>2 თითი (Pinch)</strong> ან <strong>⌘ / Ctrl + Scroll</strong> რუკის ზუმისთვის</span>
+            </div>
+          )}
+
+          {/* Floating Quick Exit / Scroll Past Button */}
+          <button
+            type="button"
+            onClick={handleScrollPastMap}
+            className="absolute bottom-3 right-16 z-[400] px-3.5 py-2 rounded-2xl bg-white/95 hover:bg-white text-navy font-bold text-xs shadow-md border border-slate-200/90 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 group pointer-events-auto"
+            title="ქალაქებზე და ზონებზე ჩასვლა"
+          >
+            <span>ქალაქებზე ჩასვლა</span>
+            <ChevronDown size={14} className="text-gold group-hover:translate-y-0.5 transition-transform" />
+          </button>
 
           {/* Loading Overlay */}
           {mapStatus === 'loading' && (
@@ -596,22 +817,31 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
           {/* Prominent Floating Map Theme Switcher on Top Right */}
           <div className="absolute top-3 right-3 z-[400] p-1 rounded-2xl bg-navy/95 backdrop-blur-md border-2 border-white/30 shadow-2xl flex items-center gap-1 pointer-events-auto">
+            {/* Lock / Unlock Toggle Button */}
+            <button
+              type="button"
+              onClick={handleToggleMapLock}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+                isMapUnlocked ? 'bg-emerald-500 text-white shadow-xs font-black' : 'text-slate-300 hover:text-white'
+              }`}
+              title={isMapUnlocked ? 'რუკის ზუმი აქტიურია (ჩასაკეტად დაკლიკეთ)' : 'რუკის ზუმის განბლოკვა (ორჯერ დაკლიკეთ)'}
+            >
+              {isMapUnlocked ? <Unlock size={12} /> : <Lock size={12} />}
+              <span className="hidden sm:inline">{isMapUnlocked ? 'ზუმი აქტიური' : 'ზუმი ჩაკეტილი'}</span>
+            </button>
             {(['dark', 'street', 'satellite'] as const).map(t => {
               const isActive = mapTheme === t;
               return (
                 <button
                   key={t}
                   type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setMapTheme(t);
-                  }}
+                  onClick={() => handleThemeChange(t)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                     isActive
                       ? 'bg-gold text-navy shadow-md font-black ring-2 ring-white/60 scale-105'
                       : 'text-slate-200 hover:text-white hover:bg-white/10'
                   }`}
-                  title={`${t === 'dark' ? 'მუქი' : t === 'street' ? 'ღია' : 'სატელიტი'} რუკის რეჟიმი`}
+                  title={`${t === 'dark' ? 'მუქი (CartoDB)' : t === 'street' ? 'ქუჩები (OSM)' : 'სატელიტი (Google Hybrid)'} რუკის რეჟიმი`}
                 >
                   <span>{t === 'dark' ? '🌙 მუქი' : t === 'street' ? '🗺️ ღია' : '🛰️ სატელიტი'}</span>
                 </button>

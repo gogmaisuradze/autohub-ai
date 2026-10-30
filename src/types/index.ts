@@ -324,6 +324,8 @@ export type MapPointType =
   | 'radar'
   | 'patrol'
   | 'hazard'
+  | 'traffic_jam'
+  | 'road_repair'
   | 'fuel'
   | 'charging'
   | 'service'
@@ -367,6 +369,10 @@ export interface MapReport {
   address?: string;
   website?: string;
   opening_hours?: string;
+  delay_minutes?: number;
+  severity?: 'heavy' | 'moderate' | 'light';
+  road_repair_kind?: string;
+  alternativeRouteId?: string;
   active: boolean;
 }
 
