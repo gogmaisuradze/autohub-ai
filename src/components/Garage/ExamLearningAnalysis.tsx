@@ -206,6 +206,34 @@ export function setAcademicOverride(category: string, status: 'akademikosi' | 'c
   } catch {}
 }
 
+export function clearLearningHistory(category: string): boolean {
+  try {
+    localStorage.removeItem(storageKey(category));
+    localStorage.removeItem(overrideKey(category));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function seedDemoMistakes(category: string, sampleQuestions: { id: number; topicId: number }[]): LearningHistory {
+  const history = readLearningHistory(category);
+  sampleQuestions.forEach(q => {
+    history[q.id] = {
+      id: q.id,
+      topicId: q.topicId,
+      attempts: (history[q.id]?.attempts || 0) + 1,
+      mistakes: (history[q.id]?.mistakes || 0) + 1,
+      lastCorrect: false,
+      updatedAt: Date.now()
+    };
+  });
+  try {
+    localStorage.setItem(storageKey(category), JSON.stringify(history));
+  } catch {}
+  return history;
+}
+
 export function ExamLearningAnalysis({
   history,
   subjects,

@@ -6,6 +6,8 @@ import {
   ExamLearningAnalysis,
   readLearningHistory,
   recordLearningAnswer,
+  clearLearningHistory,
+  seedDemoMistakes,
   LearningHistory,
   getAcademicRank,
   setAcademicOverride,
@@ -34,9 +36,14 @@ import {
   Flame,
   ShieldCheck,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Crown,
   GraduationCap,
-  AlertTriangle
+  AlertTriangle,
+  ShieldAlert,
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { DRIVER_LICENSE_NOTEBOOK_URL } from './GarageModule';
 
@@ -240,6 +247,9 @@ export const DrivingExamWidget: React.FC = () => {
   const [learningHistory, setLearningHistory] = useState<LearningHistory>(() => readLearningHistory('B'));
   const [historySaved, setHistorySaved] = useState(true);
   const [sessionMode, setSessionMode] = useState<'practice' | 'exam'>('practice');
+  const [sessionSubtype, setSessionSubtype] = useState<'standard' | 'mistakes' | 'adaptive' | 'marathon' | 'exam'>('standard');
+  const [isMistakesListOpen, setIsMistakesListOpen] = useState(false);
+  const [mistakesFilter, setMistakesFilter] = useState<'unresolved' | 'all'>('unresolved');
   const answeredRef = useRef<Set<number>>(new Set());
 
   // Ref to question container for smooth auto-scrolling
@@ -429,6 +439,7 @@ export const DrivingExamWidget: React.FC = () => {
     const pool = [...(filtered.length >= 30 ? filtered : questionPool)];
     // Unpredictable official exam quota with anti-clustering
     const generated = selectExamRound(pool, 30);
+    setSessionSubtype('exam');
     startSession(generated, 'exam', 1800);
   };
 
@@ -445,6 +456,7 @@ export const DrivingExamWidget: React.FC = () => {
     const filtered = filterPoolByMedia(questionPool);
     const pool = [...(filtered.length >= 15 ? filtered : questionPool)];
     const generated = selectStudyRound(pool, learningHistory, 15);
+    setSessionSubtype('standard');
     startSession(generated, 'exam', 900);
   };
 
@@ -461,6 +473,7 @@ export const DrivingExamWidget: React.FC = () => {
     const filtered = filterPoolByMedia(questionPool);
     const pool = [...(filtered.length >= 60 ? filtered : questionPool)];
     const generated = selectStudyRound(pool, learningHistory, Math.min(60, pool.length));
+    setSessionSubtype('marathon');
     startSession(generated, 'practice', 3600);
   };
 
@@ -472,6 +485,7 @@ export const DrivingExamWidget: React.FC = () => {
       const filtered = filterPoolByMedia(questionPool);
       const pool = filtered.length >= 15 ? filtered : questionPool;
       const questions = selectStudyRound(pool, learningHistory, 15);
+      setSessionSubtype('adaptive');
       startSession(questions, 'practice');
     } catch {
       setQuestionLoadError(true);
@@ -485,10 +499,90 @@ export const DrivingExamWidget: React.FC = () => {
       const idSet = new Set(ids);
       const questions = pool.filter(q => idSet.has(q.id));
       if (!questions.length) return;
+      setSessionSubtype('mistakes');
       startSession(questions, 'practice');
     } catch {
       setQuestionLoadError(true);
     }
+  };
+
+  // 5b. Dedicated Mistakes Practice (All collected errors or only unresolved ones)
+  const handleStartMistakesPractice = async (mode: 'unresolved' | 'all' = 'unresolved') => {
+    sounds.playClick();
+    try {
+      let pool = categoryQuestions;
+      if (!pool || pool.length === 0) {
+        pool = await loadCategoryQuestions(activeCategory);
+      }
+      const targetRecords = mode === 'unresolved' && unresolvedMistakes.length > 0
+        ? unresolvedMistakes
+        : allMistakeRecords;
+
+      if (!targetRecords.length) {
+        alert('შეცდომების ბანკი ცარიელია! თქვენ ჯერ არ გაქვთ დაფიქსირებული შეცდომები ამ კატეგორიაში.');
+        return;
+      }
+
+      const idSet = new Set(targetRecords.map(r => r.id));
+      const questions = pool.filter(q => idSet.has(q.id));
+      if (!questions.length) {
+        const fallback = EXAM_QUESTIONS.filter(q => idSet.has(q.id));
+        if (fallback.length) {
+          setSessionSubtype('mistakes');
+          startSession(fallback, 'practice');
+          return;
+        }
+        alert('არჩეული შეცდომების ბილეთები ვერ მოიძებნა.');
+        return;
+      }
+
+      setSessionSubtype('mistakes');
+      startSession(questions, 'practice');
+    } catch {
+      setQuestionLoadError(true);
+    }
+  };
+
+  // Practice a single ticket from mistakes list
+  const handlePracticeSingleMistakeQuestion = async (qId: number) => {
+    sounds.playClick();
+    try {
+      let pool = categoryQuestions;
+      if (!pool || pool.length === 0) {
+        pool = await loadCategoryQuestions(activeCategory);
+      }
+      const found = pool.find(q => q.id === qId) || EXAM_QUESTIONS.find(q => q.id === qId);
+      if (found) {
+        setSessionSubtype('mistakes');
+        startSession([found], 'practice');
+      }
+    } catch {
+      setQuestionLoadError(true);
+    }
+  };
+
+  // Clear mistake history
+  const handleClearMistakes = () => {
+    if (window.confirm('ნამდვილად გსურთ შეცდომების ბანკის გასუფთავება? ყველა დაფიქსირებული შეცდომა განულდება.')) {
+      sounds.playClick();
+      clearLearningHistory(activeCategory);
+      setLearningHistory({});
+    }
+  };
+
+  // Seed demo mistakes for testing
+  const handleSeedDemoMistakes = async () => {
+    sounds.playClick();
+    let pool: ExamQuestion[];
+    try {
+      pool = categoryQuestions.length > 0 ? categoryQuestions : await loadCategoryQuestions(activeCategory);
+    } catch {
+      pool = EXAM_QUESTIONS;
+    }
+    const sample = (pool.length > 0 ? pool : EXAM_QUESTIONS).slice(0, 5).map(q => ({ id: q.id, topicId: q.topicId }));
+    const updated = seedDemoMistakes(activeCategory, sample);
+    setLearningHistory({ ...updated });
+    sounds.playSuccess();
   };
 
   // 6. Selected Subjects Practice
@@ -630,6 +724,7 @@ export const DrivingExamWidget: React.FC = () => {
     sounds.playClick();
     if (timerRef.current) clearInterval(timerRef.current);
     setViewMode('subject_picker');
+    setSessionSubtype('standard');
   };
 
   // Upload or attach photo to the current question
@@ -710,6 +805,12 @@ export const DrivingExamWidget: React.FC = () => {
   const cumulativeMistakes = learningRecords.reduce((acc, r) => acc + r.mistakes, 0);
   const cumulativeCorrect = Math.max(0, cumulativeAttempts - cumulativeMistakes);
   const academicRank: AcademicRank = getAcademicRank(cumulativeAttempts, cumulativeCorrect, activeCategory);
+
+  // Mistakes Bank Calculations
+  const allMistakeRecords = Object.values(learningHistory).filter(r => r.mistakes > 0 || !r.lastCorrect);
+  const unresolvedMistakes = Object.values(learningHistory).filter(r => !r.lastCorrect);
+  const resolvedMistakes = Object.values(learningHistory).filter(r => r.mistakes > 0 && r.lastCorrect);
+  const totalMistakesCount = allMistakeRecords.reduce((acc, r) => acc + r.mistakes, 0);
 
   // Selected Questions Sum
   const totalSelectedQuestionCount = availableSubjects
@@ -835,9 +936,220 @@ export const DrivingExamWidget: React.FC = () => {
           </div>
 
           {/* ======================================================== */}
-          {/* Quick Start Mode Cards Grid                              */}
+          {/* DEDICATED MISTAKES COLLECTION & REVIEW CENTER            */}
           {/* ======================================================== */}
-          <div data-tour="exam-modes-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div data-tour="exam-mistakes-center" className="rounded-3xl border-2 border-rose-300/80 bg-gradient-to-br from-rose-50/70 via-white to-amber-50/40 p-4 sm:p-6 space-y-4 shadow-sm relative overflow-hidden">
+            {/* Background subtle watermark */}
+            <div className="absolute -right-6 -bottom-6 opacity-5 pointer-events-none text-rose-900">
+              <ShieldAlert size={140} />
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-rose-100 pb-3 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                  <ShieldAlert size={24} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-black text-navy">
+                      შეცდომების კრებული & ბანკი
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                      კატეგორია {activeCategory}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    ყველა ბილეთი, რომელზეც შეცდომა დაფიქსირდა, აქ გროვდება და მათი გავლა ცალკეა შესაძლებელი
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Indicator & Clear / Seed Actions */}
+              <div className="flex items-center gap-2">
+                {allMistakeRecords.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearMistakes}
+                    className="px-2.5 py-1.5 rounded-xl text-slate-500 hover:text-rose-700 hover:bg-rose-50 text-[11px] font-bold transition-colors flex items-center gap-1 border border-slate-200/80"
+                    title="შეცდომების ისტორიის გასუფთავება"
+                  >
+                    <Trash2 size={13} />
+                    <span>გასუფთავება</span>
+                  </button>
+                )}
+                {allMistakeRecords.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={handleSeedDemoMistakes}
+                    className="px-2.5 py-1.5 rounded-xl text-amber-700 hover:bg-amber-100 text-[11px] font-bold transition-colors flex items-center gap-1 border border-amber-200"
+                    title="შესამოწმებლად დაამატეთ სატესტო შეცდომები"
+                  >
+                    <Sparkles size={13} />
+                    <span>დემო შეცდომები</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Stat Counters & Main Action Row */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center relative z-10">
+              {/* Counters */}
+              <div className="md:col-span-7 grid grid-cols-3 gap-2">
+                <div className="p-3 rounded-2xl bg-white/90 border border-rose-200/90 shadow-2xs">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                    გასამეორებელი
+                  </span>
+                  <div className="text-lg sm:text-xl font-black font-mono text-rose-600 mt-0.5">
+                    {unresolvedMistakes.length}
+                  </div>
+                  <span className="text-[10px] text-rose-700/80 font-medium">აქტიური შეცდომა</span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/80 shadow-2xs">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                    გასწორებული
+                  </span>
+                  <div className="text-lg sm:text-xl font-black font-mono text-emerald-700 mt-0.5">
+                    {resolvedMistakes.length}
+                  </div>
+                  <span className="text-[10px] text-emerald-700/80 font-medium">დაძლეული ბილეთი</span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/80 shadow-2xs">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                    სულ შეცდომა
+                  </span>
+                  <div className="text-lg sm:text-xl font-black font-mono text-navy mt-0.5">
+                    {totalMistakesCount}
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-medium">დაფიქსირებული</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="md:col-span-5 flex flex-col sm:flex-row md:flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleStartMistakesPractice('unresolved')}
+                  disabled={unresolvedMistakes.length === 0 && allMistakeRecords.length === 0}
+                  className={`w-full py-3 px-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-sm ${
+                    unresolvedMistakes.length > 0
+                      ? 'bg-gradient-to-r from-rose-600 via-rose-500 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow-rose-200 transform hover:scale-[1.01] active:scale-[0.99]'
+                      : allMistakeRecords.length > 0
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <RotateCcw size={15} />
+                  <span>
+                    {unresolvedMistakes.length > 0
+                      ? `❌ შეცდომების ცალკე გავლა (${unresolvedMistakes.length} ბილეთი)`
+                      : allMistakeRecords.length > 0
+                      ? `🔄 ყველა შეცდომის განმეორება (${allMistakeRecords.length})`
+                      : 'შეცდომები არ ფიქსირდება'}
+                  </span>
+                </button>
+
+                {allMistakeRecords.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsMistakesListOpen(!isMistakesListOpen)}
+                    className="w-full py-2 px-3 rounded-xl bg-white hover:bg-slate-50 text-navy border border-slate-200 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span>{isMistakesListOpen ? 'სიის ჩაკეცვა' : `დეტალური სიის ნახვა (${allMistakeRecords.length})`}</span>
+                    {isMistakesListOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Empty State Banner when 0 mistakes */}
+            {allMistakeRecords.length === 0 && (
+              <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 flex items-center gap-2.5 text-xs text-emerald-900 font-medium">
+                <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                <span>
+                  <strong>შეცდომების ბანკი სუფთაა!</strong> თქვენს მიერ გავლილ ბილეთებში შეცდომები არ ფიქსირდება. გაიარეთ ოფიციალური გამოცდის სიმულატორი ცოდნის შესამოწმებლად.
+                </span>
+              </div>
+            )}
+
+            {/* Expandable Detailed Mistakes List */}
+            {isMistakesListOpen && allMistakeRecords.length > 0 && (
+              <div className="pt-3 border-t border-rose-200/60 space-y-2 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-navy">შეცდომიანი ბილეთების ჩამონათვალი</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setMistakesFilter('unresolved')}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${
+                          mistakesFilter === 'unresolved' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        მხოლოდ გაუსწორებელი ({unresolvedMistakes.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMistakesFilter('all')}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${
+                          mistakesFilter === 'all' ? 'bg-navy text-white' : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        ყველა ({allMistakeRecords.length})
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+                  {(mistakesFilter === 'unresolved' ? unresolvedMistakes : allMistakeRecords).map(record => {
+                    const subject = PRAVA_SUBJECTS.find(s => s.id === record.topicId);
+                    return (
+                      <div
+                        key={record.id}
+                        className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between gap-3 text-xs shadow-2xs hover:border-rose-300 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className={`w-6 h-6 rounded-lg flex items-center justify-center font-mono font-black text-[10px] shrink-0 ${
+                            !record.lastCorrect ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            #{record.id}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="font-bold text-navy truncate">
+                              ბილეთი #{record.id} · {subject?.title || `თემა #${record.topicId}`}
+                            </div>
+                            <div className="text-[10px] text-slate-500 flex items-center gap-2">
+                              <span className="text-rose-600 font-semibold">{record.mistakes} შეცდომა</span>
+                              <span>·</span>
+                              <span>{record.attempts} მცდელობა</span>
+                              <span>·</span>
+                              <span className={record.lastCorrect ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'}>
+                                {record.lastCorrect ? '✓ გასწორებული' : '● გაუსწორებელი'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handlePracticeSingleMistakeQuestion(record.id)}
+                          className="shrink-0 px-2.5 py-1 rounded-lg bg-navy/5 hover:bg-navy hover:text-white text-navy text-[10px] font-bold transition-all"
+                        >
+                          ამ ბილეთის გავლა →
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ======================================================== */}
+          {/* Quick Start Mode Cards Grid */}
+          <div data-tour="exam-modes-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             {/* Card 1: Official Exam Simulator */}
             <div className="p-4 rounded-2xl bg-gradient-to-br from-navy via-slate-900 to-navy text-white space-y-3 relative overflow-hidden shadow-md flex flex-col justify-between">
               <div className="space-y-1.5">
@@ -847,9 +1159,9 @@ export const DrivingExamWidget: React.FC = () => {
                   </span>
                   <Award size={16} className="text-gold" />
                 </div>
-                <h3 className="text-base font-black">გამოცდის სიმულაცია</h3>
+                <h3 className="text-sm font-black">გამოცდის სიმულაცია</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  30 კითხვა · 30 წუთი · მაქს. 3 შეცდომა. ზუსტად როგორც სააგენტოში.
+                  30 კითხვა · 30 წთ · მაქს. 3 შეცდომა.
                 </p>
               </div>
               <button
@@ -862,7 +1174,42 @@ export const DrivingExamWidget: React.FC = () => {
               </button>
             </div>
 
-            {/* Card 2: Express Test */}
+            {/* Card 2: Mistakes Dedicated Round */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50/90 to-amber-50/50 border border-rose-200/90 space-y-3 shadow-xs flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-lg bg-rose-100 text-rose-800 text-[10px] font-black uppercase tracking-wider">
+                    შეცდომები ({unresolvedMistakes.length})
+                  </span>
+                  <ShieldAlert size={16} className="text-rose-600" />
+                </div>
+                <h3 className="text-sm font-black text-navy">შეცდომების ცალკე გავლა</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {unresolvedMistakes.length > 0
+                    ? `გაიარეთ მხოლოდ ის ${unresolvedMistakes.length} ბილეთი, სადაც შეცდომა დაუშვით.`
+                    : allMistakeRecords.length > 0
+                    ? `ყველა დაშვებული შეცდომის განმეორებითი გავლა (${allMistakeRecords.length}).`
+                    : 'შეცდომები ჯერ არ ფიქსირდება. ბანკი სუფთაა! 🎉'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleStartMistakesPractice('unresolved')}
+                disabled={unresolvedMistakes.length === 0 && allMistakeRecords.length === 0}
+                className={`w-full mt-2 py-2.5 rounded-xl font-black text-xs transition-colors flex items-center justify-center gap-1.5 ${
+                  unresolvedMistakes.length > 0
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
+                    : allMistakeRecords.length > 0
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                <span>ცალკე გავლა →</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+
+            {/* Card 3: Express Test */}
             <div className="p-4 rounded-2xl bg-white/90 border border-slate-200/80 space-y-3 shadow-xs flex flex-col justify-between">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -871,9 +1218,9 @@ export const DrivingExamWidget: React.FC = () => {
                   </span>
                   <Zap size={16} className="text-blue-600" />
                 </div>
-                <h3 className="text-base font-black text-navy">ექსპრეს ტესტი</h3>
+                <h3 className="text-sm font-black text-navy">ექსპრეს ტესტი</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  15 კითხვა · 15 წუთი. იდეალურია სწრაფი ცოდნის შესამოწმებლად.
+                  15 კითხვა · 15 წუთი სწრაფი ცოდნის შესამოწმებლად.
                 </p>
               </div>
               <button
@@ -886,7 +1233,7 @@ export const DrivingExamWidget: React.FC = () => {
               </button>
             </div>
 
-            {/* Card 3: Smart Adaptive Study */}
+            {/* Card 4: Smart Adaptive Study */}
             <div className="p-4 rounded-2xl bg-white/90 border border-slate-200/80 space-y-3 shadow-xs flex flex-col justify-between">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -895,9 +1242,9 @@ export const DrivingExamWidget: React.FC = () => {
                   </span>
                   <Sparkles size={16} className="text-amber-500" />
                 </div>
-                <h3 className="text-base font-black text-navy">ადაპტური სწავლა</h3>
+                <h3 className="text-sm font-black text-navy">ადაპტური სწავლა</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  15 კითხვა: თქვენი შეცდომები, ახალი ბილეთები და განმეორება.
+                  15 კითხვა: შეცდომები, ახალი ბილეთები & გამეორება.
                 </p>
               </div>
               <button
@@ -910,7 +1257,7 @@ export const DrivingExamWidget: React.FC = () => {
               </button>
             </div>
 
-            {/* Card 4: Marathon */}
+            {/* Card 5: Marathon */}
             <div className="p-4 rounded-2xl bg-white/90 border border-slate-200/80 space-y-3 shadow-xs flex flex-col justify-between">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -919,9 +1266,9 @@ export const DrivingExamWidget: React.FC = () => {
                   </span>
                   <Flame size={16} className="text-rose-600" />
                 </div>
-                <h3 className="text-base font-black text-navy">მარათონი (60 ბილეთი)</h3>
+                <h3 className="text-sm font-black text-navy">მარათონი (60 ბილეთი)</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  ინტენსიური ვარჯიში 60 უწყვეტი ბილეთით შეცდომების გარეშე.
+                  ინტენსიური ვარჯიში 60 უწყვეტი ბილეთით.
                 </p>
               </div>
               <button
@@ -929,7 +1276,7 @@ export const DrivingExamWidget: React.FC = () => {
                 onClick={handleStartMarathon}
                 className="w-full mt-2 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-navy font-black text-xs transition-colors flex items-center justify-center gap-1.5"
               >
-                <span>მარათონის დაწყება</span>
+                <span>მარათონი →</span>
                 <ArrowRight size={14} />
               </button>
             </div>
@@ -1128,12 +1475,17 @@ export const DrivingExamWidget: React.FC = () => {
                 </>
               )}
 
-              {viewMode === 'practice' && (
+              {sessionSubtype === 'mistakes' ? (
+                <div className="px-3 py-1.5 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-600 text-white font-black text-xs flex items-center gap-1.5 shadow-xs animate-pulse">
+                  <ShieldAlert size={14} />
+                  <span>შეცდომებზე მუშაობა · {activeQuestions.length} ბილეთი</span>
+                </div>
+              ) : viewMode === 'practice' ? (
                 <div className="px-3 py-1.5 rounded-2xl bg-blue-100 text-blue-900 font-bold text-xs flex items-center gap-1.5">
                   <BookOpen size={14} />
                   <span>სასწავლო რაუნდი · კატეგორია {activeCategory}</span>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -1294,6 +1646,37 @@ export const DrivingExamWidget: React.FC = () => {
             })}
           </div>
 
+          {/* Instant Mistake Resolution Feedback Banner */}
+          {isAnswered && sessionSubtype === 'mistakes' && (
+            <div className={`p-3.5 rounded-2xl flex items-center gap-2.5 text-xs font-bold animate-fade-in ${
+              currentAnswer === currentQ.correct
+                ? 'bg-emerald-50 text-emerald-950 border border-emerald-300 shadow-2xs'
+                : 'bg-rose-50 text-rose-950 border border-rose-300 shadow-2xs'
+            }`}>
+              {currentAnswer === currentQ.correct ? (
+                <>
+                  <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                  <div>
+                    <span className="font-black text-emerald-700">შესანიშნავია! შეცდომა გასწორებულია!</span>
+                    <span className="block text-[11px] text-emerald-800/80 font-normal mt-0.5">
+                      ბილეთი წარმატებით დაძლეულია და ამოღებულია შეცდომების სიიდან.
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <XCircle size={18} className="text-rose-600 shrink-0" />
+                  <div>
+                    <span className="font-black text-rose-700">შეცდომა კვლავ დაფიქსირდა</span>
+                    <span className="block text-[11px] text-rose-800/80 font-normal mt-0.5">
+                      ეს ბილეთი რჩება თქვენს შეცდომების ბანკში. გაეცანით განმარტებას ქვემოთ.
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Instant Explanation Box */}
           {isAnswered && (
             <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1.5 animate-fade-in shadow-2xs">
@@ -1361,14 +1744,18 @@ export const DrivingExamWidget: React.FC = () => {
 
           <div className="max-w-md mx-auto space-y-2">
             <h3 className="text-xl sm:text-2xl font-black text-navy">
-              {sessionMode === 'practice'
+              {sessionSubtype === 'mistakes'
+                ? 'შეცდომებზე მუშაობის რაუნდი დასრულდა'
+                : sessionMode === 'practice'
                 ? 'სწავლის რაუნდი დასრულდა'
                 : isPassed
                 ? 'გილოცავთ! გამოცდა ჩაბარებულია!'
                 : 'გამოცდა ვერ ჩაბარდა'}
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              {sessionMode === 'practice'
+              {sessionSubtype === 'mistakes'
+                ? `ამ რაუნდში გაიარეთ ${activeQuestions.length} შეცდომიანი ბილეთი. აქედან ${correctCount} წარმატებით გასწორდა და მოიხსნა შეცდომების სიიდან!`
+                : sessionMode === 'practice'
                 ? 'შედეგები შენახულია თქვენს სწავლის ისტორიაში. ქვემოთ შეგიძლიათ გადახედოთ ანალიზს და გაიმეოროთ შეცდომები.'
                 : isPassed
                 ? 'თქვენ წარმატებით დაძლიეთ თეორიული გამოცდის სიმულატორი დასაშვები 3 შეცდომის ლიმიტში.'
@@ -1478,6 +1865,17 @@ export const DrivingExamWidget: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+            {unresolvedMistakes.length > 0 && (
+              <button
+                type="button"
+                onClick={() => handleStartMistakesPractice('unresolved')}
+                className="px-6 py-3.5 rounded-2xl text-xs font-black flex items-center gap-2 shadow-sm bg-gradient-to-r from-rose-600 via-rose-500 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white transform hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                <RotateCcw size={15} />
+                <span>❌ დარჩენილი შეცდომების გავლა ({unresolvedMistakes.length})</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={handleStartExam}
