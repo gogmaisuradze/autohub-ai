@@ -371,15 +371,15 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
       const velocity = Math.abs(dx) / dt;
 
       // Quick flick ("გაკვრით") OR standard drag distance threshold
-      const isFlick = velocity > 0.22 && Math.abs(dx) > 14;
+      const isFlick = velocity > 0.22 && Math.abs(dx) > 16;
       const isThreshold = Math.abs(dx) > Math.min(42, cardWidth * 0.15);
 
       if (!cancel && (isFlick || isThreshold)) {
         sounds.playClick();
         const stepCount = Math.abs(dx) > cardWidth * 0.8 && velocity > 0.65 ? 2 : 1;
         setIndex(current => current + (dx < 0 ? stepCount : -stepCount));
+        suppressClickUntil.current = performance.now() + 180;
       }
-      suppressClickUntil.current = performance.now() + 250;
     }
     setDrag(0);
     setDragging(false);
@@ -476,23 +476,28 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
           const isSelected = slot === index;
           const isFiltered = activeCategoryKey === item.key;
           const ItemIcon = item.icon;
+          const zIndex = isSelected ? 50 : Math.max(1, 40 - Math.round(abs * 10));
 
           return (
             <div
               key={slot}
-              onClick={() => handleCardClick(item, slot)}
-              title={isSelected ? "დააწკაპუნეთ გასაფილტრად" : `გადასვლა: ${item.title}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCardClick(item, slot);
+              }}
+              title={isSelected ? "დააწკაპუნეთ გასაფილტრად" : `დააწკაპუნეთ წინ გამოსატანად: ${item.title}`}
               className={`absolute top-1/2 -translate-y-1/2 rounded-2xl p-3 sm:p-3.5 transition-all duration-500 cursor-pointer select-none border-2 group ${
                 isSelected
-                  ? 'border-amber-400 bg-[#1A2232] text-white shadow-xl shadow-slate-900/25 ring-4 ring-amber-400/25 z-30 scale-100'
-                  : 'border-slate-200/90 bg-white/95 text-slate-800 shadow-md hover:border-slate-300 hover:shadow-lg opacity-85 hover:opacity-100 z-10'
+                  ? 'border-amber-400 bg-[#1A2232] text-white shadow-xl shadow-slate-900/25 ring-4 ring-amber-400/25 scale-100'
+                  : 'border-slate-200/90 bg-white/95 text-slate-800 shadow-md hover:border-amber-400/80 hover:shadow-xl hover:scale-[1.03] opacity-85 hover:opacity-100 hover:ring-2 hover:ring-amber-400/20'
               }`}
               style={{
                 width: `${cardWidth}px`,
+                zIndex,
                 transform: `translate3d(${x}px, -50%, ${-Math.min(abs, 3) * 110}px) rotateY(${-Math.max(-36, Math.min(36, offset * 28))}deg) scale(${1 - Math.min(abs, 3) * 0.08})`,
                 opacity: d < -before || d > after ? 0 : 1,
                 pointerEvents: d < -before || d > after ? 'none' : 'auto',
-                transition: dragging ? 'none' : 'transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease, border-color 0.25s',
+                transition: dragging ? 'none' : 'transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease, border-color 0.25s, box-shadow 0.25s',
                 backfaceVisibility: 'hidden'
               }}
             >

@@ -43,9 +43,9 @@ interface Props {
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
 const CITY_COORDINATES: Record<'tbilisi' | 'batumi' | 'kutaisi', { center: [number, number]; zoom: number }> = {
-  tbilisi: { center: [41.7120, 44.7850], zoom: 13 },
-  batumi: { center: [41.6500, 41.6400], zoom: 14 },
-  kutaisi: { center: [42.2700, 42.7030], zoom: 14 }
+  tbilisi: { center: [41.7120, 44.7850], zoom: 14.5 },
+  batumi: { center: [41.6500, 41.6400], zoom: 14.5 },
+  kutaisi: { center: [42.2700, 42.7030], zoom: 14.5 }
 };
 
 export const ParkingZonesMap: React.FC<Props> = ({
@@ -327,12 +327,14 @@ export const ParkingZonesMap: React.FC<Props> = ({
         resizeObserverRef.current.observe(mapContainerRef.current);
       }
 
-      // Initial size invalidation after mount
-      setTimeout(() => {
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.invalidateSize();
-        }
-      }, 150);
+      // Staggered size invalidation after mount to handle layout transitions
+      [50, 150, 350, 700, 1200].forEach(delay => {
+        setTimeout(() => {
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.invalidateSize();
+          }
+        }, delay);
+      });
 
     } catch (err: any) {
       setMapStatus('error');
@@ -354,12 +356,14 @@ export const ParkingZonesMap: React.FC<Props> = ({
     };
   }, [initMap, viewMode]);
 
-  // Invalidate map size on viewMode switch
+  // Invalidate map size on viewMode switch & window resize
   useEffect(() => {
     if (viewMode === 'map' && mapInstanceRef.current) {
-      setTimeout(() => {
-        mapInstanceRef.current?.invalidateSize();
-      }, 100);
+      [50, 150, 350, 600].forEach(delay => {
+        setTimeout(() => {
+          mapInstanceRef.current?.invalidateSize();
+        }, delay);
+      });
     }
   }, [viewMode]);
 
@@ -412,19 +416,34 @@ export const ParkingZonesMap: React.FC<Props> = ({
     polygonLayerGroupRef.current.clearLayers();
     markerLayerGroupRef.current.clearLayers();
 
-    const bounds = mapInstanceRef.current.getBounds().pad(0.15);
+    const bounds = mapInstanceRef.current.getBounds().pad(0.2);
     const zoom = mapInstanceRef.current.getZoom();
+    const isCompact = zoom < 14;
+
     filteredZones.forEach(zone => {
-      if (!bounds.intersects(L.latLngBounds(zone.polygon))) return;
+      const center = zone.geometry?.center || zone.center;
+      if (!center || !center[0] || !center[1]) return;
+
+      const latLng = L.latLng(center[0], center[1]);
+      let inBounds = bounds.contains(latLng);
+      if (!inBounds && zone.geometry?.polygon && zone.geometry.polygon.length >= 3) {
+        try {
+          inBounds = bounds.intersects(L.latLngBounds(zone.geometry.polygon));
+        } catch {
+          inBounds = false;
+        }
+      }
+      if (!inBounds) return;
+
       const isSelected = selectedZoneId === zone.id || selectedZoneId === zone.lotCode || selectedZoneId === zone.zoneNumber;
 
       // Draw Delineated Polygon
       if (zone.geometry?.polygon && zone.geometry.polygon.length >= 3) {
         const polygon = L.polygon(zone.geometry.polygon, {
-          color: isSelected ? '#fbbf24' : zone.color,
-          fillColor: zone.fillColor,
-          fillOpacity: isSelected ? 0.65 : 0.35,
-          weight: isSelected ? 3.5 : 2.5,
+          color: isSelected ? '#fbbf24' : (zone.tariffCategory === 'A' ? '#2563EB' : zone.tariffCategory === 'B' ? '#D97706' : '#059669'),
+          fillColor: isSelected ? '#fbbf24' : (zone.tariffCategory === 'A' ? '#3B82F6' : zone.tariffCategory === 'B' ? '#F59E0B' : '#10B981'),
+          fillOpacity: isSelected ? 0.75 : 0.45,
+          weight: isSelected ? 4 : 2.5,
           dashArray: isSelected ? undefined : '4 3'
         });
 
@@ -433,7 +452,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
           onSelectZone(zone);
           marker.openPopup();
           if (mapInstanceRef.current) {
-            mapInstanceRef.current.flyTo(zone.geometry.center, 16, { duration: 0.8 });
+            mapInstanceRef.current.flyTo(center, 16.5, { duration: 0.8 });
           }
         });
 
@@ -443,32 +462,42 @@ export const ParkingZonesMap: React.FC<Props> = ({
         polygonLayerGroupRef.current.addLayer(polygon);
       }
 
-      if (zoom < 16 && !isSelected) return;
-
-      // Marker Icon
-      const badgeHtml = `
-        <div class="relative flex items-center justify-center cursor-pointer group">
-          <div class="px-2 py-1 rounded-xl font-mono font-black text-xs flex items-center gap-1 shadow-lg transition-transform hover:scale-110 ${
-            isSelected
-              ? 'bg-gold text-navy ring-2 ring-white scale-110'
-              : 'bg-navy text-gold border border-gold/60'
-          }">
-            <span class="w-1.5 h-1.5 rounded-full ${
-              zone.tariffCategory === 'A' ? 'bg-blue-400' : zone.tariffCategory === 'B' ? 'bg-amber-400' : 'bg-emerald-400'
-            }"></span>
-            <span>#${zone.lotCode}</span>
+      // Marker Icon (Visible at ALL zoom levels!)
+      const badgeHtml = isCompact
+        ? `
+          <div class="relative flex items-center justify-center cursor-pointer group">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center font-mono font-black text-[11px] shadow-md transition-transform hover:scale-125 ${
+              isSelected
+                ? 'bg-gold text-navy ring-2 ring-white scale-110'
+                : 'bg-navy text-gold border border-gold/70'
+            }">
+              <span>🅿️</span>
+            </div>
           </div>
-        </div>
-      `;
+        `
+        : `
+          <div class="relative flex items-center justify-center cursor-pointer group">
+            <div class="px-2 py-1 rounded-xl font-mono font-black text-xs flex items-center gap-1 shadow-lg transition-transform hover:scale-110 ${
+              isSelected
+                ? 'bg-gold text-navy ring-2 ring-white scale-110'
+                : 'bg-navy text-gold border border-gold/60'
+            }">
+              <span class="w-1.5 h-1.5 rounded-full ${
+                zone.tariffCategory === 'A' ? 'bg-blue-400' : zone.tariffCategory === 'B' ? 'bg-amber-400' : 'bg-emerald-400'
+              }"></span>
+              <span>#${zone.lotCode}</span>
+            </div>
+          </div>
+        `;
 
       const customIcon = L.divIcon({
         className: 'custom-parking-zone-badge',
         html: badgeHtml,
-        iconSize: [44, 24],
-        iconAnchor: [22, 12]
+        iconSize: isCompact ? [24, 24] : [44, 24],
+        iconAnchor: isCompact ? [12, 12] : [22, 12]
       });
 
-      const marker = L.marker(zone.geometry.center, { icon: customIcon });
+      const marker = L.marker(center, { icon: customIcon });
 
       const wazeDeepLink = `https://waze.com/ul?ll=${zone.geometry.center[0]},${zone.geometry.center[1]}&navigate=yes`;
       const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${zone.geometry.center[0]},${zone.geometry.center[1]}`;
