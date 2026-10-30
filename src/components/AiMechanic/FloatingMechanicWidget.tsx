@@ -46,18 +46,7 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const initialGreeting = isGe
-    ? `გამარჯობა! მე ვარ თქვენი პერსონალური AI მექანიკოსი. თქვენს ${vehicle.brand} ${vehicle.model}-ზე ვხედავ ${dtcCodes.length > 0 ? `${dtcCodes.length} DTC ხარვეზს` : 'სისტემა სუფთაა'}. რით შემიძლია დაგეხმაროთ?`
-    : `Hello! I am your AI Mechanic for ${vehicle.brand} ${vehicle.model}. I see ${dtcCodes.length > 0 ? `${dtcCodes.length} DTC active codes` : 'systems clean'}. How can I assist you?`;
-
-  const [messages, setMessages] = useState<MiniMessage[]>([
-    {
-      id: 'init-1',
-      sender: 'ai',
-      text: initialGreeting,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+  const [messages, setMessages] = useState<MiniMessage[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -93,12 +82,18 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
       setMessages((prev) => [...prev, aiReply]);
     } catch {
       sounds.playClick();
+      const fallbackText = dtcCodes.length > 0
+        ? (isGe
+            ? `თქვენს ${vehicle.brand}-ზე სკანირებული კოდები (${dtcCodes.map(c => c.code).join(', ')}) საჭიროებს შემოწმებას. სავარაუდო ხარჯი თბილისში ~${dtcCodes.reduce((s, c) => s + (c.estimated_cost_gel || 120), 0)} ₾-ია.`
+            : `Codes (${dtcCodes.map(c => c.code).join(', ')}) on your ${vehicle.brand} require inspection.`)
+        : (isGe
+            ? `თქვენს ${vehicle.brand}-ზე სკანირების შედეგად შეცდომები არ ფიქსირდება, სისტემა სუფთაა.`
+            : `Systems clean on your ${vehicle.brand}.`);
+
       const fallbackReply: MiniMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: isGe
-          ? `თქვენს ${vehicle.brand}-ზე კოდი ${dtcCodes[0]?.code || 'P0133'} საჭიროებს სენსორის შემოწმებას. თბილისში შეცვლის ფასი დაახლოებით 80-140 ლარია.`
-          : `Code ${dtcCodes[0]?.code || 'P0133'} on your ${vehicle.brand} requires sensor inspection. Replacement cost is around 80-140 GEL.`,
+        text: fallbackText,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, fallbackReply]);
@@ -290,6 +285,53 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
 
           {/* Messages Container */}
           <div className="p-3 overflow-y-auto space-y-2.5 max-h-[300px] sm:max-h-[340px] bg-slate-50/70 text-xs no-scrollbar">
+            {messages.length === 0 && !loading && (
+              <div className="py-4 px-2 text-center space-y-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gold/15 text-navy flex items-center justify-center mx-auto">
+                  <Bot size={20} className="text-navy" />
+                </div>
+                <h5 className="font-extrabold text-xs text-navy">
+                  {dtcCodes.length > 0
+                    ? `სკანერმა იპოვა ${dtcCodes.length} DTC ხარვეზი`
+                    : 'სკანირების შედეგი: სისტემა სუფთაა'}
+                </h5>
+                <p className="text-[11px] text-slate-500">
+                  {dtcCodes.length > 0
+                    ? 'დასვით კითხვა ან გაუშვით სკანირებული ხარვეზების ანალიზი n8n-ში:'
+                    : 'შეიძლება დაგისვათ კითხვა ავტომობილის მოვლაზე ან სერვისზე:'}
+                </p>
+                <div className="flex flex-col gap-1.5 pt-1">
+                  {dtcCodes.length > 0 ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleSendMessage(`გამარჯობა, სკანერმა ამოაგდო კოდები: ${dtcCodes.map(c => c.code).join(', ')}. ამიხსენი დეტალურად მიზეზები და ხარჯი.`)}
+                        className="w-full py-2 px-3 rounded-xl bg-gold text-navy font-black text-[11px] shadow-xs hover:bg-amber-400 transition-all text-left flex items-center justify-between"
+                      >
+                        <span>⚡ სკანირების ანალიზი</span>
+                        <ArrowRight size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSendMessage('რა ჯდება ამ დეტალების შეცვლა თბილისში?')}
+                        className="w-full py-1.5 px-3 rounded-xl bg-white border border-slate-200 text-navy font-bold text-[11px] hover:bg-slate-100 transition-all text-left"
+                      >
+                        💰 შეკეთების ხარჯი
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSendMessage('რა პროფილაქტიკურ რჩევებს მომცემთ მანქანის მოვლისთვის?')}
+                      className="w-full py-2 px-3 rounded-xl bg-navy text-gold font-bold text-[11px] hover:bg-slate-800 transition-all text-center"
+                    >
+                      🚗 პროფილაქტიკური რჩევები
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {messages.map((m) => (
               <div
                 key={m.id}

@@ -69,35 +69,7 @@ export const AiMechanicChat: React.FC<Props> = ({
   });
   const [isVoucherExpanded, setIsVoucherExpanded] = useState<boolean>(true);
 
-  // Generate initial greeting message
-  const getInitialMessages = (): ChatMessage[] => {
-    const msgs: ChatMessage[] = [
-      {
-        id: 'welcome',
-        sender: 'assistant',
-        text: `მოგესალმებით! მე ვარ თქვენი AutoHub AI პერსონალური მექანიკოსი. ჩემი სისტემა სინქრონიზებულია თქვენი **${vehicle.brand} ${vehicle.model} (${vehicle.year})**-ის ბორტ-კომპიუტერთან.\n\nამჟამად დაფიქსირებულია **${dtcCodes.length} DTC ხარვეზი** (${dtcCodes.map(d => d.code).join(', ')}).\n\nშეგიძლიათ მკითხოთ ნებისმიერი რამ: ნაწილების ფასები, შეკეთების სირთულე, უსაფრთხოა თუ არა გზის გაგრძელება ან სად შეაკეთოთ თბილისსა და რეგიონებში.`,
-        timestamp: new Date().toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' })
-      }
-    ];
-
-    if (currentBooking) {
-      msgs.push({
-        id: 'booking-clarification-init',
-        sender: 'assistant',
-        text: `📋 **ახალი ჯავშნის AI დაზუსტება:**\nმივიღე თქვენი ჯავშანი **${currentBooking.provider_name}**-ში, თარიღი: **${currentBooking.booking_date} ${currentBooking.booking_time}**.\n\n` +
-          `თქვენი **${vehicle.brand} ${vehicle.model}**-ის მოგროვებული ბორტ-მონაცემების ანალიზი:\n` +
-          `• ⚠️ **აქტიური DTC კოდები (${dtcCodes.length}):** ${dtcCodes.map(d => `${d.code} (${d.title_ge})`).join(', ') || 'არ ფიქსირდება'}.\n` +
-          `• 🛢️ **ძრავის ზეთის რესურსი:** დარჩენილია **${oilHealthPct}%** (Motul 5W-30).\n` +
-          `• 🚗 **მიმდინარე გარბენი:** ${vehicle.mileage_km.toLocaleString()} კმ.\n\n` +
-          `💡 **AI რეკომენდაცია:** რადგან სერვისცენტრში უკვე დაჯავშნილი გაქვთ ვიზიტი, რეკომენდირებულია ერთდროულად ჩატარდეს კომპიუტერული დიაგნოსტიკა + აალების სანთლების შემოწმება და ძრავის ზეთის შეცვლა. ეს დაგიზოგავთ დროს და სერვისცენტრში მოგანიჭებთ კომპლექსურ ფასდაკლებას.`,
-        timestamp: new Date().toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' })
-      });
-    }
-
-    return msgs;
-  };
-
-  const [messages, setMessages] = useState<ChatMessage[]>(getInitialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -551,6 +523,110 @@ export const AiMechanicChat: React.FC<Props> = ({
 
         {/* Message History Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#EDF1F7]/50">
+          {messages.length === 0 && !isLoading && (
+            <div className="h-full flex items-center justify-center p-2 sm:p-4 animate-fade-in">
+              <div className="w-full max-w-xl p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                      dtcCodes.length > 0 ? 'bg-rose-500/10 text-rose-600' : 'bg-emerald-500/10 text-emerald-600'
+                    }`}>
+                      {dtcCodes.length > 0 ? <AlertTriangle size={20} /> : <CheckCircle size={20} />}
+                    </div>
+                    <div>
+                      <h4 className="text-sm sm:text-base font-black text-navy">
+                        {dtcCodes.length > 0
+                          ? `სკანერმა გამოავლინა ${dtcCodes.length} DTC ხარვეზი`
+                          : 'სკანირების შედეგი: სისტემა სუფთაა'}
+                      </h4>
+                      <p className="text-[11px] font-mono text-slate-500">
+                        {vehicle.brand} {vehicle.model} ({vehicle.year || '2016'}) • {vehicle.engine || '2.0L Turbo'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold border ${
+                    dtcCodes.length > 0
+                      ? 'bg-rose-100 text-rose-700 border-rose-300'
+                      : 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                  }`}>
+                    {dtcCodes.length > 0 ? `${dtcCodes.length} Faults` : 'All Clear'}
+                  </span>
+                </div>
+
+                {dtcCodes.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-xs text-slate-600">
+                      დააკლიკეთ ნებისმიერ ხარვეზს ან გაუშვით სრული ანალიზი n8n AI მექანიკოსთან:
+                    </p>
+
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      {dtcCodes.map((dtc) => (
+                        <div
+                          key={dtc.code}
+                          onClick={() => {
+                            sounds.playClick();
+                            handleSendMessage(`გამარჯობა, სკანერმა ამოაგდო კოდი ${dtc.code} (${dtc.title_ge}). გთხოვთ დეტალურად ამიხსნათ: რა ნაწილის დეფექტია, რა ჯდება შეცვლა თბილისში და უსაფრთხოა თუ არა მოძრაობა?`);
+                          }}
+                          className="p-3 rounded-2xl bg-slate-50 hover:bg-gold/15 border border-slate-200/80 hover:border-gold/60 cursor-pointer transition-all flex items-center justify-between gap-3 group"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-black text-rose-600 text-xs">{dtc.code}</span>
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-white text-slate-600 border border-slate-200">
+                                {dtc.severity === 'high' ? '🚨 კრიტიკული' : '⚠️ საშუალო'}
+                              </span>
+                              {dtc.estimated_cost_gel && (
+                                <span className="text-[9px] font-mono text-emerald-700 font-bold">
+                                  ~{dtc.estimated_cost_gel} ₾
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs font-bold text-navy truncate mt-1">
+                              {dtc.title_ge}
+                            </div>
+                          </div>
+                          <span className="px-3 py-1.5 rounded-xl bg-navy text-gold text-xs font-black group-hover:bg-slate-800 transition-colors shrink-0 shadow-2xs">
+                            ანალიზი →
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sounds.playSuccess();
+                          handleSendMessage(`გამარჯობა AI მექანიკოსო, ჩავატარე დიაგნოსტიკური სკანირება და ამოაგდო შემდეგი ხარვეზები:\n${dtcCodes.map(c => `• ${c.code}: ${c.title_ge}`).join('\n')}\n\nგთხოვთ გამიკეთოთ სრული ანალიზი: მიზეზები, უსაფრთხოება და თბილისში შეკეთების ხარჯები.`);
+                        }}
+                        className="w-full py-3 px-4 rounded-2xl bg-gold hover:bg-amber-400 text-navy font-black text-xs sm:text-sm shadow-gold-soft flex items-center justify-center gap-2 transition-all"
+                      >
+                        <Sparkles size={16} className="text-navy" />
+                        <span>⚡ სკანერის ყველა ხარვეზის სრული ანალიზი</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 py-2 text-center">
+                    <p className="text-xs text-slate-600">
+                      თქვენი {vehicle.brand} {vehicle.model}-ის ბორტ-კომპიუტერზე შეცდომები არ ფიქსირდება. შეგიძლიათ დასვათ ნებისმიერი კითხვა სერვისზე ან მოვლაზე.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        handleSendMessage(`გამარჯობა AI მექანიკოსო, ჩემს ${vehicle.brand} ${vehicle.model}-ზე სკანირებამ ხარვეზები არ აჩვენა. რა პროფილაქტიკურ რჩევებს მომცემთ მისი ძრავისა და კვანძების მოვლისთვის?`);
+                      }}
+                      className="px-4 py-2.5 rounded-2xl bg-navy text-gold text-xs font-bold hover:bg-slate-800 transition-all shadow-xs"
+                    >
+                      🚗 პროფილაქტიკური რჩევები
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {messages.map((msg) => {
             const isMe = msg.sender === 'user';
             return (
