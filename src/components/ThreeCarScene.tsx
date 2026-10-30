@@ -219,19 +219,17 @@ export const ThreeCarScene: React.FC<Props> = ({
     return () => observer.disconnect();
   }, []);
 
-  // Trigger 3D car entrance fly-in from depth: starts in distance, rotates 360°, stops tilted at -0.30 rad
+  // Trigger 3D car entrance drive-in: starts straight in background along floor, drives forward, then rotates to showcase angle
   const triggerEntranceFlyIn = useCallback(() => {
     if (!carMasterGroupRef.current) return;
     const car = carMasterGroupRef.current;
-    // Set starting position deep in the background, elevated, and small
-    car.position.set(-4.5, 2.6, -16.0);
-    car.scale.set(0.12, 0.12, 0.12);
-    // Begins at tilted beauty angle minus full 360 turn (-0.30 - 2*PI)
-    car.rotation.y = -0.30 - Math.PI * 2;
+    car.position.set(0, 0, -13.0);
+    car.scale.set(1, 1, 1);
+    car.rotation.set(0, 0, 0); // Straight forward facing viewer
     entranceAnimRef.current = {
       active: true,
       startTime: performance.now(),
-      duration: 2.4
+      duration: 2.2
     };
     try { sounds.playScanSweep(); } catch {}
   }, []);
@@ -699,12 +697,16 @@ export const ThreeCarScene: React.FC<Props> = ({
     // The reference dots run in the existing GPU scene, without a second animation loop.
     const dotPositions: number[] = [], dotColors: number[] = [];
     const warmGold = new THREE.Color(0xcaa95a), paleGold = new THREE.Color(0xe9dfc6);
-    for (let ring=0; ring<28; ring++) {
-      const latitude = -.22 + ring * .047;
+    const dotRingCount = 68;
+    for (let ring=0; ring<dotRingCount; ring++) {
+      // Cover both hemispheres, including the floor-facing half. Mid-ring
+      // sampling avoids duplicate points at the poles.
+      const latitude = -Math.PI/2 + (ring+.5)/dotRingCount*Math.PI;
       const y = Math.sin(latitude) * 27 + 1.2;
       const radius = Math.cos(latitude) * 27;
-      for (let column=0; column<144; column++) {
-        const angle = (column + (ring%2)*.5) / 144 * Math.PI*2;
+      const columns = Math.max(8, Math.round(144*Math.cos(latitude)));
+      for (let column=0; column<columns; column++) {
+        const angle = (column + (ring%2)*.5) / columns * Math.PI*2;
         dotPositions.push(Math.cos(angle)*radius,y,Math.sin(angle)*radius);
         const color = (column+ring)%5===0 ? paleGold : warmGold;
         dotColors.push(color.r,color.g,color.b);
@@ -909,11 +911,9 @@ export const ThreeCarScene: React.FC<Props> = ({
             vec3 solidSurface = ${mat.userData.keepSurfaceColor ? 'diffuseColor.rgb * uPaintColor' : 'uPaintColor'};
             diffuseColor.rgb = mix(uGhostColor, solidSurface, painted);
             diffuseColor.a = surfaceAlpha * mix(uGhostAlpha, 1.0, painted);
-            diffuseColor.a *= 1.0 - exp(-pow((vCarSurface.z - uScanZ) / .18, 2.0)) * uScanStrength * .85 * (1.0 - painted);
-            float frontGrille = smoothstep(2.20, 2.28, vCarSurface.z) * (1.0 - smoothstep(.40, .48, abs(vCarSurface.x))) * step(.17, vCarSurface.y - uLift) * (1.0 - smoothstep(.66, .69, vCarSurface.y - uLift));
-            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.006, .008, .012), frontGrille * painted);`);
-          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(.13, mix(uSolidRoughness, .48, frontGrille), painted);');
-          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(.03, mix(uSolidMetalness, .03, frontGrille), painted);');
+            diffuseColor.a *= 1.0 - exp(-pow((vCarSurface.z - uScanZ) / .18, 2.0)) * uScanStrength * .85 * (1.0 - painted);`);
+          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(.13, uSolidRoughness, painted);');
+          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(.03, uSolidMetalness, painted);');
         }
         shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
           float scanBand = exp(-pow((vCarSurface.z - uScanZ) / .035, 2.0));
@@ -1259,19 +1259,56 @@ export const ThreeCarScene: React.FC<Props> = ({
         bodyMaterialsRef.current.push(glass);
         bodyGrp.attach(mesh);
       });
-      ['Body_Trim', 'Body_Grille'].forEach(name => meshesOf(name).forEach(mesh => {
+      // წინა ცხაური (BMW M Kidney Grille — თანაბარი ქარხნული პრიალა შავი შეფერილობა)
+      meshesOf('Body_Grille').forEach(mesh => {
         const native = mesh.material as THREE.MeshStandardMaterial;
-        const material = new THREE.MeshPhysicalMaterial();
-        THREE.MeshStandardMaterial.prototype.copy.call(material, native);
-        material.transparent = true; material.opacity = .14; material.depthWrite = false;
-        material.alphaTest = 0;
-        material.clearcoat = .12; material.clearcoatRoughness = .22;
-        material.userData = { ghostOpacity: .14, solidColor: 0xffffff, keepSurfaceColor: true,
-          solidRoughness: name === 'Body_Grille' ? .34 : .48, solidMetalness: .03 };
+        const material = new THREE.MeshPhysicalMaterial({
+          color: 0x0e1014,
+          roughness: 0.20,
+          metalness: 0.12,
+          clearcoat: 0.85,
+          clearcoatRoughness: 0.10,
+          side: THREE.DoubleSide
+        });
+        if (native && native.map) material.map = native.map;
+        if (native && native.normalMap) {
+          material.normalMap = native.normalMap;
+          material.normalScale.copy(native.normalScale);
+        }
+        material.userData = {
+          ghostOpacity: 0.18,
+          solidColor: 0x0e1014,
+          keepSurfaceColor: false,
+          solidRoughness: 0.20,
+          solidMetalness: 0.12
+        };
         mesh.material = material;
         bodyMaterialsRef.current.push(material);
         bodyGrp.attach(mesh);
-      }));
+      });
+
+      // ძარის დეკორატიული ელემენტები (M-Sport Shadowline Trim / Diffuser)
+      meshesOf('Body_Trim').forEach(mesh => {
+        const native = mesh.material as THREE.MeshStandardMaterial;
+        const material = new THREE.MeshPhysicalMaterial({
+          color: 0x14171c,
+          roughness: 0.36,
+          metalness: 0.05,
+          clearcoat: 0.45,
+          clearcoatRoughness: 0.20
+        });
+        if (native && native.map) material.map = native.map;
+        material.userData = {
+          ghostOpacity: 0.14,
+          solidColor: 0x14171c,
+          keepSurfaceColor: false,
+          solidRoughness: 0.36,
+          solidMetalness: 0.05
+        };
+        mesh.material = material;
+        bodyMaterialsRef.current.push(material);
+        bodyGrp.attach(mesh);
+      });
 
       // მინები — ავთენტური ქარხნული ტონირებული საავტომობილო მინა (საქარე მინა/ფანჯრები)
       const windowMat = new THREE.MeshPhysicalMaterial({
@@ -1604,10 +1641,10 @@ export const ThreeCarScene: React.FC<Props> = ({
       }
     };
 
-    // Initial arrival fly-in starting position: deep in the background, rotated
-    carMasterGroup.position.set(-4.5, 2.6, -16.0);
-    carMasterGroup.scale.set(0.12, 0.12, 0.12);
-    carMasterGroup.rotation.y = -0.30 - Math.PI * 2;
+    // Initial arrival drive-in starting position: in background along floor, facing straight
+    carMasterGroup.position.set(0, 0, -13.0);
+    carMasterGroup.scale.set(1, 1, 1);
+    carMasterGroup.rotation.set(0, 0, 0);
 
     // Load from preloaded cache if ready, or await preloader, or fallback to direct load
     const preloadedGltf = getPreloadedCarModel();
@@ -1837,28 +1874,36 @@ export const ThreeCarScene: React.FC<Props> = ({
         }
       }
 
-      // Entrance fly-in animation: Car comes down from depth, rotates, and stops at tilted angle (-0.30)
+      // Entrance drive-in animation: Car enters driving straight along ground, then smoothly turns into showcase angle
       if (entranceAnimRef.current.active && modelReadyRef.current && carMasterGroupRef.current) {
         const elapsed = (performance.now() - entranceAnimRef.current.startTime) / 1000;
-        const t = Math.min(1, Math.max(0, elapsed / entranceAnimRef.current.duration));
-        const ease = 1 - Math.pow(1 - t, 3); // Organic ease-out cubic
+        const duration = entranceAnimRef.current.duration;
+        const t = Math.min(1, Math.max(0, elapsed / duration));
 
         const car = carMasterGroupRef.current;
-        car.position.x = -4.5 * (1 - ease);
-        car.position.y = 2.6 * (1 - ease);
-        car.position.z = -16.0 * (1 - ease);
-        const currentScale = 0.12 + 0.88 * ease;
-        car.scale.set(currentScale, currentScale, currentScale);
+        car.position.x = 0;
+        car.position.y = 0;
+        car.scale.set(1, 1, 1);
 
-        // Spins 360 degrees as it approaches, decelerating into tilted beauty angle -0.30
-        car.rotation.y = (-0.30 - Math.PI * 2) + (Math.PI * 2) * ease;
+        // Phase 1: Drives straight forward along the floor from z = -13.0 to z = 0 (0% to 70% of motion)
+        const tDrive = Math.min(1, t / 0.70);
+        const easeDrive = 1 - Math.pow(1 - tDrive, 3); // Decelerates naturally as it reaches the center
+        car.position.z = -13.0 * (1 - easeDrive);
+
+        // Phase 2: As it arrives on the podium, it smoothly rotates from straight (0) into showcase angle (-0.30 rad)
+        let rotProgress = 0;
+        if (t > 0.48) {
+          const normRot = (t - 0.48) / 0.52;
+          rotProgress = normRot * normRot * (3 - 2 * normRot); // Smooth easeInOut
+        }
+        car.rotation.y = -0.30 * rotProgress;
 
         if (t >= 1) {
           entranceAnimRef.current.active = false;
           car.position.set(0, 0, 0);
           car.scale.set(1, 1, 1);
           car.rotation.y = -0.30;
-          // Strictly stop in the tilted position!
+          // Strictly stop in the tilted presentation position!
           liveStateRef.current.autoRotate = false;
           setAutoRotate(false);
         }
