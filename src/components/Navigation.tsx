@@ -108,14 +108,9 @@ export const Navigation: React.FC<Props> = ({
 
   const handlePatrolButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     sounds.playClick();
-    if (!isPatrolOpen) {
-      updatePosition();
-      setIsPatrolOpen(true);
-    } else {
-      setIsPatrolOpen(false);
-    }
+    onSelectTab('fines');
+    setIsPatrolOpen(false);
   };
 
   const tabs = [
@@ -207,11 +202,27 @@ export const Navigation: React.FC<Props> = ({
                       </span>
                     )}
 
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
-                        isPatrolOpen ? 'rotate-180 text-gold' : 'text-slate-400'
-                      }`}
-                    />
+                    <span
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        sounds.playClick();
+                        if (!isPatrolOpen) {
+                          updatePosition();
+                          setIsPatrolOpen(true);
+                        } else {
+                          setIsPatrolOpen(false);
+                        }
+                      }}
+                      className="p-0.5 -mr-0.5 rounded hover:bg-slate-200/50 transition-colors"
+                      title="საპატრულო მენიუ"
+                    >
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
+                          isPatrolOpen ? 'rotate-180 text-gold' : 'text-slate-400'
+                        }`}
+                      />
+                    </span>
                   </button>
 
                   {/* Dropdown Portal */}

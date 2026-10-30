@@ -826,6 +826,192 @@ export const DrivingExamWidget: React.FC = () => {
     <div id="driving-exam-widget" className="space-y-4">
 
       {/* ======================================================== */}
+      {/* 0. HERO SHOWCASE: DRIVING EXAM TICKETS & THEORY (2026)   */}
+      {/* ======================================================== */}
+      {(viewMode === 'subject_picker' || viewMode === 'results') && (
+        <div
+          id="driving-exam-section"
+          data-tour="fines-exam"
+          className="relative p-5 sm:p-7 rounded-[2rem] border-2 transition-all bg-gradient-to-br from-[#0c1222] via-[#11192e] to-[#080d1a] text-white border-gold/50 shadow-2xl space-y-5 overflow-hidden group"
+        >
+          {/* Thematic Ambient Glows */}
+          <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-gold/15 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+
+          {/* Thematic Road & Speedometer Subtle SVG Watermark */}
+          <div className="absolute right-4 bottom-2 opacity-[0.07] pointer-events-none select-none hidden lg:block">
+            <svg width="280" height="150" viewBox="0 0 280 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 140 C 50 30, 230 30, 260 140" stroke="currentColor" strokeWidth="8" strokeDasharray="10 10" />
+              <circle cx="140" cy="140" r="85" stroke="currentColor" strokeWidth="4" />
+              <line x1="140" y1="140" x2="200" y2="75" stroke="#f59e0b" strokeWidth="6" strokeLinecap="round" />
+              <circle cx="140" cy="140" r="14" fill="#f59e0b" />
+            </svg>
+          </div>
+
+          {/* Main Content Row */}
+          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 pb-4 border-b border-white/10">
+
+            {/* Left Side: Icon & Big Titles */}
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 border border-gold/60 bg-gradient-to-br from-amber-400/25 via-gold/15 to-navy shadow-lg shadow-gold/10 ring-2 ring-gold/20">
+                <span className="text-2xl sm:text-3xl">🎓</span>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-gold text-navy flex items-center justify-center font-bold text-xs shadow-sm">
+                  🚗
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                {/* Badges Strip */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-[11px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-gold text-slate-950 shadow-xs flex items-center gap-1.5">
+                    <Sparkles size={12} className="text-navy" />
+                    <span>საგამოცდო ბაზა 2026</span>
+                  </span>
+                  <span className="text-xs font-mono font-bold text-amber-200/90 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
+                    {totalCategoryCount || 921} ოფიციალური ბილეთი
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-white/10 text-slate-300 border border-white/10 hidden sm:inline-block">
+                    32 ოფიციალური თემა • prava.ge
+                  </span>
+                </div>
+
+                {/* Large Title */}
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-tight pt-0.5 flex flex-wrap items-center gap-2">
+                  <span>მართვის მოწმობის ბილეთები</span>
+                  <span className="text-xs sm:text-sm font-black px-2.5 py-0.5 rounded-xl bg-gold/20 text-gold border border-gold/40">
+                    A · B · C · D · AM
+                  </span>
+                </h2>
+
+                <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                  საქართველოს შსს მომსახურების სააგენტოს თეორიული გამოცდის სრული სიმულატორი, გამოუცნობი ადაპტური ალგორითმი და აკადემიური მზადების რანგები.
+                </p>
+              </div>
+            </div>
+
+            {/* Right Side: Thematic Mini Driver's License Card Visual & Action Button */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
+              <div className="hidden md:flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-slate-900/90 to-navy/90 border border-gold/40 shadow-lg backdrop-blur-md">
+                <div className="w-11 h-14 rounded-xl bg-gradient-to-br from-blue-900 via-slate-900 to-slate-950 border border-white/20 p-1 flex flex-col justify-between items-center relative overflow-hidden">
+                  <div className="w-full flex items-center justify-between text-[7px] font-bold text-white/90">
+                    <span>GE</span>
+                    <span>🇬🇪</span>
+                  </div>
+                  <div className="w-6 h-6 rounded-full bg-slate-700/80 border border-gold/40 flex items-center justify-center text-[10px]">
+                    👤
+                  </div>
+                  <div className="text-[6px] font-mono text-gold font-bold">DRIVING</div>
+                </div>
+                <div className="space-y-0.5 text-left pr-1">
+                  <div className="text-[9px] font-mono font-black text-gold uppercase tracking-wider">
+                    GEORGIA • მართვის მოწმობა
+                  </div>
+                  <div className="text-xs font-black text-white">
+                    {activeCategory} კატეგორია
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-300">
+                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">თეორია 100%</span>
+                    <span>• 30 კითხვა</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Launch Exam Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  handleStartExam();
+                }}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-black shadow-gold-soft shrink-0 bg-gradient-to-r from-amber-400 via-gold to-amber-500 hover:from-amber-300 hover:to-gold text-slate-950 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-amber-300"
+              >
+                <BookOpen size={16} />
+                <span>გამოცდის დაწყება (30 კითხვა) →</span>
+              </button>
+            </div>
+
+          </div>
+
+          {/* Categories Preview Pills Strip (Interactive switcher) */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+            <span className="text-[11px] text-slate-400 font-bold mr-1">კატეგორიები:</span>
+            {[
+              { cat: 'B' as const, label: 'B / B1', desc: 'მსუბუქი', count: 921, icon: '🚗' },
+              { cat: 'A' as const, label: 'A / A1', desc: 'მოტოციკლი', count: 760, icon: '🏍️' },
+              { cat: 'C' as const, label: 'C / C1', desc: 'სატვირთო', count: 954, icon: '🚚' },
+              { cat: 'D' as const, label: 'D / D1', desc: 'ავტობუსი', count: 845, icon: '🚌' },
+              { cat: 'AM' as const, label: 'AM', desc: 'მოპედი', count: 327, icon: '🛵' }
+            ].map(c => {
+              const isCatActive = activeCategory === c.cat;
+              return (
+                <button
+                  key={c.cat}
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setActiveCategory(c.cat);
+                  }}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
+                    isCatActive
+                      ? 'bg-gold/25 text-gold border-gold/70 shadow-2xs font-black'
+                      : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <span>{c.icon}</span>
+                  <span>{c.label}</span>
+                  <span className="opacity-70 text-[10px]">({c.count})</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 4 Thematic Metric Tiles */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
+              <span className="text-[10px] text-slate-400 block uppercase font-bold flex items-center gap-1">
+                <span>🚗</span>
+                <span>{activeCategory} კატეგორია</span>
+              </span>
+              <span className="text-sm sm:text-base font-black text-gold block mt-1">{totalCategoryCount || 921} ბილეთი</span>
+              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">{withPhotoCount || 588} ილუსტრირებული</span>
+            </div>
+
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
+              <span className="text-[10px] text-slate-400 block uppercase font-bold flex items-center gap-1">
+                <Clock size={11} className="text-white" />
+                <span>საგამოცდო დრო</span>
+              </span>
+              <span className="text-sm sm:text-base font-black text-white block mt-1">30 წთ / 30 კითხვა</span>
+              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">ოფიციალური ტაიმერი</span>
+            </div>
+
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
+              <span className="text-[10px] text-slate-400 block uppercase font-bold flex items-center gap-1">
+                <ShieldCheck size={11} className="text-emerald-400" />
+                <span>შეცდომის ლიმიტი</span>
+              </span>
+              <span className="text-sm sm:text-base font-black text-emerald-400 block mt-1">მაქს. 3 შეცდომა</span>
+              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">მე-4 შეცდომა ჩაჭრაა</span>
+            </div>
+
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
+              <span className="text-[10px] text-slate-400 block uppercase font-bold flex items-center gap-1">
+                <Award size={11} className="text-amber-300" />
+                <span>აკადემიური სტატუსი</span>
+              </span>
+              <span className="text-sm sm:text-base font-black text-amber-300 block mt-1 truncate">
+                {academicRank.icon} {academicRank.title}
+              </span>
+              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block truncate">
+                {academicRank.regalia}
+              </span>
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* ======================================================== */}
       {/* 1. TOP LEARNING ANALYSIS & PROGRESS DIAGRAM              */}
       {/* ======================================================== */}
       {(viewMode === 'subject_picker' || viewMode === 'results') && (
