@@ -12,373 +12,234 @@ interface VisualProps {
 export const ThematicCategoryVisual: React.FC<VisualProps> = ({
   categoryKey,
   isSelected = false,
-  isFiltered = false,
-  countText,
-  badge
+  isFiltered = false
 }) => {
-  switch (categoryKey) {
-    case 'radar':
-      return (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#0e1726] via-[#141e33] to-[#0a101d] overflow-hidden flex items-center justify-center">
-          {/* Ambient Radar Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(245,158,11,0.18),transparent_70%)]" />
-          
-          {/* Concentric Radar Grid Rings */}
-          <svg className="absolute inset-0 w-full h-full opacity-35" viewBox="0 0 400 250">
-            <defs>
-              <radialGradient id="radarSweep" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <circle cx="200" cy="125" r="105" fill="none" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3 3" />
-            <circle cx="200" cy="125" r="75" fill="none" stroke="#f59e0b" strokeWidth="1" />
-            <circle cx="200" cy="125" r="45" fill="none" stroke="#f59e0b" strokeWidth="1.2" strokeDasharray="4 2" />
-            <circle cx="200" cy="125" r="20" fill="none" stroke="#f59e0b" strokeWidth="1.5" />
-            <line x1="200" y1="20" x2="200" y2="230" stroke="#f59e0b" strokeWidth="0.8" strokeDasharray="2 4" />
-            <line x1="95" y1="125" x2="305" y2="125" stroke="#f59e0b" strokeWidth="0.8" strokeDasharray="2 4" />
-            {/* 45 Deg Crosshairs */}
-            <line x1="125" y1="50" x2="275" y2="200" stroke="#f59e0b" strokeWidth="0.5" strokeOpacity="0.4" />
-            <line x1="125" y1="200" x2="275" y2="50" stroke="#f59e0b" strokeWidth="0.5" strokeOpacity="0.4" />
-          </svg>
+  return (
+    <div className="relative w-full h-full bg-[#182235] flex items-center justify-center p-3 select-none">
+      {/* Subtle Matte Background Texture */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
 
-          {/* Central Camera HUD & Laser Sensor */}
-          <div className="relative z-10 flex flex-col items-center">
-            {/* Camera Lens Housing */}
-            <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-900 to-[#1e293b] border-2 border-amber-400/80 shadow-[0_0_30px_rgba(245,158,11,0.4)] flex items-center justify-center">
-              {/* Outer Lens Ring */}
-              <div className="w-14 h-14 rounded-full border border-amber-400/60 bg-slate-950 flex items-center justify-center relative">
-                {/* Aperture Iris */}
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500/40 via-amber-300/20 to-blue-500/20 border border-amber-400/80 flex items-center justify-center">
-                  <div className="w-3 h-3 rounded-full bg-amber-400 animate-ping opacity-75" />
-                  <div className="w-3 h-3 rounded-full bg-amber-300 absolute" />
+      {/* Road Sign Plates */}
+      {(() => {
+        switch (categoryKey) {
+          case 'radar':
+            // Official Radar / Speed Camera Sign (White disc with red border 80 km/h + Blue Camera Plate)
+            return (
+              <div className="flex items-center justify-center gap-3">
+                {/* Standard White Disc Speed Limit Sign */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white border-4 sm:border-[5px] border-[#DC2626] flex items-center justify-center shadow-md shrink-0">
+                  <span className="text-xl sm:text-2xl font-black text-slate-950 font-sans tracking-tight">
+                    80
+                  </span>
+                </div>
+
+                {/* Standard Blue Camera Plate (საგზაო ნიშანი 5.27/7.14) */}
+                <div className="w-20 h-16 sm:w-24 sm:h-20 rounded-xl bg-[#1E40AF] border-2 border-white p-1.5 flex flex-col items-center justify-center shadow-md shrink-0">
+                  {/* Camera pictogram */}
+                  <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm8 11a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" />
+                  </svg>
+                  <span className="text-[8px] sm:text-[9px] font-bold text-white tracking-widest mt-0.5 uppercase">
+                    RADAR
+                  </span>
                 </div>
               </div>
-              {/* Top Sensor Notch */}
-              <div className="absolute -top-1.5 w-6 h-1 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b]" />
-            </div>
+            );
 
-            {/* Speed Limit Tag */}
-            <div className="mt-2 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-white border-2 border-red-600 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-md">
-                60
-              </span>
-              <span className="text-[10px] font-mono font-bold tracking-widest text-amber-300 uppercase bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/30">
-                RADAR • 300m SCAN
-              </span>
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'traffic_jam':
-      return (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#1a0a10] via-[#240e17] to-[#0e0609] overflow-hidden flex items-center justify-center">
-          {/* Ambient Red Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_70%,rgba(239,68,68,0.25),transparent_70%)]" />
-
-          {/* Perspective Congested Highway Graphic */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 250">
-            {/* Highway Horizon Lines */}
-            <polygon points="120,250 280,250 215,80 185,80" fill="rgba(30,12,18,0.85)" stroke="#ef4444" strokeWidth="0.8" strokeOpacity="0.4" />
-            <line x1="200" y1="250" x2="200" y2="80" stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="10 8" strokeOpacity="0.6" />
-            <line x1="160" y1="250" x2="192" y2="80" stroke="#f43f5e" strokeWidth="0.8" strokeDasharray="6 6" strokeOpacity="0.3" />
-            <line x1="240" y1="250" x2="208" y2="80" stroke="#f43f5e" strokeWidth="0.8" strokeDasharray="6 6" strokeOpacity="0.3" />
-
-            {/* Glowing Red Taillights in Traffic Rows */}
-            {/* Lane 1 */}
-            <ellipse cx="170" cy="210" rx="14" ry="4" fill="#ef4444" opacity="0.9" />
-            <ellipse cx="170" cy="210" rx="22" ry="6" fill="#ef4444" opacity="0.3" />
-            <ellipse cx="180" cy="165" rx="10" ry="3" fill="#ef4444" opacity="0.85" />
-            <ellipse cx="188" cy="130" rx="7" ry="2" fill="#ef4444" opacity="0.75" />
-
-            {/* Lane 2 */}
-            <ellipse cx="230" cy="210" rx="14" ry="4" fill="#ef4444" opacity="0.9" />
-            <ellipse cx="230" cy="210" rx="22" ry="6" fill="#ef4444" opacity="0.3" />
-            <ellipse cx="220" cy="165" rx="10" ry="3" fill="#ef4444" opacity="0.85" />
-            <ellipse cx="212" cy="130" rx="7" ry="2" fill="#ef4444" opacity="0.75" />
-
-            {/* Traffic Congestion Alert Badge */}
-            <circle cx="200" cy="65" r="16" fill="#ef4444" opacity="0.2" />
-          </svg>
-
-          {/* Central Congestion Warning HUD */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-950 to-slate-900 border-2 border-rose-500/80 shadow-[0_0_30px_rgba(244,63,94,0.4)] flex items-center justify-center">
-              <span className="text-2xl">🚗</span>
-              <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white font-black text-[10px] flex items-center justify-center shadow-sm">
-                !
-              </div>
-            </div>
-            <div className="mt-2 bg-rose-500/20 px-2.5 py-0.5 rounded-full border border-rose-400/40 text-rose-300 font-mono text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
-              <span>LIVE TRAFFIC JAM</span>
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'fuel':
-      return (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#071913] via-[#0d271f] to-[#04100c] overflow-hidden flex items-center justify-center">
-          {/* Ambient Emerald Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.2),transparent_70%)]" />
-
-          {/* High Tech Fuel Pump & Price Display SVG */}
-          <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 400 250">
-            {/* Grid Lines */}
-            <line x1="40" y1="200" x2="360" y2="200" stroke="#10b981" strokeWidth="1" strokeDasharray="4 4" />
-            <circle cx="200" cy="125" r="90" fill="none" stroke="#10b981" strokeWidth="0.8" strokeDasharray="4 4" />
-          </svg>
-
-          {/* Central Fuel Dispenser Nozzle & Digital Price Board */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-950 to-emerald-950/80 border-2 border-emerald-400/80 shadow-[0_0_30px_rgba(16,185,129,0.4)] flex items-center justify-center p-2">
-              <div className="w-full h-full rounded-xl bg-slate-900 border border-emerald-500/40 flex flex-col items-center justify-center">
-                <span className="text-2xl">⛽</span>
-                <span className="text-[9px] font-mono font-black text-emerald-400 tracking-wider">
-                  95 · 3.12₾
+          case 'traffic_jam':
+            // Official Road Warning Sign: Congestion / Traffic Jam (საგზაო ნიშანი 1.34)
+            return (
+              <div className="flex flex-col items-center justify-center">
+                <svg className="w-24 h-22 sm:w-28 sm:h-24 drop-shadow-md" viewBox="0 0 100 86">
+                  {/* Outer Red Triangle */}
+                  <polygon points="50,4 96,82 4,82" fill="#DC2626" />
+                  {/* Inner Yellow / White Triangle */}
+                  <polygon points="50,14 88,76 12,76" fill="#FFFFFF" />
+                  {/* 3 Queued Cars Pictogram in Solid Black */}
+                  <g fill="#0F172A">
+                    {/* Car 1 */}
+                    <rect x="35" y="60" width="30" height="9" rx="2" />
+                    <circle cx="42" cy="70" r="2.5" fill="#0F172A" />
+                    <circle cx="58" cy="70" r="2.5" fill="#0F172A" />
+                    <path d="M40,60 L44,53 L56,53 L60,60 Z" />
+                    {/* Car 2 (higher) */}
+                    <rect x="39" y="44" width="22" height="7" rx="1.5" />
+                    <path d="M43,44 L46,39 L54,39 L57,44 Z" />
+                    {/* Car 3 (lead) */}
+                    <rect x="42" y="32" width="16" height="5" rx="1" />
+                  </g>
+                </svg>
+                <span className="mt-1 px-2.5 py-0.5 rounded-md bg-white/10 text-slate-200 text-[10px] font-bold tracking-wide uppercase">
+                  საცობი • TRAFFIC
                 </span>
               </div>
-            </div>
+            );
 
-            {/* Fuel Brand Strip */}
-            <div className="mt-2 flex items-center gap-1.5 bg-emerald-500/15 px-2.5 py-0.5 rounded-md border border-emerald-400/30 text-emerald-300 font-mono text-[10px] font-black">
-              <span>GULF</span>
-              <span>•</span>
-              <span>WISSOL</span>
-              <span>•</span>
-              <span>SOCAR</span>
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'charging':
-      return (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#061720] via-[#0c2433] to-[#040e14] overflow-hidden flex items-center justify-center">
-          {/* Ambient Cyan Lightning Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.22),transparent_70%)]" />
-
-          {/* Circuit Lines */}
-          <svg className="absolute inset-0 w-full h-full opacity-35" viewBox="0 0 400 250">
-            <path d="M60,125 L140,125 L160,80 L240,80 L260,125 L340,125" fill="none" stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="4 3" />
-            <circle cx="140" cy="125" r="4" fill="#06b6d4" />
-            <circle cx="260" cy="125" r="4" fill="#06b6d4" />
-          </svg>
-
-          {/* Central Fast Charging Plug */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-950 to-cyan-950/80 border-2 border-cyan-400/80 shadow-[0_0_30px_rgba(6,182,212,0.4)] flex items-center justify-center p-2">
-              <div className="w-full h-full rounded-xl bg-slate-900 border border-cyan-400/40 flex flex-col items-center justify-center">
-                <span className="text-2xl animate-pulse">⚡</span>
-                <span className="text-[9px] font-mono font-black text-cyan-300 tracking-wider">
-                  150 kW DC
+          case 'fuel':
+            // Official Blue Highway Service Sign: Gas Station (ნიშანი 7.1)
+            return (
+              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#1E40AF] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
+                <div className="w-full flex justify-between items-center px-1">
+                  <span className="text-[8px] font-mono font-bold text-white/80">7.1</span>
+                  <span className="text-[8px] font-bold text-amber-300">GULF • WISSOL</span>
+                </div>
+                {/* Standard fuel pump pictogram */}
+                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.5 5.5v12a1.5 1.5 0 0 1-3 0v-6.5a1 1 0 0 0-1-1H14V4h-1v6H6a2 2 0 0 0-2 2v8h10v-5h1.5a2.5 2.5 0 0 0 2.5-2.5V8.83a3 3 0 0 0 1-2.33 3 3 0 0 0-3-3zM7 6h5v3H7V6z" />
+                </svg>
+                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
+                  ავტოგასამართი
                 </span>
               </div>
-            </div>
+            );
 
-            <div className="mt-2 bg-cyan-500/15 px-2.5 py-0.5 rounded-md border border-cyan-400/30 text-cyan-300 font-mono text-[10px] font-black uppercase tracking-wider">
-              CCS2 · CHAdeMO · TYPE 2
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'service':
-      return (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#0c0e24] via-[#141638] to-[#070817] overflow-hidden flex items-center justify-center">
-          {/* Ambient Indigo Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(99,102,241,0.22),transparent_70%)]" />
-
-          {/* Brake Rotor & Oscilloscope Wireframe */}
-          <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 400 250">
-            <circle cx="200" cy="125" r="85" fill="none" stroke="#6366f1" strokeWidth="1" strokeDasharray="5 3" />
-            <circle cx="200" cy="125" r="55" fill="none" stroke="#6366f1" strokeWidth="0.8" />
-            {/* Ventilated holes */}
-            {[0, 45, 90, 135, 180, 225, 270, 315].map((ang, idx) => (
-              <circle key={idx} cx={200 + 70 * Math.cos(ang * Math.PI / 180)} cy={125 + 70 * Math.sin(ang * Math.PI / 180)} r="3" fill="#6366f1" />
-            ))}
-          </svg>
-
-          {/* Central Mechanical Wrench & Rotor */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-950 to-indigo-950/80 border-2 border-indigo-400/80 shadow-[0_0_30px_rgba(99,102,241,0.4)] flex items-center justify-center p-2">
-              <div className="w-full h-full rounded-xl bg-slate-900 border border-indigo-400/40 flex flex-col items-center justify-center">
-                <span className="text-2xl">🔧</span>
-                <span className="text-[9px] font-mono font-black text-indigo-300 tracking-wider">
-                  OBD · სავალი
+          case 'charging':
+            // Official Highway Service Sign: EV Charging Station
+            return (
+              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#047857] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
+                <div className="w-full flex justify-between items-center px-1">
+                  <span className="text-[8px] font-mono font-bold text-white/80">EV</span>
+                  <span className="text-[8px] font-bold text-emerald-200">DC / AC</span>
+                </div>
+                {/* Electric vehicle + plug pictogram */}
+                <div className="flex items-center justify-center gap-1">
+                  <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.08 3.11H5.77L6.85 7zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z" />
+                    <circle cx="7.5" cy="14.5" r="1.5" />
+                    <circle cx="16.5" cy="14.5" r="1.5" />
+                  </svg>
+                  <span className="text-xl font-bold text-amber-300">⚡</span>
+                </div>
+                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
+                  EV დამტენი
                 </span>
               </div>
-            </div>
+            );
 
-            <div className="mt-2 bg-indigo-500/15 px-2.5 py-0.5 rounded-md border border-indigo-400/30 text-indigo-300 font-mono text-[10px] font-black uppercase tracking-wider">
-              24/7 ვულკანიზაცია · სერვისი
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'car_wash':
-      return (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#061826] via-[#0a2336] to-[#040e17] overflow-hidden flex items-center justify-center">
-          {/* Ambient Sky Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(14,165,233,0.22),transparent_70%)]" />
-
-          {/* Water Droplet & Spray Arcs */}
-          <svg className="absolute inset-0 w-full h-full opacity-35" viewBox="0 0 400 250">
-            <circle cx="150" cy="90" r="10" fill="none" stroke="#0ea5e9" strokeWidth="1" strokeDasharray="2 2" />
-            <circle cx="260" cy="100" r="14" fill="none" stroke="#0ea5e9" strokeWidth="1" />
-            <circle cx="240" cy="170" r="8" fill="none" stroke="#0ea5e9" strokeWidth="1" />
-            <circle cx="130" cy="160" r="12" fill="none" stroke="#0ea5e9" strokeWidth="1" />
-          </svg>
-
-          {/* Central Wash Foam Spray */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-950 to-sky-950/80 border-2 border-sky-400/80 shadow-[0_0_30px_rgba(14,165,233,0.4)] flex items-center justify-center p-2">
-              <div className="w-full h-full rounded-xl bg-slate-900 border border-sky-400/40 flex flex-col items-center justify-center">
-                <span className="text-2xl">💧</span>
-                <span className="text-[9px] font-mono font-black text-sky-300 tracking-wider">
-                  TURBO FOAM
+          case 'service':
+            // Official Blue Highway Service Sign: Auto Repair Workshop (ნიშანი 7.4)
+            return (
+              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#1E40AF] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
+                <div className="w-full flex justify-between items-center px-1">
+                  <span className="text-[8px] font-mono font-bold text-white/80">7.4</span>
+                  <span className="text-[8px] font-bold text-white/80">SERVICE</span>
+                </div>
+                {/* Crossed wrench and hammer pictogram */}
+                <svg className="w-8 h-8 sm:w-9 sm:h-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                </svg>
+                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
+                  ავტოსერვისი
                 </span>
               </div>
-            </div>
+            );
 
-            <div className="mt-2 bg-sky-500/15 px-2.5 py-0.5 rounded-md border border-sky-400/30 text-sky-300 font-mono text-[10px] font-black uppercase tracking-wider">
-              თვითმომსახურება · ქიმწმენდა
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'parts':
-      return (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#160824] via-[#220d36] to-[#0c0414] overflow-hidden flex items-center justify-center">
-          {/* Ambient Purple Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(168,85,247,0.22),transparent_70%)]" />
-
-          {/* Interlocking Gears Silhouette */}
-          <svg className="absolute inset-0 w-full h-full opacity-35" viewBox="0 0 400 250">
-            <circle cx="160" cy="125" r="45" fill="none" stroke="#a855f7" strokeWidth="2" strokeDasharray="8 4" />
-            <circle cx="240" cy="125" r="35" fill="none" stroke="#a855f7" strokeWidth="2" strokeDasharray="6 3" />
-          </svg>
-
-          {/* Central Gear & Piston */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-950 to-purple-950/80 border-2 border-purple-400/80 shadow-[0_0_30px_rgba(168,85,247,0.4)] flex items-center justify-center p-2">
-              <div className="w-full h-full rounded-xl bg-slate-900 border border-purple-400/40 flex flex-col items-center justify-center">
-                <span className="text-2xl">⚙️</span>
-                <span className="text-[9px] font-mono font-black text-purple-300 tracking-wider">
-                  OEM PARTS
+          case 'car_wash':
+            // Official Blue Highway Service Sign: Car Wash (ნიშანი 7.3)
+            return (
+              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#1E40AF] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
+                <div className="w-full flex justify-between items-center px-1">
+                  <span className="text-[8px] font-mono font-bold text-white/80">7.3</span>
+                  <span className="text-[8px] font-bold text-sky-200">WASH</span>
+                </div>
+                {/* Car wash shower pictogram */}
+                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.92 9.01C18.72 8.42 18.16 8 17.5 8h-11c-.66 0-1.21.42-1.42 1.01L3 15v6c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-6l-2.08-5.99zM6.85 10h10.29l1.08 3.11H5.77L6.85 10zM19 19H5v-3.66l.12-.34h13.77l.11.34V19z" />
+                  <circle cx="12" cy="3" r="1.5" />
+                  <circle cx="8" cy="5" r="1" />
+                  <circle cx="16" cy="5" r="1" />
+                </svg>
+                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
+                  ავტოსამრეცხაო
                 </span>
               </div>
-            </div>
+            );
 
-            <div className="mt-2 bg-purple-500/15 px-2.5 py-0.5 rounded-md border border-purple-400/30 text-purple-300 font-mono text-[10px] font-black uppercase tracking-wider">
-              ნაწილები · ზეთები · დეტალები
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'road_repair':
-      return (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#1f1004] via-[#2c1808] to-[#120902] overflow-hidden flex items-center justify-center">
-          {/* Ambient Orange Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(249,115,22,0.22),transparent_70%)]" />
-
-          {/* Diagonal Hazard Stripes Overlay */}
-          <div className="absolute inset-0 opacity-15 bg-[repeating-linear-gradient(45deg,#f97316,#f97316_10px,#000_10px,#000_20px)]" />
-
-          {/* Central Traffic Cone & Barrier */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-950 to-orange-950/80 border-2 border-orange-400/80 shadow-[0_0_30px_rgba(249,115,22,0.4)] flex items-center justify-center p-2">
-              <div className="w-full h-full rounded-xl bg-slate-900 border border-orange-400/40 flex flex-col items-center justify-center">
-                <span className="text-2xl">🚧</span>
-                <span className="text-[9px] font-mono font-black text-orange-300 tracking-wider">
-                  DETOUR / რემონტი
+          case 'parts':
+            // Official Blue Service Sign: Spare Parts & Store
+            return (
+              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#1E40AF] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
+                <div className="w-full flex justify-between items-center px-1">
+                  <span className="text-[8px] font-mono font-bold text-white/80">PARTS</span>
+                  <span className="text-[8px] font-bold text-amber-300">OEM</span>
+                </div>
+                {/* Gear / Mechanical part pictogram */}
+                <svg className="w-8 h-8 sm:w-9 sm:h-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
+                  ავტონაწილები
                 </span>
               </div>
-            </div>
+            );
 
-            <div className="mt-2 bg-orange-500/15 px-2.5 py-0.5 rounded-md border border-orange-400/30 text-orange-300 font-mono text-[10px] font-black uppercase tracking-wider">
-              საგზაო სამუშაოები & შეზღუდვა
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'hazard':
-      return (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#24060b] via-[#330a11] to-[#140306] overflow-hidden flex items-center justify-center">
-          {/* Ambient Danger Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(225,29,72,0.25),transparent_70%)]" />
-
-          {/* Caution Ripples */}
-          <svg className="absolute inset-0 w-full h-full opacity-35" viewBox="0 0 400 250">
-            <polygon points="200,40 280,180 120,180" fill="none" stroke="#e11d48" strokeWidth="1.5" strokeDasharray="4 2" />
-          </svg>
-
-          {/* Central Hazard Triangle */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-950 to-rose-950/80 border-2 border-rose-500/80 shadow-[0_0_30px_rgba(225,29,72,0.4)] flex items-center justify-center p-2">
-              <div className="w-full h-full rounded-xl bg-slate-900 border border-rose-500/40 flex flex-col items-center justify-center">
-                <span className="text-2xl animate-bounce">⚠️</span>
-                <span className="text-[9px] font-mono font-black text-rose-300 tracking-wider">
-                  HAZARD ALERT
+          case 'road_repair':
+            // Official Road Warning Sign: Road Works (საგზაო ნიშანი 1.25)
+            return (
+              <div className="flex flex-col items-center justify-center">
+                <svg className="w-24 h-22 sm:w-28 sm:h-24 drop-shadow-md" viewBox="0 0 100 86">
+                  {/* Outer Red Triangle */}
+                  <polygon points="50,4 96,82 4,82" fill="#DC2626" />
+                  {/* Inner Yellow Triangle (Road works warning sign) */}
+                  <polygon points="50,14 88,76 12,76" fill="#FBBF24" />
+                  {/* Worker with shovel pictogram */}
+                  <g fill="#0F172A">
+                    <circle cx="56" cy="36" r="4.5" />
+                    <path d="M52,43 L45,55 L38,55 L38,58 L47,58 L54,47 L58,54 L52,70 L56,70 L61,56 L64,68 L68,68 L64,52 L57,43 Z" />
+                    <line x1="38" y1="58" x2="33" y2="72" stroke="#0F172A" strokeWidth="2.5" />
+                    <polygon points="30,70 36,70 33,75" />
+                  </g>
+                </svg>
+                <span className="mt-1 px-2.5 py-0.5 rounded-md bg-white/10 text-slate-200 text-[10px] font-bold tracking-wide uppercase">
+                  რემონტი • ROAD WORKS
                 </span>
               </div>
-            </div>
+            );
 
-            <div className="mt-2 bg-rose-500/15 px-2.5 py-0.5 rounded-md border border-rose-400/30 text-rose-300 font-mono text-[10px] font-black uppercase tracking-wider">
-              მოყინვა · ნისლი · შემთხვევები
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'showroom':
-      return (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#1f1604] via-[#2c2008] to-[#120d02] overflow-hidden flex items-center justify-center">
-          {/* Ambient Champagne Gold Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(217,119,6,0.22),transparent_70%)]" />
-
-          {/* Spotlights and Pavilion Architecture */}
-          <svg className="absolute inset-0 w-full h-full opacity-35" viewBox="0 0 400 250">
-            {/* Spotlights from Top Corners */}
-            <polygon points="40,0 120,0 240,250 160,250" fill="url(#goldLightL)" opacity="0.3" />
-            <polygon points="360,0 280,0 160,250 240,250" fill="url(#goldLightR)" opacity="0.3" />
-            <defs>
-              <linearGradient id="goldLightL" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#d97706" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#d97706" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="goldLightR" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#d97706" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#d97706" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-          </svg>
-
-          {/* Central Luxury Dealership Crest */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-950 to-amber-950/80 border-2 border-amber-400/80 shadow-[0_0_30px_rgba(217,119,6,0.4)] flex items-center justify-center p-2">
-              <div className="w-full h-full rounded-xl bg-slate-900 border border-amber-400/40 flex flex-col items-center justify-center">
-                <span className="text-2xl">🏢</span>
-                <span className="text-[9px] font-mono font-black text-amber-300 tracking-wider">
-                  OFFICIAL DEALER
+          case 'hazard':
+            // Official Road Warning Sign: Other Hazards / Caution (საგზაო ნიშანი 1.33)
+            return (
+              <div className="flex flex-col items-center justify-center">
+                <svg className="w-24 h-22 sm:w-28 sm:h-24 drop-shadow-md" viewBox="0 0 100 86">
+                  {/* Outer Red Triangle */}
+                  <polygon points="50,4 96,82 4,82" fill="#DC2626" />
+                  {/* Inner Yellow Triangle */}
+                  <polygon points="50,14 88,76 12,76" fill="#FBBF24" />
+                  {/* Exclamation point pictogram */}
+                  <g fill="#0F172A">
+                    <rect x="47" y="32" width="6" height="24" rx="3" />
+                    <circle cx="50" cy="65" r="4" />
+                  </g>
+                </svg>
+                <span className="mt-1 px-2.5 py-0.5 rounded-md bg-white/10 text-slate-200 text-[10px] font-bold tracking-wide uppercase">
+                  საფრთხე • CAUTION
                 </span>
               </div>
-            </div>
+            );
 
-            <div className="mt-2 bg-amber-500/15 px-2.5 py-0.5 rounded-md border border-amber-400/30 text-amber-300 font-mono text-[10px] font-black uppercase tracking-wider">
-              პრემიუმ ავტოსალონები · 122 ცენტრი
-            </div>
-          </div>
-        </div>
-      );
+          case 'showroom':
+            // Official Blue Highway Information Sign: Dealership / Showroom
+            return (
+              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-xl bg-[#1E40AF] border-2 border-white p-2 flex flex-col items-center justify-between shadow-md">
+                <div className="w-full flex justify-between items-center px-1">
+                  <span className="text-[8px] font-mono font-bold text-white/80">DEALER</span>
+                  <span className="text-[8px] font-bold text-amber-300">AUTO</span>
+                </div>
+                {/* Official Dealership Building & Car silhouette */}
+                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" />
+                </svg>
+                <span className="text-[9px] font-bold text-white tracking-wider uppercase">
+                  ავტოსალონი
+                </span>
+              </div>
+            );
 
-    default:
-      return null;
-  }
+          default:
+            return null;
+        }
+      })()}
+    </div>
+  );
 };

@@ -75,7 +75,7 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     subtitle: 'მძიმე შეფერხებები & ალტერნატივები',
     badge: 'LIVE 12',
     badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-400/40',
-    accent: '#EF4444',
+    accent: '#DC2626',
     icon: Car,
     description: 'თბილისისა და რეგიონების მძიმე საცობები რეალურ დროში, ალტერნატიული სწრაფი მარშრუტები და მოძრაობის დინამიკა.',
     countText: '12 აქტიური საცობი'
@@ -88,7 +88,7 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     subtitle: 'Gulf, Wissol, Socar, Rompetrol, Lukoil',
     badge: '1 421 ლოკაცია',
     badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
-    accent: '#10B981',
+    accent: '#1E40AF',
     icon: Fuel,
     description: 'საწვავის განახლებული ფასები: Gulf, Wissol, Socar, Rompetrol, Lukoil, Portal. პრემიუმი, რეგულარი, დიზელი და გაზი.',
     countText: '1 421 სადგური'
@@ -100,8 +100,8 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     shortName: 'დამტენები',
     subtitle: 'ელექტრომობილების სწრაფი დამტენები',
     badge: '254 სადგური',
-    badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40',
-    accent: '#06B6D4',
+    badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-400/40',
+    accent: '#047857',
     icon: Zap,
     description: 'ელექტრომობილების სწრაფი DC და AC დამტენები (CCS2, Chademo, Type 2, GB/T, Tesla) მთელ საქართველოში.',
     countText: '254 დამტენი ჰაბი'
@@ -113,8 +113,8 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     shortName: 'სერვისი',
     subtitle: 'დიაგნოსტიკა, სავალი ნაწილი, საბურავები',
     badge: '1 344 სერვისი',
-    badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40',
-    accent: '#6366F1',
+    badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-400/40',
+    accent: '#1E40AF',
     icon: Wrench,
     description: 'სავალი ნაწილის შეკეთება, კომპიუტერული დიაგნოსტიკა, ძრავის ოსტატები, ზეთის შეცვლა და 24/7 ვულკანიზაცია.',
     countText: '1 344 პროფესიონალი'
@@ -127,7 +127,7 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     subtitle: 'თვითმომსახურება & ქიმწმენდა',
     badge: '902 ობიექტი',
     badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-400/40',
-    accent: '#0EA5E9',
+    accent: '#1E40AF',
     icon: Droplets,
     description: 'თვითმომსახურების ბოქსები, ტურბო-ქაფი, უკონტაქტო რეცხვა, ავტო-დითეილინგი და ქიმწმენდა.',
     countText: '902 ავტოსამრეცხაო'
@@ -139,8 +139,8 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     shortName: 'ნაწილები',
     subtitle: 'ნაწილები, დეტალები & ზეთები',
     badge: '619 მაღაზია',
-    badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-400/40',
-    accent: '#A855F7',
+    badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40',
+    accent: '#1E40AF',
     icon: Cog,
     description: 'ახალი და მეორადი ორიგინალი ნაწილები, ძრავის ზეთები, სამუხრუჭე ხუნდები, ფილტრები და აქსესუარები.',
     countText: '619 ავტომაღაზია'
@@ -152,8 +152,8 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     shortName: 'რემონტი',
     subtitle: 'საგზაო სამუშაოები & შეზღუდვები',
     badge: '14 მონაკვეთი',
-    badgeColor: 'bg-orange-500/20 text-orange-300 border-orange-400/40',
-    accent: '#F97316',
+    badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
+    accent: '#DC2626',
     icon: Construction,
     description: 'საგზაო სამუშაოები, გადათხრილი ქუჩები, ზოლების შევიწროება და დროებითი შემოვლითი გზები.',
     countText: '14 რემონტი'
@@ -166,7 +166,7 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     subtitle: 'შემთხვევები & შეფერხებები',
     badge: 'Live საფრთხე',
     badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-400/40',
-    accent: '#E11D48',
+    accent: '#DC2626',
     icon: AlertTriangle,
     description: 'საგზაო შემთხვევები, მოყინული მონაკვეთები, ნისლი, ქვათაცვენა და გაფრთხილებები.',
     countText: 'ცოცხალი შეტყობინებები'
@@ -179,7 +179,7 @@ export const MAP_CATEGORIES: MapCategoryItem[] = [
     subtitle: 'ოფიციალური დილერები & ცენტრები',
     badge: '122 ცენტრი',
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
-    accent: '#D97706',
+    accent: '#1E40AF',
     icon: Building2,
     description: 'ოფიციალური იმპორტიორები, პრემიუმ ავტოსალონები და ავტომობილების სავაჭრო ცენტრები გარანტიით.',
     countText: '122 ავტოსალონი'
@@ -231,7 +231,7 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
   const active = items[activeIndex];
 
   // Dynamic responsive card width
-  const cardWidth = Math.min(350, Math.max(250, stageSize.width * 0.58));
+  const cardWidth = Math.min(340, Math.max(250, stageSize.width * 0.58));
   const step = cardWidth * 0.76;
   const before = 2;
   const after = 2;
@@ -280,14 +280,12 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
     if (performance.now() < suppressClickUntil.current) return;
     sounds.playClick();
     if (slotIndex === index) {
-      // Toggle or activate filter on the map
       if (activeCategoryKey === item.key) {
         onSelectCategory('all');
       } else {
         onSelectCategory(item.key);
       }
     } else {
-      // Jump straight to clicked card & activate filter
       setIndex(slotIndex);
       onSelectCategory(item.key);
     }
@@ -367,7 +365,7 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
 
   return (
     <div
-      className={`relative rounded-3xl overflow-hidden border-2 border-gold/40 bg-gradient-to-br from-[#0c1322] via-[#11192e] to-[#080d1a] text-white shadow-2xl p-4 sm:p-6 transition-all ${className}`}
+      className={`relative rounded-3xl overflow-hidden border border-slate-700/60 bg-[#0F172A] text-white shadow-xl p-4 sm:p-5 transition-all ${className}`}
       onKeyDown={event => {
         if (event.altKey || event.ctrlKey || event.metaKey) return;
         if (event.key === "ArrowRight") {
@@ -380,28 +378,26 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
         }
       }}
       tabIndex={0}
-      aria-label="3D Coverflow კატეგორიების კარუსელი"
+      aria-label="საგზაო ნიშნების 3D Coverflow კარუსელი"
     >
-      {/* Background Ambience & Lighting */}
-      <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-gold/15 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,rgba(245,158,11,0.08),transparent_70%)] pointer-events-none" />
+      {/* Subtle, refined background overlay (No neon) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-800/15 via-transparent to-black/25 pointer-events-none" />
 
-      {/* Top Banner Row: Section Title, Active Status & All-Categories Button */}
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+      {/* Top Banner Row: Section Title & All-Categories Button */}
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2.5">
-          <span className="w-8 h-8 rounded-xl bg-gold/20 text-gold border border-gold/40 flex items-center justify-center font-bold text-sm shadow-sm">
+          <span className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold text-sm shadow-sm">
             <Sparkles size={16} />
           </span>
           <div>
-            <h4 className="text-sm sm:text-base font-black tracking-tight text-white flex items-center gap-2">
-              <span>კატეგორიების 3D Coverflow</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/40 uppercase">
+            <h4 className="text-sm sm:text-base font-bold tracking-tight text-white flex items-center gap-2">
+              <span>საგზაო კატეგორიების 3D Coverflow</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 uppercase">
                 დინამიკური რეჟიმი
               </span>
             </h4>
             <p className="text-[11px] text-slate-400">
-              გადაფურცლეთ გაკვრით (flick), ისქროლეთ ან დააწკაპუნეთ ნებისმიერ ბარათზე
+              აპრობირებული საგზაო ნიშნები • გადაფურცლეთ გაკვრით, სქროლით ან დააწკაპუნეთ ბარათზე
             </p>
           </div>
         </div>
@@ -414,10 +410,10 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
               sounds.playClick();
               onSelectCategory('all');
             }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 border ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
               activeCategoryKey === 'all'
-                ? 'bg-gold text-navy border-gold shadow-md shadow-gold/20'
-                : 'bg-white/10 hover:bg-white/20 text-slate-200 border-white/15'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm font-black'
+                : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700'
             }`}
           >
             <Layers size={13} />
@@ -437,12 +433,12 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
         onPointerCancel={event => pointerUp(event, true)}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className="relative min-h-[300px] sm:min-h-[340px] flex items-center justify-center perspective-[1100px] transform-style-3d touch-pan-y select-none cursor-grab active:cursor-grabbing my-2"
+        className="relative min-h-[290px] sm:min-h-[320px] flex items-center justify-center perspective-[1100px] transform-style-3d touch-pan-y select-none cursor-grab active:cursor-grabbing my-2"
         style={{ perspective: "1100px", transformStyle: "preserve-3d" }}
       >
-        {/* Floor subtle reflection ellipse */}
+        {/* Subtle, soft floor drop shadow (Not glowing neon) */}
         <div
-          className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[70%] max-w-[500px] h-[30px] rounded-full bg-gradient-to-r from-transparent via-gold/20 to-transparent blur-xl pointer-events-none"
+          className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[70%] max-w-[500px] h-[25px] rounded-full bg-black/40 blur-md pointer-events-none"
         />
 
         {slots.map(slot => {
@@ -460,33 +456,33 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
               key={slot}
               onClick={() => handleCardClick(item, slot)}
               title={isSelected ? "დააწკაპუნეთ გასაფილტრად" : `გადასვლა: ${item.title}`}
-              className={`absolute top-1/2 -translate-y-1/2 rounded-2xl p-3 sm:p-3.5 transition-all duration-500 cursor-pointer select-none border backdrop-blur-md group ${
+              className={`absolute top-1/2 -translate-y-1/2 rounded-2xl p-3 sm:p-3.5 transition-all duration-500 cursor-pointer select-none border group ${
                 isSelected
-                  ? 'border-gold bg-[#151f33]/95 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_25px_rgba(245,158,11,0.35)] ring-2 ring-gold/40 z-30 scale-100'
-                  : 'border-white/15 bg-[#121a2d]/85 shadow-[0_15px_30px_rgba(0,0,0,0.4)] opacity-85 hover:opacity-100 hover:border-gold/50 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] z-10'
+                  ? 'border-amber-500/90 bg-[#172236] shadow-xl ring-1 ring-amber-500/30 z-30 scale-100'
+                  : 'border-slate-700/60 bg-[#131B2B] shadow-md hover:border-slate-500 opacity-80 hover:opacity-100 z-10'
               }`}
               style={{
                 width: `${cardWidth}px`,
-                transform: `translate3d(${x}px, -50%, ${-Math.min(abs, 3) * 120}px) rotateY(${-Math.max(-42, Math.min(42, offset * 32))}deg) scale(${1 - Math.min(abs, 3) * 0.08})`,
+                transform: `translate3d(${x}px, -50%, ${-Math.min(abs, 3) * 120}px) rotateY(${-Math.max(-40, Math.min(40, offset * 32))}deg) scale(${1 - Math.min(abs, 3) * 0.08})`,
                 opacity: d < -before || d > after ? 0 : 1,
                 pointerEvents: d < -before || d > after ? 'none' : 'auto',
                 transition: dragging ? 'none' : 'transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease, border-color 0.25s',
                 backfaceVisibility: 'hidden'
               }}
             >
-              {/* Card Top: Group & Live Counter Badge */}
+              {/* Card Top: Official Group Label & Road Badge */}
               <div className="flex items-center justify-between gap-2 pb-2">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1 truncate">
-                  <ItemIcon size={12} className="text-gold shrink-0" />
+                  <ItemIcon size={12} className="text-amber-400 shrink-0" />
                   <span className="truncate">{item.groupTitle}</span>
                 </span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black border shrink-0 ${item.badgeColor}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border shrink-0 ${item.badgeColor}`}>
                   {item.badge}
                 </span>
               </div>
 
-              {/* Custom Thematic Visual Artwork (No generic cover photo!) */}
-              <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-slate-900 border border-white/10 group-hover:border-gold/40 transition-colors shadow-inner">
+              {/* Grounded Road Sign Plate (Simple, authentic, standard traffic styling) */}
+              <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#101726] border border-slate-700/50 flex items-center justify-center shadow-inner">
                 <ThematicCategoryVisual
                   categoryKey={item.key}
                   isSelected={isSelected}
@@ -495,14 +491,13 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
                   badge={item.badge}
                 />
 
-                {/* Floating Tag over Visual */}
+                {/* Road Sign Status Pill */}
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white pointer-events-none">
-                  <span className="text-[11px] font-black drop-shadow bg-slate-950/80 px-2 py-0.5 rounded-md border border-white/10 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
-                    <span>{item.countText}</span>
+                  <span className="text-[10px] font-bold bg-slate-950/85 px-2 py-0.5 rounded border border-white/10 text-slate-300">
+                    {item.countText}
                   </span>
                   {isFiltered && (
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-500 text-slate-950 font-black text-[10px] flex items-center gap-1 shadow-sm">
+                    <span className="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold text-[10px] flex items-center gap-1 shadow-sm">
                       <CheckCircle2 size={11} /> გაფილტრულია
                     </span>
                   )}
@@ -512,16 +507,16 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
               {/* Card Bottom Info */}
               <div className="pt-2.5 space-y-1">
                 <div className="flex items-center justify-between gap-2">
-                  <h5 className="text-sm font-black text-white truncate tracking-tight">
+                  <h5 className="text-sm font-bold text-white truncate tracking-tight">
                     {item.title}
                   </h5>
                   <span
-                    className={`text-[11px] font-black px-2 py-0.5 rounded-lg border transition-all ${
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
                       isFiltered
-                        ? 'bg-gold text-navy border-gold shadow-xs'
+                        ? 'bg-amber-500 text-slate-950 border-amber-400'
                         : isSelected
-                          ? 'bg-white/15 text-gold border-gold/40'
-                          : 'bg-white/5 text-slate-300 border-white/10 group-hover:bg-gold/20 group-hover:text-gold'
+                          ? 'bg-white/15 text-amber-300 border-amber-500/40'
+                          : 'bg-white/5 text-slate-300 border-white/10 group-hover:bg-amber-500/20 group-hover:text-amber-300'
                     }`}
                   >
                     {isFiltered ? 'გაფილტრულია' : isSelected ? 'არჩევა' : 'დააწკაპუნეთ'}
@@ -537,62 +532,62 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
       </div>
 
       {/* Bottom Controls Bar: Active Info + Dock Navigation */}
-      <div className="relative z-10 flex flex-col items-center gap-3 pt-2 border-t border-white/10">
+      <div className="relative z-10 flex flex-col items-center gap-2.5 pt-2 border-t border-slate-800">
         <div className="text-center max-w-xl">
           <div className="flex items-center justify-center gap-2">
-            <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <span>{active.title}</span>
               <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${active.badgeColor}`}>
                 {active.badge}
               </span>
             </h3>
           </div>
-          <p className="text-xs text-slate-300 mt-1 line-clamp-2 sm:line-clamp-none">
+          <p className="text-xs text-slate-300 mt-0.5 line-clamp-2 sm:line-clamp-none">
             {active.description}
           </p>
         </div>
 
         {/* Dock Controls */}
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/[0.07] border border-white/15 shadow-inner backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="flex items-center gap-2.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 shadow-sm">
             {/* Position indicator */}
-            <span className="text-xs font-mono font-bold text-slate-300 border-r border-white/15 pr-3">
-              <span className="text-gold font-black">{String(activeIndex + 1).padStart(2, "0")}</span>
+            <span className="text-xs font-mono font-bold text-slate-300 border-r border-slate-700 pr-2.5">
+              <span className="text-amber-400 font-bold">{String(activeIndex + 1).padStart(2, "0")}</span>
               <span className="text-slate-500 mx-1">/</span>
               <span>{String(items.length).padStart(2, "0")}</span>
             </span>
 
             {/* Transport Arrows */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => select(index - 1)}
                 aria-label="წინა კატეგორია"
-                className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-all active:scale-90"
+                className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white transition-all active:scale-90"
               >
-                <ChevronLeft size={17} />
+                <ChevronLeft size={16} />
               </button>
 
               <button
                 type="button"
                 onClick={() => setPlaying(prev => !prev)}
                 aria-label={playing ? "პაუზა" : "ავტო-დათვალიერება"}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${
                   playing
-                    ? 'bg-gold text-navy font-bold'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
+                    ? 'bg-amber-500 text-slate-950 font-bold'
+                    : 'bg-slate-700 hover:bg-slate-600 text-white'
                 }`}
               >
-                {playing ? <Pause size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />}
+                {playing ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
               </button>
 
               <button
                 type="button"
                 onClick={() => select(index + 1)}
                 aria-label="შემდეგი კატეგორია"
-                className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-all active:scale-90"
+                className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white transition-all active:scale-90"
               >
-                <ChevronRight size={17} />
+                <ChevronRight size={16} />
               </button>
             </div>
           </div>
@@ -608,20 +603,20 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
                 onSelectCategory(active.key);
               }
             }}
-            className={`px-4 py-2 rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 transition-all active:scale-95 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all active:scale-95 ${
               isCurrentActiveFilter
-                ? 'bg-emerald-500 hover:bg-emerald-600 text-slate-950 shadow-emerald-500/20'
-                : 'bg-gradient-to-r from-amber-400 to-gold hover:from-amber-300 hover:to-amber-500 text-slate-950 shadow-gold/20'
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                : 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold'
             }`}
           >
             {isCurrentActiveFilter ? (
               <>
-                <CheckCircle2 size={14} />
-                <span>ფილტრი ჩართულია (გამორთვა)</span>
+                <CheckCircle2 size={13} />
+                <span>ფილტრი აქტიურია (გამორთვა)</span>
               </>
             ) : (
               <>
-                <Sparkles size={14} />
+                <Sparkles size={13} />
                 <span>რუკაზე ჩვენება ({active.title})</span>
               </>
             )}
@@ -629,13 +624,13 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
         </div>
 
         {/* Dynamic Navigation Hints */}
-        <p className="text-[11px] text-slate-400 flex items-center gap-2 flex-wrap justify-center">
-          <span className="flex items-center gap-1"><MousePointer size={12} className="text-gold" /> გაკვრა (Flick)</span>
+        <p className="text-[10px] text-slate-400 flex items-center gap-2 flex-wrap justify-center">
+          <span className="flex items-center gap-1"><MousePointer size={11} className="text-amber-400" /> გაკვრა (Flick)</span>
           <span className="text-slate-600">•</span>
-          <span className="flex items-center gap-1"><RotateCw size={12} className="text-gold" /> მაუსით სქროლი</span>
+          <span className="flex items-center gap-1"><RotateCw size={11} className="text-amber-400" /> მაუსით სქროლი</span>
           <span className="text-slate-600">•</span>
-          <ArrowLeft size={11} />
-          <ArrowRight size={11} />
+          <ArrowLeft size={10} />
+          <ArrowRight size={10} />
           <span>ისრებით მართვა</span>
         </p>
       </div>
@@ -643,17 +638,17 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
       {/* ======================================================== */}
       {/* Bottom Horizontal Quick-Nav Icon Strip (10 Categories)   */}
       {/* ======================================================== */}
-      <div className="relative z-10 w-full pt-3 mt-3 border-t border-white/10">
-        <div className="flex items-center justify-between pb-2 px-1">
-          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
-            <span>სწრაფი კატეგორიები (ნებისმიერზე დაჭერით გადასვლა)</span>
+      <div className="relative z-10 w-full pt-2.5 mt-2.5 border-t border-slate-800">
+        <div className="flex items-center justify-between pb-1.5 px-1">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
+            საგზაო ნიშნების სწრაფი ზოლი (ნებისმიერზე დაჭერით გადასვლა)
           </span>
-          <span className="text-[10px] text-gold font-mono font-bold">
+          <span className="text-[10px] text-amber-400 font-mono font-bold">
             10 კატეგორია
           </span>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar sm:justify-center">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar sm:justify-center">
           {items.map((cat, i) => {
             const isSelected = activeIndex === i;
             const isFiltered = activeCategoryKey === cat.key;
@@ -669,30 +664,30 @@ export const MapCategoriesCoverflow: React.FC<Props> = ({
                   onSelectCategory(cat.key);
                 }}
                 title={`${cat.title} (${cat.badge})`}
-                className={`group relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shrink-0 active:scale-95 ${
+                className={`group relative flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold transition-all shrink-0 active:scale-95 ${
                   isSelected
-                    ? 'bg-gold text-slate-950 border-gold shadow-md shadow-gold/25 font-black scale-105 ring-2 ring-gold/40'
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm font-black scale-105'
                     : isFiltered
                       ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50'
-                      : 'bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border-white/10 hover:border-white/20'
+                      : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700/60'
                 }`}
               >
                 <Icon
-                  size={14}
-                  className={`shrink-0 transition-transform group-hover:scale-110 ${
-                    isSelected ? 'text-slate-950' : isFiltered ? 'text-emerald-400' : 'text-gold'
+                  size={13}
+                  className={`shrink-0 ${
+                    isSelected ? 'text-slate-950' : isFiltered ? 'text-emerald-400' : 'text-amber-400'
                   }`}
                 />
                 <span className="whitespace-nowrap text-[11px] font-sans">
                   {cat.shortName}
                 </span>
                 <span
-                  className={`text-[9px] font-mono px-1.5 py-0.5 rounded-full font-black ${
+                  className={`text-[9px] font-mono px-1 py-0.2 rounded font-bold ${
                     isSelected
-                      ? 'bg-slate-950 text-gold'
+                      ? 'bg-slate-950 text-amber-300'
                       : isFiltered
                         ? 'bg-emerald-400 text-slate-950'
-                        : 'bg-white/10 text-slate-400'
+                        : 'bg-slate-900 text-slate-400'
                   }`}
                 >
                   {cat.badge.split(' ')[0]}
