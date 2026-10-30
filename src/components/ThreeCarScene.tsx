@@ -955,28 +955,39 @@ export const ThreeCarScene: React.FC<Props> = ({
     let disposed = false;
     let firstModelFramePending = false;
 
-    const partLabels: THREE.Sprite[] = [];
-    const labelPart = (parent: THREE.Object3D, text: string, lift = .18) => {
-      const bounds = new THREE.Box3().setFromObject(parent);
-      if (bounds.isEmpty()) return;
-      const anchor = parent.worldToLocal(bounds.getCenter(new THREE.Vector3()));
-      const top = parent.worldToLocal(new THREE.Vector3(bounds.getCenter(new THREE.Vector3()).x, bounds.max.y, bounds.getCenter(new THREE.Vector3()).z));
-      const canvas = document.createElement('canvas'); canvas.width = 768; canvas.height = 112;
-      const ctx = canvas.getContext('2d')!;
-      ctx.fillStyle = 'rgba(15,23,42,.94)'; ctx.beginPath(); ctx.roundRect(3,3,762,106,22); ctx.fill();
-      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3; ctx.stroke();
-      ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center';
-      ctx.font = `bold ${text.length > 28 ? 31 : 40}px sans-serif`; ctx.fillText(text,384,68,730);
-      const texture = new THREE.CanvasTexture(canvas);
-      const label = new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false,sizeAttenuation:false}));
-      label.position.copy(top); label.position.y += lift;
-      label.scale.set(.26,.031,1); label.visible=false; label.renderOrder=21;
-      parent.add(label); label.userData.anchor=anchor.clone(); partLabels.push(label);
-      const stem = new THREE.Line(new THREE.BufferGeometry().setFromPoints([anchor,label.position.clone()]),
-        new THREE.LineBasicMaterial({color:0xfbbf24,transparent:true,opacity:.55}));
-      stem.visible=false; parent.add(stem); label.userData.stem=stem;
+    const hoverParts = new Map<THREE.Mesh, string>();
+    const namedPartRoots = new Map<THREE.Object3D, string>();
+    const labelPart = (parent: THREE.Object3D, text: string, _lift = .18) => {
+      namedPartRoots.set(parent, text);
     };
-    const cabinParts: { group: THREE.Group; side: number; rear: boolean; label: THREE.Sprite }[] = [];
+    const cabinParts: { group: THREE.Group; side: number; rear: boolean }[] = [];
+    const tooltip = document.createElement('div');
+    tooltip.setAttribute('role', 'tooltip'); tooltip.dataset.partTooltip = 'true';
+    Object.assign(tooltip.style, {
+      position:'absolute',display:'none',pointerEvents:'none',zIndex:'30',
+      padding:'5px 8px',borderRadius:'7px',fontSize:'11px',fontWeight:'500',lineHeight:'1.4',
+      maxWidth:'190px',color:'#f1f0eb',background:'rgba(15,23,42,.88)',
+      border:'1px solid rgba(202,169,90,.22)',boxShadow:'0 2px 7px rgba(0,0,0,.12)',
+      whiteSpace:'normal'
+    });
+    containerRef.current!.appendChild(tooltip);
+    const hoverPointer = new THREE.Vector2();
+    const hoverRay = new THREE.Raycaster();
+    let hoverInside=false, hoverDragging=false, hoverX=0, hoverY=0, lastHoverCheck=0;
+    const hideHover = () => { hoverInside=false; tooltip.style.display='none'; };
+    const onHoverMove = (event: PointerEvent) => {
+      if(event.pointerType==='touch'||event.buttons||hoverDragging){hideHover();return;}
+      const rect=renderer.domElement.getBoundingClientRect();
+      hoverX=event.clientX-rect.left;hoverY=event.clientY-rect.top;
+      hoverPointer.set(hoverX/rect.width*2-1,-hoverY/rect.height*2+1);hoverInside=true;
+    };
+    const onHoverDown = () => {hoverDragging=true;hideHover();};
+    const onHoverUp = (event: PointerEvent) => { hoverDragging=false; onHoverMove(event); };
+    renderer.domElement.addEventListener('pointermove',onHoverMove);
+    renderer.domElement.addEventListener('pointerleave',hideHover);
+    renderer.domElement.addEventListener('pointerdown',onHoverDown);
+    window.addEventListener('pointerup',onHoverUp);
+    window.addEventListener('blur',hideHover);
     const processLoadedGltf = (gltf: any) => {
       const root = gltf.scene.clone(true);
       if (disposed) return;
@@ -1346,17 +1357,8 @@ export const ThreeCarScene: React.FC<Props> = ({
         if (!group) {
           group = new THREE.Group(); group.name = key; carMasterGroup.add(group);
           seatGroups.set(key, group);
-          const canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = 112;
-          const ctx = canvas.getContext('2d')!;
-          ctx.fillStyle = 'rgba(15,23,42,.92)'; ctx.beginPath(); ctx.roundRect(4,4,632,104,24); ctx.fill();
-          ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3; ctx.stroke();
-          ctx.fillStyle = '#ffffff'; ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText(rear ? 'უკანა სავარძლები' : side > 0 ? 'მარცხენა სავარძელი' : 'მარჯვენა სავარძელი', 320, 68);
-          const texture = new THREE.CanvasTexture(canvas);
-          const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true }));
-          label.position.set(rear ? 0 : side * .38, 1.48, rear ? -.95 : -.12);
-          label.scale.set(.9,.158,1); label.visible = false; label.renderOrder = 20; group.add(label);
-          cabinParts.push({ group, side, rear, label });
+          labelPart(group, rear ? 'უკანა სავარძლები' : side > 0 ? 'მარცხენა სავარძელი' : 'მარჯვენა სავარძელი');
+          cabinParts.push({ group, side, rear });
         }
         group.attach(mesh);
       };
@@ -1547,6 +1549,16 @@ export const ThreeCarScene: React.FC<Props> = ({
         source.add(layer); scanLayerMeshes.push(layer);
       });
       carMasterGroup.remove(root);
+      hoverParts.clear();
+      carMasterGroup.traverse(node => {
+        if(!(node instanceof THREE.Mesh)||node.name.startsWith('LaserSection_'))return;
+        let ancestor: THREE.Object3D | null=node;
+        while(ancestor){
+          const text=namedPartRoots.get(ancestor);
+          if(text){hoverParts.set(node,text);break;}
+          ancestor=ancestor.parent;
+        }
+      });
       modelReadyRef.current = true;
       firstModelFramePending = true;
 
@@ -1710,18 +1722,9 @@ export const ThreeCarScene: React.FC<Props> = ({
         groupsRef.current['body'].position.y = curExp * 1.10;
       }
 
-      partLabels.forEach(label=>{
-        label.visible=curExp>.18;
-        (label.material as THREE.SpriteMaterial).opacity=THREE.MathUtils.clamp((curExp-.18)/.30,0,1);
-        const stem=label.userData.stem as THREE.Line;
-        if(stem)stem.visible=label.visible;
-      });
-
       // Cabin parts return exactly to their original transform when assembled.
-      cabinParts.forEach(({group, side, rear, label}) => {
+      cabinParts.forEach(({group, side, rear}) => {
         group.position.set(rear ? 0 : side * 1.25 * curExp, .18 * curExp, rear ? -1.05 * curExp : 0);
-        label.visible = curExp > .12;
-        (label.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp((curExp - .12) / .3, 0, 1);
       });
 
       // Displace Internal Aggregates according to their explosion vectors
@@ -1894,25 +1897,23 @@ export const ThreeCarScene: React.FC<Props> = ({
       }
       controls.update();
       canopy.visible = camera.position.y < canopy.position.y - .3;
-      if (curExp > .18 && partLabels.length) {
-        // Two readable columns stay outside the car silhouette; leaders track moving parts.
-        const positions = partLabels.map(label => {
-          const anchor = (label.userData.anchor as THREE.Vector3).clone();
-          label.parent!.localToWorld(anchor);
-          return {label,projected:anchor.clone().project(camera)};
-        }).sort((a,b)=>a.projected.x-b.projected.x);
-        const middle=Math.ceil(positions.length/2);
-        [positions.slice(0,middle),positions.slice(middle)].forEach((column,side)=>{
-          column.sort((a,b)=>b.projected.y-a.projected.y);
-          column.forEach(({label,projected},index)=>{
-            const y=THREE.MathUtils.lerp(.56,-.76,column.length>1?index/(column.length-1):.5);
-            const target = new THREE.Vector3(side===0?-.73:.73,y,projected.z).unproject(camera);
-            label.parent!.worldToLocal(target);label.position.copy(target);
-            const stem=label.userData.stem as THREE.Line;
-            const attribute=stem.geometry.getAttribute('position') as THREE.BufferAttribute;
-            attribute.setXYZ(1,target.x,target.y,target.z);attribute.needsUpdate=true;stem.geometry.computeBoundingSphere();
-          });
+      if(hoverInside&&!hoverDragging&&performance.now()-lastHoverCheck>65){
+        lastHoverCheck=performance.now();
+        carMasterGroup.updateWorldMatrix(true,true);
+        hoverRay.setFromCamera(hoverPointer,camera);
+        const visibleMeshes=[...hoverParts.keys()].filter(mesh=>{
+          let parent:THREE.Object3D|null=mesh;
+          while(parent){if(!parent.visible)return false;parent=parent.parent;}
+          return true;
         });
+        const hit=hoverRay.intersectObjects(visibleMeshes,false)[0];
+        const text=hit?hoverParts.get(hit.object as THREE.Mesh):undefined;
+        if(text){
+          tooltip.textContent=text;tooltip.style.display='block';
+          const rect=renderer.domElement.getBoundingClientRect();
+          tooltip.style.left=`${Math.max(6,Math.min(hoverX+12,rect.width-tooltip.offsetWidth-6))}px`;
+          tooltip.style.top=`${Math.max(6,Math.min(hoverY+14,rect.height-tooltip.offsetHeight-6))}px`;
+        }else tooltip.style.display='none';
       }
       renderer.render(scene, camera);
       if (firstModelFramePending) {
@@ -1962,6 +1963,12 @@ export const ThreeCarScene: React.FC<Props> = ({
       }
       if (gestureHintTimerRef.current) clearTimeout(gestureHintTimerRef.current);
       if (twoFingerTimerRef.current) clearTimeout(twoFingerTimerRef.current);
+      renderer.domElement.removeEventListener('pointermove',onHoverMove);
+      renderer.domElement.removeEventListener('pointerleave',hideHover);
+      renderer.domElement.removeEventListener('pointerdown',onHoverDown);
+      window.removeEventListener('pointerup',onHoverUp);
+      window.removeEventListener('blur',hideHover);
+      tooltip.remove();hoverParts.clear();namedPartRoots.clear();
       controls.dispose();
       renderer.dispose();
     };
