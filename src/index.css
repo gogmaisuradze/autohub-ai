@@ -479,15 +479,28 @@
 
 .light-google-popup .leaflet-popup-close-button {
   color: #5F6368 !important;
-  top: 10px !important;
-  right: 12px !important;
+  top: 8px !important;
+  right: 8px !important;
   font-size: 16px !important;
-  padding: 4px !important;
-  transition: all 0.2s ease;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 9999px !important;
+  background: #F1F3F4 !important;
+  border: 1px solid #DADCE0 !important;
+  padding: 0 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+  z-index: 40 !important;
+  cursor: pointer !important;
 }
 
 .light-google-popup .leaflet-popup-close-button:hover {
+  background: #E8EAED !important;
   color: #202124 !important;
+  transform: scale(1.08) !important;
 }
 
 /* Modern Soft Slate Dark Styling for OpenStreetMap (Applied to the entire tile-pane: Instant & Zero Lag) */

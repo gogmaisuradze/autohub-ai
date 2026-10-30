@@ -12,3 +12,7 @@ dist/
 .env
 .env.*
 *.log
+
+# large backups
+*_orig*.glb
+public/models/*_orig*.glb

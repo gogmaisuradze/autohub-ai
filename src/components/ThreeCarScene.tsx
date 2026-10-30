@@ -695,6 +695,34 @@ export const ThreeCarScene: React.FC<Props> = ({
     const backdropMaterial = new THREE.MeshStandardMaterial({ color: 0x17191e, roughness: .55, metalness: .25, side: THREE.BackSide });
     const backdrop = new THREE.Mesh(backdropGeometry, backdropMaterial);
     backdrop.position.y = 1.2; scene.add(backdrop);
+    // Constellation reference adapted to a spherical, dots-only showroom backdrop.
+    // One static GPU draw call: no extra canvas loop, text, links or pointer handlers.
+    const dotPositions: number[] = [], dotColors: number[] = [];
+    const warmGold = new THREE.Color(0xcaa95a), paleGold = new THREE.Color(0xe9dfc6);
+    for (let ring=0; ring<28; ring++) {
+      const latitude = -.22 + ring * .047;
+      const y = Math.sin(latitude) * 27 + 1.2;
+      const radius = Math.cos(latitude) * 27;
+      for (let column=0; column<144; column++) {
+        const angle = (column + (ring%2)*.5) / 144 * Math.PI*2;
+        dotPositions.push(Math.cos(angle)*radius,y,Math.sin(angle)*radius);
+        const color = (column+ring)%5===0 ? paleGold : warmGold;
+        dotColors.push(color.r,color.g,color.b);
+      }
+    }
+    const dotsGeometry = new THREE.BufferGeometry();
+    dotsGeometry.setAttribute('position',new THREE.Float32BufferAttribute(dotPositions,3));
+    dotsGeometry.setAttribute('color',new THREE.Float32BufferAttribute(dotColors,3));
+    const dotCanvas = document.createElement('canvas'); dotCanvas.width=dotCanvas.height=32;
+    const dotContext=dotCanvas.getContext('2d')!;
+    const dotGradient=dotContext.createRadialGradient(16,16,0,16,16,16);
+    dotGradient.addColorStop(0,'rgba(255,255,255,1)');dotGradient.addColorStop(.35,'rgba(255,255,255,.85)');dotGradient.addColorStop(1,'rgba(255,255,255,0)');
+    dotContext.fillStyle=dotGradient;dotContext.fillRect(0,0,32,32);
+    const dotTexture=new THREE.CanvasTexture(dotCanvas);
+    const dotsMaterial=new THREE.PointsMaterial({map:dotTexture,size:.20,vertexColors:true,
+      transparent:true,opacity:.55,depthWrite:false,sizeAttenuation:true,toneMapped:false});
+    const showroomDots=new THREE.Points(dotsGeometry,dotsMaterial);showroomDots.name='ShowroomConstellationDots';scene.add(showroomDots);
+
     const showroomBeltMaterial = new THREE.MeshBasicMaterial({ color: 0x315061 });
     const showroomBelt = new THREE.Mesh(new THREE.TorusGeometry(27.95, .014, 6, 128), showroomBeltMaterial);
     showroomBelt.rotation.x = Math.PI / 2; showroomBelt.position.y = 1.2; scene.add(showroomBelt);
@@ -771,7 +799,14 @@ export const ThreeCarScene: React.FC<Props> = ({
     scene.add(carMasterGroup);
     const fitWholeAssembly = () => {
       carMasterGroup.updateWorldMatrix(true, true);
-      const box = new THREE.Box3().setFromObject(carMasterGroup);
+      // Frame physical geometry only; screen-space labels must not feed back
+      // into the camera fit as they follow its projection.
+      const box = new THREE.Box3();
+      carMasterGroup.traverse(node => {
+        if (!(node instanceof THREE.Mesh) || node.name.startsWith('LaserSection_')) return;
+        if (!node.geometry.boundingBox) node.geometry.computeBoundingBox();
+        if (node.geometry.boundingBox) box.union(node.geometry.boundingBox.clone().applyMatrix4(node.matrixWorld));
+      });
       if (box.isEmpty()) return;
       const center = box.getCenter(new THREE.Vector3());
       const vertical = THREE.MathUtils.degToRad(camera.fov / 2);
@@ -920,6 +955,27 @@ export const ThreeCarScene: React.FC<Props> = ({
     let disposed = false;
     let firstModelFramePending = false;
 
+    const partLabels: THREE.Sprite[] = [];
+    const labelPart = (parent: THREE.Object3D, text: string, lift = .18) => {
+      const bounds = new THREE.Box3().setFromObject(parent);
+      if (bounds.isEmpty()) return;
+      const anchor = parent.worldToLocal(bounds.getCenter(new THREE.Vector3()));
+      const top = parent.worldToLocal(new THREE.Vector3(bounds.getCenter(new THREE.Vector3()).x, bounds.max.y, bounds.getCenter(new THREE.Vector3()).z));
+      const canvas = document.createElement('canvas'); canvas.width = 768; canvas.height = 112;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = 'rgba(15,23,42,.94)'; ctx.beginPath(); ctx.roundRect(3,3,762,106,22); ctx.fill();
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center';
+      ctx.font = `bold ${text.length > 28 ? 31 : 40}px sans-serif`; ctx.fillText(text,384,68,730);
+      const texture = new THREE.CanvasTexture(canvas);
+      const label = new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false,sizeAttenuation:false}));
+      label.position.copy(top); label.position.y += lift;
+      label.scale.set(.26,.031,1); label.visible=false; label.renderOrder=21;
+      parent.add(label); label.userData.anchor=anchor.clone(); partLabels.push(label);
+      const stem = new THREE.Line(new THREE.BufferGeometry().setFromPoints([anchor,label.position.clone()]),
+        new THREE.LineBasicMaterial({color:0xfbbf24,transparent:true,opacity:.55}));
+      stem.visible=false; parent.add(stem); label.userData.stem=stem;
+    };
     const cabinParts: { group: THREE.Group; side: number; rear: boolean; label: THREE.Sprite }[] = [];
     const processLoadedGltf = (gltf: any) => {
       const root = gltf.scene.clone(true);
@@ -982,6 +1038,53 @@ export const ThreeCarScene: React.FC<Props> = ({
         carMasterGroup.add(light);
         lightsRef.current[id] = light;
       });
+
+      const cooling = groupsRef.current.cooling;
+      const fans: THREE.Group[] = [];
+      if (cooling) {
+        const coolingMeshes: THREE.Mesh[] = [];
+        cooling.traverse(node => { if (node instanceof THREE.Mesh && /^cooling(?:_\d+)?$/.test(node.name)) coolingMeshes.push(node); });
+        [-1,1].forEach(side => { const fan = new THREE.Group(); fan.name = side > 0 ? 'CoolingFanLeft' : 'CoolingFanRight'; cooling.add(fan); fans.push(fan); });
+        coolingMeshes.forEach(mesh => {
+          const geometry = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+          const positions=geometry.getAttribute('position'), count=positions.count/3;
+          const parents=Array.from({length:count},(_,i)=>i);
+          const find=(i:number):number=>{while(parents[i]!==i){parents[i]=parents[parents[i]];i=parents[i];}return i;};
+          const welded=new Map<string,number>();
+          for(let i=0;i<positions.count;i++){
+            const key=[positions.getX(i),positions.getY(i),positions.getZ(i)].map(v=>Math.round(v*10000)).join(',');
+            const other=welded.get(key), triangle=Math.floor(i/3);
+            if(other===undefined)welded.set(key,triangle);else parents[find(triangle)]=find(other);
+          }
+          const bounds=new Map<number,THREE.Box3>(),point=new THREE.Vector3();
+          for(let i=0;i<positions.count;i++){
+            const key=find(Math.floor(i/3));if(!bounds.has(key))bounds.set(key,new THREE.Box3());
+            point.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);carMasterGroup.worldToLocal(point);bounds.get(key)!.expandByPoint(point);
+          }
+          const sideByIsland=new Map<number,number>();
+          bounds.forEach((box,key)=>{
+            const size=box.getSize(new THREE.Vector3());
+            // Whole, disconnected motor and blade islands lie on either side of the centre.
+            if(size.x<.4&&size.y<.4&&box.min.y>.27&&box.max.y<.65&&box.min.z>2.065&&box.max.z<2.15){
+              if(box.max.x<0)sideByIsland.set(key,0);else if(box.min.x>0)sideByIsland.set(key,1);
+            }
+          });
+          const keep:number[]=[],split:[number[],number[]]=[[],[]];
+          for(let i=0;i<positions.count;i+=3){const side=sideByIsland.get(find(i/3));(side===undefined?keep:split[side]).push(i,i+1,i+2);}
+          const subset=(ids:number[])=>{const out=geometry.clone();out.clearGroups();out.setIndex(ids);return out;};
+          split.forEach((ids,index)=>{
+            if(!ids.length)return;
+            const piece=new THREE.Mesh(subset(ids),mesh.material);piece.position.copy(mesh.position);piece.quaternion.copy(mesh.quaternion);piece.scale.copy(mesh.scale);
+            mesh.parent!.add(piece);fans[index].attach(piece);piece.castShadow=true;
+          });
+          mesh.geometry=subset(keep);geometry.dispose();
+        });
+        fans.forEach((fan,index)=>{
+          const side=index===0?-1:1;
+          engineParts.push({node:fan,rest:fan.position.clone(),offset:new THREE.Vector3(side*.58,.12,.75)});
+          labelPart(fan,side>0?'მარცხენა ვენტილატორი':'მარჯვენა ვენტილატორი',side>0?.35:.12);
+        });
+      }
 
       // Keep the material surfaces of each downloaded physical part together.
       const engineGroup = groupsRef.current.engine;
@@ -1395,6 +1498,25 @@ export const ThreeCarScene: React.FC<Props> = ({
           }
         });
       });
+      const shortNames: Record<string,string> = {
+        engine:'ძრავა და ტრანსმისია',ecu:'ECU მართვის ბლოკი',cooling:'რადიატორი',
+        suspension:'საკიდარი',exhaust:'გამონაბოლქვის სისტემა',battery:'აკუმულატორი',
+        ignition_coil:'აალების კოჭები',oxygen_sensor:'ჟანგბადის სენსორი',coolant_sensor:'ტემპერატურის სენსორი',
+        throttle_sensor:'დროსელის სენსორი',fuel_injectors:'ინჟექტორები',fuel_pump:'საწვავის ტუმბო',
+        intake_sensor:'ჰაერის სენსორი',knock_sensor:'დეტონაციის სენსორი',map_sensor:'წნევის სენსორი'
+      };
+      componentsList.forEach((component,index)=>{
+        const group=groupsRef.current[component.id];
+        if(group&&component.id!=='brakes') labelPart(group,shortNames[component.id]||component.name_ge,.20+(index%3)*.22);
+      });
+      wheelParts.forEach(({node})=>{
+        const name=node.name;
+        const part=name.startsWith('Rim')?'დისკი და საბურავი':name.startsWith('BrakeDisc')?'სამუხრუჭე დისკი':name.startsWith('BrakeCaliper')?'სამუხრუჭე სუპორტი':'ამორტიზატორი';
+        const corner=name.endsWith('FL')?'წინა მარცხენა':name.endsWith('FR')?'წინა მარჯვენა':name.endsWith('RL')?'უკანა მარცხენა':'უკანა მარჯვენა';
+        const lift=name.startsWith('Rim')?.12:name.startsWith('BrakeDisc')?.32:name.startsWith('BrakeCaliper')?.55:.75;
+        labelPart(node,`${corner} · ${part}`,lift);
+      });
+
       // A single surface changes from glass to paint. No overlapping shells,
       // stochastic alpha dithering or displaced duplicate geometry.
       bodyMaterialsRef.current.forEach(material => {
@@ -1588,6 +1710,13 @@ export const ThreeCarScene: React.FC<Props> = ({
         groupsRef.current['body'].position.y = curExp * 1.10;
       }
 
+      partLabels.forEach(label=>{
+        label.visible=curExp>.18;
+        (label.material as THREE.SpriteMaterial).opacity=THREE.MathUtils.clamp((curExp-.18)/.30,0,1);
+        const stem=label.userData.stem as THREE.Line;
+        if(stem)stem.visible=label.visible;
+      });
+
       // Cabin parts return exactly to their original transform when assembled.
       cabinParts.forEach(({group, side, rear, label}) => {
         group.position.set(rear ? 0 : side * 1.25 * curExp, .18 * curExp, rear ? -1.05 * curExp : 0);
@@ -1765,6 +1894,26 @@ export const ThreeCarScene: React.FC<Props> = ({
       }
       controls.update();
       canopy.visible = camera.position.y < canopy.position.y - .3;
+      if (curExp > .18 && partLabels.length) {
+        // Two readable columns stay outside the car silhouette; leaders track moving parts.
+        const positions = partLabels.map(label => {
+          const anchor = (label.userData.anchor as THREE.Vector3).clone();
+          label.parent!.localToWorld(anchor);
+          return {label,projected:anchor.clone().project(camera)};
+        }).sort((a,b)=>a.projected.x-b.projected.x);
+        const middle=Math.ceil(positions.length/2);
+        [positions.slice(0,middle),positions.slice(middle)].forEach((column,side)=>{
+          column.sort((a,b)=>b.projected.y-a.projected.y);
+          column.forEach(({label,projected},index)=>{
+            const y=THREE.MathUtils.lerp(.56,-.76,column.length>1?index/(column.length-1):.5);
+            const target = new THREE.Vector3(side===0?-.73:.73,y,projected.z).unproject(camera);
+            label.parent!.worldToLocal(target);label.position.copy(target);
+            const stem=label.userData.stem as THREE.Line;
+            const attribute=stem.geometry.getAttribute('position') as THREE.BufferAttribute;
+            attribute.setXYZ(1,target.x,target.y,target.z);attribute.needsUpdate=true;stem.geometry.computeBoundingSphere();
+          });
+        });
+      }
       renderer.render(scene, camera);
       if (firstModelFramePending) {
         firstModelFramePending = false;
@@ -1794,11 +1943,13 @@ export const ThreeCarScene: React.FC<Props> = ({
       sequenceCallbacks.current.onSequenceBusyChange?.(false);
       cancelAnimationFrame(animId);
       viewportObserver.disconnect();
+      dotsGeometry.dispose(); dotsMaterial.dispose(); dotTexture.dispose();
       floorMirror.getRenderTarget().dispose();
       showroomEnvironment.dispose();
       environmentTarget.dispose();
       dracoLoader.dispose();
       scene.traverse((o: any) => {
+        if (o.isSprite) { o.material.map?.dispose(); o.material.dispose(); }
         if (o.isLine) { o.geometry.dispose(); o.material.dispose(); }
         if (o.isMesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: THREE.Material) => m.dispose()); }
       });

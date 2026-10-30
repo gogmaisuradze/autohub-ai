@@ -449,6 +449,260 @@ interface Props {
   vehicle?: VehicleProfile;
 }
 
+export interface CompanyBrandData {
+  brandName: string;
+  categoryLabel: string;
+  categoryBadgeClass: string;
+  phone?: string;
+  website?: string;
+  logoSvg: string;
+}
+
+export function getCompanyBrandData(item: MapReport): CompanyBrandData {
+  const brandRaw = (item.brand || '').trim();
+  const titleRaw = (item.title || '').trim();
+  const combined = `${brandRaw} ${titleRaw}`.toLowerCase();
+
+  // 1. FUEL STATIONS
+  if (item.type === 'fuel' || combined.includes('fuel') || combined.includes('გასამართ') || combined.includes('ბენზინ') || combined.includes('wissol') || combined.includes('gulf') || combined.includes('rompetrol') || combined.includes('socar') || combined.includes('lukoil') || combined.includes('portal')) {
+    if (combined.includes('wissol') || combined.includes('ვისოლ')) {
+      return {
+        brandName: 'Wissol • ვისოლი',
+        categoryLabel: '⛽ ავტოგასამართი',
+        categoryBadgeClass: 'bg-amber-100 text-amber-950 border border-amber-300',
+        phone: item.phone || '*2000',
+        website: item.website || 'https://wissol.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#F36F21"/><path d="M6 10L13 28L18 15L23 28L30 10H24.5L21 21.5L18 13.5L15 21.5L11.5 10H6Z" fill="#FFFFFF"/><circle cx="18" cy="8" r="2.2" fill="#FFE500"/></svg>`
+      };
+    }
+    if (combined.includes('gulf') || combined.includes('გალფ') || combined.includes('sun petroleum')) {
+      return {
+        brandName: 'Gulf • გალფი',
+        categoryLabel: '⛽ ავტოგასამართი',
+        categoryBadgeClass: 'bg-orange-100 text-orange-950 border border-orange-300',
+        phone: item.phone || '*0007',
+        website: item.website || 'https://gulf.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><circle cx="18" cy="18" r="17" fill="#002D62" stroke="#FF5F00" stroke-width="2"/><ellipse cx="18" cy="18" rx="13" ry="10" fill="#FF5F00"/><text x="18" y="21.5" font-family="Arial, sans-serif" font-weight="900" font-size="9" fill="#FFFFFF" text-anchor="middle">Gulf</text></svg>`
+      };
+    }
+    if (combined.includes('rompetrol') || combined.includes('რომპეტროლ')) {
+      return {
+        brandName: 'Rompetrol • რომპეტროლი',
+        categoryLabel: '⛽ ავტოგასამართი',
+        categoryBadgeClass: 'bg-rose-100 text-rose-950 border border-rose-300',
+        phone: item.phone || '032 291 07 27',
+        website: item.website || 'https://rompetrol.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#E30613"/><circle cx="18" cy="18" r="8" fill="#FFED00"/><circle cx="18" cy="18" r="3.5" fill="#1C1917"/></svg>`
+      };
+    }
+    if (combined.includes('socar') || combined.includes('სოკარ')) {
+      return {
+        brandName: 'SOCAR • სოკარი',
+        categoryLabel: '⛽ ავტოგასამართი',
+        categoryBadgeClass: 'bg-sky-100 text-sky-950 border border-sky-300',
+        phone: item.phone || '*0001',
+        website: item.website || 'https://socar.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#004B87"/><path d="M18 5C18 5 10 15 10 22C10 26.5 13.5 30 18 30C22.5 30 26 26.5 26 22C26 15 18 5 18 5Z" fill="#00A859"/><circle cx="18" cy="21" r="3.5" fill="#FFFFFF"/></svg>`
+      };
+    }
+    if (combined.includes('lukoil') || combined.includes('ლუკოილ')) {
+      return {
+        brandName: 'Lukoil • ლუკოილი',
+        categoryLabel: '⛽ ავტოგასამართი',
+        categoryBadgeClass: 'bg-red-100 text-red-950 border border-red-300',
+        phone: item.phone || '032 238 00 00',
+        website: item.website || 'https://lukoil.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#E30613"/><path d="M18 7C18 7 11 16 11 22C11 26 14 29 18 29C22 29 25 26 25 22C25 16 18 7 18 7Z" fill="#FFFFFF"/></svg>`
+      };
+    }
+    if (combined.includes('portal') || combined.includes('პორტალ')) {
+      return {
+        brandName: 'Portal • პორტალი',
+        categoryLabel: '⛽ ავტოგასამართი',
+        categoryBadgeClass: 'bg-purple-100 text-purple-950 border border-purple-300',
+        phone: item.phone || '032 249 00 00',
+        website: item.website || 'https://portal.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#3B0764"/><circle cx="18" cy="18" r="10" fill="none" stroke="#F59E0B" stroke-width="2.5"/><circle cx="18" cy="18" r="4.5" fill="#F59E0B"/></svg>`
+      };
+    }
+    if (combined.includes('connect') || combined.includes('ქონექთ')) {
+      return {
+        brandName: 'Connect • ქონექთი',
+        categoryLabel: '⛽ ავტოგასამართი',
+        categoryBadgeClass: 'bg-teal-100 text-teal-950 border border-teal-300',
+        phone: item.phone,
+        website: item.website,
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#0D9488"/><circle cx="13" cy="18" r="4" fill="#FFFFFF"/><circle cx="23" cy="18" r="4" fill="#FEF08A"/><line x1="13" y1="18" x2="23" y2="18" stroke="#FFFFFF" stroke-width="2"/></svg>`
+      };
+    }
+    return {
+      brandName: item.brand || item.title || 'ავტოგასამართი სადგური',
+      categoryLabel: '⛽ ავტოგასამართი',
+      categoryBadgeClass: 'bg-emerald-100 text-emerald-950 border border-emerald-300',
+      phone: item.phone,
+      website: item.website,
+      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#15803D"/><path d="M10 11H22V27H10V11Z" fill="#FFFFFF"/><path d="M23 15H25C26 15 27 16 27 17V24" stroke="#FFFFFF" stroke-width="2"/><circle cx="16" cy="16" r="2.5" fill="#15803D"/></svg>`
+    };
+  }
+
+  // 2. EV CHARGING STATIONS
+  if (item.type === 'charging' || combined.includes('charg') || combined.includes('დამტენ') || combined.includes('ev ')) {
+    if (combined.includes('space') || combined.includes('სპეის')) {
+      return {
+        brandName: 'E-Space • ი-სპეისი',
+        categoryLabel: '⚡ EV დამტენი',
+        categoryBadgeClass: 'bg-teal-100 text-teal-950 border border-teal-300',
+        phone: item.phone || '032 205 22 55',
+        website: item.website || 'https://e-space.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#0891B2"/><path d="M20 5L10 19H17L14 31L26 15H19L22 5H20Z" fill="#A3E635"/></svg>`
+      };
+    }
+    if (combined.includes('martev') || combined.includes('მარტივ')) {
+      return {
+        brandName: 'martEV • მარტივი',
+        categoryLabel: '⚡ EV დამტენი',
+        categoryBadgeClass: 'bg-emerald-100 text-emerald-950 border border-emerald-300',
+        phone: item.phone,
+        website: item.website,
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#15803D"/><path d="M19 6L11 18H17L15 30L25 15H18L21 6H19Z" fill="#FFFFFF"/></svg>`
+      };
+    }
+    if (combined.includes('tesla') || combined.includes('ტესლა')) {
+      return {
+        brandName: 'Tesla Supercharger',
+        categoryLabel: '⚡ Supercharger',
+        categoryBadgeClass: 'bg-red-100 text-red-950 border border-red-300',
+        phone: item.phone,
+        website: item.website || 'https://tesla.com',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#E11D48"/><path d="M8 12C14 10 22 10 28 12L27 15C22 13 14 13 9 15L8 12ZM18 16V30H15V17C12 17 9 17.5 7 18.5L6 16C10 14.5 15 14 18 14C21 14 26 14.5 30 16L29 18.5C27 17.5 24 17 21 17V30H18V16Z" fill="#FFFFFF"/></svg>`
+      };
+    }
+    return {
+      brandName: item.brand || item.title || 'EV დამტენი სადგური',
+      categoryLabel: '⚡ EV დამტენი',
+      categoryBadgeClass: 'bg-teal-100 text-teal-950 border border-teal-300',
+      phone: item.phone,
+      website: item.website,
+      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#0D9488"/><path d="M19 6L11 18H17L15 30L25 15H18L21 6H19Z" fill="#FFFFFF"/></svg>`
+    };
+  }
+
+  // 3. SERVICE & AUTO PARTS BRANDS
+  if (item.type === 'service' || item.type === 'parts' || combined.includes('service') || combined.includes('სერვის') || combined.includes('ნაწილ') || combined.includes('tegeta') || combined.includes('amboli')) {
+    if (combined.includes('tegeta') || combined.includes('თეგეტა')) {
+      return {
+        brandName: 'Tegeta Motors • თეგეტა',
+        categoryLabel: '🔧 ავტოსერვისი & ნაწილები',
+        categoryBadgeClass: 'bg-blue-100 text-blue-950 border border-blue-300',
+        phone: item.phone || '032 226 44 44',
+        website: item.website || 'https://tegetamotors.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#0F172A"/><path d="M7 10H29V14H21V28H15V14H7V10Z" fill="#EF4444"/><circle cx="18" cy="7" r="2" fill="#3B82F6"/></svg>`
+      };
+    }
+    if (combined.includes('amboli') || combined.includes('ამბოლ')) {
+      return {
+        brandName: 'Amboli • ამბოლი',
+        categoryLabel: '🔩 ავტონაწილები & სერვისი',
+        categoryBadgeClass: 'bg-red-100 text-red-950 border border-red-300',
+        phone: item.phone || '032 215 40 40',
+        website: item.website || 'https://amboli.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#DC2626"/><path d="M18 7L27 28H22L20 22H16L14 28H9L18 7ZM17 15L16.5 18H19.5L19 15L18 11.5L17 15Z" fill="#FFFFFF"/></svg>`
+      };
+    }
+    if (combined.includes('vianor') || combined.includes('ვიანორ')) {
+      return {
+        brandName: 'Vianor • ვიანორი',
+        categoryLabel: '🛞 საბურავები & სერვისი',
+        categoryBadgeClass: 'bg-orange-100 text-orange-950 border border-orange-300',
+        phone: item.phone,
+        website: item.website || 'https://vianor.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#EA580C"/><text x="18" y="24" font-family="Arial, sans-serif" font-weight="900" font-size="14" fill="#FFFFFF" text-anchor="middle">V</text></svg>`
+      };
+    }
+    if (combined.includes('würth') || combined.includes('ვიურტ')) {
+      return {
+        brandName: 'Würth Georgia • ვიურტი',
+        categoryLabel: '🔩 ინსტრუმენტები & ნაწილები',
+        categoryBadgeClass: 'bg-red-100 text-red-950 border border-red-300',
+        phone: item.phone,
+        website: item.website || 'https://wuerth.ge',
+        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#DC2626"/><circle cx="14" cy="18" r="4.5" fill="#FFFFFF"/><circle cx="22" cy="18" r="4.5" fill="#FFFFFF"/></svg>`
+      };
+    }
+    return {
+      brandName: item.brand || item.title || (item.type === 'parts' ? 'ავტონაწილები' : 'ავტოსერვისი'),
+      categoryLabel: item.type === 'parts' ? '🔩 ავტონაწილები' : '🔧 ავტოსერვისი',
+      categoryBadgeClass: item.type === 'parts' ? 'bg-purple-100 text-purple-950 border border-purple-300' : 'bg-indigo-100 text-indigo-950 border border-indigo-300',
+      phone: item.phone,
+      website: item.website,
+      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#4338CA"/><path d="M14.7 9.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-4.5 4.5a2 2 0 01-2.8-2.8l4.5-4.5a6 6 0 017.94-7.94l-3.76 3.76z" fill="#FFFFFF"/></svg>`
+    };
+  }
+
+  // 4. PARKING (Municipal / Official)
+  if (item.type === 'parking' || combined.includes('parking') || combined.includes('პარკინგ')) {
+    return {
+      brandName: item.code ? `თბილისის პარკინგი #${item.code}` : 'მუნიციპალური პარკინგი',
+      categoryLabel: '🅿️ საპარკინგე ზონა',
+      categoryBadgeClass: 'bg-blue-100 text-blue-950 border border-blue-300',
+      phone: item.phone || '032 293 44 44',
+      website: item.website || 'https://parking.tbilisi.gov.ge',
+      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#1A73E8"/><text x="18" y="26" font-family="Arial, sans-serif" font-weight="900" font-size="20" fill="#FFFFFF" text-anchor="middle">P</text></svg>`
+    };
+  }
+
+  // 5. RADAR & POLICE
+  if (item.type === 'radar' || item.type === 'patrol') {
+    return {
+      brandName: item.type === 'patrol' ? 'შსს საპატრულო პოლიცია' : (item.speed_limit_kmh ? `სიჩქარის რადარი · ${item.speed_limit_kmh} კმ/სთ` : 'საგზაო კამერა / რადარი'),
+      categoryLabel: item.type === 'patrol' ? '🚓 საპატრულო ეკიპაჟი' : '📷 სიჩქარის კონტროლი',
+      categoryBadgeClass: 'bg-indigo-100 text-indigo-950 border border-indigo-300',
+      phone: '112 / 032 241 42 42',
+      website: 'https://police.ge',
+      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#1E3A8A"/><path d="M18 6L26 9.5V17C26 22.5 22.5 26.5 18 29C13.5 26.5 10 22.5 10 17V9.5L18 6Z" fill="#2563EB" stroke="#F59E0B" stroke-width="1.5"/><path d="M18 11.5L19.5 15.2L23.5 15.5L20.4 18L21.5 22L18 19.8L14.5 22L15.6 18L12.5 15.5L16.5 15.2L18 11.5Z" fill="#F59E0B"/></svg>`
+    };
+  }
+
+  // 6. SHOWROOM / DEALERS
+  if (item.type === 'showroom' || combined.includes('mercedes') || combined.includes('bmw') || combined.includes('toyota') || combined.includes('audi') || combined.includes('hyundai') || combined.includes('ford') || combined.includes('porsche')) {
+    const matchedBrand =
+      combined.includes('bmw') ? 'BMW' :
+      combined.includes('mercedes') ? 'Mercedes-Benz' :
+      combined.includes('toyota') ? 'Toyota' :
+      combined.includes('audi') ? 'Audi' :
+      combined.includes('hyundai') ? 'Hyundai' :
+      combined.includes('porsche') ? 'Porsche' :
+      combined.includes('ford') ? 'Ford' :
+      (item.brand || 'ავტოსალონი');
+    return {
+      brandName: `${matchedBrand} • ოფიციალური დილერი`,
+      categoryLabel: '🏢 ავტოსალონი',
+      categoryBadgeClass: 'bg-slate-100 text-slate-950 border border-slate-300',
+      phone: item.phone,
+      website: item.website,
+      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#18181B"/><circle cx="18" cy="18" r="11" fill="none" stroke="#F59E0B" stroke-width="2"/><text x="18" y="22" font-family="Arial, sans-serif" font-weight="900" font-size="10" fill="#F59E0B" text-anchor="middle">★</text></svg>`
+    };
+  }
+
+  // 7. CAR WASH / JAMS / REPAIR / HAZARDS
+  const fallbackIcons: Record<string, { label: string; bg: string; color: string; icon: string }> = {
+    car_wash: { label: '🧼 ავტოსამრეცხაო', bg: 'bg-sky-100 text-sky-950 border border-sky-300', color: '#0284C7', icon: '🧼' },
+    traffic_jam: { label: '🔴 საგზაო საცობი', bg: 'bg-rose-100 text-rose-950 border border-rose-300', color: '#E11D48', icon: '🔴' },
+    road_repair: { label: '🚧 საგზაო სამუშაოები', bg: 'bg-amber-100 text-amber-950 border border-amber-300', color: '#D97706', icon: '🚧' },
+    hazard: { label: '⚠️ საგზაო საფრთხე', bg: 'bg-red-100 text-red-950 border border-red-300', color: '#DC2626', icon: '⚠️' }
+  };
+  const fb = fallbackIcons[item.type] || { label: item.title, bg: 'bg-slate-100 text-slate-800 border border-slate-300', color: '#475569', icon: '📍' };
+
+  return {
+    brandName: item.brand || item.title || 'საგზაო ობიექტი',
+    categoryLabel: fb.label,
+    categoryBadgeClass: fb.bg,
+    phone: item.phone,
+    website: item.website,
+    logoSvg: `<div class="w-full h-full flex items-center justify-center text-base bg-slate-50">${fb.icon}</div>`
+  };
+}
+
 export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -738,7 +992,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       zoomControl: false,
       attributionControl: true,
       preferCanvas: true,
-      scrollWheelZoom: false // Disable accidental wheel scroll hijacking
+      scrollWheelZoom: false, // Disable accidental wheel scroll hijacking
+      closePopupOnClick: false // Keep popup on the pin open when clicking or dragging the map!
     });
 
     // Cooperative wheel gesture handler: Ctrl/Cmd + wheel allows zoom; normal wheel scrolls the webpage
@@ -849,7 +1104,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     // Map Click handler - allows placing a point directly by clicking
     map.on('click', (e: any) => {
       setClickedCoords({ lat: e.latlng.lat, lng: e.latlng.lng });
-      setSelectedReport(null);
     });
 
     // Invalidate size after render to prevent grey/empty tile glitch
@@ -1368,60 +1622,62 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         `;
       }
 
+      const brandData = getCompanyBrandData(item);
       const displayAddress = item.address || `${getGeorgiaRegionName(item.lat, item.lng)} • საგზაო მონაკვეთი (${item.lat.toFixed(4)}, ${item.lng.toFixed(4)})`;
       const wazeDeepLink = `https://waze.com/ul?ll=${item.lat},${item.lng}&navigate=yes`;
       const gmapsLink = `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}`;
 
       const popupContent = `
-        <div class="w-72 font-sans text-[#202124] p-1">
-          <div class="flex items-center justify-between pb-2 border-b border-[#E8EAED]">
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-              item.type === 'patrol' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-              item.type === 'traffic_jam' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-              item.type === 'road_repair' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
-              item.type === 'radar' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
-              item.type === 'hazard' ? 'bg-red-50 text-red-700 border border-red-200' :
-              item.type === 'fuel' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
-              item.type === 'charging' ? 'bg-teal-50 text-teal-800 border border-teal-200' :
-              item.type === 'service' ? 'bg-indigo-50 text-indigo-800 border border-indigo-200' :
-              item.type === 'car_wash' ? 'bg-sky-50 text-sky-800 border border-sky-200' :
-              item.type === 'parts' ? 'bg-purple-50 text-purple-800 border border-purple-200' :
-              item.type === 'parking' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-              'bg-amber-50 text-amber-900 border border-amber-200'
-            }">
-              ${item.type === 'patrol' ? '🚓 საპატრულო ეკიპაჟი' :
-                item.type === 'traffic_jam' ? (item.delay_minutes ? `🔴 საცობი · +${item.delay_minutes} წთ` : '🔴 მძიმე საცობი') :
-                item.type === 'road_repair' ? '🚧 ქუჩის რემონტი' :
-                item.type === 'radar' ? (item.speed_limit_kmh ? `⚡ რადარი · ${item.speed_limit_kmh} კმ/სთ` : '📷 ' + escapeHtml(item.cameraKind || 'რადარი / კამერა')) :
-                item.type === 'hazard' ? '⚠️ საგზაო საფრთხე' :
-                item.type === 'fuel' ? '⛽ ავტოგასამართი' :
-                item.type === 'charging' ? '⚡ დამტენი სადგური' :
-                item.type === 'service' ? '🔧 ავტოსერვისი & საბურავები' :
-                item.type === 'car_wash' ? '🧼 ავტოსამრეცხაო' :
-                item.type === 'parts' ? '🔩 ავტონაწილები' :
-                item.type === 'parking' ? (item.code ? `🅿️ საპარკინგე ლოტი #${escapeHtml(item.code)}` : '🅿️ პარკინგი') : '🏢 ავტო სალონი'}
-            </span>
-            <span class="text-[10px] text-[#5F6368] font-mono">${item.cameraSource ? 'OSM OpenData' : formatTimeAgo(item.timestamp)}</span>
+        <div class="light-pin-card font-sans text-[#202124] p-1 select-text">
+          <!-- Top Row: Logo + Category & Brand Title -->
+          <div class="flex items-center gap-2.5 pb-2.5 border-b border-[#E8EAED] pr-7">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-2xs border border-[#DADCE0] bg-white">
+              ${brandData.logoSvg}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider ${brandData.categoryBadgeClass}">
+                  ${brandData.categoryLabel}
+                </span>
+                ${item.opening_hours ? `<span class="text-[9px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 font-bold">${item.opening_hours.includes('24') ? '24/7' : escapeHtml(item.opening_hours)}</span>` : ''}
+              </div>
+              <h4 class="font-extrabold text-xs sm:text-sm text-[#202124] leading-tight truncate mt-0.5" title="${escapeHtml(brandData.brandName)}">
+                ${escapeHtml(brandData.brandName)}
+              </h4>
+            </div>
           </div>
 
-          <h4 class="font-bold text-sm text-[#202124] mt-2 leading-tight">${item.title}</h4>
-          <div class="text-xs text-[#5F6368] flex items-start gap-1 mt-1 font-medium">
-            <span class="shrink-0 mt-0.5">📍</span>
+          <!-- Address -->
+          <div class="text-[11px] text-[#5F6368] flex items-start gap-1 mt-2 font-medium leading-snug">
+            <span class="shrink-0 text-slate-400 mt-0.5">📍</span>
             <span>${escapeHtml(displayAddress)}</span>
           </div>
-          ${item.description && item.description !== item.address && item.description !== displayAddress ? `<p class="text-xs text-[#5F6368] mt-1 leading-snug">${item.description}</p>` : ''}
-          ${popupBodyHtml}
+          ${item.description && item.description !== item.address && item.description !== displayAddress ? `<p class="text-[11px] text-[#5F6368] mt-1 leading-snug">${item.description}</p>` : ''}
 
-          <div class="mt-3 pt-2.5 border-t border-[#E8EAED] flex flex-wrap items-center justify-between gap-1.5 text-xs">
-            <div class="flex items-center gap-1.5">
-              <a href="${wazeDeepLink}" target="_blank" rel="noreferrer" class="px-2.5 py-1 rounded-xl bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#1A73E8] border border-[#DADCE0] font-bold flex items-center gap-1 transition-all">
-                <span>Waze ↗</span>
-              </a>
-              <a href="${gmapsLink}" target="_blank" rel="noreferrer" class="px-2.5 py-1 rounded-xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-bold flex items-center gap-1 transition-all shadow-xs">
-                <span>Google Maps ↗</span>
+          <!-- Phone Number Bar (if available) -->
+          ${brandData.phone ? `
+            <div class="mt-2 p-1.5 px-2 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-900 flex items-center justify-between">
+              <div class="flex items-center gap-1 min-w-0">
+                <span class="text-xs">📞</span>
+                <span class="font-mono font-bold text-[11px] truncate">${escapeHtml(brandData.phone)}</span>
+              </div>
+              <a href="tel:${escapeHtml(brandData.phone.replace(/[^0-9+*]/g, ''))}" class="px-2.5 py-0.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow-2xs transition-all shrink-0">
+                დარეკვა
               </a>
             </div>
-            ${item.phone ? `<a href="tel:${escapeHtml(item.phone)}" class="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold flex items-center gap-1 transition-all"><span>📞 დარეკვა</span></a>` : ''}
+          ` : ''}
+
+          <!-- Category Specifics (Fuel prices / Speed limit / Parking details) -->
+          ${popupBodyHtml}
+
+          <!-- Direction Links (Waze & Google Maps) -->
+          <div class="mt-2.5 pt-2 border-t border-[#E8EAED] flex items-center gap-1.5 text-xs">
+            <a href="${wazeDeepLink}" target="_blank" rel="noreferrer" class="flex-1 py-1 px-2 rounded-xl bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#1A73E8] border border-[#DADCE0] font-bold text-center flex items-center justify-center gap-1 transition-all">
+              <span>Waze ↗</span>
+            </a>
+            <a href="${gmapsLink}" target="_blank" rel="noreferrer" class="flex-1 py-1 px-2 rounded-xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-bold text-center flex items-center justify-center gap-1 transition-all shadow-xs">
+              <span>Google Maps ↗</span>
+            </a>
           </div>
         </div>
       `;
@@ -1430,7 +1686,12 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       marker.bindPopup(popupContent, {
         className: 'light-google-popup',
         maxWidth: 320,
-        autoPan: false
+        minWidth: 260,
+        autoPan: true,
+        autoPanPadding: [20, 20],
+        closeOnClick: false,
+        autoClose: false,
+        closeButton: true
       });
 
       marker.on('click', (e: any) => {
@@ -1443,6 +1704,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           mapInstanceRef.current.panTo([item.lat, item.lng], { animate: true, duration: 0.35 });
         }
         marker.openPopup();
+      });
+
+      marker.on('popupclose', () => {
+        setSelectedReport(prev => (prev?.id === item.id ? null : prev));
       });
 
       marker.addTo(layer);
@@ -2141,174 +2406,165 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         </button>
 
         {/* Selected Marker Rich Info Card (Slides up when any marker is clicked) */}
-        {selectedReport && (
-          <div
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            className="absolute bottom-3 left-3 right-3 sm:left-4 sm:right-auto sm:max-w-md z-30 p-4 rounded-3xl bg-white/98 backdrop-blur-xl border border-[#DADCE0] text-[#202124] shadow-[0_12px_32px_rgba(60,64,67,0.22)] animate-fade-in"
-          >
-            {/* Header: Badge + Time + Close */}
-            <div className="flex items-center justify-between pb-2 border-b border-[#E8EAED]">
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                selectedReport.type === 'patrol' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                selectedReport.type === 'traffic_jam' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                selectedReport.type === 'road_repair' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
-                selectedReport.type === 'radar' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
-                selectedReport.type === 'hazard' ? 'bg-red-50 text-red-700 border border-red-200' :
-                selectedReport.type === 'fuel' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
-                selectedReport.type === 'charging' ? 'bg-teal-50 text-teal-800 border border-teal-200' :
-                selectedReport.type === 'service' ? 'bg-indigo-50 text-indigo-800 border border-indigo-200' :
-                selectedReport.type === 'car_wash' ? 'bg-sky-50 text-sky-800 border border-sky-200' :
-                selectedReport.type === 'parts' ? 'bg-purple-50 text-purple-800 border border-purple-200' :
-                selectedReport.type === 'parking' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                'bg-amber-50 text-amber-900 border border-amber-200'
-              }`}>
-                {selectedReport.type === 'patrol' ? '🚓 საპატრულო ეკიპაჟი' :
-                 selectedReport.type === 'traffic_jam' ? (selectedReport.delay_minutes ? `🔴 საცობი · +${selectedReport.delay_minutes} წთ შეფერხება` : '🔴 მძიმე საცობი') :
-                 selectedReport.type === 'road_repair' ? `🚧 ქუჩის რემონტი ${selectedReport.road_repair_kind ? `• ${selectedReport.road_repair_kind}` : ''}` :
-                 selectedReport.type === 'radar' ? (selectedReport.speed_limit_kmh ? `⚡ რადარი · ${selectedReport.speed_limit_kmh} კმ/სთ` : '📷 ' + (selectedReport.cameraKind || 'რადარი / კამერა')) :
-                 selectedReport.type === 'hazard' ? '⚠️ საგზაო საფრთხე' :
-                 selectedReport.type === 'fuel' ? `⛽ ავტოგასამართი ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
-                 selectedReport.type === 'charging' ? `⚡ დამტენი სადგური ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
-                 selectedReport.type === 'service' ? `🔧 ავტოსერვისი & საბურავები ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
-                 selectedReport.type === 'car_wash' ? `🧼 ავტოსამრეცხაო ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
-                 selectedReport.type === 'parts' ? `🔩 ავტონაწილები ${selectedReport.brand ? `• ${selectedReport.brand}` : ''}` :
-                 selectedReport.type === 'parking' ? (selectedReport.code ? `🅿️ საპარკინგე ლოტი #${selectedReport.code}` : '🅿️ პარკინგი') :
-                 '🏢 ავტოსალონი'}
-              </span>
+        {selectedReport && (() => {
+          const brandData = getCompanyBrandData(selectedReport);
+          const displayAddress = selectedReport.address || `${getGeorgiaRegionName(selectedReport.lat, selectedReport.lng)} • საგზაო მონაკვეთი (${selectedReport.lat.toFixed(4)}, ${selectedReport.lng.toFixed(4)})`;
 
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-[#5F6368] font-mono">
-                  {selectedReport.cameraSource ? 'OSM OpenData' : formatTimeAgo(selectedReport.timestamp)}
-                </span>
+          return (
+            <div
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              className="absolute bottom-3 left-3 right-3 sm:left-4 sm:right-auto sm:max-w-md z-30 p-4 rounded-3xl bg-white/98 backdrop-blur-xl border border-[#DADCE0] text-[#202124] shadow-[0_12px_32px_rgba(60,64,67,0.22)] animate-fade-in"
+            >
+              {/* Header: Company Logo + Badge + Name + Close */}
+              <div className="flex items-center justify-between pb-2.5 border-b border-[#E8EAED] gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-2xs border border-slate-200 bg-white"
+                    dangerouslySetInnerHTML={{ __html: brandData.logoSvg }}
+                  />
+                  <div className="min-w-0">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block ${brandData.categoryBadgeClass}`}>
+                      {brandData.categoryLabel}
+                    </span>
+                    <h4 className="font-extrabold text-sm text-[#202124] leading-tight truncate mt-0.5" title={brandData.brandName}>
+                      {brandData.brandName}
+                    </h4>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-[#5F6368] font-mono hidden sm:inline-block">
+                    {selectedReport.cameraSource ? 'OSM OpenData' : formatTimeAgo(selectedReport.timestamp)}
+                  </span>
+                  <button
+                    onClick={() => {
+                      sounds.playClick();
+                      setSelectedReport(null);
+                      mapInstanceRef.current?.closePopup();
+                    }}
+                    className="w-7 h-7 rounded-full bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#5F6368] hover:text-[#202124] flex items-center justify-center text-xs font-bold transition-all"
+                    title="დახურვა"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="flex items-start gap-1.5 mt-2.5 text-xs text-[#5F6368] font-medium leading-snug">
+                <span className="shrink-0 text-slate-400 mt-0.5">📍</span>
+                <span>{displayAddress}</span>
+              </div>
+              {selectedReport.description && selectedReport.description !== selectedReport.address && (
+                <p className="text-xs text-[#5F6368] mt-1 leading-snug">
+                  {selectedReport.description}
+                </p>
+              )}
+
+              {/* Dedicated Phone Bar (if available) */}
+              {brandData.phone && (
+                <div className="mt-2.5 p-2 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-900 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-sm shrink-0">📞</span>
+                    <span className="font-mono font-bold text-xs truncate">{brandData.phone}</span>
+                  </div>
+                  <a
+                    href={`tel:${brandData.phone.replace(/[^0-9+*]/g, '')}`}
+                    className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs transition-all shrink-0 flex items-center gap-1"
+                  >
+                    <Phone size={12} />
+                    <span>დარეკვა</span>
+                  </a>
+                </div>
+              )}
+
+              {/* Details Box */}
+              <div className="mt-2.5 p-2.5 rounded-2xl bg-[#F8F9FA] border border-[#DADCE0] space-y-1.5 text-xs text-[#3C4043]">
+                {selectedReport.delay_minutes && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#5F6368]">სავარაუდო შეფერხება:</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-mono font-bold text-xs">
+                      ⏱️ +{selectedReport.delay_minutes} წუთი
+                    </span>
+                  </div>
+                )}
+                {selectedReport.road_repair_kind && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#5F6368]">სამუშაოს ტიპი:</span>
+                    <span className="font-bold text-amber-900">
+                      🚧 {selectedReport.road_repair_kind}
+                    </span>
+                  </div>
+                )}
+                {selectedReport.speed_limit_kmh && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#5F6368]">მაქს. სიჩქარე:</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 font-mono font-bold text-xs">
+                      ⚡ {selectedReport.speed_limit_kmh} კმ/სთ
+                    </span>
+                  </div>
+                )}
+                {selectedReport.opening_hours && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#5F6368]">
+                    <span>🕒</span>
+                    <span>{selectedReport.opening_hours}</span>
+                  </div>
+                )}
+                {selectedReport.website && (
+                  <div className="flex items-center gap-1.5">
+                    <span>🌐</span>
+                    <a href={selectedReport.website} target="_blank" rel="noopener noreferrer" className="text-[#1A73E8] hover:underline">
+                      ვებსაიტი ↗
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Alternative Route CTA if available */}
+              {selectedReport.alternativeRouteId && (
                 <button
-                  onClick={() => setSelectedReport(null)}
-                  className="w-6 h-6 rounded-full bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#5F6368] hover:text-[#202124] flex items-center justify-center text-xs transition-all"
-                  title="დახურვა"
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setActiveRouteId(selectedReport.alternativeRouteId!);
+                    setShowAlternativeRoutes(true);
+                    setSelectedReport(null);
+                  }}
+                  className="w-full mt-2.5 py-2.5 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
                 >
-                  ✕
+                  <Zap size={15} className="text-white fill-white" />
+                  <span>⚡ ალტერნატიული მოკლე გზის ნახვა (დაზოგვა!)</span>
                 </button>
-              </div>
-            </div>
+              )}
 
-            {/* Title & Description */}
-            <h4 className="font-bold text-base text-[#202124] mt-2 leading-tight">
-              {selectedReport.title}
-            </h4>
-            <div className="flex items-start gap-1.5 mt-1 text-xs text-[#5F6368] font-medium">
-              <span className="shrink-0 mt-0.5">📍</span>
-              <span>
-                {selectedReport.address || `${getGeorgiaRegionName(selectedReport.lat, selectedReport.lng)} • საგზაო მონაკვეთი (${selectedReport.lat.toFixed(4)}, ${selectedReport.lng.toFixed(4)})`}
-              </span>
-            </div>
-            {selectedReport.description && selectedReport.description !== selectedReport.address && (
-              <p className="text-xs text-[#5F6368] mt-1 leading-snug">
-                {selectedReport.description}
-              </p>
-            )}
-
-            {/* Details Box */}
-            <div className="mt-2.5 p-2.5 rounded-2xl bg-[#F8F9FA] border border-[#DADCE0] space-y-1.5 text-xs text-[#3C4043]">
-              {selectedReport.delay_minutes && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[#5F6368]">სავარაუდო შეფერხება:</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-mono font-bold text-xs">
-                    ⏱️ +{selectedReport.delay_minutes} წუთი
-                  </span>
-                </div>
-              )}
-              {selectedReport.road_repair_kind && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[#5F6368]">სამუშაოს ტიპი:</span>
-                  <span className="font-bold text-amber-900">
-                    🚧 {selectedReport.road_repair_kind}
-                  </span>
-                </div>
-              )}
-              {selectedReport.speed_limit_kmh && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[#5F6368]">მაქს. სიჩქარე:</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 font-mono font-bold text-xs">
-                    ⚡ {selectedReport.speed_limit_kmh} კმ/სთ
-                  </span>
-                </div>
-              )}
-              {selectedReport.phone && (
-                <div className="flex items-center gap-1.5">
-                  <span>📞</span>
-                  <a href={`tel:${selectedReport.phone}`} className="text-[#1A73E8] font-mono font-bold hover:underline">
-                    {selectedReport.phone}
+              {/* Navigation & Action Buttons */}
+              <div className="mt-3 pt-2.5 border-t border-[#E8EAED] flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-1">
+                  <a
+                    href={`https://waze.com/ul?ll=${selectedReport.lat},${selectedReport.lng}&navigate=yes`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 py-2 px-3 rounded-xl bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#1A73E8] font-bold text-xs flex items-center justify-center gap-1.5 border border-[#DADCE0] transition-all"
+                  >
+                    <Navigation size={14} />
+                    <span>Waze</span>
+                  </a>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${selectedReport.lat},${selectedReport.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 py-2 px-3 rounded-xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                  >
+                    <ExternalLink size={14} />
+                    <span>Google Maps</span>
                   </a>
                 </div>
-              )}
-              {selectedReport.opening_hours && (
-                <div className="flex items-center gap-1.5 text-[11px] text-[#5F6368]">
-                  <span>🕒</span>
-                  <span>{selectedReport.opening_hours}</span>
-                </div>
-              )}
-              {selectedReport.website && (
-                <div className="flex items-center gap-1.5">
-                  <span>🌐</span>
-                  <a href={selectedReport.website} target="_blank" rel="noopener noreferrer" className="text-[#1A73E8] hover:underline">
-                    ვებსაიტი ↗
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Alternative Route CTA if available */}
-            {selectedReport.alternativeRouteId && (
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setActiveRouteId(selectedReport.alternativeRouteId!);
-                  setShowAlternativeRoutes(true);
-                  setSelectedReport(null);
-                }}
-                className="w-full mt-2.5 py-2.5 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
-              >
-                <Zap size={15} className="text-white fill-white" />
-                <span>⚡ ალტერნატიული მოკლე გზის ნახვა (დაზოგვა!)</span>
-              </button>
-            )}
-
-            {/* Navigation & Action Buttons */}
-            <div className="mt-3 pt-2.5 border-t border-[#E8EAED] flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-1">
-                <a
-                  href={`https://waze.com/ul?ll=${selectedReport.lat},${selectedReport.lng}&navigate=yes`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 py-2 px-3 rounded-xl bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#1A73E8] font-bold text-xs flex items-center justify-center gap-1.5 border border-[#DADCE0] transition-all"
-                >
-                  <Navigation size={14} />
-                  <span>Waze</span>
-                </a>
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${selectedReport.lat},${selectedReport.lng}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 py-2 px-3 rounded-xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
-                >
-                  <ExternalLink size={14} />
-                  <span>Google Maps</span>
-                </a>
               </div>
-              {selectedReport.phone && (
-                <a
-                  href={`tel:${selectedReport.phone}`}
-                  className="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs flex items-center gap-1 transition-all"
-                >
-                  <Phone size={14} />
-                  <span>დარეკვა</span>
-                </a>
-              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Alternative Shorter Routes Interactive Floating Card / Drawer */}
         {showAlternativeRoutes && (
