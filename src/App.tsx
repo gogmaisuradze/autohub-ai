@@ -23,6 +23,7 @@ import { sounds } from './services/soundEffects';
 import { generateServicesForVehicle } from './services/vinServiceEngine';
 import { preloadCarModel } from './services/modelPreloader';
 import { ArrowLeft, ShieldAlert, GraduationCap } from 'lucide-react';
+import { GraduationCap3D } from './components/Garage/Exam3DIcons';
 
 const DrivingExamPage = React.lazy(() => import('./components/Garage/DrivingExamWidget'));
 const ObdModule = React.lazy(() => import('./components/Diagnostics/ObdModule'));
@@ -1219,9 +1220,7 @@ export const App: React.FC = () => {
             {/* Top Patrol Sub-Navigation Switcher */}
             <div className="bg-white/90 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white flex items-center justify-center font-black shadow-xs">
-                  <GraduationCap size={20} />
-                </div>
+                <GraduationCap3D size={44} className="shrink-0" />
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 font-mono">ბილეთები</span>

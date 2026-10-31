@@ -949,8 +949,8 @@ export const DrivingExamWidget: React.FC = () => {
 
             {/* Left Side: Icon & Big Titles */}
             <div className="flex items-start sm:items-center gap-4">
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center shrink-0">
-                <GraduationCap3D size={58} className="transform hover:scale-105 transition-transform" />
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full bg-white flex items-center justify-center shadow-[0_6px_18px_rgba(0,0,0,0.28)] ring-1 ring-black/5">
+                <GraduationCap3D size={44} className="transform hover:scale-105 transition-transform" />
               </div>
 
               <div className="space-y-1">
