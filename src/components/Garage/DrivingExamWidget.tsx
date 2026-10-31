@@ -945,15 +945,15 @@ export const DrivingExamWidget: React.FC = () => {
           </div>
 
           {/* Main Content Row */}
-          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 pb-4 border-b border-white/10">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px] items-start gap-5 lg:gap-8 pb-5 border-b border-white/10">
 
             {/* Left Side: Icon & Big Titles */}
-            <div className="flex items-start sm:items-center gap-4">
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full bg-white flex items-center justify-center shadow-[0_6px_18px_rgba(0,0,0,0.28)] ring-1 ring-black/5">
-                <GraduationCap3D size={44} className="transform hover:scale-105 transition-transform" />
+            <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+              <div className="relative w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-full bg-white flex items-center justify-center shadow-[0_6px_18px_rgba(0,0,0,0.28)] ring-1 ring-black/5">
+                <GraduationCap3D size={34} className="transform hover:scale-105 transition-transform" />
               </div>
 
-              <div className="space-y-1">
+              <div className="min-w-0 flex-1 space-y-3">
                 {/* Badges Strip */}
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="px-3 py-1 rounded-full text-[11px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-gold text-slate-950 shadow-xs flex items-center gap-1.5">
@@ -969,7 +969,7 @@ export const DrivingExamWidget: React.FC = () => {
                 </div>
 
                 {/* Large Title */}
-                <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-tight pt-0.5 flex flex-wrap items-center gap-2">
+                <h2 className="text-xl sm:text-2xl xl:text-3xl font-black text-white tracking-tight leading-tight pt-0.5 flex flex-wrap items-center gap-2">
                   <span>მართვის მოწმობის ბილეთები</span>
                   <span className="text-xs sm:text-sm font-black px-2.5 py-0.5 rounded-xl bg-gold/20 text-gold border border-gold/40">
                     ყველა 10 კატეგორია
@@ -981,22 +981,22 @@ export const DrivingExamWidget: React.FC = () => {
                 </p>
 
                 {/* Dashboard Quick Navigation Buttons (Signs & Leaderboard) */}
-                <div className="flex flex-wrap items-center gap-2.5 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-3 pt-5">
                   <button
                     type="button"
                     onClick={() => {
                       sounds.playClick();
                       setExtrasTab(extrasTab === 'signs' ? 'tickets' : 'signs');
                     }}
-                    className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 border shadow-xs cursor-pointer ${
+                    className={`relative overflow-visible w-full min-w-0 h-14 pl-20 pr-3 py-2 rounded-2xl text-xs font-bold transition-colors flex items-center gap-3 border cursor-pointer ${
                       extrasTab === 'signs'
                         ? 'bg-gradient-to-r from-amber-400 to-gold text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-gold'
                         : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-gold/60'
                     }`}
                   >
-                    <img src={`${import.meta.env.BASE_URL}images/icons/signs-3d.png`} alt="" className="w-7 h-7 object-contain shrink-0 drop-shadow-sm" />
-                    <span>საგზაო ნიშნების შესწავლა</span>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                    <span className="pointer-events-none absolute -top-2 left-1 flex h-20 w-20 items-center justify-center"><img src={`${import.meta.env.BASE_URL}images/icons/signs-3d.png`} alt="" loading="lazy" decoding="async" className="w-20 h-20 object-contain drop-shadow-[0_5px_4px_rgba(0,0,0,0.22)]" /></span>
+                    <span className="min-w-0 flex-1 text-left leading-relaxed">საგზაო ნიშნების შესწავლა</span>
+                    <span className={`ml-auto shrink-0 whitespace-nowrap text-[9px] font-mono px-1.5 py-0.5 rounded-full ${
                       extrasTab === 'signs' ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-amber-300'
                     }`}>
                       252 ნიშანი
@@ -1009,15 +1009,15 @@ export const DrivingExamWidget: React.FC = () => {
                       sounds.playClick();
                       setExtrasTab(extrasTab === 'ranking' ? 'tickets' : 'ranking');
                     }}
-                    className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 border shadow-xs cursor-pointer ${
+                    className={`relative overflow-visible w-full min-w-0 h-14 pl-20 pr-3 py-2 rounded-2xl text-xs font-bold transition-colors flex items-center gap-3 border cursor-pointer ${
                       extrasTab === 'ranking'
                         ? 'bg-gradient-to-r from-amber-400 to-gold text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-gold'
                         : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-gold/60'
                     }`}
                   >
-                    <img src={`${import.meta.env.BASE_URL}images/icons/medals-3d.png`} alt="" className="w-7 h-7 object-contain shrink-0 drop-shadow-sm" />
-                    <span>საუკეთესო ოცეული</span>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                    <span className="pointer-events-none absolute -top-4 -left-2 flex h-20 w-20 items-center justify-center"><img src={`${import.meta.env.BASE_URL}images/icons/top20-trophy-v1.png`} alt="" loading="lazy" decoding="async" className="w-16 h-16 -rotate-12 object-contain drop-shadow-[0_5px_4px_rgba(0,0,0,0.22)]" /></span>
+                    <span className="min-w-0 flex-1 text-left leading-relaxed">საუკეთესო ოცეული</span>
+                    <span className={`ml-auto shrink-0 whitespace-nowrap text-[9px] font-mono px-1.5 py-0.5 rounded-full ${
                       extrasTab === 'ranking' ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-amber-300'
                     }`}>
                       Top 20
@@ -1041,7 +1041,7 @@ export const DrivingExamWidget: React.FC = () => {
             </div>
 
             {/* Right Side: Interactive Thematic Driver's License Card Visual & Action Button */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
+            <div className="flex min-w-0 flex-col items-stretch gap-3 w-full">
               <div
                 role="button"
                 tabIndex={0}
@@ -1056,7 +1056,7 @@ export const DrivingExamWidget: React.FC = () => {
                   }
                 }}
                 title="დააჭირეთ მართვის მოწმობის სანახავად / შესავსებად ✎"
-                className="flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-slate-900/90 to-navy/90 border border-gold/40 hover:border-gold hover:shadow-gold-soft cursor-pointer transition-all transform hover:scale-[1.02] active:scale-[0.98] group relative backdrop-blur-md select-none shrink-0"
+                className="flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-slate-900/90 to-navy/90 border border-gold/40 hover:border-gold hover:shadow-gold-soft cursor-pointer transition-all transform hover:scale-[1.02] active:scale-[0.98] group relative backdrop-blur-md select-none w-full min-w-0"
               >
                 {/* Mini License Photo / Avatar Frame */}
                 <div className="w-11 h-14 rounded-xl bg-gradient-to-br from-blue-900 via-slate-900 to-slate-950 border border-white/20 p-1 flex flex-col justify-between items-center relative overflow-hidden shrink-0 group-hover:border-gold/60 transition-colors">
@@ -1081,7 +1081,7 @@ export const DrivingExamWidget: React.FC = () => {
                 </div>
 
                 {/* License Information Details */}
-                <div className="space-y-0.5 text-left pr-1 min-w-[130px] max-w-[190px]">
+                <div className="space-y-1 text-left pr-1 min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1">
                     <span className="text-[8px] sm:text-[9px] font-mono font-black text-gold uppercase tracking-wider truncate">
                       GEORGIA • მოწმობა
@@ -1121,9 +1121,9 @@ export const DrivingExamWidget: React.FC = () => {
                   sounds.playClick();
                   handleStartExam();
                 }}
-                className="w-full sm:w-auto px-7 py-4 rounded-2xl text-sm sm:text-base font-black shadow-gold-soft shrink-0 bg-gradient-to-r from-amber-400 via-gold to-amber-500 hover:from-amber-300 hover:to-gold text-slate-950 flex items-center justify-center gap-2.5 transition-all transform hover:scale-[1.03] active:scale-[0.98] border-2 border-amber-200 ring-2 ring-amber-400/50 ring-offset-2 ring-offset-slate-900 animate-pulse-gold"
+                className="w-full min-w-0 min-h-14 px-4 py-3.5 rounded-2xl text-sm leading-relaxed font-black shadow-sm bg-gradient-to-r from-amber-400 to-gold hover:from-amber-300 hover:to-amber-400 text-slate-950 flex items-center justify-center gap-2 transition-colors border border-amber-300/70"
               >
-                <BookOpen size={18} strokeWidth={2.5} />
+                <BookOpen size={18} strokeWidth={2.5} className="shrink-0" />
                 <span>გამოცდის დაწყება ({categoryConfig.size} კითხვა) →</span>
               </button>
             </div>
@@ -1376,7 +1376,7 @@ export const DrivingExamWidget: React.FC = () => {
                 }}
                 className="px-3 py-1.5 rounded-xl text-xs font-bold text-navy hover:text-gold bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
-                <img src={`${import.meta.env.BASE_URL}images/icons/medals-3d.png`} alt="" className="w-5 h-5 object-contain shrink-0" />
+                <img src={`${import.meta.env.BASE_URL}images/icons/top20-trophy-v1.png`} alt="" className="w-5 h-5 object-contain shrink-0" />
                 <span>საუკეთესო ოცეული</span>
               </button>
 
