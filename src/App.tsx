@@ -5,13 +5,7 @@ import { VEHICLE_PRESETS, OWNER_VEHICLES, VISITOR_INITIAL_VEHICLE } from './cons
 import { Navigation, TabType } from './components/Navigation';
 import { HomeHub } from './components/HomeHub';
 
-import { AiMechanicChat } from './components/AiMechanic/AiMechanicChat';
-import { FinesModule } from './components/Fines/FinesModule';
-import { ParkingModule } from './components/Parking/ParkingModule';
-import { ServiceLogModule } from './components/ServiceLog/ServiceLogModule';
-import { GarageModule } from './components/Garage/GarageModule';
-import LiveTrafficMap from './components/Map/LiveTrafficMap';
-import { SettingsModule } from './components/Settings/SettingsModule';
+// მძიმე tab-მოდულები იტვირთება code-split chunk-ებად (იხ. React.lazy ქვემოთ).
 import { ClearDtcModal } from './components/Modals/ClearDtcModal';
 import { ObdAdapterConnectModal, ObdAdapterType } from './components/Modals/ObdAdapterConnectModal';
 import { PwaInstallBanner } from './components/Modals/PwaInstallBanner';
@@ -34,6 +28,21 @@ import { ArrowLeft, ShieldAlert, GraduationCap } from 'lucide-react';
 
 const DrivingExamPage = React.lazy(() => import('./components/Garage/DrivingExamWidget'));
 const ObdModule = React.lazy(() => import('./components/Diagnostics/ObdModule'));
+const FinesModule = React.lazy(() => import('./components/Fines/FinesModule'));
+const ParkingModule = React.lazy(() => import('./components/Parking/ParkingModule'));
+const ServiceLogModule = React.lazy(() => import('./components/ServiceLog/ServiceLogModule'));
+const GarageModule = React.lazy(() => import('./components/Garage/GarageModule'));
+const LiveTrafficMap = React.lazy(() => import('./components/Map/LiveTrafficMap'));
+const AiMechanicChat = React.lazy(() =>
+  import('./components/AiMechanic/AiMechanicChat').then(m => ({ default: m.AiMechanicChat }))
+);
+
+// მსუბუქი fallback მოდულის ჩატვირთვისას
+const ModuleFallback: React.FC = () => (
+  <div className="flex items-center justify-center py-24 text-slate-400 text-sm font-mono animate-pulse">
+    იტვირთება…
+  </div>
+);
 
 const INITIAL_VEHICLE: VehicleProfile = {
   id: 'CAR_01',
@@ -1252,6 +1261,7 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'fines' && (
+          <React.Suspense fallback={<ModuleFallback />}>
           <FinesModule
             vehicle={vehicle}
             fines={fines}
@@ -1265,9 +1275,11 @@ export const App: React.FC = () => {
               handleTabChange('ai');
             }}
           />
+          </React.Suspense>
         )}
 
         {activeTab === 'parking' && (
+          <React.Suspense fallback={<ModuleFallback />}>
           <ParkingModule
             vehicle={vehicle}
             allVehicles={allVehicles}
@@ -1281,9 +1293,11 @@ export const App: React.FC = () => {
             onOpenFieldPrompt={handleOpenFieldPrompt}
             onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
           />
+          </React.Suspense>
         )}
 
         {activeTab === 'ai' && (
+          <React.Suspense fallback={<ModuleFallback />}>
           <AiMechanicChat
             vehicle={vehicle}
             dtcCodes={dtcCodes}
@@ -1297,9 +1311,11 @@ export const App: React.FC = () => {
             fines={fines}
             onNavigateTab={handleTabChange}
           />
+          </React.Suspense>
         )}
 
         {activeTab === 'service' && (
+          <React.Suspense fallback={<ModuleFallback />}>
           <ServiceLogModule
             vehicle={vehicle}
             services={services}
@@ -1355,15 +1371,19 @@ export const App: React.FC = () => {
               handleTabChange('ai');
             }}
           />
+          </React.Suspense>
         )}
 
         {activeTab === 'map' && (
           <div className="animate-fade-in">
-            <LiveTrafficMap vehicle={vehicle} />
+            <React.Suspense fallback={<ModuleFallback />}>
+              <LiveTrafficMap vehicle={vehicle} />
+            </React.Suspense>
           </div>
         )}
 
         {(activeTab === 'garage' || activeTab === 'settings') && (
+          <React.Suspense fallback={<ModuleFallback />}>
           <GarageModule
             vehicle={vehicle}
             onNavigateTab={setActiveTab}
@@ -1400,6 +1420,7 @@ export const App: React.FC = () => {
               handleTabChange('ai');
             }}
           />
+          </React.Suspense>
         )}
       </main>
 
