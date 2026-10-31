@@ -4,6 +4,7 @@ import { GeorgianLicensePlate } from '../ui/GeorgianLicensePlate';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
 import { PromptFieldType } from '../Modals/ContextualFieldPromptModal';
+import { GraduationCap3D, ShieldAlert3D } from '../Garage/Exam3DIcons';
 import {
   Clock,
   Camera,
@@ -670,8 +671,8 @@ export const FinesModule: React.FC<Props> = ({
       {/* Top Patrol Sub-Navigation Switcher */}
       <div className="bg-white/90 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 text-white flex items-center justify-center font-black shadow-xs">
-            <ShieldAlert size={20} />
+          <div className="relative shrink-0 flex items-center justify-center">
+            <ShieldAlert3D size={44} className="transform hover:scale-105 transition-transform" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -691,7 +692,7 @@ export const FinesModule: React.FC<Props> = ({
         {/* Sub-page Switcher Pills */}
         <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/80">
           <div className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-white text-navy shadow-xs border border-slate-200/80 flex items-center gap-1.5">
-            <ShieldAlert size={14} className="text-rose-500" />
+            <ShieldAlert3D size={18} />
             <span>საპატრულო ჯარიმები</span>
             {pendingFines.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-rose-500 text-white">
@@ -707,7 +708,7 @@ export const FinesModule: React.FC<Props> = ({
             }}
             className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-navy hover:bg-white transition-all flex items-center gap-1.5"
           >
-            <GraduationCap size={14} className="text-amber-500" />
+            <GraduationCap3D size={18} />
             <span>მართვის მოწმობის ბილეთები</span>
           </button>
         </div>

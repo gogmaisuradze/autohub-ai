@@ -8,6 +8,12 @@ import { selectStudyRound, selectExamRound } from './adaptiveStudy';
 import { ExamCategoryCarouselStrip } from './ExamCategoryCarouselStrip';
 import { RegaliaMedalsModal, RegaliaMedalVisual } from './RegaliaMedalsModal';
 import {
+  DriverLicenseModal,
+  getStoredDriverLicense,
+  DriverLicenseData
+} from './DriverLicenseModal';
+import { GraduationCap3D, ShieldAlert3D } from './Exam3DIcons';
+import {
   ExamLearningAnalysis,
   readLearningHistory,
   recordLearningAnswer,
@@ -313,6 +319,24 @@ export const DrivingExamWidget: React.FC = () => {
 
   // Academic Regalia & Medals Modal State
   const [isRegaliaModalOpen, setIsRegaliaModalOpen] = useState(false);
+
+  // Driver's License Modal State & Live Synchronization
+  const [isLicenseModalOpen, setIsLicenseModalOpen] = useState(false);
+  const [driverLicense, setDriverLicense] = useState<DriverLicenseData>(getStoredDriverLicense);
+
+  useEffect(() => {
+    const handleDriverUpdate = () => {
+      setDriverLicense(getStoredDriverLicense());
+    };
+    window.addEventListener('autohub-driver-updated', handleDriverUpdate);
+    window.addEventListener('autohub-vehicle-updated', handleDriverUpdate);
+    window.addEventListener('storage', handleDriverUpdate);
+    return () => {
+      window.removeEventListener('autohub-driver-updated', handleDriverUpdate);
+      window.removeEventListener('autohub-vehicle-updated', handleDriverUpdate);
+      window.removeEventListener('storage', handleDriverUpdate);
+    };
+  }, []);
 
   const questionCache = useRef<Record<string, Promise<ExamQuestion[]>>>({});
   const [categoryQuestions, setCategoryQuestions] = useState<ExamQuestion[]>([]);
@@ -900,19 +924,6 @@ export const DrivingExamWidget: React.FC = () => {
         } catch { setQuestionLoadError(true); }
       }}>რეკონსტრუქციის ნიმუში · ბილეთი #297 →</button>}
 
-      {(viewMode === 'subject_picker' || viewMode === 'results') && <>
-        <nav aria-label="სწავლის განყოფილებები" className="flex flex-wrap gap-2 rounded-2xl bg-slate-100 p-2">
-          {([['tickets', 'ბილეთები'], ['signs', 'ნიშნების შესწავლა'], ['ranking', 'საუკეთესო ოცეული']] as const).map(([id, label]) => <button key={id} onClick={() => setExtrasTab(id)} aria-pressed={extrasTab === id} className={`rounded-xl px-4 py-2 text-sm font-bold ${extrasTab === id ? 'bg-navy text-white' : 'text-slate-600 hover:bg-white'}`}>{label}</button>)}
-        </nav>
-        {extrasTab === 'signs' && <SignsLearning />}
-        {extrasTab === 'ranking' && <ExamLeaderboard category={activeCategory} />}
-      </>}
-      {(extrasTab === 'tickets' || viewMode === 'exam' || viewMode === 'practice') && <>
-
-
-      {/* ======================================================== */}
-      {/* 0. HERO SHOWCASE: DRIVING EXAM TICKETS & THEORY (2026)   */}
-      {/* ======================================================== */}
       {(viewMode === 'subject_picker' || viewMode === 'results') && (
         <div
           id="driving-exam-section"
@@ -938,9 +949,9 @@ export const DrivingExamWidget: React.FC = () => {
 
             {/* Left Side: Icon & Big Titles */}
             <div className="flex items-start sm:items-center gap-4">
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 border border-gold/60 bg-gradient-to-br from-amber-400/25 via-gold/15 to-navy shadow-lg shadow-gold/10 ring-2 ring-gold/20">
-                <span className="text-2xl sm:text-3xl">🎓</span>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-gold text-navy flex items-center justify-center font-bold text-xs shadow-sm">
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center shrink-0">
+                <GraduationCap3D size={58} className="transform hover:scale-105 transition-transform" />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400 to-gold text-slate-950 flex items-center justify-center font-bold text-xs shadow-md border border-navy/40">
                   🚗
                 </div>
               </div>
@@ -971,32 +982,139 @@ export const DrivingExamWidget: React.FC = () => {
                 <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
                   საქართველოს შსს მომსახურების სააგენტოს თეორიული გამოცდის სრული სიმულატორი, გამოუცნობი ადაპტური ალგორითმი და აკადემიური მზადების რანგები.
                 </p>
+
+                {/* Dashboard Quick Navigation Buttons (Signs & Leaderboard) */}
+                <div className="flex flex-wrap items-center gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setExtrasTab(extrasTab === 'signs' ? 'tickets' : 'signs');
+                    }}
+                    className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 border shadow-xs cursor-pointer ${
+                      extrasTab === 'signs'
+                        ? 'bg-gradient-to-r from-amber-400 to-gold text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-gold'
+                        : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-gold/60'
+                    }`}
+                  >
+                    <span className="w-5 h-5 rounded-full bg-rose-500/90 border border-white/40 flex items-center justify-center text-[11px] shadow-2xs shrink-0 text-white font-bold">
+                      🛑
+                    </span>
+                    <span>საგზაო ნიშნების შესწავლა</span>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                      extrasTab === 'signs' ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-amber-300'
+                    }`}>
+                      252 ნიშანი
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setExtrasTab(extrasTab === 'ranking' ? 'tickets' : 'ranking');
+                    }}
+                    className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 border shadow-xs cursor-pointer ${
+                      extrasTab === 'ranking'
+                        ? 'bg-gradient-to-r from-amber-400 to-gold text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-gold'
+                        : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-gold/60'
+                    }`}
+                  >
+                    <span className="text-sm shrink-0">🏆</span>
+                    <span>საუკეთესო ოცეული</span>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                      extrasTab === 'ranking' ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-amber-300'
+                    }`}>
+                      Top 20
+                    </span>
+                  </button>
+
+                  {extrasTab !== 'tickets' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setExtrasTab('tickets');
+                      }}
+                      className="px-3 py-2 rounded-2xl text-xs font-bold text-amber-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/15 transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>← ბილეთებზე დაბრუნება</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Right Side: Thematic Mini Driver's License Card Visual & Action Button */}
+            {/* Right Side: Interactive Thematic Driver's License Card Visual & Action Button */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
-              <div className="hidden md:flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-slate-900/90 to-navy/90 border border-gold/40 shadow-lg backdrop-blur-md">
-                <div className="w-11 h-14 rounded-xl bg-gradient-to-br from-blue-900 via-slate-900 to-slate-950 border border-white/20 p-1 flex flex-col justify-between items-center relative overflow-hidden">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  sounds.playClick();
+                  setIsLicenseModalOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setIsLicenseModalOpen(true);
+                  }
+                }}
+                title="დააჭირეთ მართვის მოწმობის სანახავად / შესავსებად ✎"
+                className="flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-slate-900/90 to-navy/90 border border-gold/40 hover:border-gold hover:shadow-gold-soft cursor-pointer transition-all transform hover:scale-[1.02] active:scale-[0.98] group relative backdrop-blur-md select-none shrink-0"
+              >
+                {/* Mini License Photo / Avatar Frame */}
+                <div className="w-11 h-14 rounded-xl bg-gradient-to-br from-blue-900 via-slate-900 to-slate-950 border border-white/20 p-1 flex flex-col justify-between items-center relative overflow-hidden shrink-0 group-hover:border-gold/60 transition-colors">
                   <div className="w-full flex items-center justify-between text-[7px] font-bold text-white/90">
                     <span>GE</span>
                     <span>🇬🇪</span>
                   </div>
-                  <div className="w-6 h-6 rounded-full bg-slate-700/80 border border-gold/40 flex items-center justify-center text-[10px]">
-                    👤
-                  </div>
+
+                  {driverLicense.photo ? (
+                    <img
+                      src={driverLicense.photo}
+                      alt="Driver"
+                      className="w-7 h-7 rounded-full object-cover border border-gold/50 shadow-xs"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-slate-700/80 border border-gold/40 flex items-center justify-center text-[10px] text-gold font-bold">
+                      {driverLicense.firstName ? driverLicense.firstName[0] : '👤'}
+                    </div>
+                  )}
+
                   <div className="text-[6px] font-mono text-gold font-bold">DRIVING</div>
                 </div>
-                <div className="space-y-0.5 text-left pr-1">
-                  <div className="text-[9px] font-mono font-black text-gold uppercase tracking-wider">
-                    GEORGIA • მართვის მოწმობა
+
+                {/* License Information Details */}
+                <div className="space-y-0.5 text-left pr-1 min-w-[130px] max-w-[190px]">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[8px] sm:text-[9px] font-mono font-black text-gold uppercase tracking-wider truncate">
+                      GEORGIA • მოწმობა
+                    </span>
+                    <span className="text-[10px] text-amber-300 opacity-70 group-hover:opacity-100 transition-opacity">
+                      ✎
+                    </span>
                   </div>
-                  <div className="text-xs font-black text-white">
-                    {activeCategory} კატეგორია
+
+                  <div className="text-xs font-black text-white truncate">
+                    {driverLicense.firstName || driverLicense.lastName
+                      ? `${driverLicense.firstName} ${driverLicense.lastName}`.trim()
+                      : '+ შეავსეთ პროფილი'}
                   </div>
+
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-300">
-                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">პერსონალური სწავლა</span>
-                    <span>• {categoryConfig.size} კითხვა</span>
+                    {driverLicense.personalNumber ? (
+                      <>
+                        <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
+                          {driverLicense.points}/100 ქულა
+                        </span>
+                        <span className="text-slate-400">• {activeCategory}</span>
+                      </>
+                    ) : (
+                      <span className="px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-bold">
+                        შესავსებად ✎
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1085,9 +1203,77 @@ export const DrivingExamWidget: React.FC = () => {
       )}
 
       {/* ======================================================== */}
+      {/* 0B. SIGNS LEARNING VIEW (WHEN SELECTED IN DASHBOARD)    */}
+      {/* ======================================================== */}
+      {extrasTab === 'signs' && (viewMode === 'subject_picker' || viewMode === 'results') && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-white border border-slate-200/90 neu-card shadow-neu-card">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-300 flex items-center justify-center text-lg shadow-2xs">
+                🛑
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-navy">
+                  საგზაო ნიშნების შესწავლა & კატალოგი
+                </h3>
+                <p className="text-xs text-slate-500">
+                  ოფიციალური საგზაო ნიშნები, განმარტებები და თქვენი ათვისების პროგრესი
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setExtrasTab('tickets');
+              }}
+              className="btn-stitch-soft px-4 py-2 text-xs font-black text-navy hover:text-gold flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <span>← ბილეთებზე დაბრუნება</span>
+            </button>
+          </div>
+          <SignsLearning />
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 0C. TOP 20 LEADERBOARD VIEW (WHEN SELECTED IN DASHBOARD) */}
+      {/* ======================================================== */}
+      {extrasTab === 'ranking' && (viewMode === 'subject_picker' || viewMode === 'results') && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-white border border-slate-200/90 neu-card shadow-neu-card">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-400/20 border border-amber-400 flex items-center justify-center text-lg shadow-2xs">
+                🏆
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-navy">
+                  საუკეთესო ოცეული (Top 20 Leaderboard)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {activeCategory} კატეგორიის ჩაბარებული სრული გამოცდების საუკეთესო შედეგები
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setExtrasTab('tickets');
+              }}
+              className="btn-stitch-soft px-4 py-2 text-xs font-black text-navy hover:text-gold flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <span>← ბილეთებზე დაბრუნება</span>
+            </button>
+          </div>
+          <ExamLeaderboard category={activeCategory} />
+        </div>
+      )}
+
+      {/* ======================================================== */}
       {/* 1. TOP LEARNING ANALYSIS & PROGRESS DIAGRAM              */}
       {/* ======================================================== */}
-      {(viewMode === 'subject_picker' || viewMode === 'results') && (
+      {extrasTab === 'tickets' && (viewMode === 'subject_picker' || viewMode === 'results') && (
         <div data-tour="exam-academic-analysis">
           <ExamLearningAnalysis
             history={learningHistory}
@@ -1103,7 +1289,7 @@ export const DrivingExamWidget: React.FC = () => {
       {/* ======================================================== */}
       {/* 2. SUBJECT PICKER & TICKET CONFIGURATION HUB             */}
       {/* ======================================================== */}
-      {viewMode === 'subject_picker' && (
+      {extrasTab === 'tickets' && viewMode === 'subject_picker' && (
         <section className="p-4 sm:p-6 rounded-3xl neu-card border border-white/80 space-y-5 shadow-neu-card">
 
           {/* Minimalist Academic Regalia & Medals Status Strip */}
@@ -1174,9 +1360,35 @@ export const DrivingExamWidget: React.FC = () => {
                 {categoryConfig.verified ? 'ჩაბარების ზღვარი: მომსახურების სააგენტოს წესით.' : 'სასწავლო რეჟიმი · ოფიციალური ფორმატი გადასამოწმებელია.'} პერსონალური პროგრესი თითოეულ თემაში.
               </p>
             </div>
-            <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-xl shrink-0 self-start sm:self-auto">
-              სულ: {totalCategoryCount || categoryConfig.count} ბილეთი
-            </span>
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setExtrasTab('signs');
+                }}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-navy hover:text-gold bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <span>🛑</span>
+                <span>საგზაო ნიშნები (252)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setExtrasTab('ranking');
+                }}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-navy hover:text-gold bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <span>🏆</span>
+                <span>საუკეთესო ოცეული</span>
+              </button>
+
+              <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl shrink-0">
+                სულ: {totalCategoryCount || categoryConfig.count} ბილეთი
+              </span>
+            </div>
           </div>
 
           {/* Media Type Filter Strip */}
@@ -1221,14 +1433,14 @@ export const DrivingExamWidget: React.FC = () => {
           {/* ======================================================== */}
           <div data-tour="exam-mistakes-center" className="rounded-3xl border-2 border-rose-300/80 bg-gradient-to-br from-rose-50/70 via-white to-amber-50/40 p-4 sm:p-6 space-y-4 shadow-sm relative overflow-hidden">
             {/* Background subtle watermark */}
-            <div className="absolute -right-6 -bottom-6 opacity-5 pointer-events-none text-rose-900">
-              <ShieldAlert size={140} />
+            <div className="absolute -right-6 -bottom-6 opacity-10 pointer-events-none text-rose-900">
+              <ShieldAlert3D size={150} />
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-rose-100 pb-3 relative z-10">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 text-white flex items-center justify-center shadow-sm shrink-0">
-                  <ShieldAlert size={24} />
+                <div className="relative shrink-0 flex items-center justify-center">
+                  <ShieldAlert3D size={52} className="transform hover:scale-105 transition-transform" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -1462,7 +1674,7 @@ export const DrivingExamWidget: React.FC = () => {
                   <span className="px-2.5 py-0.5 rounded-lg bg-rose-100 text-rose-800 text-[10px] font-black uppercase tracking-wider">
                     შეცდომები ({unresolvedMistakes.length})
                   </span>
-                  <ShieldAlert size={16} className="text-rose-600" />
+                  <ShieldAlert3D size={24} />
                 </div>
                 <h3 className="text-sm font-black text-navy">შეცდომების ცალკე გავლა</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
@@ -1758,7 +1970,7 @@ export const DrivingExamWidget: React.FC = () => {
 
               {sessionSubtype === 'mistakes' ? (
                 <div className="px-3 py-1.5 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-600 text-white font-black text-xs flex items-center gap-1.5 shadow-xs animate-pulse">
-                  <ShieldAlert size={14} />
+                  <ShieldAlert3D size={18} />
                   <span>შეცდომებზე მუშაობა · {activeQuestions.length} ბილეთი</span>
                 </div>
               ) : viewMode === 'practice' ? (
@@ -2207,7 +2419,12 @@ export const DrivingExamWidget: React.FC = () => {
         category={activeCategory}
       />
 
-      </>}
+      {/* Driver's License View / Edit Modal */}
+      <DriverLicenseModal
+        isOpen={isLicenseModalOpen}
+        onClose={() => setIsLicenseModalOpen(false)}
+        onSaved={(updated) => setDriverLicense(updated)}
+      />
     </div>
   );
 };

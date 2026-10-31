@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VehicleProfile, ServiceItem, ServiceBookingItem } from '../../types';
 import { sounds } from '../../services/soundEffects';
 import { GeorgianLicensePlate } from '../ui/GeorgianLicensePlate';
@@ -109,6 +109,20 @@ export const GarageModule: React.FC<Props> = ({
       return null;
     }
   });
+
+  useEffect(() => {
+    const handleDriverUpdate = () => {
+      try {
+        setDriverPhoto(localStorage.getItem('autohub_driver_photo') || null);
+      } catch {}
+    };
+    window.addEventListener('autohub-driver-updated', handleDriverUpdate);
+    window.addEventListener('storage', handleDriverUpdate);
+    return () => {
+      window.removeEventListener('autohub-driver-updated', handleDriverUpdate);
+      window.removeEventListener('storage', handleDriverUpdate);
+    };
+  }, []);
 
   const handleDriverPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
