@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Camera,
   ParkingSquare,
+  GraduationCap,
   Navigation as NavigationIcon
 } from "lucide-react";
 
@@ -63,8 +64,8 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     {
       id: 2,
       tab: 'fines' as TabType,
-      title: isGe ? 'საპატრულო' : 'Patrol',
-      name: isGe ? 'საპატრულო & ბილეთები' : 'Police Fines & Exam',
+      title: isGe ? 'ჯარიმები' : 'Fines',
+      name: isGe ? 'ვიდეოჯარიმები & ქვითრები' : 'Police Fines & Receipts',
       role: isGe ? 'ვიდეოკამერების მონიტორინგი' : 'Smart Traffic Monitoring',
       icon: ShieldAlert,
       badgeText: pendingFines.length > 0 ? (isGe ? `${pendingFines.length} აქტიური` : `${pendingFines.length} Active`) : (isGe ? 'სუფთაა' : 'Clean'),
@@ -72,6 +73,20 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
       desc: isGe
         ? (pendingFines.length > 0 ? `გადასახდელია ${totalFineDiscounted} ₾ (მოქმედებს -20% საშეღავათო ვადა).` : 'საპატრულო ჯარიმები არ ფიქსირდება — სისტემა სუფთაა.')
         : (pendingFines.length > 0 ? `Outstanding: ${totalFineDiscounted} GEL (-20% discount active).` : 'No outstanding traffic fines recorded — record is clean.'),
+      accent: '#FCA311'
+    },
+    {
+      id: 7,
+      tab: 'exam' as TabType,
+      title: isGe ? 'ბილეთები' : 'Tickets',
+      name: isGe ? 'მართვის მოწმობის ბილეთები' : 'Driver License Tickets',
+      role: isGe ? 'თეორიული გამოცდა 2026' : 'Theory Exam 2026',
+      icon: GraduationCap,
+      badgeText: isGe ? '10 კატეგორია' : '10 Categories',
+      badgeColor: 'bg-amber-500 text-white font-black',
+      desc: isGe
+        ? 'შსს-ის ოფიციალური საგამოცდო ბილეთები — ყველა 10 კატეგორია (B, A, C, D, T/S…).'
+        : 'Official MIA theory tickets — all 10 categories (B, A, C, D, T/S…).',
       accent: '#FCA311'
     },
     {

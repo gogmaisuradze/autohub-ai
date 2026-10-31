@@ -4,7 +4,7 @@ import { GeorgianLicensePlate } from '../ui/GeorgianLicensePlate';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
 import { PromptFieldType } from '../Modals/ContextualFieldPromptModal';
-import { GraduationCap3D, ShieldAlert3D } from '../Garage/Exam3DIcons';
+import { ShieldAlert3D } from '../Garage/Exam3DIcons';
 import {
   Clock,
   Camera,
@@ -676,7 +676,7 @@ export const FinesModule: React.FC<Props> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 font-mono">საპატრულო</span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 font-mono">ჯარიმები</span>
               <span className="text-slate-300">/</span>
               <h1 className="text-base sm:text-lg font-black text-navy">ვიდეოჯარიმები & ქვითრები</h1>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
@@ -689,29 +689,6 @@ export const FinesModule: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Sub-page Switcher Pills */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/80">
-          <div className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-white text-navy shadow-xs border border-slate-200/80 flex items-center gap-1.5">
-            <ShieldAlert3D size={18} />
-            <span>საპატრულო ჯარიმები</span>
-            {pendingFines.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-rose-500 text-white">
-                {pendingFines.length}
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              onOpenDrivingExam?.();
-            }}
-            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-navy hover:bg-white transition-all flex items-center gap-1.5"
-          >
-            <GraduationCap3D size={18} />
-            <span>მართვის მოწმობის ბილეთები</span>
-          </button>
-        </div>
       </div>
 
       {/* ======================================================== */}

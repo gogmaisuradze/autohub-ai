@@ -1224,7 +1224,7 @@ export const App: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 font-mono">საპატრულო</span>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 font-mono">ბილეთები</span>
                     <span className="text-slate-300">/</span>
                     <h1 className="text-base sm:text-lg font-black text-navy">მართვის მოწმობის ბილეთები</h1>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-amber-100 text-amber-900 border border-amber-300">
@@ -1237,29 +1237,6 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Sub-page Switcher Pills */}
-              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/80">
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    handleTabChange('fines');
-                  }}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-navy hover:bg-white transition-all flex items-center gap-1.5"
-                >
-                  <ShieldAlert size={14} className="text-rose-500" />
-                  <span>საპატრულო ჯარიმები</span>
-                  {fines.filter(f => f.status === 'pending').length > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-rose-500 text-white">
-                      {fines.filter(f => f.status === 'pending').length}
-                    </span>
-                  )}
-                </button>
-                <div className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-white text-navy shadow-xs border border-slate-200/80 flex items-center gap-1.5">
-                  <GraduationCap size={14} className="text-amber-500" />
-                  <span>მართვის მოწმობის ბილეთები</span>
-                </div>
-              </div>
             </div>
 
             <React.Suspense fallback={
