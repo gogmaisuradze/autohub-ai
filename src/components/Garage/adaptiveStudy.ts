@@ -97,8 +97,8 @@ export function selectStudyRound<T extends { id: number; topicId?: number }>(
 }
 
 /**
- * Generates an official 30-question exam with an unpredictable mix
- * resembling official Ministry exam distributions (crossroads, signs, speed, first aid, laws)
+ * Generates a category-sized AutoHub training round with balanced themes.
+ * These proportions are educational choices, not official Ministry quotas.
  */
 export function selectExamRound<T extends { id: number; topicId?: number }>(
   pool: T[],
@@ -137,7 +137,7 @@ export function selectExamRound<T extends { id: number; topicId?: number }>(
     }
   };
 
-  // Balanced official quota
+  // Balanced training mix
   take(prioritiesAndCrossroads, Math.round(size * 0.3)); // ~9 crossroads
   take(roadSigns, Math.round(size * 0.3)); // ~9 signs
   take(rulesAndManeuvers, Math.round(size * 0.25)); // ~7-8 maneuvers & rules

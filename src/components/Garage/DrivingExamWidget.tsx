@@ -1,5 +1,7 @@
+import { SignsLearning, ExamLeaderboard, saveExamScore } from './ExamExtras';
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
+import { EXAM_CATEGORIES, ExamCategory, examCategory } from './examCategories';
 import { sounds } from '../../services/soundEffects';
 import { selectStudyRound, selectExamRound } from './adaptiveStudy';
 import {
@@ -236,15 +238,33 @@ export const EXAM_QUESTIONS: ExamQuestion[] = [
   }
 ];
 
+// Preserve earlier combined-package progress before introducing C1 and D1.
+function preserveCombinedCategoryProgress() {
+  try {
+    const marker = 'autohub.exam.split-categories.v1';
+    if (localStorage.getItem(marker)) return;
+    for (const [oldCategory, newCategory] of [['C', 'C1'], ['D', 'D1']]) {
+      for (const prefix of ['autohub.exam.learning.v1.', 'autohub.exam.academic_override.v1.']) {
+        const previous = localStorage.getItem(prefix + oldCategory);
+        if (previous && !localStorage.getItem(prefix + newCategory)) {
+          localStorage.setItem(prefix + newCategory, previous);
+        }
+      }
+    }
+    localStorage.setItem(marker, '1');
+  } catch { /* Learning remains available when storage is restricted. */ }
+}
+
 export const DrivingExamWidget: React.FC = () => {
   // Category Selector: B (921), A (760), C (954), D (845), AM (327)
-  const [activeCategory, setActiveCategory] = useState<'B' | 'A' | 'C' | 'D' | 'AM'>('B');
+  const [activeCategory, setActiveCategory] = useState<ExamCategory>('B');
+  const categoryConfig = examCategory(activeCategory);
   // Media Filter: All, With Photo, Without Photo (Text only)
   const [mediaFilter, setMediaFilter] = useState<'all' | 'with_image' | 'without_image'>('all');
   // Topic search filter
   const [topicSearch, setTopicSearch] = useState('');
 
-  const [learningHistory, setLearningHistory] = useState<LearningHistory>(() => readLearningHistory('B'));
+  const [learningHistory, setLearningHistory] = useState<LearningHistory>(() => (preserveCombinedCategoryProgress(), readLearningHistory('B')));
   const [historySaved, setHistorySaved] = useState(true);
   const [sessionMode, setSessionMode] = useState<'practice' | 'exam'>('practice');
   const [sessionSubtype, setSessionSubtype] = useState<'standard' | 'mistakes' | 'adaptive' | 'marathon' | 'exam'>('standard');
@@ -342,7 +362,12 @@ export const DrivingExamWidget: React.FC = () => {
     s.title.toLowerCase().includes(topicSearch.toLowerCase())
   );
 
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const deadlineRef = useRef(0);
+  const startedAtRef = useRef(0);
+  const finishedAtRef = useRef(0);
+  const scoreSavedRef = useRef(false);
+  const [extrasTab, setExtrasTab] = useState<'tickets' | 'signs' | 'ranking'>('tickets');
 
   useEffect(() => {
     return () => {
@@ -350,28 +375,33 @@ export const DrivingExamWidget: React.FC = () => {
     };
   }, []);
 
-  // Timer Tick during Exam Mode
+  // Derive the countdown from a deadline so background throttling cannot pause it.
   useEffect(() => {
-    if (viewMode === 'exam') {
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            sounds.playWarning();
-            setViewMode('results');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+    if (viewMode !== 'exam') return;
+    const tick = () => {
+      if (finishedAtRef.current) return;
+      const remaining = Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (!remaining) {
+        finishedAtRef.current = deadlineRef.current;
+        sounds.playWarning();
+        setViewMode('results');
+      }
     };
+    tick();
+    timerRef.current = setInterval(tick, 250);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [viewMode]);
+
+  useEffect(() => {
+    if (viewMode !== 'results' || sessionSubtype !== 'exam' || scoreSavedRef.current) return;
+    scoreSavedRef.current = true;
+    finishedAtRef.current ||= Date.now();
+    const correct = Object.entries(answers).filter(([i, answer]) => activeQuestions[Number(i)]?.correct === answer).length;
+    if (Object.keys(answers).length === activeQuestions.length && errorsCount <= categoryConfig.maxErrors && finishedAtRef.current <= deadlineRef.current) {
+      saveExamScore(activeCategory, correct, activeQuestions.length, finishedAtRef.current - startedAtRef.current);
+    }
+  }, [viewMode, sessionSubtype, answers, activeQuestions, errorsCount, activeCategory]);
 
   // ==========================================================
   // AUTO-SCROLL TO QUESTION CARD ON QUESTION CHANGE
@@ -414,6 +444,10 @@ export const DrivingExamWidget: React.FC = () => {
 
   // Helper to launch a test session
   const startSession = (questions: ExamQuestion[], mode: 'exam' | 'practice', customTime = 1800) => {
+    startedAtRef.current = Date.now();
+    deadlineRef.current = startedAtRef.current + customTime * 1000;
+    finishedAtRef.current = 0;
+    scoreSavedRef.current = false;
     setActiveQuestions(questions);
     setCurrentIdx(0);
     setErrorsCount(0);
@@ -425,7 +459,7 @@ export const DrivingExamWidget: React.FC = () => {
     setAcademicAlert(null);
   };
 
-  // 1. Official 30-min Exam Simulator (30 questions, 30 min, max 3 errors, unpredictable mix)
+  // Category-specific training simulation.
   const handleStartExam = async () => {
     sounds.playClick();
     let questionPool: ExamQuestion[];
@@ -436,11 +470,11 @@ export const DrivingExamWidget: React.FC = () => {
       return;
     }
     const filtered = filterPoolByMedia(questionPool);
-    const pool = [...(filtered.length >= 30 ? filtered : questionPool)];
-    // Unpredictable official exam quota with anti-clustering
-    const generated = selectExamRound(pool, 30);
+    const pool = [...(filtered.length >= categoryConfig.size ? filtered : questionPool)];
+    // AutoHub balanced selection with anti-clustering
+    const generated = selectExamRound(pool, categoryConfig.size);
     setSessionSubtype('exam');
-    startSession(generated, 'exam', 1800);
+    startSession(generated, 'exam', categoryConfig.minutes * 60);
   };
 
   // 2. Express Test (15 questions, quick 15 min check, unpredictable adaptive mix)
@@ -634,8 +668,18 @@ export const DrivingExamWidget: React.FC = () => {
 
   // Answer handler
   const handleAnswer = (optionIdx: number) => {
+    if (viewMode === 'exam' && Date.now() >= deadlineRef.current) {
+      setTimeLeft(0);
+      finishedAtRef.current = deadlineRef.current;
+      setViewMode('results');
+      return;
+    }
     if (answers[currentIdx] !== undefined || answeredRef.current.has(currentIdx)) return;
     answeredRef.current.add(currentIdx);
+    if (viewMode === 'exam' && answeredRef.current.size === activeQuestions.length) {
+      finishedAtRef.current = Date.now();
+      setTimeLeft(Math.max(0, Math.ceil((deadlineRef.current - finishedAtRef.current) / 1000)));
+    }
 
     const currentQ = activeQuestions[currentIdx];
     const isCorrect = optionIdx === currentQ.correct;
@@ -653,14 +697,14 @@ export const DrivingExamWidget: React.FC = () => {
       setErrorsCount(newErrors);
 
       // In exam mode: max 3 errors. 4th error = FAIL & Demotion to Chainiki
-      if (viewMode === 'exam' && newErrors >= 4) {
-        setAcademicOverride(activeCategory, 'chainiki');
+      if (viewMode === 'exam' && newErrors > categoryConfig.maxErrors) {
+
         setAcademicAlert({
           type: 'demoted',
-          title: 'გაქვეითება: „ჩაინიკი მძღოლი“ 🫖',
-          desc: 'გამოცდაზე დაფიქსირდა 4 კრიტიკული შეცდომა! თქვენ ჩამოქვეითდით ყველაზე დაბალ საფეხურზე.',
+          title: 'გადაბარებაც სწავლის ნაწილია 📚',
+          desc: `გამოცდაზე გადაჭარბებულია ${categoryConfig.maxErrors} შეცდომის ლიმიტი. გაიმეორეთ შეცდომიანი საკითხები.`,
           regalia: ACADEMIC_RANKS.chainiki.regalia,
-          icon: '🫖'
+          icon: '📚'
         });
         if (timerRef.current) clearInterval(timerRef.current);
         setTimeout(() => {
@@ -684,27 +728,27 @@ export const DrivingExamWidget: React.FC = () => {
 
       if (isFlawless) {
         // 100% flawless round -> Highest Academic Rank & Regalia!
-        setAcademicOverride(activeCategory, 'akademikosi');
+
         setAcademicAlert({
           type: 'promoted',
-          title: 'სრული ტრიუმფი: „საგზაო მოძრაობის აკადემიკოსი“ 👑',
-          desc: `საოცარია! ${totalAns}-დან ${totalAns}-ვე კითხვას უშეცდომოდ გაეცით პასუხი (100% სიზუსტე)! გამოუცნობმა ალგორითმმა ვერაფერი დაგაკლოთ — მოგენიჭათ უმაღლესი რეგალია.`,
+          title: 'უშეცდომო რაუნდი — სემესტრი ჩაბარებულია! 🎓',
+          desc: `საოცარია! ${totalAns}-დან ${totalAns}-ვე კითხვას უშეცდომოდ გაეცით პასუხი (100% სიზუსტე)! კიდევ ერთი ნაბიჯი შემდეგი აკადემიური წოდებისკენ!`,
           regalia: ACADEMIC_RANKS.akademikosi.regalia,
           icon: '👑'
         });
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
         sounds.playSuccess();
-      } else if (viewMode === 'exam' && totalErr <= 3) {
+      } else if (viewMode === 'exam' && totalErr <= categoryConfig.maxErrors) {
         confetti({ particleCount: 80, spread: 65, origin: { y: 0.6 } });
         sounds.playSuccess();
       } else if (totalErr >= 4) {
-        setAcademicOverride(activeCategory, 'chainiki');
+
         setAcademicAlert({
           type: 'demoted',
-          title: 'გაქვეითება: „ჩაინიკი მძღოლი“ 🫖',
-          desc: 'შეცდომების რაოდენობა კრიტიკულია (4+ შეცდომა). თქვენ გაქვეითდით ყველაზე დაბალ საფეხურზე.',
+          title: 'გადაბარებაც სწავლის ნაწილია 📚',
+          desc: 'აკადემიკოსსაც სჭირდება გადაბარება. გაიმეორე შეცდომიანი საკითხები — წოდება საერთო პროგრესით განისაზღვრება.',
           regalia: ACADEMIC_RANKS.chainiki.regalia,
-          icon: '🫖'
+          icon: '📚'
         });
       }
       setViewMode('results');
@@ -797,7 +841,7 @@ export const DrivingExamWidget: React.FC = () => {
   const correctCount = Object.entries(answers).filter(
     ([index, option]) => activeQuestions[Number(index)]?.correct === option
   ).length;
-  const isPassed = answeredCount === activeQuestions.length && errorsCount <= 3 && timeLeft > 0;
+  const isPassed = answeredCount === activeQuestions.length && errorsCount <= categoryConfig.maxErrors && timeLeft > 0;
 
   // Cumulative learning calculations & Academic Rank
   const learningRecords = Object.values(learningHistory);
@@ -824,6 +868,15 @@ export const DrivingExamWidget: React.FC = () => {
 
   return (
     <div id="driving-exam-widget" className="space-y-4">
+      {(viewMode === 'subject_picker' || viewMode === 'results') && <>
+        <nav aria-label="სწავლის განყოფილებები" className="flex flex-wrap gap-2 rounded-2xl bg-slate-100 p-2">
+          {([['tickets', 'ბილეთები'], ['signs', 'ნიშნების შესწავლა'], ['ranking', 'საუკეთესო ოცეული']] as const).map(([id, label]) => <button key={id} onClick={() => setExtrasTab(id)} aria-pressed={extrasTab === id} className={`rounded-xl px-4 py-2 text-sm font-bold ${extrasTab === id ? 'bg-navy text-white' : 'text-slate-600 hover:bg-white'}`}>{label}</button>)}
+        </nav>
+        {extrasTab === 'signs' && <SignsLearning />}
+        {extrasTab === 'ranking' && <ExamLeaderboard category={activeCategory} />}
+      </>}
+      {(extrasTab === 'tickets' || viewMode === 'exam' || viewMode === 'practice') && <>
+
 
       {/* ======================================================== */}
       {/* 0. HERO SHOWCASE: DRIVING EXAM TICKETS & THEORY (2026)   */}
@@ -868,10 +921,10 @@ export const DrivingExamWidget: React.FC = () => {
                     <span>საგამოცდო ბაზა 2026</span>
                   </span>
                   <span className="text-xs font-mono font-bold text-amber-200/90 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
-                    {totalCategoryCount || 921} ოფიციალური ბილეთი
+                    {totalCategoryCount || categoryConfig.count} სასწავლო ბილეთი
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-white/10 text-slate-300 border border-white/10 hidden sm:inline-block">
-                    32 ოფიციალური თემა • prava.ge
+                    32 სასწავლო თემა • AutoHub
                   </span>
                 </div>
 
@@ -879,7 +932,7 @@ export const DrivingExamWidget: React.FC = () => {
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-tight pt-0.5 flex flex-wrap items-center gap-2">
                   <span>მართვის მოწმობის ბილეთები</span>
                   <span className="text-xs sm:text-sm font-black px-2.5 py-0.5 rounded-xl bg-gold/20 text-gold border border-gold/40">
-                    A · B · C · D · AM
+                    ყველა 10 კატეგორია
                   </span>
                 </h2>
 
@@ -910,8 +963,8 @@ export const DrivingExamWidget: React.FC = () => {
                     {activeCategory} კატეგორია
                   </div>
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-300">
-                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">თეორია 100%</span>
-                    <span>• 30 კითხვა</span>
+                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">პერსონალური სწავლა</span>
+                    <span>• {categoryConfig.size} კითხვა</span>
                   </div>
                 </div>
               </div>
@@ -926,7 +979,7 @@ export const DrivingExamWidget: React.FC = () => {
                 className="w-full sm:w-auto px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-black shadow-gold-soft shrink-0 bg-gradient-to-r from-amber-400 via-gold to-amber-500 hover:from-amber-300 hover:to-gold text-slate-950 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-amber-300"
               >
                 <BookOpen size={16} />
-                <span>გამოცდის დაწყება (30 კითხვა) →</span>
+                <span>გამოცდის დაწყება ({categoryConfig.size} კითხვა) →</span>
               </button>
             </div>
 
@@ -935,13 +988,7 @@ export const DrivingExamWidget: React.FC = () => {
           {/* Categories Preview Pills Strip (Interactive switcher) */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
             <span className="text-[11px] text-slate-400 font-bold mr-1">კატეგორიები:</span>
-            {[
-              { cat: 'B' as const, label: 'B / B1', desc: 'მსუბუქი', count: 921, icon: '🚗' },
-              { cat: 'A' as const, label: 'A / A1', desc: 'მოტოციკლი', count: 760, icon: '🏍️' },
-              { cat: 'C' as const, label: 'C / C1', desc: 'სატვირთო', count: 954, icon: '🚚' },
-              { cat: 'D' as const, label: 'D / D1', desc: 'ავტობუსი', count: 845, icon: '🚌' },
-              { cat: 'AM' as const, label: 'AM', desc: 'მოპედი', count: 327, icon: '🛵' }
-            ].map(c => {
+            {EXAM_CATEGORIES.map(c => {
               const isCatActive = activeCategory === c.cat;
               return (
                 <button
@@ -981,8 +1028,8 @@ export const DrivingExamWidget: React.FC = () => {
                 <Clock size={11} className="text-white" />
                 <span>საგამოცდო დრო</span>
               </span>
-              <span className="text-sm sm:text-base font-black text-white block mt-1">30 წთ / 30 კითხვა</span>
-              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">ოფიციალური ტაიმერი</span>
+              <span className="text-sm sm:text-base font-black text-white block mt-1">{categoryConfig.minutes} წთ / {categoryConfig.size} კითხვა</span>
+              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">სასწავლო ტაიმერი</span>
             </div>
 
             <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
@@ -990,8 +1037,8 @@ export const DrivingExamWidget: React.FC = () => {
                 <ShieldCheck size={11} className="text-emerald-400" />
                 <span>შეცდომის ლიმიტი</span>
               </span>
-              <span className="text-sm sm:text-base font-black text-emerald-400 block mt-1">მაქს. 3 შეცდომა</span>
-              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">მე-4 შეცდომა ჩაჭრაა</span>
+              <span className="text-sm sm:text-base font-black text-emerald-400 block mt-1">მაქს. {categoryConfig.maxErrors} შეცდომა</span>
+              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">{categoryConfig.maxErrors + 1}-ე შეცდომა ჩაჭრაა</span>
             </div>
 
             <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
@@ -1043,19 +1090,14 @@ export const DrivingExamWidget: React.FC = () => {
                 </h2>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                საქართველოს შსს მომსახურების სააგენტოს ოფიციალური საგამოცდო ბაზა 2026
+                სასწავლო ბილეთები · პერსონალური პროგრესი თითოეულ კატეგორიაში
               </p>
+              <p className="text-[11px] text-slate-500 mt-1">{categoryConfig.verified ? 'ჩაბარების ზღვარი: მომსახურების სააგენტოს წესით.' : 'ამ კატეგორიის გამოცდა სასწავლო რეჟიმშია; ოფიციალური ფორმატი გადასამოწმებელია.'} ბაზა სასწავლო წყაროა; ოფიციალური განახლებების გადამოწმება საჭიროა.</p>
             </div>
 
             {/* Category Selector Tabs */}
             <div data-tour="exam-category-tabs" className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-slate-100/90 border border-slate-200/80">
-              {[
-                { cat: 'B', label: 'B / B1', desc: 'მსუბუქი', count: 921, icon: '🚗' },
-                { cat: 'A', label: 'A / A1', desc: 'მოტოციკლი', count: 760, icon: '🏍️' },
-                { cat: 'C', label: 'C / C1', desc: 'სატვირთო', count: 954, icon: '🚚' },
-                { cat: 'D', label: 'D / D1', desc: 'ავტობუსი', count: 845, icon: '🚌' },
-                { cat: 'AM', label: 'AM', desc: 'მოპედი', count: 327, icon: '🛵' }
-              ].map(item => {
+              {EXAM_CATEGORIES.map(item => {
                 const isActive = activeCategory === item.cat;
                 return (
                   <button
@@ -1347,7 +1389,7 @@ export const DrivingExamWidget: React.FC = () => {
                 </div>
                 <h3 className="text-sm font-black">გამოცდის სიმულაცია</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  30 კითხვა · 30 წთ · მაქს. 3 შეცდომა.
+                  {categoryConfig.size} კითხვა · {categoryConfig.minutes} წთ · მაქს. {categoryConfig.maxErrors} შეცდომა.
                 </p>
               </div>
               <button
@@ -1355,7 +1397,7 @@ export const DrivingExamWidget: React.FC = () => {
                 onClick={handleStartExam}
                 className="w-full mt-2 py-2.5 rounded-xl bg-gold hover:bg-gold/90 text-navy font-black text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm"
               >
-                <span>დაწყება (30 წთ)</span>
+                <span>დაწყება ({categoryConfig.minutes} წთ)</span>
                 <ArrowRight size={14} />
               </button>
             </div>
@@ -1656,7 +1698,7 @@ export const DrivingExamWidget: React.FC = () => {
                       : 'bg-slate-100 text-slate-700'
                   }`}>
                     <XCircle size={14} />
-                    <span>შეცდომა: {errorsCount}/3</span>
+                    <span>შეცდომა: {errorsCount}/{categoryConfig.maxErrors}</span>
                   </div>
                 </>
               )}
@@ -1944,8 +1986,8 @@ export const DrivingExamWidget: React.FC = () => {
                 : sessionMode === 'practice'
                 ? 'შედეგები შენახულია თქვენს სწავლის ისტორიაში. ქვემოთ შეგიძლიათ გადახედოთ ანალიზს და გაიმეოროთ შეცდომები.'
                 : isPassed
-                ? 'თქვენ წარმატებით დაძლიეთ თეორიული გამოცდის სიმულატორი დასაშვები 3 შეცდომის ლიმიტში.'
-                : 'დაფიქსირდა 4 ან მეტი შეცდომა ან ამოიწურა 30-წუთიანი საგამოცდო დრო.'}
+                ? `სიმულატორი ჩაბარებულია — დასაშვებია ${categoryConfig.maxErrors} შეცდომა.`
+                : `გადააჭარბეთ ${categoryConfig.maxErrors} შეცდომის ლიმიტს, ვერ დაასრულეთ ყველა კითხვა ან ამოიწურა ${categoryConfig.minutes} წუთი.`}
             </p>
           </div>
 
@@ -2093,6 +2135,7 @@ export const DrivingExamWidget: React.FC = () => {
         </div>
       )}
 
+      </>}
     </div>
   );
 };

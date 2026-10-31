@@ -29,7 +29,7 @@ export interface LearningRecord {
 
 export type LearningHistory = Record<string, LearningRecord>;
 
-export type AcademicRankId = 'chainiki' | 'kursanti' | 'bakalavri' | 'magistri' | 'doqtori' | 'akademikosi';
+export type AcademicRankId = 'chainiki' | 'kursanti' | 'bakalavri' | 'magistranti' | 'magistri' | 'doqtoranti' | 'doqtori' | 'profesori' | 'akademikosi';
 
 export interface AcademicRank {
   id: AcademicRankId;
@@ -46,78 +46,113 @@ export interface AcademicRank {
 }
 
 export const ACADEMIC_RANKS: Record<AcademicRankId, AcademicRank> = {
-  chainiki: {
-    id: 'chainiki',
-    level: 1,
-    title: 'ჩაინიკი მძღოლი',
-    regalia: 'თუნუქის ჩაინიკის ორდენი 🫖',
-    icon: '🫖',
-    badgeColor: 'bg-rose-100 text-rose-900 border-rose-300',
-    borderColor: 'border-rose-400',
-    bgGradient: 'from-rose-500/15 via-rose-500/5 to-transparent',
-    quote: 'საჭესთან ჯერ ნუ დაჯდები! შეცდომების რაოდენობა კრიტიკულია — თეორია თავიდან გაქვს სასწავლი.',
-    requirement: 'სიზუსტე < 55% ან ჩაჭრილი გამოცდები (4+ შეცდომა)',
-    demotionWarning: 'გაქვეითებული ხარ ჩაინიკის რანგში!'
+  "chainiki": {
+    "id": "chainiki",
+    "level": 1,
+    "title": "მსმენელი",
+    "regalia": "პირველი გაკვეთილის მედალი",
+    "icon": "🎒",
+    "badgeColor": "bg-amber-50 text-navy border-amber-200",
+    "borderColor": "border-gold/40",
+    "bgGradient": "from-amber-100/50 via-white to-slate-50",
+    "quote": "ღვედი შევიკარი, ახლა საით?",
+    "requirement": "დაიწყე სწავლა და მოიპოვე პირველი მედალი"
   },
-  kursanti: {
-    id: 'kursanti',
-    level: 2,
-    title: 'ავტოსკოლის კურსანტი',
-    regalia: 'კურსანტის სამკერდე ნიშანი 🚗',
-    icon: '🚗',
-    badgeColor: 'bg-slate-100 text-slate-800 border-slate-300',
-    borderColor: 'border-slate-300',
-    bgGradient: 'from-slate-500/15 via-slate-500/5 to-transparent',
-    quote: 'პირველი ნაბიჯები საგზაო მოძრაობაში. საფუძველი ჩაყრილია, თუმცა ბევრი ვარჯიში გჭირდება.',
-    requirement: 'სიზუსტე 55% – 69%'
+  "kursanti": {
+    "id": "kursanti",
+    "level": 2,
+    "title": "სტუდენტი",
+    "regalia": "ბრინჯაოს საჭე",
+    "icon": "🥉",
+    "badgeColor": "bg-amber-50 text-navy border-amber-200",
+    "borderColor": "border-gold/40",
+    "bgGradient": "from-amber-100/50 via-white to-slate-50",
+    "quote": "მარჯვნიდან მოსულს უკვე ვამჩნევ.",
+    "requirement": "10 განსხვავებული ბილეთი · 50%+ სიზუსტე"
   },
-  bakalavri: {
-    id: 'bakalavri',
-    level: 3,
-    title: 'ბაკალავრი საგზაო წესებში',
-    regalia: 'საგზაო ბაკალავრის დიპლომი 🎓',
-    icon: '🎓',
-    badgeColor: 'bg-blue-100 text-blue-900 border-blue-300',
-    borderColor: 'border-blue-400',
-    bgGradient: 'from-blue-500/15 via-blue-500/5 to-transparent',
-    quote: 'საგზაო ნიშნები და წესები იცი, თუმცა რთულ გზაჯვარედინებსა და მარეგულირებელზე მეტი ყურადღება გმართებს.',
-    requirement: 'სიზუსტე 70% – 82% (20+ კითხვა)'
+  "bakalavri": {
+    "id": "bakalavri",
+    "level": 3,
+    "title": "ბაკალავრი",
+    "regalia": "ვერცხლის საჭე",
+    "icon": "🥈",
+    "badgeColor": "bg-amber-50 text-navy border-amber-200",
+    "borderColor": "border-gold/40",
+    "bgGradient": "from-amber-100/50 via-white to-slate-50",
+    "quote": "ნიშნებს ვცნობ — ერთმანეთშიც აღარ მერევა.",
+    "requirement": "30 განსხვავებული ბილეთი · 60%+ სიზუსტე"
   },
-  magistri: {
-    id: 'magistri',
-    level: 4,
-    title: 'მართვის თეორიის მაგისტრი',
-    regalia: 'საგამოცდო მაგისტრის ოქროს ბეჭედი 📜',
-    icon: '📜',
-    badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
-    borderColor: 'border-amber-400',
-    bgGradient: 'from-amber-500/15 via-amber-500/5 to-transparent',
-    quote: 'მყარი აკადემიური ცოდნა! პრაქტიკულად მზად ხარ რეალურ სააგენტოში გამოცდის უშეცდომოდ ჩასაბარებლად.',
-    requirement: 'სიზუსტე 83% – 91% (40+ კითხვა)'
+  "magistranti": {
+    "id": "magistranti",
+    "level": 4,
+    "title": "მაგისტრანტი",
+    "regalia": "ოქროს წიგნი",
+    "icon": "🎓",
+    "badgeColor": "bg-amber-50 text-navy border-amber-200",
+    "borderColor": "border-gold/40",
+    "bgGradient": "from-amber-100/50 via-white to-slate-50",
+    "quote": "სამაგისტრო თემა: ვინ გაივლის პირველი?",
+    "requirement": "60 განსხვავებული ბილეთი · 70%+ სიზუსტე"
   },
-  doqtori: {
-    id: 'doqtori',
-    level: 5,
-    title: 'დოქტორი საგზაო მეცნიერებებში',
-    regalia: 'საგზაო მეცნიერებათა დოქტორის მანტია 🏆',
-    icon: '🏆',
-    badgeColor: 'bg-indigo-100 text-indigo-950 border-indigo-300',
-    borderColor: 'border-indigo-400',
-    bgGradient: 'from-indigo-500/15 via-indigo-500/5 to-transparent',
-    quote: 'უმაღლესი აკადემიური კლასი! კანონის მუხლებსა და რთულ მანევრებს პროფესორული სიზუსტით ხსნი.',
-    requirement: 'სიზუსტე 92% – 97% (60+ კითხვა)'
+  "magistri": {
+    "id": "magistri",
+    "level": 5,
+    "title": "მაგისტრი",
+    "regalia": "ოქროს საჭე",
+    "icon": "🥇",
+    "badgeColor": "bg-amber-50 text-navy border-amber-200",
+    "borderColor": "border-gold/40",
+    "bgGradient": "from-amber-100/50 via-white to-slate-50",
+    "quote": "ჯერ მაჩვენებელი, მერე მანევრი.",
+    "requirement": "100 განსხვავებული ბილეთი · 78%+ სიზუსტე"
   },
-  akademikosi: {
-    id: 'akademikosi',
-    level: 6,
-    title: 'საგზაო მოძრაობის აკადემიკოსი & გრანდ-მაისტერი',
-    regalia: 'შსს საგამოცდო კომისიის თავმჯდომარეობის ოქროს გვირგვინი 👑',
-    icon: '👑',
-    badgeColor: 'bg-amber-400 text-navy border-amber-300 ring-2 ring-amber-400/50 shadow-md font-black',
-    borderColor: 'border-gold',
-    bgGradient: 'from-amber-400/25 via-gold/10 to-transparent',
-    quote: 'აბსოლუტური 100%-იანი გენიოსი! გამოუცნობ ალგორითმსაც კი ვერაფერი გამოეპარა შენს თვალს.',
-    requirement: '100%-იანი სრული უშეცდომო რაუნდი ან 98%+ სიზუსტე'
+  "doqtoranti": {
+    "id": "doqtoranti",
+    "level": 6,
+    "title": "დოქტორანტი",
+    "regalia": "ცოდნის ვერცხლის ვარსკვლავი",
+    "icon": "🔬",
+    "badgeColor": "bg-amber-50 text-navy border-amber-200",
+    "borderColor": "border-gold/40",
+    "bgGradient": "from-amber-100/50 via-white to-slate-50",
+    "quote": "დისერტაცია გზაჯვარედინებზე იწერება.",
+    "requirement": "150 განსხვავებული ბილეთი · 84%+ სიზუსტე"
+  },
+  "doqtori": {
+    "id": "doqtori",
+    "level": 7,
+    "title": "დოქტორი",
+    "regalia": "ცოდნის ოქროს ვარსკვლავი",
+    "icon": "🏅",
+    "badgeColor": "bg-amber-50 text-navy border-amber-200",
+    "borderColor": "border-gold/40",
+    "bgGradient": "from-amber-100/50 via-white to-slate-50",
+    "quote": "პასუხთან ერთად მიზეზიც ვიცი.",
+    "requirement": "220 განსხვავებული ბილეთი · 90%+ სიზუსტე"
+  },
+  "profesori": {
+    "id": "profesori",
+    "level": 8,
+    "title": "პროფესორი",
+    "regalia": "დაფნის გვირგვინიანი საჭე",
+    "icon": "🎖️",
+    "badgeColor": "bg-amber-50 text-navy border-amber-200",
+    "borderColor": "border-gold/40",
+    "bgGradient": "from-amber-100/50 via-white to-slate-50",
+    "quote": "ლექცია დასრულდა — ახლა პრაქტიკაა.",
+    "requirement": "250 განსხვავებული ბილეთი · 94%+ სიზუსტე"
+  },
+  "akademikosi": {
+    "id": "akademikosi",
+    "level": 9,
+    "title": "აკადემიკოსი",
+    "regalia": "გვირგვინისა და დაფნის უმაღლესი მედალი",
+    "icon": "👑",
+    "badgeColor": "bg-amber-50 text-navy border-amber-200",
+    "borderColor": "border-gold/40",
+    "bgGradient": "from-amber-100/50 via-white to-slate-50",
+    "quote": "პრიორიტეტი მაქვს, მაგრამ მაინც გადავამოწმებ.",
+    "requirement": "300 განსხვავებული ბილეთი · 97%+ სიზუსტე"
   }
 };
 
@@ -165,35 +200,25 @@ export function recordLearningAnswer(
 }
 
 export function getAcademicRank(attempts: number, correct: number, category = 'B'): AcademicRank {
-  let override: 'akademikosi' | 'chainiki' | null = null;
-  try {
-    const val = localStorage.getItem(overrideKey(category));
-    if (val === 'akademikosi' || val === 'chainiki') override = val;
-  } catch {}
+  // A legacy one-round override must not grant or remove a permanent academic rank.
+  const history = readLearningHistory(category);
+  const unique = Object.keys(history).length;
+  const accuracy = attempts > 0 ? (correct / attempts) * 100 : 0;
+  const ladder: [AcademicRankId, number, number][] = [["chainiki", 0, 0], ["kursanti", 10, 50], ["bakalavri", 30, 60], ["magistranti", 60, 70], ["magistri", 100, 78], ["doqtoranti", 150, 84], ["doqtori", 220, 90], ["profesori", 250, 94], ["akademikosi", 300, 97]];
+  return [...ladder].reverse().find(([, count, percent]) => unique >= count && accuracy >= percent)
+    ? ACADEMIC_RANKS[[...ladder].reverse().find(([, count, percent]) => unique >= count && accuracy >= percent)![0]]
+    : ACADEMIC_RANKS.chainiki;
+}
 
-  if (override === 'akademikosi') return ACADEMIC_RANKS.akademikosi;
-  if (override === 'chainiki') return ACADEMIC_RANKS.chainiki;
-
-  if (attempts === 0) return ACADEMIC_RANKS.kursanti;
-
-  const accuracy = Math.round((correct / attempts) * 100);
-
-  if (attempts >= 5 && accuracy < 55) {
-    return ACADEMIC_RANKS.chainiki; // Demoted to lowest!
-  }
-  if (attempts >= 50 && accuracy >= 97) {
-    return ACADEMIC_RANKS.akademikosi; // Highest!
-  }
-  if (attempts >= 30 && accuracy >= 90) {
-    return ACADEMIC_RANKS.doqtori;
-  }
-  if (attempts >= 20 && accuracy >= 80) {
-    return ACADEMIC_RANKS.magistri;
-  }
-  if (attempts >= 10 && accuracy >= 68) {
-    return ACADEMIC_RANKS.bakalavri;
-  }
-  return ACADEMIC_RANKS.kursanti;
+export function AcademicMedal({ rank }: { rank: AcademicRank }) {
+  return <svg viewBox="0 0 80 96" className="w-14 h-16 shrink-0" role="img" aria-label={rank.regalia}>
+    <path d="M19 0h17l8 34-15 9zM44 0h17L51 43l-15-9z" fill="#14213d" />
+    <path d="M26 0h4l10 36-4 2zM50 0h4L44 38l-4-2z" fill="#d9a841" />
+    <circle cx="40" cy="57" r="31" fill={rank.level < 3 ? '#bb8551' : rank.level < 5 ? '#bfc9d8' : '#d9a841'} stroke="#14213d" strokeWidth="2" />
+    <circle cx="40" cy="57" r="25" fill="#14213d" stroke="#f6dfaa" />
+    <text x="40" y="64" textAnchor="middle" fontSize="24">{rank.icon}</text>
+    <text x="40" y="82" textAnchor="middle" fontSize="9" fill="#14213d" fontWeight="bold">{rank.level}</text>
+  </svg>;
 }
 
 export function setAcademicOverride(category: string, status: 'akademikosi' | 'chainiki' | null) {
@@ -321,6 +346,10 @@ export function ExamLearningAnalysis({
       className="rounded-3xl neu-card border border-white/80 p-4 sm:p-6 text-left space-y-4 shadow-neu-card"
       aria-label="სწავლის ანალიტიკა და აკადემიური რეგალიები"
     >
+      <details className="rounded-2xl border border-gold/20 bg-white/70 p-3">
+        <summary className="cursor-pointer text-sm font-bold text-navy">აკადემიური გზა · 9 წოდება და მედალი</summary>
+        <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2 mt-3">{Object.values(ACADEMIC_RANKS).map(rank => <div key={rank.id} title={rank.requirement} className={`flex flex-col items-center text-center rounded-xl p-2 border ${rank.level <= currentRank.level ? 'border-gold/40 bg-amber-50' : 'border-slate-100 opacity-50'}`}><AcademicMedal rank={rank} /><span className="text-[10px] font-bold text-navy">{rank.title}</span><span className="text-[9px] text-slate-500 mt-1">{rank.requirement}</span></div>)}</div>
+      </details>
       {/* ======================================================== */}
       {/* 1. ACADEMIC STATUS & REGALIA HERO BANNER                 */}
       {/* ======================================================== */}
@@ -330,12 +359,12 @@ export function ExamLearningAnalysis({
           {/* Left: Icon & Rank Title */}
           <div className="flex items-center gap-3.5">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white shadow-md border-2 border-white flex items-center justify-center text-3xl sm:text-4xl shrink-0">
-              {currentRank.icon}
+              <AcademicMedal rank={currentRank} />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black uppercase border ${currentRank.badgeColor}`}>
-                  დონე {currentRank.level}/6 · {currentRank.title}
+                  დონე {currentRank.level}/9 · {currentRank.title}
                 </span>
                 {currentRank.id === 'akademikosi' && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-gold text-navy shadow-xs flex items-center gap-1 animate-pulse">
@@ -346,7 +375,7 @@ export function ExamLearningAnalysis({
                 {currentRank.id === 'chainiki' && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white flex items-center gap-1">
                     <ShieldAlert size={12} />
-                    <span>გაქვეითებული</span>
+                    <span>სწავლის დასაწყისი</span>
                   </span>
                 )}
               </div>
@@ -384,9 +413,9 @@ export function ExamLearningAnalysis({
 
           <div className="text-[10px] text-slate-500 font-medium">
             {currentRank.id === 'chainiki' ? (
-              <span className="text-rose-700 font-bold">⚠️ საჭიროა 5 სწორი პასუხი კურსანტამდე დასაწინაურებლად!</span>
+              <span className="text-rose-700 font-bold">🎒 შემდეგი საფეხური: 10 განსხვავებული ბილეთი და მინიმუმ 50% სიზუსტე.</span>
             ) : currentRank.id === 'akademikosi' ? (
-              <span className="text-amber-800 font-bold">👑 უმაღლესი რეგალია დაცულია — შეცდომა არ დაუშვა!</span>
+              <span className="text-amber-800 font-bold">👑 აკადემიკოსსაც სჭირდება გამეორება — ცოდნა გზაში გამოგადგება.</span>
             ) : (
               <span>დაწინაურების მოთხოვნა: {currentRank.requirement}</span>
             )}
@@ -551,7 +580,7 @@ export function ExamLearningAnalysis({
 
         {attempts === 0 ? (
           <p className="text-xs text-amber-900/90 leading-relaxed">
-            💡 <strong>პირადი დიაგნოსტიკა ჯერ ცარიელია:</strong> გაიარეთ პირველი 15 კითხვა ან ოფიციალური სიმულაცია. გამოუცნობი ალგორითმი ავტომატურად გააანალიზებს თქვენს შეცდომებს, შემოგთავაზებთ ხაფანგებს და განსაზღვრავს თქვენს აკადემიურ წოდებას (ჩაინიკიდან აკადემიკოსამდე).
+            💡 <strong>პირადი დიაგნოსტიკა ჯერ ცარიელია:</strong> გაიარეთ პირველი 15 კითხვა ან ოფიციალური სიმულაცია. გამოუცნობი ალგორითმი ავტომატურად გააანალიზებს თქვენს შეცდომებს, შემოგთავაზებთ ხაფანგებს და განსაზღვრავს თქვენს აკადემიურ წოდებას (მსმენელიდან აკადემიკოსამდე).
           </p>
         ) : weakTopics.length > 0 ? (
           <div className="space-y-2">

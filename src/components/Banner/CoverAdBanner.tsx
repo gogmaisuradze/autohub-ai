@@ -229,11 +229,11 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
     badgeBg: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40',
     imageUrl: 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1920&q=85',
     carModelHint: 'PURE DRIVING PLEASURE & FREEDOM OF THE OPEN ROAD',
-    description: 'მომსახურების სააგენტოს 2026 წლის ოფიციალური საგამოცდო ბილეთები (A, B, C, D): 30-წუთიანი სიმულაცია, შეცდომების ანალიზი და მზადყოფნის ინდექსი.',
+    description: 'მომსახურების სააგენტოს 2026 წლის ოფიციალური საგამოცდო ბილეთები (A, B, C, D): 20–40-წუთიანი სიმულაცია, შეცდომების ანალიზი და მზადყოფნის ინდექსი.',
     highlights: [
       '2026 წლის ოფიციალური ბილეთები',
-      'რეალური გამოცდის ტაიმერი (30 წთ)',
-      'A, B, C, D ყველა კატეგორია',
+      'კატეგორიის შესაბამისი ტაიმერი (20–40 წთ)',
+      'ათი კატეგორიის სასწავლო ბილეთები',
       'შეცდომების ანალიზი & გამეორება'
     ],
     specs: [
@@ -701,8 +701,8 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                 <div className="bg-gradient-to-r from-indigo-500 to-indigo-400 h-1 rounded-full w-[60%]"></div>
               </div>
               <div className="flex items-center justify-between text-[10px] pt-0.5">
-                <span className="text-slate-300">⏱️ დრო: 22:45</span>
-                <span className="text-emerald-400 font-bold">შეცდომა: 0 / 3</span>
+                <span className="text-slate-300">⏱️ დროის ნიმუში: 22:45</span>
+                <span className="text-emerald-400 font-bold">შეცდომა: 0 / 5</span>
               </div>
             </div>
 

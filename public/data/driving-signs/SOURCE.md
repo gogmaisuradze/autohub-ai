@@ -1,0 +1,1 @@
+Community teaching reference: https://github.com/trongio/Prava-App public/seeded.sqlite and public/images/signs. 252 archived sign records; not a claim of current official completeness. Imported 2026-10-31. User reference: https://prava.ge/signs/category/mandatory
