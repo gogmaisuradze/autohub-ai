@@ -920,9 +920,15 @@ export const ParkingModule: React.FC<Props> = ({
 
         {/* 1. ძირითადი 4 ფანჯარა (ლოკაციით დაწყება, ქუჩის ნახვა რუკაზე, სლოტის ნომრის ჩაწერა, პარკირების დაწყება) */}
         <div>
-          <label className="text-xs font-black text-navy uppercase tracking-wider block mb-2.5">
-            1. აირჩიეთ პარკირების მოქმედება:
-          </label>
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-xs font-black text-navy uppercase tracking-wider flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-gold"></span>
+              1. აირჩიეთ პარკირების მოქმედება:
+            </label>
+            <span className="text-[10px] font-bold text-slate-600 bg-white/80 px-2.5 py-1 rounded-full border border-slate-200/60 shadow-2xs">
+              სწრაფი წვდომა
+            </span>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Card 1: ლოკაციით პარკინგის დაწყება */}
             <div
@@ -930,51 +936,60 @@ export const ParkingModule: React.FC<Props> = ({
                 sounds.playClick();
                 setSelectedParkingAction(selectedParkingAction === 'location' ? null : 'location');
               }}
-              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+              className={`p-4 sm:p-5 rounded-3xl cursor-pointer transition-all duration-200 relative flex flex-col justify-between overflow-hidden group ${
                 selectedParkingAction === 'location'
-                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
-                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+                  ? 'bg-white border-2 border-gold shadow-neu-flat ring-4 ring-gold/15 -translate-y-0.5'
+                  : 'neu-card shadow-neu-card border border-white/90 hover:border-gold/60 hover:-translate-y-0.5 hover:shadow-lg bg-white'
               }`}
             >
+              {selectedParkingAction === 'location' && (
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold via-amber-400 to-gold rounded-t-3xl" />
+              )}
               <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start justify-between gap-2 mb-2.5">
                   <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                      selectedParkingAction === 'location' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                    className={`w-11 h-11 rounded-2xl neu-circle flex items-center justify-center transition-all duration-300 shrink-0 border border-white ${
+                      selectedParkingAction === 'location'
+                        ? 'bg-gradient-to-br from-gold to-amber-500 text-navy font-bold shadow-gold-soft'
+                        : 'bg-white text-navy group-hover:text-gold group-hover:scale-105 group-hover:shadow-md'
                     }`}
                   >
                     <Navigation className="w-5 h-5" />
                   </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-amber-100 text-amber-950 border-amber-300 font-black ring-1 ring-amber-400/40">
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gold/15 text-navy border border-gold/40 shadow-2xs flex items-center gap-1.5 font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gold animate-ping"></span>
                     GPS დეტექცია
                   </span>
                 </div>
 
                 <div>
-                  <h4 className="text-xs sm:text-sm font-black text-navy">ლოკაციით დაწყება</h4>
-                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                  <h4 className="text-xs sm:text-sm font-black text-navy group-hover:text-gold transition-colors">
+                    ლოკაციით დაწყება
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium line-clamp-1 mt-0.5">
                     {activeParkedLot?.district_ge || 'ვაკე'} • {activeParkedLot?.categoryLabel_ge || 'ზონა A (1.00 ₾/სთ)'}
                   </p>
-                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
-                    ● GPS ავტომატური ამოცნობა
-                  </span>
+                  <div className="flex items-center gap-1.5 mt-2 text-[10px] font-mono font-bold text-slate-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span>GPS ავტომატური ამოცნობა</span>
+                  </div>
                 </div>
 
                 {selectedParkingAction === 'location' && (
-                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
-                    <Check size={11} className="stroke-[3]" />
+                  <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-gold text-navy flex items-center justify-center shadow-gold-soft animate-scale-in">
+                    <Check size={12} className="stroke-[3]" />
                   </div>
                 )}
               </div>
 
-              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
+              <div className={`mt-3 pt-2.5 border-t flex items-center justify-between text-[11px] font-sans font-bold transition-colors ${
                 selectedParkingAction === 'location'
                   ? 'border-gold/30 text-navy'
                   : 'border-slate-100 text-slate-500 group-hover:text-navy'
               }`}>
                 <span>დეტალები</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${
-                  selectedParkingAction === 'location' ? 'rotate-180 text-navy' : ''
+                <ChevronDown size={14} className={`transition-transform duration-300 ${
+                  selectedParkingAction === 'location' ? 'rotate-180 text-gold' : 'text-slate-400 group-hover:text-navy'
                 }`} />
               </div>
             </div>
@@ -985,51 +1000,60 @@ export const ParkingModule: React.FC<Props> = ({
                 sounds.playClick();
                 setSelectedParkingAction(selectedParkingAction === 'map' ? null : 'map');
               }}
-              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+              className={`p-4 sm:p-5 rounded-3xl cursor-pointer transition-all duration-200 relative flex flex-col justify-between overflow-hidden group ${
                 selectedParkingAction === 'map'
-                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
-                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+                  ? 'bg-white border-2 border-gold shadow-neu-flat ring-4 ring-gold/15 -translate-y-0.5'
+                  : 'neu-card shadow-neu-card border border-white/90 hover:border-gold/60 hover:-translate-y-0.5 hover:shadow-lg bg-white'
               }`}
             >
+              {selectedParkingAction === 'map' && (
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold via-amber-400 to-gold rounded-t-3xl" />
+              )}
               <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start justify-between gap-2 mb-2.5">
                   <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                      selectedParkingAction === 'map' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                    className={`w-11 h-11 rounded-2xl neu-circle flex items-center justify-center transition-all duration-300 shrink-0 border border-white ${
+                      selectedParkingAction === 'map'
+                        ? 'bg-gradient-to-br from-gold to-amber-500 text-navy font-bold shadow-gold-soft'
+                        : 'bg-white text-navy group-hover:text-gold group-hover:scale-105 group-hover:shadow-md'
                     }`}
                   >
                     <Map className="w-5 h-5" />
                   </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-200">
-                    რუკა & ზონა
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-navy/5 text-navy border border-navy/15 shadow-2xs flex items-center gap-1">
+                    <Map size={10} className="text-navy" />
+                    <span>რუკა & ზონა</span>
                   </span>
                 </div>
 
                 <div>
-                  <h4 className="text-xs sm:text-sm font-black text-navy">ქუჩის ნახვა რუკაზე</h4>
-                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                  <h4 className="text-xs sm:text-sm font-black text-navy group-hover:text-gold transition-colors">
+                    ქუჩის ნახვა რუკაზე
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium line-clamp-1 mt-0.5">
                     {activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'} #{activeParkedLot?.lotCode === '005' ? '34' : '34'}
                   </p>
-                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
-                    ● მზიურის მოპირდაპირედ
-                  </span>
+                  <div className="flex items-center gap-1.5 mt-2 text-[10px] font-mono font-bold text-slate-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span>მზიურის მოპირდაპირედ</span>
+                  </div>
                 </div>
 
                 {selectedParkingAction === 'map' && (
-                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
-                    <Check size={11} className="stroke-[3]" />
+                  <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-gold text-navy flex items-center justify-center shadow-gold-soft animate-scale-in">
+                    <Check size={12} className="stroke-[3]" />
                   </div>
                 )}
               </div>
 
-              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
+              <div className={`mt-3 pt-2.5 border-t flex items-center justify-between text-[11px] font-sans font-bold transition-colors ${
                 selectedParkingAction === 'map'
                   ? 'border-gold/30 text-navy'
                   : 'border-slate-100 text-slate-500 group-hover:text-navy'
               }`}>
                 <span>რუკის ნახვა</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${
-                  selectedParkingAction === 'map' ? 'rotate-180 text-navy' : ''
+                <ChevronDown size={14} className={`transition-transform duration-300 ${
+                  selectedParkingAction === 'map' ? 'rotate-180 text-gold' : 'text-slate-400 group-hover:text-navy'
                 }`} />
               </div>
             </div>
@@ -1040,51 +1064,59 @@ export const ParkingModule: React.FC<Props> = ({
                 sounds.playClick();
                 setSelectedParkingAction(selectedParkingAction === 'slot' ? null : 'slot');
               }}
-              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between ${
+              className={`p-4 sm:p-5 rounded-3xl cursor-pointer transition-all duration-200 relative flex flex-col justify-between overflow-hidden group ${
                 selectedParkingAction === 'slot'
-                  ? 'bg-white shadow-md border-gold ring-2 ring-gold/40'
-                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white'
+                  ? 'bg-white border-2 border-gold shadow-neu-flat ring-4 ring-gold/15 -translate-y-0.5'
+                  : 'neu-card shadow-neu-card border border-white/90 hover:border-gold/60 hover:-translate-y-0.5 hover:shadow-lg bg-white'
               }`}
             >
+              {selectedParkingAction === 'slot' && (
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold via-amber-400 to-gold rounded-t-3xl" />
+              )}
               <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start justify-between gap-2 mb-2.5">
                   <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                      selectedParkingAction === 'slot' ? 'bg-gold text-navy font-bold' : 'bg-slate-100 text-slate-600'
+                    className={`w-11 h-11 rounded-2xl neu-circle flex items-center justify-center transition-all duration-300 shrink-0 border border-white ${
+                      selectedParkingAction === 'slot'
+                        ? 'bg-gradient-to-br from-gold to-amber-500 text-navy font-bold shadow-gold-soft'
+                        : 'bg-white text-navy group-hover:text-gold group-hover:scale-105 group-hover:shadow-md'
                     }`}
                   >
                     <ParkingSquare className="w-5 h-5" />
                   </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-blue-100 text-blue-800 border-blue-200">
+                  <span className="text-[10px] font-black font-mono px-2.5 py-1 rounded-full bg-navy text-gold border border-gold/30 shadow-2xs">
                     ლოტი #{customSlotInput || activeParkedLot?.lotCode || '005'}
                   </span>
                 </div>
 
                 <div>
-                  <h4 className="text-xs sm:text-sm font-black text-navy">სლოტის ნომრის ჩაწერა</h4>
-                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                  <h4 className="text-xs sm:text-sm font-black text-navy group-hover:text-gold transition-colors">
+                    სლოტის ნომრის ჩაწერა
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium line-clamp-1 mt-0.5">
                     მუნიციპალური ლოტი #{customSlotInput || '005'}
                   </p>
-                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
-                    ● ჩაწერეთ ნომერი
-                  </span>
+                  <div className="flex items-center gap-1.5 mt-2 text-[10px] font-mono font-bold text-slate-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span>ჩაწერეთ ნომერი</span>
+                  </div>
                 </div>
 
                 {selectedParkingAction === 'slot' && (
-                  <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-gold text-navy flex items-center justify-center shadow-xs">
-                    <Check size={11} className="stroke-[3]" />
+                  <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-gold text-navy flex items-center justify-center shadow-gold-soft animate-scale-in">
+                    <Check size={12} className="stroke-[3]" />
                   </div>
                 )}
               </div>
 
-              <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] font-sans font-bold transition-colors ${
+              <div className={`mt-3 pt-2.5 border-t flex items-center justify-between text-[11px] font-sans font-bold transition-colors ${
                 selectedParkingAction === 'slot'
                   ? 'border-gold/30 text-navy'
                   : 'border-slate-100 text-slate-500 group-hover:text-navy'
               }`}>
                 <span>ჩაწერა</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${
-                  selectedParkingAction === 'slot' ? 'rotate-180 text-navy' : ''
+                <ChevronDown size={14} className={`transition-transform duration-300 ${
+                  selectedParkingAction === 'slot' ? 'rotate-180 text-gold' : 'text-slate-400 group-hover:text-navy'
                 }`} />
               </div>
             </div>
@@ -1099,18 +1131,21 @@ export const ParkingModule: React.FC<Props> = ({
                   handleStopParking();
                 }
               }}
-              className={`p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all border relative flex flex-col justify-between group active:scale-[0.98] ${
+              className={`p-4 sm:p-5 rounded-3xl cursor-pointer transition-all duration-200 relative flex flex-col justify-between overflow-hidden group active:scale-[0.99] ${
                 activeSession.isActive
-                  ? 'bg-white shadow-md border-rose-500 ring-2 ring-rose-500/30'
-                  : 'neu-btn bg-[#FAFBFD] text-slate-700 hover:text-navy border border-slate-200/80 hover:bg-white hover:border-gold/70'
+                  ? 'bg-white border-2 border-rose-500 shadow-neu-flat ring-4 ring-rose-500/20 -translate-y-0.5'
+                  : 'neu-card shadow-neu-card border border-white/90 hover:border-gold/60 hover:-translate-y-0.5 hover:shadow-lg bg-white'
               }`}
             >
+              {activeSession.isActive && (
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-rose-600 to-rose-500 rounded-t-3xl" />
+              )}
               <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold transition-colors ${
+                <div className="flex items-start justify-between gap-2 mb-2.5">
+                  <div className={`w-11 h-11 rounded-2xl neu-circle flex items-center justify-center font-bold transition-all duration-300 shrink-0 border border-white ${
                     activeSession.isActive
-                      ? 'bg-rose-50 text-rose-600'
-                      : 'bg-slate-100 text-navy group-hover:bg-gold/25'
+                      ? 'bg-rose-50 text-rose-600 shadow-sm'
+                      : 'bg-white text-navy group-hover:text-gold group-hover:scale-105 group-hover:shadow-md'
                   }`}>
                     {!activeSession.isActive ? (
                       <Zap className="w-5 h-5 text-gold fill-gold" />
@@ -1118,31 +1153,32 @@ export const ParkingModule: React.FC<Props> = ({
                       <Square className="w-5 h-5 fill-rose-600 text-rose-600" />
                     )}
                   </div>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                  <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border shadow-2xs flex items-center gap-1 ${
                     !activeSession.isActive
-                      ? 'bg-amber-100 text-amber-900 border-amber-200 font-black'
-                      : 'bg-rose-100 text-rose-800 border-rose-200 font-black'
+                      ? 'bg-gradient-to-r from-gold/20 to-amber-500/20 text-navy border-gold/50'
+                      : 'bg-rose-500 text-white border-rose-600 animate-pulse'
                   }`}>
                     {!activeSession.isActive ? '⚡ დაწყება' : '🛑 STOP'}
                   </span>
                 </div>
 
                 <div>
-                  <h4 className="text-xs sm:text-sm font-black text-navy">
+                  <h4 className="text-xs sm:text-sm font-black text-navy group-hover:text-gold transition-colors">
                     {!activeSession.isActive ? 'პარკირების დაწყება' : 'პარკირების შეწყვეტა'}
                   </h4>
-                  <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mt-0.5">
+                  <p className="text-[11px] text-slate-500 font-medium line-clamp-1 mt-0.5">
                     {!activeSession.isActive ? 'დააჭირეთ დასაწყებად' : 'სესიის დასრულება'}
                   </p>
-                  <span className="text-[9px] font-mono text-emerald-700 block mt-1 font-semibold">
-                    ● {!activeSession.isActive ? '15 წთ უფასო • ზონა A' : `ხანგრძლივობა: ${formatTime(activeSession.elapsedSeconds)}`}
-                  </span>
+                  <div className="flex items-center gap-1.5 mt-2 text-[10px] font-mono font-bold text-slate-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span>{!activeSession.isActive ? '15 წთ უფასო • ზონა A' : `ხანგრძლივობა: ${formatTime(activeSession.elapsedSeconds)}`}</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-sans font-bold text-slate-500 group-hover:text-navy transition-colors">
+              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] font-sans font-bold text-slate-500 group-hover:text-navy transition-colors">
                 <span>{!activeSession.isActive ? 'დაწყება' : 'შეწყვეტა'}</span>
-                <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform text-gold" />
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-gold" />
               </div>
             </div>
           </div>
@@ -1150,9 +1186,10 @@ export const ParkingModule: React.FC<Props> = ({
 
         {/* 2. დეტალური ჩამოსაშლელი ინსტრუქცია/პარამეტრები (ჩნდება მხოლოდ დაჭერისას) */}
         {selectedParkingAction && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border border-slate-200/80 shadow-xs space-y-3.5 animate-fade-in">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <h4 className="text-xs font-black text-navy flex items-center gap-1.5 uppercase tracking-wide">
+          <div className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border-2 border-gold/40 bg-white space-y-4 animate-fade-in relative">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="text-xs font-black text-navy flex items-center gap-2 uppercase tracking-wide">
+                <span className="w-2 h-2 rounded-full bg-gold"></span>
                 <span>
                   {selectedParkingAction === 'location'
                     ? '2. ლოკაციის მონაცემები'
@@ -1170,35 +1207,35 @@ export const ParkingModule: React.FC<Props> = ({
                   sounds.playClick();
                   setSelectedParkingAction(null);
                 }}
-                className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-navy transition-all"
+                className="w-8 h-8 rounded-xl neu-circle flex items-center justify-center text-slate-500 hover:text-navy transition-all"
                 title="დახურვა"
               >
-                <X size={14} />
+                <X size={15} />
               </button>
             </div>
 
             {/* Content: Location */}
             {selectedParkingAction === 'location' && (
-              <div className="space-y-2.5 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
-                    <span className="text-[10px] text-slate-400 block font-bold uppercase">მდებარეობა</span>
-                    <strong className="text-navy text-xs block mt-0.5">{activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'} #{activeParkedLot?.lotCode === '005' ? '34' : '34'}</strong>
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 shadow-2xs">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">მდებარეობა</span>
+                    <strong className="text-navy text-xs sm:text-sm block mt-0.5">{activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'} #{activeParkedLot?.lotCode === '005' ? '34' : '34'}</strong>
                     <span className="text-[10px] text-slate-500 block mt-0.5">ვაკე • მზიურის მოპირდაპირედ</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
-                    <span className="text-[10px] text-slate-400 block font-bold uppercase">სატარიფო ზონა</span>
-                    <strong className="text-gold text-xs block mt-0.5">{activeParkedLot?.categoryLabel_ge || 'ზონა A (1.00 ₾/სთ)'}</strong>
+                  <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 shadow-2xs">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">სატარიფო ზონა</span>
+                    <strong className="text-gold text-xs sm:text-sm block mt-0.5">{activeParkedLot?.categoryLabel_ge || 'ზონა A (1.00 ₾/სთ)'}</strong>
                     <span className="text-[10px] text-emerald-600 font-bold block mt-0.5">✓ პირველი 15 წთ უფასო</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60">
-                    <span className="text-[10px] text-slate-400 block font-bold uppercase">GPS სიზუსტე</span>
-                    <strong className="text-navy text-xs block mt-0.5">±6.5 მეტრი</strong>
+                  <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 shadow-2xs">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">GPS სიზუსტე</span>
+                    <strong className="text-navy text-xs sm:text-sm block mt-0.5">±6.5 მეტრი</strong>
                     <span className="text-[10px] text-slate-500 block mt-0.5">14 თანამგზავრი აქტიურია</span>
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-1">
+                <div className="flex justify-end pt-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => {
@@ -1206,7 +1243,7 @@ export const ParkingModule: React.FC<Props> = ({
                       handleStartParking();
                       setSelectedParkingAction(null);
                     }}
-                    className="px-4 py-2 rounded-xl bg-navy hover:bg-slate-800 text-gold font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                    className="px-5 py-2.5 rounded-2xl bg-navy hover:bg-slate-800 text-gold font-bold text-xs transition-all flex items-center gap-2 shadow-sm hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <Zap size={14} className="fill-gold text-gold" />
                     <span>ამ ლოკაციით პარკირების დაწყება</span>
@@ -1217,8 +1254,8 @@ export const ParkingModule: React.FC<Props> = ({
 
             {/* Content: Map */}
             {selectedParkingAction === 'map' && (
-              <div className="space-y-2.5 text-xs">
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="space-y-3 text-xs">
+                <div className="p-4 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
                     <strong className="text-navy block font-bold text-xs sm:text-sm">
                       {activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'} #{activeParkedLot?.lotCode === '005' ? '34' : '34'}
@@ -1245,7 +1282,7 @@ export const ParkingModule: React.FC<Props> = ({
             {/* Content: Slot Input */}
             {selectedParkingAction === 'slot' && (
               <div className="space-y-3 text-xs">
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 space-y-2.5">
+                <div className="p-4 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 shadow-2xs space-y-3">
                   <label className="text-[11px] text-slate-600 block font-bold">
                     ჩაწერეთ საგზაო ნიშანზე მითითებული საპარკინგე სლოტის/ლოტის ნომერი:
                   </label>
@@ -1272,10 +1309,10 @@ export const ParkingModule: React.FC<Props> = ({
                             setCustomSlotInput(code);
                             setParkingLocationInput(`ზონა #${code} — ი. ჭავჭავაძის გამზირი`);
                           }}
-                          className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold border transition-all ${
                             customSlotInput === code
                               ? 'bg-gold text-navy border-gold shadow-xs font-black'
-                              : 'bg-white text-slate-600 border-slate-200 hover:border-gold'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-gold shadow-2xs'
                           }`}
                         >
                           #{code}
@@ -1309,7 +1346,7 @@ export const ParkingModule: React.FC<Props> = ({
               sounds.playClick();
               document.getElementById('parking-zones-map-section')?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="btn-stitch-soft w-full sm:w-auto px-6 py-3.5 text-xs font-bold flex items-center justify-center gap-2 group transition-all"
+            className="btn-stitch-soft w-full sm:w-auto px-6 py-3.5 text-xs font-black flex items-center justify-center gap-2 group transition-all rounded-2xl shadow-sm hover:border-gold hover:text-gold"
           >
             <Map className="w-4 h-4 text-gold group-hover:scale-110 transition-transform" />
             <span>სრული რუკის ნახვა</span>
@@ -1325,8 +1362,10 @@ export const ParkingModule: React.FC<Props> = ({
                 handleStopParking();
               }
             }}
-            className={`w-full sm:flex-1 py-3.5 sm:py-4 px-8 text-sm sm:text-base font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all ${
-              !activeSession.isActive ? 'btn-stitch-navy' : 'btn-stitch-rose text-white'
+            className={`w-full sm:flex-1 py-3.5 sm:py-4 px-8 text-sm sm:text-base font-black flex items-center justify-center gap-2 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all border ${
+              !activeSession.isActive
+                ? 'bg-gradient-to-r from-navy via-slate-900 to-navy text-gold border-gold/40'
+                : 'bg-gradient-to-r from-rose-600 via-rose-700 to-rose-600 text-white border-rose-400'
             }`}
           >
             <Zap className={`w-5 h-5 ${!activeSession.isActive ? 'text-gold fill-gold' : 'text-white fill-white'}`} />

@@ -1,9 +1,12 @@
-import { SignsLearning, ExamLeaderboard, saveExamScore } from './ExamExtras';
+import { TicketReconstruction, ReconstructionSwitch, RECONSTRUCTION_IDS } from './TicketReconstruction';
+import { SignsLearning, ExamLeaderboard, ExamAchievement, saveExamScore } from './ExamExtras';
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { EXAM_CATEGORIES, ExamCategory, examCategory } from './examCategories';
 import { sounds } from '../../services/soundEffects';
 import { selectStudyRound, selectExamRound } from './adaptiveStudy';
+import { ExamCategoryCarouselStrip } from './ExamCategoryCarouselStrip';
+import { RegaliaMedalsModal, RegaliaMedalVisual } from './RegaliaMedalsModal';
 import {
   ExamLearningAnalysis,
   readLearningHistory,
@@ -258,6 +261,14 @@ function preserveCombinedCategoryProgress() {
 export const DrivingExamWidget: React.FC = () => {
   // Category Selector: B (921), A (760), C (954), D (845), AM (327)
   const [activeCategory, setActiveCategory] = useState<ExamCategory>('B');
+  const [openReconstruction, setOpenReconstruction] = useState<number | null>(null);
+  const [reconstructionsEnabled, setReconstructionsEnabled] = useState(() => {
+    try { return localStorage.getItem('autohub.exam.reconstructions.v1') === 'on'; } catch { return false; }
+  });
+  const toggleReconstructions = (enabled: boolean) => {
+    setReconstructionsEnabled(enabled);
+    try { localStorage.setItem('autohub.exam.reconstructions.v1', enabled ? 'on' : 'off'); } catch { /* Session preference still works. */ }
+  };
   const categoryConfig = examCategory(activeCategory);
   // Media Filter: All, With Photo, Without Photo (Text only)
   const [mediaFilter, setMediaFilter] = useState<'all' | 'with_image' | 'without_image'>('all');
@@ -299,6 +310,9 @@ export const DrivingExamWidget: React.FC = () => {
     regalia: string;
     icon: string;
   } | null>(null);
+
+  // Academic Regalia & Medals Modal State
+  const [isRegaliaModalOpen, setIsRegaliaModalOpen] = useState(false);
 
   const questionCache = useRef<Record<string, Promise<ExamQuestion[]>>>({});
   const [categoryQuestions, setCategoryQuestions] = useState<ExamQuestion[]>([]);
@@ -444,6 +458,7 @@ export const DrivingExamWidget: React.FC = () => {
 
   // Helper to launch a test session
   const startSession = (questions: ExamQuestion[], mode: 'exam' | 'practice', customTime = 1800) => {
+    setOpenReconstruction(null);
     startedAtRef.current = Date.now();
     deadlineRef.current = startedAtRef.current + customTime * 1000;
     finishedAtRef.current = 0;
@@ -719,6 +734,7 @@ export const DrivingExamWidget: React.FC = () => {
   const handleNext = () => {
     sounds.playClick();
     if (currentIdx < activeQuestions.length - 1) {
+      setOpenReconstruction(null);
       setCurrentIdx(prev => prev + 1);
     } else {
       // Round completed - evaluate promotion / demotion
@@ -759,7 +775,8 @@ export const DrivingExamWidget: React.FC = () => {
   const handlePrev = () => {
     sounds.playClick();
     if (currentIdx > 0) {
-      setCurrentIdx(prev => prev - 1);
+      setOpenReconstruction(null);
+    setCurrentIdx(prev => prev - 1);
     }
   };
 
@@ -868,6 +885,21 @@ export const DrivingExamWidget: React.FC = () => {
 
   return (
     <div id="driving-exam-widget" className="space-y-4">
+      <ExamAchievement />
+      {(viewMode === 'subject_picker' || viewMode === 'results') && <ReconstructionSwitch enabled={reconstructionsEnabled} onChange={toggleReconstructions} />}
+      {viewMode === 'subject_picker' && <button type="button" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-navy" onClick={async () => {
+        try {
+          const questions = await loadCategoryQuestions('B');
+          const sample = questions.find(q => q.id === 297);
+          if (!sample) return;
+          setActiveCategory('B');
+          setExtrasTab('tickets');
+          setSessionSubtype('standard');
+          toggleReconstructions(true);
+          startSession([sample], 'practice');
+        } catch { setQuestionLoadError(true); }
+      }}>რეკონსტრუქციის ნიმუში · ბილეთი #297 →</button>}
+
       {(viewMode === 'subject_picker' || viewMode === 'results') && <>
         <nav aria-label="სწავლის განყოფილებები" className="flex flex-wrap gap-2 rounded-2xl bg-slate-100 p-2">
           {([['tickets', 'ბილეთები'], ['signs', 'ნიშნების შესწავლა'], ['ranking', 'საუკეთესო ოცეული']] as const).map(([id, label]) => <button key={id} onClick={() => setExtrasTab(id)} aria-pressed={extrasTab === id} className={`rounded-xl px-4 py-2 text-sm font-bold ${extrasTab === id ? 'bg-navy text-white' : 'text-slate-600 hover:bg-white'}`}>{label}</button>)}
@@ -985,31 +1017,15 @@ export const DrivingExamWidget: React.FC = () => {
 
           </div>
 
-          {/* Categories Preview Pills Strip (Interactive switcher) */}
-          <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
-            <span className="text-[11px] text-slate-400 font-bold mr-1">კატეგორიები:</span>
-            {EXAM_CATEGORIES.map(c => {
-              const isCatActive = activeCategory === c.cat;
-              return (
-                <button
-                  key={c.cat}
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setActiveCategory(c.cat);
-                  }}
-                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
-                    isCatActive
-                      ? 'bg-gold/25 text-gold border-gold/70 shadow-2xs font-black'
-                      : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  <span>{c.icon}</span>
-                  <span>{c.label}</span>
-                  <span className="opacity-70 text-[10px]">({c.count})</span>
-                </button>
-              );
-            })}
+          {/* Categories Carousel Strip (Interactive switcher) */}
+          <div className="pt-1">
+            <ExamCategoryCarouselStrip
+              activeCategory={activeCategory}
+              onSelectCategory={(c) => setActiveCategory(c)}
+              onOpenRegaliaModal={() => setIsRegaliaModalOpen(true)}
+              currentRankTitle={academicRank.title}
+              currentRankLevel={academicRank.level}
+            />
           </div>
 
           {/* 4 Thematic Metric Tiles */}
@@ -1041,10 +1057,20 @@ export const DrivingExamWidget: React.FC = () => {
               <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">{categoryConfig.maxErrors + 1}-ე შეცდომა ჩაჭრაა</span>
             </div>
 
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/40 transition-colors backdrop-blur-sm">
-              <span className="text-[10px] text-slate-400 block uppercase font-bold flex items-center gap-1">
-                <Award size={11} className="text-amber-300" />
-                <span>აკადემიური სტატუსი</span>
+            <div
+              onClick={() => {
+                sounds.playClick();
+                setIsRegaliaModalOpen(true);
+              }}
+              className="p-3 sm:p-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:border-gold/60 transition-all backdrop-blur-sm cursor-pointer group hover:scale-[1.01] active:scale-[0.99]"
+              title="დააჭირეთ რეგალიებისა და მედლების სანახავად (9 დონე)"
+            >
+              <span className="text-[10px] text-slate-400 block uppercase font-bold flex items-center justify-between gap-1 group-hover:text-gold transition-colors">
+                <span className="flex items-center gap-1">
+                  <Award size={11} className="text-amber-300" />
+                  <span>აკადემიური სტატუსი</span>
+                </span>
+                <span className="text-gold text-[9px] font-bold">9 დონე →</span>
               </span>
               <span className="text-sm sm:text-base font-black text-amber-300 block mt-1 truncate">
                 {academicRank.icon} {academicRank.title}
@@ -1080,50 +1106,77 @@ export const DrivingExamWidget: React.FC = () => {
       {viewMode === 'subject_picker' && (
         <section className="p-4 sm:p-6 rounded-3xl neu-card border border-white/80 space-y-5 shadow-neu-card">
 
-          {/* Header & Category Switcher */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🚗</span>
-                <h2 className="text-lg sm:text-xl font-black text-navy tracking-tight">
-                  საგამოცდო ბილეთების პაკეტები & თემები
-                </h2>
+          {/* Minimalist Academic Regalia & Medals Status Strip */}
+          <div className="p-4 sm:p-5 rounded-3xl neu-card shadow-neu-card border border-white bg-white flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5 w-full md:w-auto">
+              <RegaliaMedalVisual rank={academicRank} size="md" />
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-md bg-gold/20 text-navy border border-gold/40">
+                    დონე {academicRank.level} / 9
+                  </span>
+                  <span className="text-xs font-black text-navy">
+                    {academicRank.title}
+                  </span>
+                  <span className="text-[10px] text-emerald-700 font-bold hidden sm:inline-flex items-center gap-0.5">
+                    <Check size={11} className="stroke-[3]" />
+                    <span>მოპოვებული რეგალია</span>
+                  </span>
+                </div>
+                <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Award size={13} className="text-gold" />
+                  <span>რეგალია: <strong className="text-navy">{academicRank.regalia}</strong></span>
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono">
+                  ათვისებული: {Object.keys(learningHistory).length} ბილეთი • სიზუსტე: {cumulativeAttempts > 0 ? Math.round((cumulativeCorrect / cumulativeAttempts) * 100) : 0}%
+                </div>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                სასწავლო ბილეთები · პერსონალური პროგრესი თითოეულ კატეგორიაში
-              </p>
-              <p className="text-[11px] text-slate-500 mt-1">{categoryConfig.verified ? 'ჩაბარების ზღვარი: მომსახურების სააგენტოს წესით.' : 'ამ კატეგორიის გამოცდა სასწავლო რეჟიმშია; ოფიციალური ფორმატი გადასამოწმებელია.'} ბაზა სასწავლო წყაროა; ოფიციალური განახლებების გადამოწმება საჭიროა.</p>
             </div>
 
-            {/* Category Selector Tabs */}
-            <div data-tour="exam-category-tabs" className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-slate-100/90 border border-slate-200/80">
-              {EXAM_CATEGORIES.map(item => {
-                const isActive = activeCategory === item.cat;
-                return (
-                  <button
-                    key={item.cat}
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setActiveCategory(item.cat as typeof activeCategory);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      isActive
-                        ? 'bg-navy text-white shadow-xs'
-                        : 'text-slate-600 hover:text-navy hover:bg-white/60'
-                    }`}
-                  >
-                    <span>{item.icon}</span>
-                    <span>{item.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
-                    }`}>
-                      {item.count}
-                    </span>
-                  </button>
-                );
-              })}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setIsRegaliaModalOpen(true);
+              }}
+              className="btn-stitch-soft w-full md:w-auto px-4 py-2.5 text-xs font-bold text-navy hover:text-gold flex items-center justify-center gap-2 shadow-2xs group transition-all"
+            >
+              <Sparkles size={14} className="text-gold group-hover:scale-110 transition-transform" />
+              <span>რეგალიები & მედლები (9 დონე)</span>
+              <span className="text-gold font-bold">→</span>
+            </button>
+          </div>
+
+          {/* Dedicated Category Carousel Strip (AM, B, A, C, D, C1, D1, Military, Tram, T/S) */}
+          <div data-tour="exam-category-tabs" className="py-1">
+            <ExamCategoryCarouselStrip
+              activeCategory={activeCategory}
+              onSelectCategory={(itemCat) => {
+                sounds.playClick();
+                setActiveCategory(itemCat);
+              }}
+              onOpenRegaliaModal={() => setIsRegaliaModalOpen(true)}
+              currentRankTitle={academicRank.title}
+              currentRankLevel={academicRank.level}
+            />
+          </div>
+
+          {/* Header & Verification Info */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-navy tracking-tight flex items-center gap-2">
+                <span>საგამოცდო ბილეთების პაკეტები & თემები</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-navy/5 text-navy border border-navy/15 font-mono">
+                  {categoryConfig.label}
+                </span>
+              </h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                {categoryConfig.verified ? 'ჩაბარების ზღვარი: მომსახურების სააგენტოს წესით.' : 'სასწავლო რეჟიმი · ოფიციალური ფორმატი გადასამოწმებელია.'} პერსონალური პროგრესი თითოეულ თემაში.
+              </p>
             </div>
+            <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-xl shrink-0 self-start sm:self-auto">
+              სულ: {totalCategoryCount || categoryConfig.count} ბილეთი
+            </span>
           </div>
 
           {/* Media Type Filter Strip */}
@@ -1823,6 +1876,15 @@ export const DrivingExamWidget: React.FC = () => {
             <h4 className="text-base sm:text-lg font-black text-navy leading-snug pt-1">
               {currentQ.text}
             </h4>
+            {!questionImageUrl && RECONSTRUCTION_IDS.has(currentQ.id) && <>
+              {isAnswered ? <button type="button" aria-expanded={openReconstruction === currentQ.id} onClick={() => {
+                toggleReconstructions(true);
+                setOpenReconstruction(openReconstruction === currentQ.id ? null : currentQ.id);
+              }} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-navy hover:border-gold/50">
+                {openReconstruction === currentQ.id ? 'რეკონსტრუქციის დამალვა' : 'სურვილის შემთხვევაში · რეკონსტრუქციის ნახვა'}
+              </button> : <p className="text-[11px] text-slate-500">პასუხის შემდეგ შეძლებ სასწავლო რეკონსტრუქციის სურვილისამებრ გახსნას.</p>}
+              {isAnswered && openReconstruction === currentQ.id && <TicketReconstruction id={currentQ.id} />}
+            </>}
           </div>
 
           {/* ======================================================== */}
@@ -2134,6 +2196,16 @@ export const DrivingExamWidget: React.FC = () => {
 
         </div>
       )}
+
+      {/* Academic Regalia & Medals Modal (9 Levels) */}
+      <RegaliaMedalsModal
+        isOpen={isRegaliaModalOpen}
+        onClose={() => setIsRegaliaModalOpen(false)}
+        currentRank={academicRank}
+        uniqueTickets={Object.keys(learningHistory).length}
+        accuracy={cumulativeAttempts > 0 ? Math.round((cumulativeCorrect / cumulativeAttempts) * 100) : 0}
+        category={activeCategory}
+      />
 
       </>}
     </div>

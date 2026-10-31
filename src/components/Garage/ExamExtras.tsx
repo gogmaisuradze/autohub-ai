@@ -1,17 +1,64 @@
 import React, { useEffect, useState } from 'react';
+import confetti from 'canvas-confetti';
 import { EXAM_CATEGORIES, ExamCategory } from './examCategories';
 
 type Score = { id: string; name: string; category: ExamCategory; correct: number; total: number; elapsed: number; date: number };
 const scoreKey = 'autohub.exam.scores.v1';
 function read<T>(key: string, fallback: T): T { try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; } catch { return fallback; } }
+export function rankExamScores(scores: Score[], category: ExamCategory) {
+  const names = new Set<string>();
+  return scores.filter(s => s.category === category)
+    .sort((a, b) => b.correct / b.total - a.correct / a.total || a.elapsed - b.elapsed || a.date - b.date)
+    .filter(s => { const key = s.name.trim().toLocaleLowerCase(); if (names.has(key)) return false; names.add(key); return true; }).slice(0, 20);
+}
+export type ExamAward = { name: string; place: number; category: ExamCategory; medal: string; title: string };
 export function saveExamScore(category: ExamCategory, correct: number, total: number, elapsed: number) {
   try {
     const name = read<string>('autohub.exam.nickname', 'სტუმარი').trim().slice(0, 40) || 'სტუმარი';
+    const identity = name.toLocaleLowerCase();
     const scores = read<Score[]>(scoreKey, []);
+    const previousPlace = rankExamScores(scores, category).findIndex(s => s.name.toLocaleLowerCase() === identity) + 1;
     scores.push({ id: crypto.randomUUID(), name, category, correct, total, elapsed: Math.max(0, elapsed), date: Date.now() });
-    localStorage.setItem(scoreKey, JSON.stringify(scores.slice(-1000)));
+    const stored = scores.slice(-1000);
+    localStorage.setItem(scoreKey, JSON.stringify(stored));
     window.dispatchEvent(new Event('autohub-exam-score'));
+    const place = rankExamScores(stored, category).findIndex(s => s.name.toLocaleLowerCase() === identity) + 1;
+    const key = `autohub.exam.award.v1.${category}.${identity}`;
+    const previousBest = read<number>(key, previousPlace || 21);
+    if (!place || place >= previousBest) return;
+    localStorage.setItem(key, JSON.stringify(place));
+    const medal = place === 1 ? '🥇' : place === 2 ? '🥈' : place === 3 ? '🥉' : '🏅';
+    const title = place === 1 ? 'ოქროს მედალი — პირველი ადგილი!' : place === 2 ? 'ვერცხლის მედალი — მეორე ადგილი!' : place === 3 ? 'ბრინჯაოს მედალი — მესამე ადგილი!' : 'საუკეთესო ოცეულის საპატიო მედალი!';
+    const award: ExamAward = { name, place, category, medal, title };
+    window.dispatchEvent(new CustomEvent('autohub-exam-award', { detail: award }));
+    return award;
   } catch { /* A storage failure must not interrupt the completed exam. */ }
+}
+
+export function ExamAchievement() {
+  const [award, setAward] = useState<ExamAward | null>(null);
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const celebrate = (event: Event) => {
+      setAward((event as CustomEvent<ExamAward>).detail);
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => setAward(null), 15000);
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        confetti({ particleCount: 75, spread: 65, origin: { y: 0.35 }, colors: ['#d9a841', '#14213d', '#ffffff'], disableForReducedMotion: true });
+      }
+    };
+    window.addEventListener('autohub-exam-award', celebrate);
+    return () => { window.removeEventListener('autohub-exam-award', celebrate); if (timeout) clearTimeout(timeout); };
+  }, []);
+  if (!award) return null;
+  return <aside role="status" aria-live="polite" aria-atomic="true" className="fixed z-[100] top-24 right-3 left-3 sm:left-auto sm:right-6 sm:w-96 rounded-3xl border-2 border-gold bg-navy p-5 text-white shadow-2xl">
+    <button type="button" aria-label="მილოცვის დახურვა" onClick={() => setAward(null)} className="absolute top-2 right-3 rounded-lg p-2 text-white/70 hover:text-white">✕</button>
+    <div className="text-5xl mb-3" aria-hidden="true">{award.medal}</div>
+    <h2 className="text-lg font-black text-gold">გილოცავთ, {award.name}!</h2>
+    <p className="mt-2 font-bold">{award.title}</p>
+    <p className="mt-2 text-sm text-slate-200">{EXAM_CATEGORIES.find(c => c.cat === award.category)?.label} კატეგორიაში დაიკავე #{award.place} ადგილი. აკადემიური საბჭო ტაშს გიკრავს! 👏</p>
+    <p className="mt-3 text-[11px] text-slate-400">ამ ბრაუზერის საუკეთესო ოცეული · ახალი საუკეთესო ადგილი</p>
+  </aside>;
 }
 const formatTime = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
 export function ExamLeaderboard({ category }: { category: ExamCategory }) {
@@ -20,9 +67,7 @@ export function ExamLeaderboard({ category }: { category: ExamCategory }) {
   const [scores, setScores] = useState(() => read<Score[]>(scoreKey, []));
   const [saved, setSaved] = useState(true);
   useEffect(() => { const update = () => setScores(read<Score[]>(scoreKey, [])); window.addEventListener('autohub-exam-score', update); window.addEventListener('storage', update); return () => { window.removeEventListener('autohub-exam-score', update); window.removeEventListener('storage', update); }; }, []);
-  const sorted = scores.filter(s => s.category === filter).sort((a, b) => b.correct / b.total - a.correct / a.total || a.elapsed - b.elapsed || a.date - b.date);
-  const names = new Set<string>();
-  const top = sorted.filter(s => { const key = s.name.trim().toLocaleLowerCase(); if (names.has(key)) return false; names.add(key); return true; }).slice(0, 20);
+  const top = rankExamScores(scores, filter);
   return <section className="rounded-3xl bg-white border border-slate-200 p-5 sm:p-7 space-y-4">
     <h2 className="text-xl font-black text-navy">🏆 საუკეთესო ოცეული</h2>
     <p className="text-sm text-slate-500">ამ ბრაუზერის შედეგები · თითო სახელის საუკეთესო ჩაბარებული სრული გამოცდა. ჯერ სიზუსტე, შემდეგ ნაკლები დრო. სავარჯიშოები რეიტინგში არ შედის.</p>
