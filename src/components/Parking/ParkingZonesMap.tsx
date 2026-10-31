@@ -585,7 +585,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
         sounds.playClick();
         onSelectZone(zone);
         if (mapInstanceRef.current) {
-          mapInstanceRef.current.flyTo(zone.geometry.center, 16, { duration: 0.8 });
+          mapInstanceRef.current.fitBounds(L.latLngBounds(zone.geometry.polygon), { padding: [65, 65], maxZoom: 19, animate: true, duration: 0.8 });
         }
       });
 
@@ -599,7 +599,12 @@ export const ParkingZonesMap: React.FC<Props> = ({
     onSelectZone(zone);
     setTimeout(() => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.flyTo(zone.geometry.center, 16, { duration: 1.0 });
+        const L = (window as any).L;
+        if (L && zone.geometry.polygon?.length >= 3) {
+          mapInstanceRef.current.fitBounds(L.latLngBounds(zone.geometry.polygon), { padding: [65, 65], maxZoom: 19, animate: true, duration: 1.0 });
+        } else {
+          mapInstanceRef.current.flyTo(zone.geometry.center, 18, { duration: 1.0 });
+        }
       }
     }, 80);
   };

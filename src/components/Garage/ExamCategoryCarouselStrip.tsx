@@ -14,163 +14,25 @@ interface CategoryItemDef {
 /**
  * 10 Minimalist Vector Vehicle Silhouettes matching the driving license category strip.
  */
-export const CATEGORY_VEHICLE_ICONS: Record<string, (className?: string) => React.ReactNode> = {
-  // 1. AM - Scooter / Moped
-  AM: (className = 'w-7 h-5') => (
-    <svg viewBox="0 0 32 24" className={className} fill="currentColor">
-      {/* Rear & Front Wheels */}
-      <circle cx="7" cy="18" r="4" fill="none" stroke="currentColor" strokeWidth="2.2" />
-      <circle cx="25" cy="18" r="4" fill="none" stroke="currentColor" strokeWidth="2.2" />
-      {/* Scooter Frame & Body */}
-      <path d="M6 14 C8 11, 12 11, 14 14 L19 14 L22 8 C23 6.8, 25 6, 27 6 L28 7.5 L25 8.5 L23 13 L26 15 L20 15 C18 15, 17 12, 14 12 L10 15 Z" />
-      {/* Handlebar & Headlight */}
-      <path d="M23 6 L27 5.5 L28 7.5 L24 8 Z" />
-      {/* Seat */}
-      <path d="M10 11 C10 9.5, 15 9.5, 16 11 Z" />
-    </svg>
-  ),
+function VehicleIllustration({ category, className = 'w-[72px] h-11' }: { category: ExamCategory; className?: string }) {
+  const wheels = (positions: number[], y = 43, radius = 7) => positions.map(x => <g key={x}><circle cx={x} cy={y} r={radius} fill="#182235" /><circle cx={x} cy={y} r={radius * .55} fill="#c6ced8" /><circle cx={x} cy={y} r={radius * .2} fill="#667589" /></g>);
+  const windows = (xs: number[], y = 17, width = 11) => xs.map(x => <rect key={x} x={x} y={y} width={width} height="12" rx="2" fill="#a9d2e4" stroke="#52657c" strokeWidth=".7" />);
+  return <svg viewBox="0 0 112 60" className={className} fill="none" aria-hidden="true">
+    <ellipse cx="56" cy="53" rx="46" ry="2" fill="#15243b" opacity=".1" />
+    {category === 'B' && <><path d="M9 39l4-10 16-4 14-13h29l17 15 12 5 3 12H9z" fill="currentColor" /><path d="M36 25l10-10h11v10zm25-10h9l12 10H61z" fill="#a9d2e4" stroke="#52657c" strokeWidth=".7" /><path d="M16 34h11m61 0h11" stroke="#e4bb56" strokeWidth="3" /><path d="M57 28v12M32 40h46" stroke="#7c8da0" strokeWidth=".8" />{wheels([29,85])}</>}
+    {category === 'AM' && <><path d="M22 37q3-14 24-12l6 13h17l10-23h8L77 42H20z" fill="currentColor" /><path d="M35 23h17M79 15l-5-7h14" stroke="currentColor" strokeWidth="4" strokeLinecap="round" /><path d="M84 19l9 23M27 33l-5 10" stroke="#758699" strokeWidth="3" /><path d="M48 36h19" stroke="#d9a841" strokeWidth="3" />{wheels([23,91],44,9)}</>}
+    {category === 'A' && <><path d="M23 43l22-20 20 20H23l31-11 24-14 14 26" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" /><path d="M44 21q8-10 21 0l-4 9-18-2zM29 23h18l-6 6H27z" fill="currentColor" /><path d="M76 17l-4-8h12M80 15l8 3" stroke="currentColor" strokeWidth="3" /><circle cx="54" cy="36" r="6" fill="#7c8da0" />{wheels([22,91],44,10)}</>}
+    {(category === 'C' || category === 'C1') && <><rect x="8" y={category === 'C' ? 9 : 17} width={category === 'C' ? 58 : 52} height={category === 'C' ? 32 : 24} rx="2" fill="currentColor" /><path d="M68 42V17h19l13 15v10z" fill="currentColor" /><path d="M73 21h12l9 11H73z" fill="#a9d2e4" stroke="#52657c" /><path d="M13 16v19m9-19v19m9-19v19m9-19v19m9-19v19" stroke="#8d9cad" strokeWidth=".7" opacity=".6" /><path d="M7 43h97" stroke="#596a7e" strokeWidth="3" />{wheels(category === 'C' ? [25,44,87] : [25,87])}</>}
+    {(category === 'D' || category === 'D1') && <><path d={category === 'D' ? 'M8 40V13q0-5 5-5h83q5 0 5 5v29H8z' : 'M13 42V24l13-10h57l17 16v12z'} fill="currentColor" />{windows(category === 'D' ? [14,28,42,56,70,84] : [31,46,61],category === 'D' ? 15 : 19)}{category === 'D1' && <path d="M82 19l11 11H79V19z" fill="#a9d2e4" />}<path d="M12 35h86" stroke="#d9a841" strokeWidth="2" /><path d="M78 31v9" stroke="#5d7084" />{wheels(category === 'D' ? [25,85] : [30,83])}</>}
+    {category === 'Mil' && <><path d="M10 41V29l15-7 10-11h42l12 14 12 7v10z" fill="currentColor" /><path d="M39 15h14v12H29zm19 0h16l10 12H58z" fill="#a9d2e4" stroke="#52657c" /><path d="M17 33h15m35 0h18M49 30v11" stroke="#879078" strokeWidth="2" /><path d="M80 10V1" stroke="#5e7183" strokeWidth="2" />{wheels([28,84],43,10)}</>}
+    {category === 'Tram' && <><path d="M42 9l12-8 13 8-13 8zM40 1h29" stroke="currentColor" strokeWidth="2" /><rect x="8" y="17" width="94" height="27" rx="6" fill="currentColor" />{windows([15,29,43,57,71,85],22,10)}<path d="M11 39h88M6 51h100" stroke="#d9a841" strokeWidth="2" />{wheels([25,84],46,4)}</>}
+    {category === 'TS' && <><path d="M26 34V12h25v24h34l11 6H21z" fill="currentColor" /><path d="M30 16h16v15H30z" fill="#a9d2e4" stroke="#52657c" /><path d="M57 26h30l8 12H54z" fill="currentColor" /><path d="M71 26V14h4M23 11h31" stroke="currentColor" strokeWidth="3" />{wheels([30],41,13)}{wheels([88],45,8)}<path d="M24 34l12 14m-12 0 12-14" stroke="#758699" strokeWidth="1.3" /></>}
+  </svg>;
+}
 
-  // 2. B - Passenger Car (Sedan)
-  B: (className = 'w-8 h-5') => (
-    <svg viewBox="0 0 36 22" className={className} fill="currentColor">
-      {/* Wheels */}
-      <circle cx="9" cy="17" r="3.8" fill="none" stroke="currentColor" strokeWidth="2.2" />
-      <circle cx="27" cy="17" r="3.8" fill="none" stroke="currentColor" strokeWidth="2.2" />
-      {/* Car Body Profile */}
-      <path d="M3 14 L6 14 C7 11.5, 10.5 11.5, 11.5 14 L24.5 14 C25.5 11.5, 29 11.5, 30 14 L33.5 14 C34.5 14, 35 13, 34.5 12 L32 9.5 C31 8.5, 29.5 8, 28 8 L24 8 L18 4 C16.5 3, 14 3, 12 4 L7 8 L4 9 C2.5 9.5, 2 11, 2 12.5 Z" />
-      {/* Windows Silhouette */}
-      <path d="M13 5 C14.5 4.5, 16.5 4.5, 17.5 5 L23 8.5 L12 8.5 Z" fill="#FFFFFF" fillOpacity="0.4" />
-      <path d="M18.5 5 L23.5 5 C25 5, 26.5 6, 27 7.5 L27.5 8.5 L18.5 8.5 Z" fill="#FFFFFF" fillOpacity="0.4" />
-    </svg>
-  ),
-
-  // 3. A - Motorcycle
-  A: (className = 'w-8 h-5') => (
-    <svg viewBox="0 0 34 22" className={className} fill="currentColor">
-      {/* Wheels */}
-      <circle cx="7" cy="16" r="4.2" fill="none" stroke="currentColor" strokeWidth="2.2" />
-      <circle cx="27" cy="16" r="4.2" fill="none" stroke="currentColor" strokeWidth="2.2" />
-      {/* Bike Frame, Engine & Tank */}
-      <path d="M7 16 L13 10 L18 10 L22 13 L27 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M16 10 L24 6 L25 8 L21 11 Z" />
-      {/* Seat & Rear Cowl */}
-      <path d="M11 9 C11 7.5, 16 7.5, 17 9 L13 10 Z" />
-      {/* Handlebar & Windshield */}
-      <path d="M22 6 L26 4 L27 6 L24 7 Z" />
-      {/* Engine Block */}
-      <circle cx="16" cy="14" r="2.5" />
-    </svg>
-  ),
-
-  // 4. C - Heavy Commercial Truck / Semi
-  C: (className = 'w-9 h-5') => (
-    <svg viewBox="0 0 38 22" className={className} fill="currentColor">
-      {/* Wheels */}
-      <circle cx="7" cy="17" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="25" cy="17" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="32" cy="17" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      {/* Truck Cab */}
-      <path d="M3 14 L3 6 C3 4.5, 4 3.5, 5.5 3.5 L10 3.5 L12 7 L12 14 Z" />
-      <path d="M5 5 L9.5 5 L11 7.5 L5 7.5 Z" fill="#FFFFFF" fillOpacity="0.4" />
-      {/* Big Cargo Box / Semi Trailer */}
-      <rect x="13" y="4" width="23" height="10" rx="1.5" />
-    </svg>
-  ),
-
-  // 5. D - Passenger Transit Bus
-  D: (className = 'w-9 h-5') => (
-    <svg viewBox="0 0 38 22" className={className} fill="currentColor">
-      {/* Wheels */}
-      <circle cx="8" cy="17" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="30" cy="17" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      {/* Bus Body */}
-      <rect x="3" y="4" width="32" height="11" rx="2" />
-      {/* Windows Strip */}
-      <rect x="5" y="6" width="5" height="4" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-      <rect x="11.5" y="6" width="5" height="4" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-      <rect x="18" y="6" width="5" height="4" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-      <rect x="24.5" y="6" width="5" height="4" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-    </svg>
-  ),
-
-  // 6. C1 - Delivery Van / Light Truck
-  C1: (className = 'w-8 h-5') => (
-    <svg viewBox="0 0 34 22" className={className} fill="currentColor">
-      {/* Wheels */}
-      <circle cx="8" cy="17" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="26" cy="17" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      {/* Van Body */}
-      <path d="M3 14 L3 10 C3 9, 4 8, 5 7.5 L9 5 C10 4.5, 11 4.5, 12 4.5 L30 4.5 C31 4.5, 32 5.5, 32 6.5 L32 14 Z" />
-      {/* Front Cab Window */}
-      <path d="M5 8.5 L8.5 6.5 L12 6.5 L12 10 L5 10 Z" fill="#FFFFFF" fillOpacity="0.4" />
-    </svg>
-  ),
-
-  // 7. D1 - Minibus / Shuttle
-  D1: (className = 'w-8 h-5') => (
-    <svg viewBox="0 0 36 22" className={className} fill="currentColor">
-      {/* Wheels */}
-      <circle cx="8" cy="17" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="27" cy="17" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      {/* Minibus Body */}
-      <path d="M3 14 L3 10 C3 8.5, 4.5 7, 6 6.5 L10 5.5 C11 5, 12 5, 13 5 L31 5 C32.5 5, 33 6, 33 7.5 L33 14 Z" />
-      {/* Multiple Windows */}
-      <path d="M6 7.5 L9.5 6.5 L12 6.5 L12 10 L6 10 Z" fill="#FFFFFF" fillOpacity="0.4" />
-      <rect x="13.5" y="6.5" width="5.5" height="3.5" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-      <rect x="20.5" y="6.5" width="5.5" height="3.5" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-      <rect x="27.5" y="6.5" width="4" height="3.5" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-    </svg>
-  ),
-
-  // 8. Mil - Military / Tactical Vehicle
-  Mil: (className = 'w-8 h-5') => (
-    <svg viewBox="0 0 36 22" className={className} fill="currentColor">
-      {/* Big Raised Offroad Wheels */}
-      <circle cx="8" cy="16.5" r="4" fill="none" stroke="currentColor" strokeWidth="2.4" />
-      <circle cx="27" cy="16.5" r="4" fill="none" stroke="currentColor" strokeWidth="2.4" />
-      {/* Rugged Angular SUV Body */}
-      <path d="M3 13 L4 9.5 C4.5 8, 6 7.5, 7.5 7 L12 7 L14 4 L28 4 L30 7 L33 9 C34 9.5, 34 11, 34 13 Z" />
-      {/* Tactical Windows */}
-      <path d="M15 5.5 L20 5.5 L20 8 L13 8 Z" fill="#FFFFFF" fillOpacity="0.4" />
-      <path d="M21.5 5.5 L26.5 5.5 L28 8 L21.5 8 Z" fill="#FFFFFF" fillOpacity="0.4" />
-      {/* Top Beacon / Antenna */}
-      <circle cx="21" cy="2.5" r="1.5" />
-    </svg>
-  ),
-
-  // 9. Tram - Urban Light Rail / Tram
-  Tram: (className = 'w-8 h-5') => (
-    <svg viewBox="0 0 36 22" className={className} fill="currentColor">
-      {/* Top Pantograph */}
-      <path d="M15 1 L21 1 M18 1 L16 4 L20 4 Z" stroke="currentColor" strokeWidth="1.4" fill="none" />
-      {/* Tram Carriage Body */}
-      <rect x="3" y="5" width="30" height="10" rx="1.5" />
-      {/* Panoramic Windows */}
-      <rect x="5" y="7" width="5" height="4.5" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-      <rect x="11.5" y="7" width="5" height="4.5" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-      <rect x="18" y="7" width="5" height="4.5" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-      <rect x="24.5" y="7" width="5" height="4.5" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-      {/* Low Rail Bogies */}
-      <circle cx="10" cy="16.5" r="2.2" />
-      <circle cx="26" cy="16.5" r="2.2" />
-    </svg>
-  ),
-
-  // 10. TS - Tractor / Spec Machinery (T/S)
-  TS: (className = 'w-8 h-5') => (
-    <svg viewBox="0 0 34 22" className={className} fill="currentColor">
-      {/* Big Rear Wheel & Small Front Wheel */}
-      <circle cx="9" cy="15" r="5.5" fill="none" stroke="currentColor" strokeWidth="2.4" />
-      <circle cx="27" cy="17" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      {/* Tractor Cabin & Engine Hood */}
-      <path d="M5 9 L5 5 C5 3.5, 6.5 3, 8 3 L13 3 C14.5 3, 15 4, 15 5.5 L15 10 L25 10 L29 13 L29 16 L24 16 L23 13 L15 13 L14 15 Z" />
-      {/* Cabin Window */}
-      <rect x="7" y="4.5" width="6" height="5" rx="0.5" fill="#FFFFFF" fillOpacity="0.4" />
-      {/* Vertical Exhaust Stack */}
-      <line x1="22" y1="5" x2="22" y2="10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  ),
-};
+export const CATEGORY_VEHICLE_ICONS: Record<string, (className?: string) => React.ReactNode> = Object.fromEntries(
+  (['AM','B','A','C','D','C1','D1','Mil','Tram','TS'] as ExamCategory[]).map(category => [category, (className?: string) => <VehicleIllustration category={category} className={className} />])
+);
 
 /**
  * 10 Categories in the EXACT order shown in the user's reference image:
@@ -184,7 +46,7 @@ export const ORDERED_EXAM_CATEGORIES: CategoryItemDef[] = [
   { cat: 'D', label: 'D', name_ge: 'ავტობუსი', count: 983, icon: CATEGORY_VEHICLE_ICONS.D },
   { cat: 'C1', label: 'C1', name_ge: 'მსუბუქი სატვირთო', count: 1073, icon: CATEGORY_VEHICLE_ICONS.C1 },
   { cat: 'D1', label: 'D1', name_ge: 'მიკროავტობუსი', count: 966, icon: CATEGORY_VEHICLE_ICONS.D1 },
-  { cat: 'Mil', label: 'Military', name_ge: 'სამხედრო (B+C1)', count: 1452, icon: CATEGORY_VEHICLE_ICONS.Mil },
+  { cat: 'Mil', label: 'B+C1', name_ge: 'სამხედრო (B+C1)', count: 1452, icon: CATEGORY_VEHICLE_ICONS.Mil },
   { cat: 'Tram', label: 'Tram', name_ge: 'ტრამვაი', count: 999, icon: CATEGORY_VEHICLE_ICONS.Tram },
   { cat: 'TS', label: 'T/S', name_ge: 'სპეცტექნიკა', count: 1021, icon: CATEGORY_VEHICLE_ICONS.TS },
 ];
@@ -210,11 +72,9 @@ export function ExamCategoryCarouselStrip({
   // Auto-scroll selected item into view
   useEffect(() => {
     if (activeItemRef.current) {
-      activeItemRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
+      const track = scrollRef.current;
+      const item = activeItemRef.current;
+      if (track) track.scrollTo({ left: Math.max(0, item.offsetLeft - track.offsetLeft - (track.clientWidth - item.clientWidth) / 2), behavior: 'smooth' });
     }
   }, [activeCategory]);
 
@@ -292,11 +152,13 @@ export function ExamCategoryCarouselStrip({
                   sounds.playClick();
                   onSelectCategory(catItem.cat);
                 }}
-                className={`min-w-[76px] sm:min-w-[84px] h-[78px] sm:h-[84px] rounded-2xl p-2 sm:p-2.5 flex flex-col items-center justify-between cursor-pointer transition-all duration-200 shrink-0 select-none relative overflow-hidden group ${
+                className={`min-w-[104px] sm:min-w-[112px] h-[116px] sm:h-[124px] rounded-2xl p-2 sm:p-2.5 flex flex-col items-center justify-between cursor-pointer transition-all duration-200 shrink-0 select-none relative overflow-hidden group ${
                   isActive
                     ? 'bg-navy text-white border-2 border-gold shadow-neu-flat ring-2 ring-gold/30 -translate-y-0.5'
                     : 'neu-card bg-white text-navy border border-slate-200/90 hover:border-gold/60 hover:-translate-y-0.5 hover:shadow-md'
                 }`}
+                aria-pressed={isActive}
+                aria-label={`${catItem.label} · ${catItem.name_ge}`}
                 title={`${catItem.name_ge} • ${catItem.count} საგამოცდო ბილეთი`}
               >
                 {/* Laser line on selected card */}
@@ -310,7 +172,7 @@ export function ExamCategoryCarouselStrip({
                     isActive ? 'text-white scale-105' : 'text-slate-800 group-hover:text-gold group-hover:scale-110'
                   }`}
                 >
-                  {catItem.icon()}
+                  {catItem.icon('w-[76px] sm:w-[84px] h-12')}
                 </div>
 
                 {/* Category Code Label */}
@@ -327,7 +189,10 @@ export function ExamCategoryCarouselStrip({
                       isActive ? 'text-gold' : 'text-slate-400 group-hover:text-slate-600'
                     }`}
                   >
-                    {catItem.count}
+                    {catItem.name_ge.split(' (')[0]}
+                  </span>
+                  <span className={`block mt-1 text-[9px] ${isActive ? 'text-gold' : 'text-slate-400'}`}>
+                    {catItem.count} ბილეთი
                   </span>
                 </div>
               </button>
