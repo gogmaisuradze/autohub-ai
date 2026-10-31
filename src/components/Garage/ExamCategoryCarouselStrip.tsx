@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Award, Sparkles } from 'lucide-react';
 import { ExamCategory } from './examCategories';
 import { sounds } from '../../services/soundEffects';
@@ -12,9 +12,15 @@ interface CategoryItemDef {
 }
 
 /**
- * 10 Minimalist Vector Vehicle Silhouettes matching the driving license category strip.
+ * Generated 3D category atlas with lightweight vector fallbacks. One shared image is cached for all ten categories.
  */
 function VehicleIllustration({ category, className = 'w-[72px] h-11' }: { category: ExamCategory; className?: string }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const atlasOrder: ExamCategory[] = ['AM', 'A', 'B', 'C', 'C1', 'D', 'D1', 'Mil', 'Tram', 'TS'];
+  const index = atlasOrder.indexOf(category);
+  if (!imageFailed) return <span aria-hidden="true" className={className} style={{ position: 'relative', display: 'block', overflow: 'hidden' }}>
+    <img src={`${import.meta.env.BASE_URL}images/exam-categories/vehicles-3d-v1.png`} alt="" loading="lazy" decoding="async" draggable={false} onError={() => setImageFailed(true)} style={{ position: 'absolute', width: '500%', height: '200%', maxWidth: 'none', left: `${-(index % 5) * 100}%`, top: `${-Math.floor(index / 5) * 100 + (index < 5 ? -12 : 3)}%` }} />
+  </span>;
   const wheels = (positions: number[], y = 43, radius = 7) => positions.map(x => <g key={x}><circle cx={x} cy={y} r={radius} fill="#182235" /><circle cx={x} cy={y} r={radius * .55} fill="#c6ced8" /><circle cx={x} cy={y} r={radius * .2} fill="#667589" /></g>);
   const windows = (xs: number[], y = 17, width = 11) => xs.map(x => <rect key={x} x={x} y={y} width={width} height="12" rx="2" fill="#a9d2e4" stroke="#52657c" strokeWidth=".7" />);
   return <svg viewBox="0 0 112 60" className={className} fill="none" aria-hidden="true">
@@ -66,6 +72,14 @@ export function ExamCategoryCarouselStrip({
   currentRankTitle,
   currentRankLevel,
 }: ExamCategoryCarouselStripProps) {
+  const [selectionTurn, setSelectionTurn] = useState(0);
+  const previousCategory = useRef(activeCategory);
+  useEffect(() => {
+    if (previousCategory.current !== activeCategory) {
+      previousCategory.current = activeCategory;
+      setSelectionTurn(turn => turn + 1);
+    }
+  }, [activeCategory]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeItemRef = useRef<HTMLButtonElement>(null);
 
@@ -150,11 +164,12 @@ export function ExamCategoryCarouselStrip({
                 type="button"
                 onClick={() => {
                   sounds.playClick();
+                  if (activeCategory === catItem.cat) setSelectionTurn(turn => turn + 1);
                   onSelectCategory(catItem.cat);
                 }}
-                className={`min-w-[104px] sm:min-w-[112px] h-[116px] sm:h-[124px] rounded-2xl p-2 sm:p-2.5 flex flex-col items-center justify-between cursor-pointer transition-all duration-200 shrink-0 select-none relative overflow-hidden group ${
+                className={`w-[148px] min-w-[148px] h-[148px] sm:w-[160px] sm:min-w-[160px] sm:h-[160px] rounded-[2rem] p-2 sm:p-2.5 flex flex-col items-center justify-between cursor-pointer transition-all duration-200 shrink-0 select-none relative overflow-hidden group ${
                   isActive
-                    ? 'bg-navy text-white border-2 border-gold shadow-neu-flat ring-2 ring-gold/30 -translate-y-0.5'
+                    ? 'bg-[#14213D] text-white border-2 border-gold shadow-neu-flat ring-2 ring-gold/30 -translate-y-0.5'
                     : 'neu-card bg-white text-navy border border-slate-200/90 hover:border-gold/60 hover:-translate-y-0.5 hover:shadow-md'
                 }`}
                 aria-pressed={isActive}
@@ -166,13 +181,16 @@ export function ExamCategoryCarouselStrip({
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold via-amber-400 to-gold rounded-t-2xl" />
                 )}
 
-                {/* Vehicle Silhouette Icon */}
-                <div
-                  className={`flex items-center justify-center pt-1.5 transition-transform duration-200 ${
-                    isActive ? 'text-white scale-105' : 'text-slate-800 group-hover:text-gold group-hover:scale-110'
-                  }`}
-                >
-                  {catItem.icon('w-[76px] sm:w-[84px] h-12')}
+                {/* Raised coin: two faces and a segmented metallic cylindrical rim. */}
+                <div key={`${catItem.cat}-${isActive ? selectionTurn : 'idle'}`}
+                  className={`category-vehicle-portrait category-coin relative w-[86px] h-[86px] sm:w-24 sm:h-24 rounded-full shrink-0 ${isActive && selectionTurn > 0 ? 'category-selection-turn' : ''}`}>
+                  {Array.from({ length: 32 }, (_, edge) => <span key={edge} aria-hidden="true" className="category-coin-edge" style={{ transform: `rotateZ(${edge * 11.25}deg) translateY(calc(var(--coin-size) / -2)) rotateX(90deg)` }} />)}
+                  <div className={`category-coin-face category-coin-front ${isActive ? 'border-gold/80 bg-[#ECEAE5]' : 'border-slate-300 bg-[#F4F2EC]'}`}>
+                    {catItem.icon('w-[78px] h-[98px] sm:w-[88px] sm:h-[110px]')}
+                  </div>
+                  <div aria-hidden="true" className={`category-coin-face category-coin-back ${isActive ? 'border-gold/80 bg-[#ECEAE5]' : 'border-slate-300 bg-[#F4F2EC]'}`}>
+                    {catItem.icon('w-[78px] h-[98px] sm:w-[88px] sm:h-[110px]')}
+                  </div>
                 </div>
 
                 {/* Category Code Label */}

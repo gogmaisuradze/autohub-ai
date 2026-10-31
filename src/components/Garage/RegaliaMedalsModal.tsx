@@ -1,3 +1,4 @@
+import { AwardArtwork } from './AwardArtwork';
 import React from 'react';
 import { X, Award, Check, Lock, ChevronRight, Sparkles, Shield, Star, BookOpen, Crown } from 'lucide-react';
 import { AcademicRank, AcademicRankId, ACADEMIC_RANKS } from './ExamLearningAnalysis';
@@ -19,120 +20,9 @@ export const RANK_LADDER: [AcademicRankId, number, number][] = [
 /**
  * Bespoke, refined metallic vector medal component tailored to AutoHub's luxury aesthetic.
  */
-export function RegaliaMedalVisual({
-  rank,
-  size = 'md',
-  locked = false,
-}: {
-  rank: AcademicRank;
-  size?: 'sm' | 'md' | 'lg';
-  locked?: boolean;
-}) {
-  const dim = size === 'sm' ? 'w-10 h-12' : size === 'lg' ? 'w-20 h-24' : 'w-14 h-16';
-
-  // Ribbon and metal colors depending on rank level
-  const isBronze = rank.level <= 2;
-  const isSilver = rank.level === 3 || rank.level === 4 || rank.level === 6;
-  const isGold = rank.level === 5 || rank.level === 7 || rank.level === 8;
-  const isGrand = rank.level === 9;
-
-  const medalGradientId = `medal-grad-${rank.id}-${size}`;
-  const ribbonGradientId = `ribbon-grad-${rank.id}-${size}`;
-
-  return (
-    <div className={`relative ${dim} shrink-0 flex items-center justify-center select-none ${locked ? 'opacity-40 grayscale' : ''}`}>
-      <svg viewBox="0 0 80 96" className="w-full h-full drop-shadow-sm" role="img" aria-label={rank.regalia}>
-        <defs>
-          {/* Metal Gradients */}
-          <linearGradient id={medalGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-            {isGrand ? (
-              <>
-                <stop offset="0%" stopColor="#FFFFFF" />
-                <stop offset="35%" stopColor="#FCA311" />
-                <stop offset="70%" stopColor="#E5E7EB" />
-                <stop offset="100%" stopColor="#D97706" />
-              </>
-            ) : isGold ? (
-              <>
-                <stop offset="0%" stopColor="#FDE68A" />
-                <stop offset="45%" stopColor="#FCA311" />
-                <stop offset="80%" stopColor="#D97706" />
-                <stop offset="100%" stopColor="#92400E" />
-              </>
-            ) : isSilver ? (
-              <>
-                <stop offset="0%" stopColor="#FFFFFF" />
-                <stop offset="50%" stopColor="#CBD5E1" />
-                <stop offset="85%" stopColor="#94A3B8" />
-                <stop offset="100%" stopColor="#64748B" />
-              </>
-            ) : (
-              <>
-                <stop offset="0%" stopColor="#FDBA74" />
-                <stop offset="50%" stopColor="#CD7F32" />
-                <stop offset="85%" stopColor="#A16207" />
-                <stop offset="100%" stopColor="#78350F" />
-              </>
-            )}
-          </linearGradient>
-
-          {/* Ribbon Gradient: Navy with Gold edge */}
-          <linearGradient id={ribbonGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#0D1B2A" />
-            <stop offset="50%" stopColor="#14213D" />
-            <stop offset="100%" stopColor="#0D1B2A" />
-          </linearGradient>
-        </defs>
-
-        {/* Ribbons */}
-        <path d="M18 0 L36 0 L42 36 L26 44 Z" fill={`url(#${ribbonGradientId})`} />
-        <path d="M44 0 L62 0 L54 44 L38 36 Z" fill={`url(#${ribbonGradientId})`} />
-        {/* Ribbon Gold Stripes */}
-        <path d="M26 0 L30 0 L39 37 L35 39 Z" fill="#FCA311" opacity="0.9" />
-        <path d="M50 0 L54 0 L45 39 L41 37 Z" fill="#FCA311" opacity="0.9" />
-
-        {/* Outer Medal Circle */}
-        <circle cx="40" cy="58" r="30" fill={`url(#${medalGradientId})`} stroke="#14213D" strokeWidth="2" />
-        
-        {/* Inner Ring */}
-        <circle cx="40" cy="58" r="24" fill="#14213D" stroke={`url(#${medalGradientId})`} strokeWidth="1.5" />
-
-        {/* Central Rank Icon or Motif */}
-        <text
-          x="40"
-          y="65"
-          textAnchor="middle"
-          fontSize="20"
-          fill="#FFFFFF"
-          className="select-none"
-        >
-          {rank.icon}
-        </text>
-
-        {/* Bottom Level Indicator Tag */}
-        <circle cx="40" cy="85" r="7.5" fill="#14213D" stroke={`url(#${medalGradientId})`} strokeWidth="1.5" />
-        <text
-          x="40"
-          y="88"
-          textAnchor="middle"
-          fontSize="8.5"
-          fill="#FCA311"
-          fontWeight="900"
-          fontFamily="monospace"
-        >
-          {rank.level}
-        </text>
-      </svg>
-
-      {locked && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-6 h-6 rounded-full bg-slate-900/80 text-white flex items-center justify-center shadow-md">
-            <Lock size={12} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
+export function RegaliaMedalVisual({ rank, size = 'md', locked = false }: { rank: AcademicRank; size?: 'sm' | 'md' | 'lg'; locked?: boolean }) {
+  const dim = size === 'sm' ? 'w-12 h-12' : size === 'lg' ? 'w-28 h-28' : 'w-20 h-20';
+  return <AwardArtwork level={rank.level} label={rank.regalia} className={dim} locked={locked} fallback={rank.icon} />;
 }
 
 interface RegaliaMedalsModalProps {

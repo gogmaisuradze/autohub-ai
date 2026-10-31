@@ -1,3 +1,4 @@
+import { AwardArtwork } from './AwardArtwork';
 import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { Search, Check, Sparkles, BookOpen } from 'lucide-react';
@@ -55,7 +56,7 @@ export function ExamAchievement() {
   if (!award) return null;
   return <aside role="status" aria-live="polite" aria-atomic="true" className="fixed z-[100] top-24 right-3 left-3 sm:left-auto sm:right-6 sm:w-96 rounded-3xl border-2 border-gold bg-navy p-5 text-white shadow-2xl">
     <button type="button" aria-label="მილოცვის დახურვა" onClick={() => setAward(null)} className="absolute top-2 right-3 rounded-lg p-2 text-white/70 hover:text-white">✕</button>
-    <div className="text-5xl mb-3" aria-hidden="true">{award.medal}</div>
+    <AwardArtwork place={award.place} label={award.title} fallback={award.medal} className="w-28 h-28 mb-3" />
     <h2 className="text-lg font-black text-gold">გილოცავთ, {award.name}!</h2>
     <p className="mt-2 font-bold">{award.title}</p>
     <p className="mt-2 text-sm text-slate-200">{EXAM_CATEGORIES.find(c => c.cat === award.category)?.label} კატეგორიაში დაიკავე #{award.place} ადგილი. აკადემიური საბჭო ტაშს გიკრავს! 👏</p>
@@ -76,7 +77,7 @@ export function ExamLeaderboard({ category }: { category: ExamCategory }) {
     <label className="block text-sm font-bold text-navy">შენი სახელი / ფსევდონიმი<input maxLength={40} value={name} onChange={e => { setName(e.target.value); try { localStorage.setItem('autohub.exam.nickname', JSON.stringify(e.target.value)); setSaved(true); } catch { setSaved(false); } }} placeholder="შეიყვანე სახელი გამოცდამდე" className="block w-full sm:max-w-sm rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 mt-2" /></label>
     {!saved && <p role="status" className="text-sm text-rose-600">სახელი ვერ შეინახა — ბრაუზერში შენახვა შეზღუდულია.</p>}
     <label className="block text-sm text-navy">კატეგორია <select value={filter} onChange={e => setFilter(e.target.value as ExamCategory)} className="rounded-xl border border-slate-200 px-3 py-2 ml-2">{EXAM_CATEGORIES.map(c => <option key={c.cat} value={c.cat}>{c.label}</option>)}</select></label>
-    {!top.length ? <p className="rounded-2xl bg-slate-50 p-5 text-slate-500">ჯერ შედეგები არ არის. ჩააბარე სრული გამოცდა და შენი შედეგი აქ გამოჩნდება.</p> : <ol className="space-y-2">{top.map((s, i) => <li key={s.id} className="flex items-center gap-3 rounded-2xl bg-slate-50 border border-slate-100 p-3"><span className="font-black text-amber-600 w-8">{i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span className="flex-1 min-w-0 truncate font-bold text-navy">{s.name}</span><span className="text-sm font-bold text-emerald-700">{s.correct}/{s.total}</span><span className="font-mono text-sm text-slate-600">{formatTime(s.elapsed)}</span></li>)}</ol>}
+    {!top.length ? <p className="rounded-2xl bg-slate-50 p-5 text-slate-500">ჯერ შედეგები არ არის. ჩააბარე სრული გამოცდა და შენი შედეგი აქ გამოჩნდება.</p> : <ol className="space-y-2">{top.map((s, i) => <li key={s.id} className="flex items-center gap-3 rounded-2xl bg-slate-50 border border-slate-100 p-3"><span className="flex items-center gap-1"><AwardArtwork place={i + 1} label={`${i + 1} ადგილის ჯილდო`} className="w-12 h-12" /><span className="text-xs font-bold text-amber-700">{i + 1}</span></span><span className="flex-1 min-w-0 truncate font-bold text-navy">{s.name}</span><span className="text-sm font-bold text-emerald-700">{s.correct}/{s.total}</span><span className="font-mono text-sm text-slate-600">{formatTime(s.elapsed)}</span></li>)}</ol>}
     <p className="text-xs text-slate-400">სხვა მოწყობილობების საერთო რეიტინგი ჯერ დაკავშირებული არ არის. შენახული შედეგები ბრაუზერის მონაცემების გასუფთავებისას წაიშლება.</p>
   </section>;
 }

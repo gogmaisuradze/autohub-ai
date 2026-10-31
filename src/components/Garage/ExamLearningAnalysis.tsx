@@ -1,3 +1,4 @@
+import { AwardArtwork } from './AwardArtwork';
 import React, { useState } from 'react';
 import {
   TrendingUp,
@@ -211,14 +212,7 @@ export function getAcademicRank(attempts: number, correct: number, category = 'B
 }
 
 export function AcademicMedal({ rank }: { rank: AcademicRank }) {
-  return <svg viewBox="0 0 80 96" className="w-14 h-16 shrink-0" role="img" aria-label={rank.regalia}>
-    <path d="M19 0h17l8 34-15 9zM44 0h17L51 43l-15-9z" fill="#14213d" />
-    <path d="M26 0h4l10 36-4 2zM50 0h4L44 38l-4-2z" fill="#d9a841" />
-    <circle cx="40" cy="57" r="31" fill={rank.level < 3 ? '#bb8551' : rank.level < 5 ? '#bfc9d8' : '#d9a841'} stroke="#14213d" strokeWidth="2" />
-    <circle cx="40" cy="57" r="25" fill="#14213d" stroke="#f6dfaa" />
-    <text x="40" y="64" textAnchor="middle" fontSize="24">{rank.icon}</text>
-    <text x="40" y="82" textAnchor="middle" fontSize="9" fill="#14213d" fontWeight="bold">{rank.level}</text>
-  </svg>;
+  return <AwardArtwork level={rank.level} label={rank.regalia} fallback={rank.icon} className="w-16 h-16" />;
 }
 
 export function setAcademicOverride(category: string, status: 'akademikosi' | 'chainiki' | null) {
