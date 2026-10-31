@@ -1,3 +1,5 @@
+import { useRevealResult } from '../../hooks/useRevealResult';
+import { CoinArtwork } from '../ui/CoinArtwork';
 import React, { useState, useEffect } from 'react';
 import { VehicleProfile, ParkingFineItem, ActiveParkingSession, ParkingPermitItem } from '../../types';
 import { GeorgianLicensePlate } from '../ui/GeorgianLicensePlate';
@@ -602,6 +604,10 @@ export const ParkingModule: React.FC<Props> = ({
   const [nowTimestamp, setNowTimestamp] = useState(Date.now());
   const [selectedParkingAction, setSelectedParkingAction] = useState<'location' | 'map' | 'slot' | null>(null);
   const [customSlotInput, setCustomSlotInput] = useState<string>('005');
+  useRevealResult(selectedParkingAction, 'parking-action-result', selectedParkingAction !== null);
+  useRevealResult(activeSubTab, 'parking-subtab-result');
+  useRevealResult(activeSession.isActive, 'parking-subtab-result', activeSession.isActive);
+
 
   // Subscriptions to 4G OBD & Parking Session Lifecycle
   useEffect(() => {
@@ -947,15 +953,7 @@ export const ParkingModule: React.FC<Props> = ({
               )}
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2.5">
-                  <div
-                    className={`w-11 h-11 rounded-2xl neu-circle flex items-center justify-center transition-all duration-300 shrink-0 border border-white ${
-                      selectedParkingAction === 'location'
-                        ? 'bg-gradient-to-br from-gold to-amber-500 text-navy font-bold shadow-gold-soft'
-                        : 'bg-white text-navy group-hover:text-gold group-hover:scale-105 group-hover:shadow-md'
-                    }`}
-                  >
-                    <Navigation className="w-5 h-5" />
-                  </div>
+                  <CoinArtwork index={0} />
                   <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gold/15 text-navy border border-gold/40 shadow-2xs flex items-center gap-1.5 font-mono">
                     <span className="w-1.5 h-1.5 rounded-full bg-gold animate-ping"></span>
                     GPS დეტექცია
@@ -1011,15 +1009,7 @@ export const ParkingModule: React.FC<Props> = ({
               )}
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2.5">
-                  <div
-                    className={`w-11 h-11 rounded-2xl neu-circle flex items-center justify-center transition-all duration-300 shrink-0 border border-white ${
-                      selectedParkingAction === 'map'
-                        ? 'bg-gradient-to-br from-gold to-amber-500 text-navy font-bold shadow-gold-soft'
-                        : 'bg-white text-navy group-hover:text-gold group-hover:scale-105 group-hover:shadow-md'
-                    }`}
-                  >
-                    <Map className="w-5 h-5" />
-                  </div>
+                  <CoinArtwork index={1} />
                   <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-navy/5 text-navy border border-navy/15 shadow-2xs flex items-center gap-1">
                     <Map size={10} className="text-navy" />
                     <span>რუკა & ზონა</span>
@@ -1075,15 +1065,7 @@ export const ParkingModule: React.FC<Props> = ({
               )}
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2.5">
-                  <div
-                    className={`w-11 h-11 rounded-2xl neu-circle flex items-center justify-center transition-all duration-300 shrink-0 border border-white ${
-                      selectedParkingAction === 'slot'
-                        ? 'bg-gradient-to-br from-gold to-amber-500 text-navy font-bold shadow-gold-soft'
-                        : 'bg-white text-navy group-hover:text-gold group-hover:scale-105 group-hover:shadow-md'
-                    }`}
-                  >
-                    <ParkingSquare className="w-5 h-5" />
-                  </div>
+                  <CoinArtwork index={2} />
                   <span className="text-[10px] font-black font-mono px-2.5 py-1 rounded-full bg-navy text-gold border border-gold/30 shadow-2xs">
                     ლოტი #{customSlotInput || activeParkedLot?.lotCode || '005'}
                   </span>
@@ -1142,17 +1124,9 @@ export const ParkingModule: React.FC<Props> = ({
               )}
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2.5">
-                  <div className={`w-11 h-11 rounded-2xl neu-circle flex items-center justify-center font-bold transition-all duration-300 shrink-0 border border-white ${
-                    activeSession.isActive
-                      ? 'bg-rose-50 text-rose-600 shadow-sm'
-                      : 'bg-white text-navy group-hover:text-gold group-hover:scale-105 group-hover:shadow-md'
-                  }`}>
-                    {!activeSession.isActive ? (
-                      <Zap className="w-5 h-5 text-gold fill-gold" />
-                    ) : (
-                      <Square className="w-5 h-5 fill-rose-600 text-rose-600" />
-                    )}
-                  </div>
+                  {activeSession.isActive ? (
+                    <span className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center text-rose-600" aria-hidden="true"><Square className="w-8 h-8 fill-current" /></span>
+                  ) : <CoinArtwork index={3} />}
                   <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border shadow-2xs flex items-center gap-1 ${
                     !activeSession.isActive
                       ? 'bg-gradient-to-r from-gold/20 to-amber-500/20 text-navy border-gold/50'
@@ -1186,7 +1160,7 @@ export const ParkingModule: React.FC<Props> = ({
 
         {/* 2. დეტალური ჩამოსაშლელი ინსტრუქცია/პარამეტრები (ჩნდება მხოლოდ დაჭერისას) */}
         {selectedParkingAction && (
-          <div className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border-2 border-gold/40 bg-white space-y-4 animate-fade-in relative">
+          <div id="parking-action-result" className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border-2 border-gold/40 bg-white space-y-4 animate-fade-in relative">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h4 className="text-xs font-black text-navy flex items-center gap-2 uppercase tracking-wide">
                 <span className="w-2 h-2 rounded-full bg-gold"></span>
@@ -1398,9 +1372,7 @@ export const ParkingModule: React.FC<Props> = ({
       <div id="parking-city-selector-section" data-tour="parking-city" className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border border-white space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl neu-circle flex items-center justify-center text-navy shadow-sm shrink-0 bg-white border border-slate-100">
-              <MapPin size={20} className="text-gold" />
-            </div>
+            <CoinArtwork collection="details" index={0} className="w-14 h-14" />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base sm:text-lg font-black text-navy">
@@ -1597,10 +1569,7 @@ export const ParkingModule: React.FC<Props> = ({
         {/* Top: Profile Header & Active Car Info */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-5 border-b border-slate-200/80">
           <div className="flex items-start sm:items-center gap-3.5">
-            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-navy via-slate-800 to-navy text-gold flex items-center justify-center shadow-md relative shrink-0">
-              <ParkingSquare className="w-7 h-7 text-gold" />
-              <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white absolute -top-1 -right-1 animate-pulse" />
-            </div>
+            <CoinArtwork collection="details" index={1} className="w-16 h-16" />
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black text-navy">
@@ -1649,9 +1618,7 @@ export const ParkingModule: React.FC<Props> = ({
           {/* Permit Status */}
           <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
-                <Sparkles size={16} />
-              </div>
+              <CoinArtwork collection="details" index={2} className="w-12 h-12" />
               <div>
                 <span className="text-[10px] text-slate-400 font-mono block">მუნიციპალური საშვი</span>
                 <span className="text-xs font-extrabold text-navy">
@@ -1669,11 +1636,7 @@ export const ParkingModule: React.FC<Props> = ({
           {/* Live Session Status */}
           <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                activeSession.isActive ? 'bg-emerald-100 text-emerald-700 animate-pulse' : 'bg-slate-100 text-slate-500'
-              }`}>
-                <Timer size={16} />
-              </div>
+              <CoinArtwork collection="details" index={4} className="w-12 h-12" />
               <div>
                 <span className="text-[10px] text-slate-400 font-mono block">LIVE ზონალური სესია</span>
                 <span className="text-xs font-extrabold text-navy">
@@ -1691,11 +1654,7 @@ export const ParkingModule: React.FC<Props> = ({
           {/* Fines Status */}
           <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                totalPendingParking > 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-emerald-700'
-              }`}>
-                {totalPendingParking > 0 ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
-              </div>
+              <CoinArtwork collection="details" index={3} className="w-12 h-12" />
               <div>
                 <span className="text-[10px] text-slate-400 font-mono block">საპარკინგე ჯარიმები</span>
                 <span className={`text-xs font-extrabold ${totalPendingParking > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
@@ -1892,7 +1851,7 @@ export const ParkingModule: React.FC<Props> = ({
       {/* SUB-TAB 1: LIVE ZONE PARKING WITH REGION CONTOUR LOGOS    */}
       {/* ======================================================== */}
       {activeSubTab === 'zone_parking' && (
-        <div className="space-y-5 animate-fade-in">
+        <div id="parking-subtab-result" className="space-y-5 animate-fade-in">
           
           {/* Active Live Parking Stopwatch Card with Strict Status Separation */}
           {(activeSession.isActive || (parkingSession && parkingSession.status !== 'completed' && parkingSession.status !== 'probable_stop')) ? (
@@ -2037,9 +1996,7 @@ export const ParkingModule: React.FC<Props> = ({
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-800">
-                    <Timer size={18} />
-                  </div>
+                  <CoinArtwork collection="details" index={4} className="w-14 h-14" />
                   <div>
                     <h3 className="text-sm sm:text-base font-bold text-slate-900">
                       ზონალური პარკირების დაწყება
@@ -2190,9 +2147,7 @@ export const ParkingModule: React.FC<Props> = ({
               onClick={() => setShowOperatorReqs(!showOperatorReqs)}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gold/15 text-gold flex items-center justify-center border border-gold/30 shrink-0">
-                  <Building size={20} />
-                </div>
+                <CoinArtwork collection="details" index={5} className="w-12 h-12" />
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h4 className="text-sm font-black text-white">
@@ -2252,7 +2207,7 @@ export const ParkingModule: React.FC<Props> = ({
       {/* SUB-TAB 2: MUNICIPAL PARKING FINES                       */}
       {/* ======================================================== */}
       {activeSubTab === 'parking_fines' && (
-        <div className="space-y-5 animate-fade-in">
+        <div id="parking-subtab-result" className="space-y-5 animate-fade-in">
           
           {/* Municipal Ticket Search Form */}
           <div className="p-5 rounded-3xl neu-card shadow-neu-card border border-white space-y-3">
@@ -2407,7 +2362,7 @@ export const ParkingModule: React.FC<Props> = ({
       {/* SUB-TAB 3: PARKING PERMITS & PASSES                      */}
       {/* ======================================================== */}
       {activeSubTab === 'permits' && (
-        <div className="space-y-5 animate-fade-in">
+        <div id="parking-subtab-result" className="space-y-5 animate-fade-in">
           <div className="p-5 rounded-3xl neu-card shadow-neu-card border border-white space-y-2">
             <h3 className="text-sm font-extrabold text-navy flex items-center gap-2">
               <Sparkles size={16} className="text-gold" />
@@ -2492,7 +2447,7 @@ export const ParkingModule: React.FC<Props> = ({
       {/* SUB-TAB 4: COMMERCIAL / MALL & AIRPORT SPOTS             */}
       {/* ======================================================== */}
       {activeSubTab === 'spots' && (
-        <div className="space-y-5 animate-fade-in">
+        <div id="parking-subtab-result" className="space-y-5 animate-fade-in">
           <div className="p-5 rounded-3xl neu-card shadow-neu-card border border-white">
             <h3 className="text-sm font-extrabold text-navy flex items-center gap-2">
               <Building size={16} className="text-gold" />

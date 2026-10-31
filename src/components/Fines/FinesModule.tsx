@@ -1,3 +1,4 @@
+import { useRevealResult } from '../../hooks/useRevealResult';
 import React, { useState } from 'react';
 import { FineItem, FinePaymentReceipt, VehicleProfile } from '../../types';
 import { GeorgianLicensePlate } from '../ui/GeorgianLicensePlate';
@@ -67,47 +68,50 @@ export interface PhotoAvatarPreset {
   badge: string;
 }
 
+const AVATAR_BASE = `${import.meta.env.BASE_URL}avatars/`;
+
 export const PHOTO_AVATARS: PhotoAvatarPreset[] = [
   {
     id: 'avatar_dog',
     title: 'Good Vibes ძაღლი',
     subtitle: 'Music Lover Dog',
-    image: '/avatars/dog.png',
+    image: `${AVATAR_BASE}dog.png`,
     badge: 'GOOD VIBES'
   },
   {
     id: 'avatar_lion',
     title: 'ლომი კლდეზე',
     subtitle: 'Majestic Lion',
-    image: '/avatars/lion.png',
+    image: `${AVATAR_BASE}lion.png`,
     badge: 'LION'
   },
   {
     id: 'avatar_shark',
     title: 'ოკეანის ზვიგენი',
     subtitle: 'Ocean Shark',
-    image: '/avatars/shark.png',
+    image: `${AVATAR_BASE}shark.png`,
     badge: 'SHARK'
   },
   {
     id: 'avatar_sloth',
     title: 'ზენი ზარმაცა',
     subtitle: 'Zen Sloth',
-    image: '/avatars/sloth.png',
+    image: `${AVATAR_BASE}sloth.png`,
     badge: 'ZEN SLOTH'
   },
   {
     id: 'avatar_cat',
     title: 'ყავის კატა',
     subtitle: 'Chill Coffee Cat',
-    image: '/avatars/cat.png',
+    image: `${AVATAR_BASE}cat.png`,
     badge: 'COFFEE CAT'
   }
 ];
 
 export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full", showBadge = true) => {
   // Find matching preset by id or image URL
-  const matchedPreset = PHOTO_AVATARS.find(p => p.id === photoUrl || p.image === photoUrl);
+  // ძველად შენახული '/avatars/x.png' გზებიც ემთხვევა (base path-ის გარეშე)
+  const matchedPreset = PHOTO_AVATARS.find(p => p.id === photoUrl || p.image === photoUrl || (!!photoUrl?.startsWith('/avatars/') && p.image.endsWith(photoUrl.slice(1))));
 
   const effectivePreset = matchedPreset || (!photoUrl || photoUrl === 'avatar_lion' ? PHOTO_AVATARS[0] : null);
 
@@ -115,7 +119,7 @@ export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full
     ? effectivePreset.image
     : photoUrl && (photoUrl.startsWith('http') || photoUrl.startsWith('data:') || photoUrl.startsWith('/'))
     ? photoUrl
-    : '/avatars/dog.png'; // Default to Good Vibes dog
+    : `${AVATAR_BASE}dog.png`; // Default to Good Vibes dog
 
   const badgeText = effectivePreset
     ? effectivePreset.badge
@@ -130,7 +134,7 @@ export const renderDriverAvatar = (photoUrl?: string, className = "w-full h-full
         alt={matchedPreset ? matchedPreset.title : "Driver Avatar"}
         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         loading="eager"
-        fetchPriority="high"
+        {...{ fetchpriority: "high" }}
       />
       {/* Security holographic sheen overlay */}
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
@@ -176,6 +180,10 @@ export const FinesModule: React.FC<Props> = ({
   const [personalNumberInput, setPersonalNumberInput] = useState(vehicle.driver_personal_number || '');
   const [driverNameInput, setDriverNameInput] = useState(vehicle.driver_name || '');
   const [showPointsGuide, setShowPointsGuide] = useState(false);
+  useRevealResult(isEditingDocs, 'fines-docs-result', isEditingDocs);
+  useRevealResult(isEditingDriverInfo, 'fines-driver-result', isEditingDriverInfo);
+  useRevealResult(showPointsGuide, 'fines-guide-result', showPointsGuide);
+
 
   // Direct Ticket Search & Pay State
   const [ticketSearchInput, setTicketSearchInput] = useState('');
@@ -1273,7 +1281,7 @@ export const FinesModule: React.FC<Props> = ({
 
       {/* Edit Form */}
       {isEditingDocs && (
-        <div className="p-5 rounded-3xl neu-card border border-gold/40 space-y-4 animate-fade-in">
+        <div id="fines-docs-result" className="p-5 rounded-3xl neu-card border border-gold/40 space-y-4 animate-fade-in">
           <h3 className="text-sm font-bold text-navy flex items-center gap-2">
             <Car className="w-4 h-4 text-gold" />
             სატრანსპორტო საშუალების რეკვიზიტები
@@ -1319,7 +1327,7 @@ export const FinesModule: React.FC<Props> = ({
 
       {/* Explanatory Guide Box (Toggleable) */}
       {showPointsGuide && (
-        <div className="p-4 rounded-3xl neu-card border border-blue-200 text-xs text-navy space-y-2 animate-fade-in">
+        <div id="fines-guide-result" className="p-4 rounded-3xl neu-card border border-blue-200 text-xs text-navy space-y-2 animate-fade-in">
           <div className="flex items-center gap-2 font-bold text-blue-900">
             <Info className="w-4 h-4 text-blue-600 shrink-0" />
             <span>როგორ მუშაობს მართვის მოწმობის 100-ქულიანი სისტემა საქართველოში?</span>
@@ -1335,7 +1343,7 @@ export const FinesModule: React.FC<Props> = ({
 
       {/* Edit Driver Info Form */}
       {isEditingDriverInfo && (
-        <div className="p-5 rounded-3xl neu-card border border-gold/40 space-y-3 animate-fade-in">
+        <div id="fines-driver-result" className="p-5 rounded-3xl neu-card border border-gold/40 space-y-3 animate-fade-in">
           <h4 className="text-xs font-bold text-navy flex items-center gap-1.5">
             <UserCheck className="w-4 h-4 text-gold" />
             მძღოლის პირადი რეკვიზიტები

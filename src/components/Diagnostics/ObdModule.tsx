@@ -1,3 +1,4 @@
+import { useRevealResult } from '../../hooks/useRevealResult';
 import React, { useState, useEffect, useRef } from 'react';
 import { DtcCode, TelemetryData, VehicleProfile } from '../../types';
 import { ThreeCarScene } from '../ThreeCarScene';
@@ -95,6 +96,9 @@ export const ObdModule: React.FC<Props> = ({
   const [selectedInstructionType, setSelectedInstructionType] = useState<string>(adapterType || 'cloud_4g');
   const [isInstructionsOpen, setIsInstructionsOpen] = useState<boolean>(false);
   const [showPortHint, setShowPortHint] = useState<boolean>(false);
+  useRevealResult(`${isInstructionsOpen}:${selectedInstructionType}`, 'obd-instructions-result', isInstructionsOpen);
+  useRevealResult(scanOutcome, 'diagnostic-results-section', scanOutcome === 'success');
+
 
   useEffect(() => {
     if (adapterType) {
@@ -651,7 +655,7 @@ export const ObdModule: React.FC<Props> = ({
 
         {/* 2. დამაკავშირებელი ინსტრუქცია (ჩამოიშლება მხოლოდ დაჭერისას) */}
         {isInstructionsOpen && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border border-slate-200/80 shadow-xs space-y-3 animate-fade-in">
+          <div id="obd-instructions-result" className="p-4 sm:p-5 rounded-2xl bg-white/95 border border-slate-200/80 shadow-xs space-y-3 animate-fade-in">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <h4 className="text-xs font-black text-navy flex items-center gap-1.5 uppercase tracking-wide">
                 <span>2. დამაკავშირებელი ინსტრუქცია</span>

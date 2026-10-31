@@ -1,3 +1,4 @@
+import { useRevealResult } from '../../hooks/useRevealResult';
 import React, { useState } from 'react';
 import { ServiceItem, VehicleProfile, ServiceCategory, ServiceVariantKey, ServiceBookingItem } from '../../types';
 import { sounds } from '../../services/soundEffects';
@@ -93,6 +94,10 @@ export const ServiceLogModule: React.FC<Props> = ({
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<'all' | ServiceCategory>('all');
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [selectedServiceDeckCard, setSelectedServiceDeckCard] = useState<'profile' | 'catalog' | null>(null);
+  useRevealResult(selectedServiceDeckCard, 'service-profile-result', selectedServiceDeckCard === 'profile');
+  useRevealResult(isCatalogOpen, 'service-catalog-result', isCatalogOpen);
+  useRevealResult(activeCategoryFilter, 'service-filter-result');
+
 
   // Toggle ready-made answers / preset thematic details
   const [showPresetAnswers, setShowPresetAnswers] = useState<boolean>(() => {
@@ -578,7 +583,7 @@ export const ServiceLogModule: React.FC<Props> = ({
 
         {/* 2. Expandable Profile Drawer (when Card 1 is clicked) */}
         {selectedServiceDeckCard === 'profile' && (
-          <div className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border-2 border-gold/40 bg-white space-y-4 animate-fade-in relative">
+          <div id="service-profile-result" className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border-2 border-gold/40 bg-white space-y-4 animate-fade-in relative">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h4 className="text-xs font-black text-navy flex items-center gap-2 uppercase tracking-wide">
                 <span className="w-2 h-2 rounded-full bg-gold"></span>
@@ -758,7 +763,7 @@ export const ServiceLogModule: React.FC<Props> = ({
 
       {/* 2. Expandable Full Component & Service Catalog (23+ Variants) */}
       {isCatalogOpen && (
-        <div className="p-5 rounded-3xl neu-card shadow-neu-card border border-white space-y-4 animate-fade-in">
+        <div id="service-catalog-result" className="p-5 rounded-3xl neu-card shadow-neu-card border border-white space-y-4 animate-fade-in">
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div>
               <h3 className="text-sm font-extrabold text-navy flex items-center gap-2">
@@ -1116,6 +1121,7 @@ export const ServiceLogModule: React.FC<Props> = ({
       )}
 
       {/* 4. Service Cards Grid */}
+      <div id="service-filter-result" />
       {filteredServices.length === 0 ? (
         <div className="p-10 rounded-3xl neu-card shadow-neu-card text-center space-y-3 border border-white">
           <div className="w-12 h-12 rounded-2xl bg-amber-50 text-gold flex items-center justify-center mx-auto">

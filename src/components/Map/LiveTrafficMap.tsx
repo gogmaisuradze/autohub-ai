@@ -1,3 +1,4 @@
+import { useRevealResult } from '../../hooks/useRevealResult';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { MapPointType, MapReport, VehicleProfile } from '../../types';
 import { n8nService } from '../../services/n8nService';
@@ -752,6 +753,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [activeReportCount, setActiveReportCount] = useState(0);
   const [mapRevision, setMapRevision] = useState(0);
   const [activeMapView, setActiveMapView] = useState<'autohub_map' | 'waze_live'>('autohub_map');
+  useRevealResult(`${filterType}:${activeMapView}`, 'live-traffic-map-canvas');
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 

@@ -1,3 +1,4 @@
+import { useRevealResult } from '../../hooks/useRevealResult';
 import { TicketReconstruction, ReconstructionSwitch, RECONSTRUCTION_IDS } from './TicketReconstruction';
 import { SignsLearning, ExamLeaderboard, ExamAchievement, saveExamScore } from './ExamExtras';
 import React, { useState, useEffect, useRef } from 'react';
@@ -448,24 +449,8 @@ export const DrivingExamWidget: React.FC = () => {
     }
   }, [viewMode, sessionSubtype, answers, activeQuestions, errorsCount, activeCategory]);
 
-  // ==========================================================
-  // AUTO-SCROLL TO QUESTION CARD ON QUESTION CHANGE
-  // ==========================================================
-  useEffect(() => {
-    if (viewMode === 'practice' || viewMode === 'exam') {
-      const scrollTimeout = setTimeout(() => {
-        if (questionCardRef.current) {
-          const topOffset = 85;
-          const targetY = questionCardRef.current.getBoundingClientRect().top + window.pageYOffset - topOffset;
-          window.scrollTo({
-            top: Math.max(0, targetY),
-            behavior: 'smooth'
-          });
-        }
-      }, 40);
-      return () => clearTimeout(scrollTimeout);
-    }
-  }, [currentIdx, viewMode]);
+  useRevealResult(`${viewMode}:${currentIdx}`, viewMode === 'results' ? 'exam-session-result' : viewMode === 'subject_picker' ? 'driving-exam-section' : 'exam-question-result');
+  useRevealResult(extrasTab, extrasTab === 'signs' ? 'exam-signs-result' : extrasTab === 'ranking' ? 'exam-ranking-result' : 'driving-exam-section');
 
   // Subject Selection Toggles
   const handleToggleSubject = (subjectId: number) => {
@@ -1216,7 +1201,7 @@ export const DrivingExamWidget: React.FC = () => {
       {/* 0B. SIGNS LEARNING VIEW (WHEN SELECTED IN DASHBOARD)    */}
       {/* ======================================================== */}
       {extrasTab === 'signs' && (viewMode === 'subject_picker' || viewMode === 'results') && (
-        <div className="space-y-4 animate-fade-in">
+        <div id="exam-signs-result" className="space-y-4 animate-fade-in">
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-white border border-slate-200/90 neu-card shadow-neu-card">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-300 flex items-center justify-center text-lg shadow-2xs">
@@ -1250,7 +1235,7 @@ export const DrivingExamWidget: React.FC = () => {
       {/* 0C. TOP 20 LEADERBOARD VIEW (WHEN SELECTED IN DASHBOARD) */}
       {/* ======================================================== */}
       {extrasTab === 'ranking' && (viewMode === 'subject_picker' || viewMode === 'results') && (
-        <div className="space-y-4 animate-fade-in">
+        <div id="exam-ranking-result" className="space-y-4 animate-fade-in">
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-white border border-slate-200/90 neu-card shadow-neu-card">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-400/20 border border-amber-400 flex items-center justify-center text-lg shadow-2xs">
@@ -1907,6 +1892,7 @@ export const DrivingExamWidget: React.FC = () => {
       {/* ======================================================== */}
       {(viewMode === 'exam' || viewMode === 'practice') && (
         <div
+          id="exam-question-result"
           ref={questionCardRef}
           className="p-3 sm:p-6 rounded-3xl neu-card shadow-neu-card border border-white/80 space-y-4 animate-fade-in"
         >
@@ -2245,7 +2231,7 @@ export const DrivingExamWidget: React.FC = () => {
       {/* 4. EXAM RESULTS & REVIEW VIEW                           */}
       {/* ======================================================== */}
       {viewMode === 'results' && (
-        <div className="p-6 sm:p-8 rounded-3xl neu-card shadow-neu-card border border-white text-center space-y-6 animate-fade-in">
+        <div id="exam-session-result" className="p-6 sm:p-8 rounded-3xl neu-card shadow-neu-card border border-white text-center space-y-6 animate-fade-in">
 
           <div className="w-20 h-20 rounded-3xl neu-circle flex items-center justify-center mx-auto text-3xl shadow-md">
             {sessionMode === 'practice' ? '📖' : isPassed ? '🎉' : '❌'}

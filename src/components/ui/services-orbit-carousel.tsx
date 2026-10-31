@@ -50,7 +50,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     {
       id: 1,
       tab: 'obd' as TabType,
-      title: isGe ? 'ტესტირება' : 'OBD Test',
+      title: isGe ? 'OBD' : 'OBD',
       name: isGe ? 'დიაგნოსტიკა & ტესტირება' : 'Diagnostics & OBD-II',
       role: isGe ? 'ცოცხალი ტელემეტრია & DTC' : 'Live Telemetry & DTC',
       icon: Activity,
@@ -134,7 +134,7 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
     {
       id: 6,
       tab: 'ai' as TabType,
-      title: isGe ? 'AI მექანიკოსი' : 'AI Mechanic',
+      title: isGe ? 'AI' : 'AI',
       name: isGe ? 'AI მექანიკოსი' : 'AI Mechanic',
       role: isGe ? 'პერსონალური ონლაინ ოსტატი' : '24/7 Smart Mechanic',
       icon: Bot,

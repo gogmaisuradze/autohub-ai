@@ -1086,7 +1086,7 @@ export const App: React.FC = () => {
     setAiInitialPrompt(
       `გამარჯობა, მაქვს შეცდომის კოდი ${code.code} (${code.title_ge}). გთხოვთ ამიხსნათ დეტალურად: რა ნაწილის გაუმართაობაა, რა ჯდება თბილისში შეცვლა და შეიძლება თუ არა მოძრაობის გაგრძელება?`
     );
-    React.startTransition(() => setActiveTab('ai'));
+    handleTabChange('ai');
   };
 
   const handleConsultAiAboutAllCodes = (codes: DtcCode[]) => {
@@ -1374,7 +1374,7 @@ export const App: React.FC = () => {
           <React.Suspense fallback={<ModuleFallback />}>
           <GarageModule
             vehicle={vehicle}
-            onNavigateTab={(t) => React.startTransition(() => setActiveTab(t))}
+            onNavigateTab={handleTabChange}
             onUpdateVehicle={setVehicle}
             onOpenAddModal={() => setIsAddVehicleModalOpen(true)}
             onDeleteVehicle={handleDeleteVehicle}

@@ -85,7 +85,7 @@ export const HomeHub: React.FC<Props> = ({
     },
     {
       id: 'fines' as TabType,
-      title: 'საპატრულო',
+      title: 'ჯარიმები',
       subtitle: 'ვიდეოჯარიმები და 20%-იანი ფასდაკლების ვადა',
       icon: ShieldAlert,
       badgeText: pendingFines.length > 0 ? `${pendingFines.length}` : 'OK',
@@ -95,7 +95,7 @@ export const HomeHub: React.FC<Props> = ({
     },
     {
       id: 'exam' as TabType,
-      title: 'მართვის მოწმობა',
+      title: 'ბილეთები',
       subtitle: '2026 წლის ოფიციალური საგამოცდო ბილეთები',
       icon: GraduationCap,
       badgeText: '2026',
