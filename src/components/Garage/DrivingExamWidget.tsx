@@ -990,7 +990,7 @@ export const DrivingExamWidget: React.FC = () => {
                 </p>
 
                 {/* Dashboard Quick Navigation Buttons (Signs & Leaderboard) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-3 pt-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-3 pt-5">
                   <button
                     type="button"
                     onClick={() => {
@@ -1031,6 +1031,15 @@ export const DrivingExamWidget: React.FC = () => {
                     }`}>
                       Top 20
                     </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { sounds.playClick(); handleStartExam(); }}
+                    className="relative w-full min-w-0 h-14 px-4 py-2 rounded-2xl text-xs font-bold transition-colors flex items-center justify-center gap-3 border cursor-pointer bg-gold hover:bg-amber-400 text-navy border-amber-300 active:bg-amber-500"
+                  >
+                    <BookOpen size={22} className="shrink-0 text-navy" />
+                    <span>გამოცდის დაწყება</span>
                   </button>
 
                   {extrasTab !== 'tickets' && (
@@ -1123,30 +1132,9 @@ export const DrivingExamWidget: React.FC = () => {
                 </div>
               </div>
 
-              {/* Launch Exam Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  handleStartExam();
-                }}
-                className="self-center w-32 h-32 sm:w-36 sm:h-36 shrink-0 rounded-full p-5 text-sm sm:text-base leading-relaxed font-black bg-transparent text-gold flex items-center justify-center text-center border-2 border-gold/80 shadow-none transition-colors duration-150 hover:border-gold active:bg-gold active:text-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
-              >
-                <span>გამოცდის დაწყება</span>
-              </button>
+
             </div>
 
-          </div>
-
-          {/* Categories Carousel Strip (Interactive switcher) */}
-          <div className="pt-1">
-            <ExamCategoryCarouselStrip
-              activeCategory={activeCategory}
-              onSelectCategory={(c) => setActiveCategory(c)}
-              onOpenRegaliaModal={() => setIsRegaliaModalOpen(true)}
-              currentRankTitle={academicRank.title}
-              currentRankLevel={academicRank.level}
-            />
           </div>
 
           {/* 4 Thematic Metric Tiles */}
@@ -1203,6 +1191,25 @@ export const DrivingExamWidget: React.FC = () => {
           </div>
 
         </div>
+      )}
+
+      {extrasTab === 'tickets' && viewMode === 'subject_picker' && (
+        <section className="p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/80">
+          {/* Dedicated Category Carousel Strip (AM, B, A, C, D, C1, D1, Military, Tram, T/S) */}
+          <div data-tour="exam-category-tabs" className="py-1">
+            <ExamCategoryCarouselStrip
+              activeCategory={activeCategory}
+              onSelectCategory={(itemCat) => {
+                sounds.playClick();
+                setActiveCategory(itemCat);
+              }}
+              onOpenRegaliaModal={() => setIsRegaliaModalOpen(true)}
+              currentRankTitle={academicRank.title}
+              currentRankLevel={academicRank.level}
+            />
+          </div>
+
+        </section>
       )}
 
       {/* ======================================================== */}
@@ -1276,7 +1283,10 @@ export const DrivingExamWidget: React.FC = () => {
       {/* ======================================================== */}
       {/* 1. TOP LEARNING ANALYSIS & PROGRESS DIAGRAM              */}
       {/* ======================================================== */}
-      {extrasTab === 'tickets' && (viewMode === 'subject_picker' || viewMode === 'results') && (
+
+
+      {/* ======================================================== */}
+      {extrasTab === 'tickets' && viewMode === 'results' && (
         <div data-tour="exam-academic-analysis">
           <ExamLearningAnalysis
             history={learningHistory}
@@ -1289,147 +1299,10 @@ export const DrivingExamWidget: React.FC = () => {
         </div>
       )}
 
-      {/* ======================================================== */}
       {/* 2. SUBJECT PICKER & TICKET CONFIGURATION HUB             */}
       {/* ======================================================== */}
       {extrasTab === 'tickets' && viewMode === 'subject_picker' && (
         <section className="p-4 sm:p-6 rounded-3xl neu-card border border-white/80 space-y-5 shadow-neu-card">
-
-          {/* Minimalist Academic Regalia & Medals Status Strip */}
-          <div className="p-4 sm:p-5 rounded-3xl neu-card shadow-neu-card border border-white bg-white flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5 w-full md:w-auto">
-              <RegaliaMedalVisual rank={academicRank} size="md" />
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-md bg-gold/20 text-navy border border-gold/40">
-                    დონე {academicRank.level} / 9
-                  </span>
-                  <span className="text-xs font-black text-navy">
-                    {academicRank.title}
-                  </span>
-                  <span className="text-[10px] text-emerald-700 font-bold hidden sm:inline-flex items-center gap-0.5">
-                    <Check size={11} className="stroke-[3]" />
-                    <span>მოპოვებული რეგალია</span>
-                  </span>
-                </div>
-                <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Award size={13} className="text-gold" />
-                  <span>რეგალია: <strong className="text-navy">{academicRank.regalia}</strong></span>
-                </div>
-                <div className="text-[11px] text-slate-500 font-mono">
-                  ათვისებული: {Object.keys(learningHistory).length} ბილეთი • სიზუსტე: {cumulativeAttempts > 0 ? Math.round((cumulativeCorrect / cumulativeAttempts) * 100) : 0}%
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                setIsRegaliaModalOpen(true);
-              }}
-              className="btn-stitch-soft w-full md:w-auto px-4 py-2.5 text-xs font-bold text-navy hover:text-gold flex items-center justify-center gap-2 shadow-2xs group transition-all"
-            >
-              <Sparkles size={14} className="text-gold group-hover:scale-110 transition-transform" />
-              <span>რეგალიები & მედლები (9 დონე)</span>
-              <span className="text-gold font-bold">→</span>
-            </button>
-          </div>
-
-          {/* Dedicated Category Carousel Strip (AM, B, A, C, D, C1, D1, Military, Tram, T/S) */}
-          <div data-tour="exam-category-tabs" className="py-1">
-            <ExamCategoryCarouselStrip
-              activeCategory={activeCategory}
-              onSelectCategory={(itemCat) => {
-                sounds.playClick();
-                setActiveCategory(itemCat);
-              }}
-              onOpenRegaliaModal={() => setIsRegaliaModalOpen(true)}
-              currentRankTitle={academicRank.title}
-              currentRankLevel={academicRank.level}
-            />
-          </div>
-
-          {/* Header & Verification Info */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <div>
-              <h2 className="text-base sm:text-lg font-black text-navy tracking-tight flex items-center gap-2">
-                <span>საგამოცდო ბილეთების პაკეტები & თემები</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-navy/5 text-navy border border-navy/15 font-mono">
-                  {categoryConfig.label}
-                </span>
-              </h2>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                {categoryConfig.verified ? 'ჩაბარების ზღვარი: მომსახურების სააგენტოს წესით.' : 'სასწავლო რეჟიმი · ოფიციალური ფორმატი გადასამოწმებელია.'} პერსონალური პროგრესი თითოეულ თემაში.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setExtrasTab('signs');
-                }}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-navy hover:text-gold bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <img src={`${import.meta.env.BASE_URL}images/icons/signs-3d.png`} alt="" className="w-5 h-5 object-contain shrink-0" />
-                <span>საგზაო ნიშნები (252)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setExtrasTab('ranking');
-                }}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-navy hover:text-gold bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <img src={`${import.meta.env.BASE_URL}images/icons/top20-trophy-v1.png`} alt="" className="w-5 h-5 object-contain shrink-0" />
-                <span>საუკეთესო ოცეული</span>
-              </button>
-
-              <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl shrink-0">
-                სულ: {totalCategoryCount || categoryConfig.count} ბილეთი
-              </span>
-            </div>
-          </div>
-
-          {/* Media Type Filter Strip */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50/80 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-              <Filter size={14} className="text-gold" />
-              <span>ბილეთების ტიპი:</span>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {[
-                { key: 'all', label: 'ყველა ბილეთი', count: totalCategoryCount || 921, icon: '🌐' },
-                { key: 'with_image', label: 'ფოტოებიანი ბილეთები', count: withPhotoCount || 588, icon: '📷' },
-                { key: 'without_image', label: 'ტექსტური / ულითო ბილეთები', count: withoutPhotoCount || 333, icon: '📝' }
-              ].map(f => {
-                const isSelected = mediaFilter === f.key;
-                return (
-                  <button
-                    key={f.key}
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setMediaFilter(f.key as typeof mediaFilter);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
-                      isSelected
-                        ? 'bg-white text-navy border-gold shadow-xs ring-1 ring-gold/40'
-                        : 'bg-white/60 text-slate-600 border-slate-200/70 hover:bg-white'
-                    }`}
-                  >
-                    <span>{f.icon}</span>
-                    <span>{f.label}</span>
-                    <span className="text-[10px] font-mono text-slate-400">({f.count})</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
           {/* ======================================================== */}
           {/* DEDICATED MISTAKES COLLECTION & REVIEW CENTER            */}
@@ -1641,6 +1514,140 @@ export const DrivingExamWidget: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Minimalist Academic Regalia & Medals Status Strip */}
+          <div className="p-4 sm:p-5 rounded-3xl neu-card shadow-neu-card border border-white bg-white flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5 w-full md:w-auto">
+              <RegaliaMedalVisual rank={academicRank} size="md" />
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-md bg-gold/20 text-navy border border-gold/40">
+                    დონე {academicRank.level} / 9
+                  </span>
+                  <span className="text-xs font-black text-navy">
+                    {academicRank.title}
+                  </span>
+                  <span className="text-[10px] text-emerald-700 font-bold hidden sm:inline-flex items-center gap-0.5">
+                    <Check size={11} className="stroke-[3]" />
+                    <span>მოპოვებული რეგალია</span>
+                  </span>
+                </div>
+                <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Award size={13} className="text-gold" />
+                  <span>რეგალია: <strong className="text-navy">{academicRank.regalia}</strong></span>
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono">
+                  ათვისებული: {Object.keys(learningHistory).length} ბილეთი • სიზუსტე: {cumulativeAttempts > 0 ? Math.round((cumulativeCorrect / cumulativeAttempts) * 100) : 0}%
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setIsRegaliaModalOpen(true);
+              }}
+              className="btn-stitch-soft w-full md:w-auto px-4 py-2.5 text-xs font-bold text-navy hover:text-gold flex items-center justify-center gap-2 shadow-2xs group transition-all"
+            >
+              <Sparkles size={14} className="text-gold group-hover:scale-110 transition-transform" />
+              <span>რეგალიები & მედლები (9 დონე)</span>
+              <span className="text-gold font-bold">→</span>
+            </button>
+          </div>
+
+
+        <div data-tour="exam-academic-analysis">
+          <ExamLearningAnalysis
+            history={learningHistory}
+            subjects={PRAVA_SUBJECTS}
+            total={categoryQuestions.length}
+            onPractice={handleReviewMistakes}
+            saved={historySaved}
+            category={activeCategory}
+          />
+        </div>
+
+          {/* Header & Verification Info */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-navy tracking-tight flex items-center gap-2">
+                <span>საგამოცდო ბილეთების პაკეტები & თემები</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-navy/5 text-navy border border-navy/15 font-mono">
+                  {categoryConfig.label}
+                </span>
+              </h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                {categoryConfig.verified ? 'ჩაბარების ზღვარი: მომსახურების სააგენტოს წესით.' : 'სასწავლო რეჟიმი · ოფიციალური ფორმატი გადასამოწმებელია.'} პერსონალური პროგრესი თითოეულ თემაში.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setExtrasTab('signs');
+                }}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-navy hover:text-gold bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <img src={`${import.meta.env.BASE_URL}images/icons/signs-3d.png`} alt="" className="w-5 h-5 object-contain shrink-0" />
+                <span>საგზაო ნიშნები (252)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setExtrasTab('ranking');
+                }}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-navy hover:text-gold bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <img src={`${import.meta.env.BASE_URL}images/icons/top20-trophy-v1.png`} alt="" className="w-5 h-5 object-contain shrink-0" />
+                <span>საუკეთესო ოცეული</span>
+              </button>
+
+              <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl shrink-0">
+                სულ: {totalCategoryCount || categoryConfig.count} ბილეთი
+              </span>
+            </div>
+          </div>
+
+          {/* Media Type Filter Strip */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50/80 border border-slate-100">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+              <Filter size={14} className="text-gold" />
+              <span>ბილეთების ტიპი:</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { key: 'all', label: 'ყველა ბილეთი', count: totalCategoryCount || 921, icon: '🌐' },
+                { key: 'with_image', label: 'ფოტოებიანი ბილეთები', count: withPhotoCount || 588, icon: '📷' },
+                { key: 'without_image', label: 'ტექსტური / ულითო ბილეთები', count: withoutPhotoCount || 333, icon: '📝' }
+              ].map(f => {
+                const isSelected = mediaFilter === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setMediaFilter(f.key as typeof mediaFilter);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                      isSelected
+                        ? 'bg-white text-navy border-gold shadow-xs ring-1 ring-gold/40'
+                        : 'bg-white/60 text-slate-600 border-slate-200/70 hover:bg-white'
+                    }`}
+                  >
+                    <span>{f.icon}</span>
+                    <span>{f.label}</span>
+                    <span className="text-[10px] font-mono text-slate-400">({f.count})</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* ======================================================== */}
