@@ -994,9 +994,7 @@ export const DrivingExamWidget: React.FC = () => {
                         : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-gold/60'
                     }`}
                   >
-                    <span className="w-5 h-5 rounded-full bg-rose-500/90 border border-white/40 flex items-center justify-center text-[11px] shadow-2xs shrink-0 text-white font-bold">
-                      🛑
-                    </span>
+                    <img src={`${import.meta.env.BASE_URL}images/icons/signs-3d.png`} alt="" className="w-7 h-7 object-contain shrink-0 drop-shadow-sm" />
                     <span>საგზაო ნიშნების შესწავლა</span>
                     <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
                       extrasTab === 'signs' ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-amber-300'
@@ -1017,7 +1015,7 @@ export const DrivingExamWidget: React.FC = () => {
                         : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-gold/60'
                     }`}
                   >
-                    <span className="text-sm shrink-0">🏆</span>
+                    <img src={`${import.meta.env.BASE_URL}images/icons/medals-3d.png`} alt="" className="w-7 h-7 object-contain shrink-0 drop-shadow-sm" />
                     <span>საუკეთესო ოცეული</span>
                     <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
                       extrasTab === 'ranking' ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-amber-300'
@@ -1123,9 +1121,9 @@ export const DrivingExamWidget: React.FC = () => {
                   sounds.playClick();
                   handleStartExam();
                 }}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-black shadow-gold-soft shrink-0 bg-gradient-to-r from-amber-400 via-gold to-amber-500 hover:from-amber-300 hover:to-gold text-slate-950 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-amber-300"
+                className="w-full sm:w-auto px-7 py-4 rounded-2xl text-sm sm:text-base font-black shadow-gold-soft shrink-0 bg-gradient-to-r from-amber-400 via-gold to-amber-500 hover:from-amber-300 hover:to-gold text-slate-950 flex items-center justify-center gap-2.5 transition-all transform hover:scale-[1.03] active:scale-[0.98] border-2 border-amber-200 ring-2 ring-amber-400/50 ring-offset-2 ring-offset-slate-900 animate-pulse-gold"
               >
-                <BookOpen size={16} />
+                <BookOpen size={18} strokeWidth={2.5} />
                 <span>გამოცდის დაწყება ({categoryConfig.size} კითხვა) →</span>
               </button>
             </div>
@@ -1366,7 +1364,7 @@ export const DrivingExamWidget: React.FC = () => {
                 }}
                 className="px-3 py-1.5 rounded-xl text-xs font-bold text-navy hover:text-gold bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
-                <span>🛑</span>
+                <img src={`${import.meta.env.BASE_URL}images/icons/signs-3d.png`} alt="" className="w-5 h-5 object-contain shrink-0" />
                 <span>საგზაო ნიშნები (252)</span>
               </button>
 
@@ -1378,7 +1376,7 @@ export const DrivingExamWidget: React.FC = () => {
                 }}
                 className="px-3 py-1.5 rounded-xl text-xs font-bold text-navy hover:text-gold bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
-                <span>🏆</span>
+                <img src={`${import.meta.env.BASE_URL}images/icons/medals-3d.png`} alt="" className="w-5 h-5 object-contain shrink-0" />
                 <span>საუკეთესო ოცეული</span>
               </button>
 
