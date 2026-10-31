@@ -402,6 +402,8 @@ export const DrivingExamWidget: React.FC = () => {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const deadlineRef = useRef(0);
+  const timerMilestoneRef = useRef(0);
+  const [timerNotice, setTimerNotice] = useState(0);
   const startedAtRef = useRef(0);
   const finishedAtRef = useRef(0);
   const scoreSavedRef = useRef(false);
@@ -420,6 +422,11 @@ export const DrivingExamWidget: React.FC = () => {
       if (finishedAtRef.current) return;
       const remaining = Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000));
       setTimeLeft(remaining);
+      const milestone = Math.floor((Date.now() - startedAtRef.current) / (5 * 60 * 1000));
+      if (remaining > 0 && milestone > timerMilestoneRef.current) {
+        timerMilestoneRef.current = milestone;
+        setTimerNotice(milestone);
+      }
       if (!remaining) {
         finishedAtRef.current = deadlineRef.current;
         sounds.playWarning();
@@ -483,6 +490,8 @@ export const DrivingExamWidget: React.FC = () => {
   // Helper to launch a test session
   const startSession = (questions: ExamQuestion[], mode: 'exam' | 'practice', customTime = 1800) => {
     setOpenReconstruction(null);
+    timerMilestoneRef.current = 0;
+    setTimerNotice(0);
     startedAtRef.current = Date.now();
     deadlineRef.current = startedAtRef.current + customTime * 1000;
     finishedAtRef.current = 0;
@@ -1121,10 +1130,9 @@ export const DrivingExamWidget: React.FC = () => {
                   sounds.playClick();
                   handleStartExam();
                 }}
-                className="w-full min-w-0 min-h-14 px-4 py-3.5 rounded-2xl text-sm leading-relaxed font-black shadow-sm bg-gradient-to-r from-amber-400 to-gold hover:from-amber-300 hover:to-amber-400 text-slate-950 flex items-center justify-center gap-2 transition-colors border border-amber-300/70"
+                className="self-center w-32 h-32 sm:w-36 sm:h-36 shrink-0 rounded-full p-5 text-sm sm:text-base leading-relaxed font-black bg-transparent text-gold flex items-center justify-center text-center border-2 border-gold/80 shadow-none transition-colors duration-150 hover:border-gold active:bg-gold active:text-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
               >
-                <BookOpen size={18} strokeWidth={2.5} className="shrink-0" />
-                <span>გამოცდის დაწყება ({categoryConfig.size} კითხვა) →</span>
+                <span>გამოცდის დაწყება</span>
               </button>
             </div>
 
@@ -1942,15 +1950,6 @@ export const DrivingExamWidget: React.FC = () => {
               {viewMode === 'exam' && (
                 <>
                   <div className={`px-3 py-1.5 rounded-2xl font-mono font-black text-xs flex items-center gap-1.5 shadow-xs ${
-                    timeLeft < 300
-                      ? 'bg-rose-100 text-rose-800 border border-rose-300 animate-pulse'
-                      : 'bg-amber-100 text-amber-900 border border-amber-300'
-                  }`}>
-                    <Clock size={14} />
-                    <span>⏱️ {minutes}:{seconds}</span>
-                  </div>
-
-                  <div className={`px-3 py-1.5 rounded-2xl font-mono font-black text-xs flex items-center gap-1.5 shadow-xs ${
                     errorsCount >= 3
                       ? 'bg-rose-500 text-white'
                       : errorsCount > 0
@@ -2198,7 +2197,7 @@ export const DrivingExamWidget: React.FC = () => {
           </div>
 
           {/* Navigation Action Buttons Footer */}
-          <div className="flex items-center justify-between pt-3 border-t border-slate-200/80">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200/80">
             {viewMode === 'practice' ? (
               <button
                 type="button"
@@ -2209,7 +2208,13 @@ export const DrivingExamWidget: React.FC = () => {
                 <ArrowLeft size={14} />
                 <span>წინა კითხვა</span>
               </button>
-            ) : <div />}
+            ) : <>
+              <div key={timerNotice} role="timer" aria-label="გამოცდის დარჩენილი დრო" aria-live="off" className={`flex items-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 font-mono text-sm font-black tabular-nums text-rose-700 ${timerNotice > 0 ? 'exam-timer-attention' : ''}`}>
+                <Clock size={17} aria-hidden="true" />
+                <span>{minutes}:{seconds}</span>
+              </div>
+              <span className="sr-only" role="status">{timerNotice > 0 ? `გამოცდის დაწყებიდან გავიდა ${timerNotice * 5} წუთი.` : ''}</span>
+            </>}
 
             <button
               type="button"

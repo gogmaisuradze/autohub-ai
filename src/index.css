@@ -535,3 +535,14 @@
 }
 .animate-pulse-gold { animation: pulse-gold 2.3s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .animate-pulse-gold { animation: none; } }
+
+@keyframes exam-timer-attention {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50% { transform: translateX(-4px); background-color: #ffe4e6; }
+  20%, 40%, 60% { transform: translateX(4px); background-color: #fecdd3; }
+  75% { transform: translateX(0); }
+}
+.exam-timer-attention { animation: exam-timer-attention 1.4s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .exam-timer-attention { animation: none; }
+}
