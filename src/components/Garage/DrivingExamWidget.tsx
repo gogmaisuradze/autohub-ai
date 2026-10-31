@@ -990,7 +990,7 @@ export const DrivingExamWidget: React.FC = () => {
                 </p>
 
                 {/* Dashboard Quick Navigation Buttons (Signs & Leaderboard) */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-3 pt-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-3 pt-5">
                   <button
                     type="button"
                     onClick={() => {
@@ -1033,14 +1033,7 @@ export const DrivingExamWidget: React.FC = () => {
                     </span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => { sounds.playClick(); handleStartExam(); }}
-                    className="relative w-full min-w-0 h-14 px-4 py-2 rounded-2xl text-xs font-bold transition-colors flex items-center justify-center gap-3 border cursor-pointer bg-gold hover:bg-amber-400 text-navy border-amber-300 active:bg-amber-500"
-                  >
-                    <BookOpen size={22} className="shrink-0 text-navy" />
-                    <span>გამოცდის დაწყება</span>
-                  </button>
+
 
                   {extrasTab !== 'tickets' && (
                     <button
@@ -1132,7 +1125,14 @@ export const DrivingExamWidget: React.FC = () => {
                 </div>
               </div>
 
-
+                  <button
+                    type="button"
+                    onClick={() => { sounds.playClick(); handleStartExam(); }}
+                    className="relative w-full min-w-0 h-14 px-4 py-2 rounded-2xl text-xs font-bold transition-colors flex items-center justify-center gap-3 border cursor-pointer bg-gold hover:bg-amber-400 text-navy border-amber-300 active:bg-amber-500"
+                  >
+                    <BookOpen size={22} className="shrink-0 text-navy" />
+                    <span>გამოცდის დაწყება</span>
+                  </button>
             </div>
 
           </div>
