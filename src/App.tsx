@@ -13,9 +13,7 @@ import { AddVehicleWizardModal } from './components/Modals/AddVehicleWizardModal
 import { ContextualFieldPromptModal, PromptFieldType } from './components/Modals/ContextualFieldPromptModal';
 import { VinHistoryModal } from './components/Modals/VinHistoryModal';
 import { ServiceBookingModal } from './components/Booking/ServiceBookingModal';
-import { CoverAdBanner } from './components/Banner/CoverAdBanner';
 import { FloatingMechanicWidget } from './components/AiMechanic/FloatingMechanicWidget';
-import { InteractiveSiteTour } from './components/Guide/InteractiveSiteTour';
 import { ParkingConfirmationModal } from './components/Parking/ParkingConfirmationModal';
 import { parkingSessionService } from './services/parkingSessionService';
 import { ParkingSession } from './types/parkingSession';
@@ -35,6 +33,17 @@ const GarageModule = React.lazy(() => import('./components/Garage/GarageModule')
 const LiveTrafficMap = React.lazy(() => import('./components/Map/LiveTrafficMap'));
 const AiMechanicChat = React.lazy(() =>
   import('./components/AiMechanic/AiMechanicChat').then(m => ({ default: m.AiMechanicChat }))
+);
+const CoverAdBanner = React.lazy(() =>
+  import('./components/Banner/CoverAdBanner').then(m => ({ default: m.CoverAdBanner }))
+);
+const InteractiveSiteTour = React.lazy(() =>
+  import('./components/Guide/InteractiveSiteTour').then(m => ({ default: m.InteractiveSiteTour }))
+);
+
+// ბანერის placeholder — იმავე სიმაღლით, რომ chunk-ის ჩატვირთვისას layout არ „ახტეს“
+const BannerFallback: React.FC = () => (
+  <div className="w-full h-[520px] sm:h-[540px] md:h-[550px] lg:h-[560px] xl:h-[570px] rounded-3xl bg-navy-900/80 animate-pulse" />
 );
 
 // მსუბუქი fallback მოდულის ჩატვირთვისას
@@ -531,7 +540,7 @@ export const App: React.FC = () => {
         if (next === 'obd') {
           handleTabChange('obd');
         } else {
-          setActiveTab(next);
+          React.startTransition(() => setActiveTab(next));
           try { localStorage.setItem('autohub_active_tab', next); } catch {}
           setTimeout(() => scrollToMainContent(1100), 40);
         }
@@ -554,7 +563,8 @@ export const App: React.FC = () => {
   }, []);
 
   const handleTabChange = (tab: TabType) => {
-    setActiveTab(tab);
+    // lazy tab chunk-ის ჩატვირთვა transition-ად — ძველი ხედი რჩება სანამ ახალი ჩაიტვირთება
+    React.startTransition(() => setActiveTab(tab));
     try {
       localStorage.setItem('autohub_active_tab', tab);
       window.location.hash = tab;
@@ -1075,7 +1085,7 @@ export const App: React.FC = () => {
     setAiInitialPrompt(
       `გამარჯობა, მაქვს შეცდომის კოდი ${code.code} (${code.title_ge}). გთხოვთ ამიხსნათ დეტალურად: რა ნაწილის გაუმართაობაა, რა ჯდება თბილისში შეცვლა და შეიძლება თუ არა მოძრაობის გაგრძელება?`
     );
-    setActiveTab('ai');
+    React.startTransition(() => setActiveTab('ai'));
   };
 
   const handleConsultAiAboutAllCodes = (codes: DtcCode[]) => {
@@ -1137,6 +1147,7 @@ export const App: React.FC = () => {
 
       {/* Cover Advertising Banner (Wider panoramic layout for grand automotive photography) */}
       <div id="cover-banner-section" data-tour="cover-banner" className="hidden md:block w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
+        <React.Suspense fallback={<BannerFallback />}>
         <CoverAdBanner
           onNavigateTab={handleTabChange}
           onStartObdScan={() => {
@@ -1150,6 +1161,7 @@ export const App: React.FC = () => {
           onScrollPastBanner={() => scrollToMainContent(950)}
           isTourActive={isSiteTourActive}
         />
+        </React.Suspense>
       </div>
 
       {/* 3. Main Content Container (Unified wide layout matching CoverAdBanner) */}
@@ -1386,7 +1398,7 @@ export const App: React.FC = () => {
           <React.Suspense fallback={<ModuleFallback />}>
           <GarageModule
             vehicle={vehicle}
-            onNavigateTab={setActiveTab}
+            onNavigateTab={(t) => React.startTransition(() => setActiveTab(t))}
             onUpdateVehicle={setVehicle}
             onOpenAddModal={() => setIsAddVehicleModalOpen(true)}
             onDeleteVehicle={handleDeleteVehicle}
@@ -1514,13 +1526,15 @@ export const App: React.FC = () => {
       />
 
       {/* Interactive Cloud Bot & Google-Style Guided Site Tour */}
-      <InteractiveSiteTour
-        currentTab={activeTab}
-        onNavigateTab={handleTabChange}
-        externalTrigger={tourTrigger}
-        onTourActiveChange={setIsSiteTourActive}
-        onTourCompleted={handleTourCompleted}
-      />
+      <React.Suspense fallback={null}>
+        <InteractiveSiteTour
+          currentTab={activeTab}
+          onNavigateTab={handleTabChange}
+          externalTrigger={tourTrigger}
+          onTourActiveChange={setIsSiteTourActive}
+          onTourCompleted={handleTourCompleted}
+        />
+      </React.Suspense>
 
       {/* Global 4G OBD Parking Stop Confirmation Modal (when user is outside the Parking tab) */}
       {activeTab !== 'parking' && globalParkingSession && globalParkingSession.status === 'probable_stop' && (
