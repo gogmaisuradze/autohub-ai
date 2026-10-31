@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, DtcCode, FineItem, ServiceBookingItem, ServiceItem, VehicleProfile } from '../../types';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
+import { TabType } from '../Navigation';
+import { ChatMessageContent, copyTextToClipboard } from './ChatMessageContent';
 import {
   Send,
   Bot,
@@ -24,7 +26,9 @@ import {
   Wrench,
   ShieldCheck,
   Droplets,
-  Plus
+  Plus,
+  Copy,
+  Check
 } from 'lucide-react';
 
 interface Props {
@@ -38,6 +42,7 @@ interface Props {
   onOpenBookingModal?: () => void;
   services?: ServiceItem[];
   fines?: FineItem[];
+  onNavigateTab?: (tab: TabType) => void;
 }
 
 export const AiMechanicChat: React.FC<Props> = ({
@@ -50,7 +55,8 @@ export const AiMechanicChat: React.FC<Props> = ({
   allBookings = [],
   onOpenBookingModal,
   services = [],
-  fines = []
+  fines = [],
+  onNavigateTab
 }) => {
   // Accumulated data calculations
   const oilService = services.find(s => s.variant_key === 'engine_oil' || s.title_ge.toLowerCase().includes('ზეთ'));
@@ -75,7 +81,17 @@ export const AiMechanicChat: React.FC<Props> = ({
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showQuickPrompts, setShowQuickPrompts] = useState<boolean>(true);
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  const handleCopyMessage = async (text: string, id: string) => {
+    sounds.playClick();
+    const ok = await copyTextToClipboard(text);
+    if (ok) {
+      setCopiedMsgId(id);
+      setTimeout(() => setCopiedMsgId(null), 2000);
+    }
+  };
 
   const quickPrompts = [
     { label: '💰 რა ჯდება ამ დეტალების შეცვლა?', query: 'რა ჯდება ამ დეტალების შეცვლა თბილისის ბაზარზე ნაწილებით და ხელობით?' },
@@ -642,28 +658,63 @@ export const AiMechanicChat: React.FC<Props> = ({
                   {isMe ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4 text-gold" />}
                 </div>
 
-                <div className={`max-w-[85%] sm:max-w-[75%] rounded-3xl p-4 shadow-sm ${
+                <div className={`max-w-[88%] sm:max-w-[80%] rounded-3xl p-4 shadow-sm select-text ${
                   isMe
                     ? 'bg-navy text-white rounded-tr-none'
                     : 'neu-card text-navy rounded-tl-none'
                 }`}>
-                  <div className="text-xs sm:text-sm whitespace-pre-line leading-relaxed">
-                    {msg.text}
-                  </div>
+                  <ChatMessageContent
+                    text={msg.text}
+                    isUser={isMe}
+                    onNavigateTab={onNavigateTab}
+                  />
 
-                  <div className={`flex items-center justify-between mt-2 pt-1 border-t text-[10px] ${
+                  <div className={`flex items-center justify-between mt-2.5 pt-1.5 border-t text-[10px] select-none ${
                     isMe ? 'border-white/10 text-white/60' : 'border-slate-100 text-slate-400'
                   }`}>
                     <span>{msg.timestamp}</span>
-                    {!isMe && (
+
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => speakText(msg.text)}
-                        className="hover:text-gold transition-colors flex items-center gap-1 font-semibold"
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyMessage(msg.text, msg.id);
+                        }}
+                        className={`transition-colors flex items-center gap-1 font-semibold px-2 py-0.5 rounded-lg cursor-pointer ${
+                          copiedMsgId === msg.id
+                            ? 'text-emerald-500 font-bold bg-emerald-500/10'
+                            : isMe
+                              ? 'hover:text-gold text-white/80 hover:bg-white/10'
+                              : 'hover:text-gold text-slate-500 hover:bg-slate-100'
+                        }`}
+                        title="ტექსტის დაკოპირება"
                       >
-                        <Volume2 className="w-3 h-3" />
-                        <span>წაკითხვა</span>
+                        {copiedMsgId === msg.id ? (
+                          <>
+                            <Check size={11} className="text-emerald-500" />
+                            <span>დაკოპირდა!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={11} className="opacity-80" />
+                            <span>დაკოპირება</span>
+                          </>
+                        )}
                       </button>
-                    )}
+
+                      {!isMe && (
+                        <button
+                          type="button"
+                          onClick={() => speakText(msg.text)}
+                          className="hover:text-gold transition-colors flex items-center gap-1 font-semibold px-1.5 py-0.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+                          title="ხმოვანი წაკითხვა"
+                        >
+                          <Volume2 className="w-3 h-3" />
+                          <span>წაკითხვა</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

@@ -1130,6 +1130,11 @@ export const App: React.FC = () => {
       <div id="cover-banner-section" data-tour="cover-banner" className="hidden md:block w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
         <CoverAdBanner
           onNavigateTab={handleTabChange}
+          onStartObdScan={() => {
+            setIsObdConnected(true);
+            handleTabChange('obd');
+            setAutoStartScanTrigger(Date.now());
+          }}
           onOpenBookingModal={() => handleOpenBookingModal()}
           onOpenObdModal={() => setIsObdAdapterModalOpen(true)}
           onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
@@ -1290,6 +1295,7 @@ export const App: React.FC = () => {
             onOpenBookingModal={() => handleOpenBookingModal()}
             services={services}
             fines={fines}
+            onNavigateTab={handleTabChange}
           />
         )}
 

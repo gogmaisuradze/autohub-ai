@@ -4,6 +4,7 @@ import { DtcCode, VehicleProfile } from '../../types';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
 import { TabType } from '../Navigation';
+import { ChatMessageContent, copyTextToClipboard } from './ChatMessageContent';
 import {
   Bot,
   X,
@@ -14,7 +15,9 @@ import {
   AlertTriangle,
   ArrowRight,
   MessageSquare,
-  Zap
+  Zap,
+  Copy,
+  Check
 } from 'lucide-react';
 
 interface Props {
@@ -47,6 +50,16 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [messages, setMessages] = useState<MiniMessage[]>([]);
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
+
+  const handleCopyMessage = async (text: string, id: string) => {
+    sounds.playClick();
+    const ok = await copyTextToClipboard(text);
+    if (ok) {
+      setCopiedMsgId(id);
+      setTimeout(() => setCopiedMsgId(null), 2000);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -338,17 +351,51 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
                 className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`p-2.5 rounded-2xl max-w-[88%] leading-relaxed ${
+                  className={`p-2.5 rounded-2xl max-w-[90%] leading-relaxed select-text ${
                     m.sender === 'user'
                       ? 'bg-navy text-white rounded-tr-xs shadow-xs'
                       : 'bg-white text-navy rounded-tl-xs shadow-xs border border-slate-200/70'
                   }`}
                 >
-                  <p>{m.text}</p>
+                  <ChatMessageContent
+                    text={m.text}
+                    isUser={m.sender === 'user'}
+                    onNavigateTab={onOpenFullChat}
+                  />
+
+                  <div className={`flex items-center justify-between mt-1.5 pt-1 border-t text-[9px] select-none ${
+                    m.sender === 'user' ? 'border-white/10 text-white/60' : 'border-slate-100 text-slate-400'
+                  }`}>
+                    <span className="font-mono">{m.time}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyMessage(m.text, m.id);
+                      }}
+                      className={`flex items-center gap-1 font-semibold px-1.5 py-0.2 rounded transition-colors cursor-pointer ${
+                        copiedMsgId === m.id
+                          ? 'text-emerald-500 font-bold bg-emerald-500/10'
+                          : m.sender === 'user'
+                            ? 'hover:text-gold text-white/80'
+                            : 'hover:text-gold text-slate-500'
+                      }`}
+                      title={isGe ? 'ტექსტის დაკოპირება' : 'Copy message text'}
+                    >
+                      {copiedMsgId === m.id ? (
+                        <>
+                          <Check size={10} className="text-emerald-500" />
+                          <span>{isGe ? 'დაკოპირდა!' : 'Copied!'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={10} className="opacity-80" />
+                          <span>{isGe ? 'დაკოპირება' : 'Copy'}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <span className="text-[9px] text-slate-400 mt-0.5 px-1 font-mono">
-                  {m.time}
-                </span>
               </div>
             ))}
             {loading && (

@@ -172,8 +172,8 @@ export const ThreeCarScene: React.FC<Props> = ({
     setInfoCardOpen(false);
     const isMobileClient = (containerRef.current?.clientWidth || window.innerWidth) < 640;
     targetCamPosRef.current = isMobileClient
-      ? new THREE.Vector3(3.45, 1.75, 3.95)
-      : new THREE.Vector3(4.15, 2.05, 4.65);
+      ? new THREE.Vector3(3.95, 1.95, 4.55)
+      : new THREE.Vector3(4.75, 2.35, 5.35);
     targetCamLookRef.current = new THREE.Vector3(0, .75, 0);
     sequenceCallbacks.current.onSequenceBusyChange?.(true);
     const viewport = containerRef.current;
@@ -251,6 +251,8 @@ export const ThreeCarScene: React.FC<Props> = ({
   }, [entranceTrigger, triggerEntranceFlyIn]);
   const [isGhostMode, setIsGhostMode] = useState<boolean>(false); // Show the finished paint first; X-ray remains available
   const solidTargetRef = useRef(1);
+  const rippleTimeRef = useRef<number>(99);
+  const rippleActiveRef = useRef<boolean>(false);
   const [explodeFactor, setExplodeFactor] = useState<number>(0); // 0 to 1
   const [infoCardOpen, setInfoCardOpen] = useState<boolean>(false);
   const [leftHudOpen, setLeftHudOpen] = useState<boolean>(false);
@@ -547,10 +549,10 @@ export const ThreeCarScene: React.FC<Props> = ({
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    // 2. Camera Setup (Perspective angle matching the user's digital twin blueprint photo)
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.copy(width < 640 ? new THREE.Vector3(6.4,2.8,7.6) : new THREE.Vector3(4.9,2.25,5.8));
-    const initialTarget = new THREE.Vector3(0, 1.65, 0);
+    // 2. Camera Setup (Perspective angle with generous podium breathing margin)
+    const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 100);
+    camera.position.copy(width < 640 ? new THREE.Vector3(7.2, 3.2, 8.6) : new THREE.Vector3(5.6, 2.6, 6.7));
+    const initialTarget = new THREE.Vector3(0, 0.75, 0);
     camera.lookAt(initialTarget);
     cameraRef.current = camera;
 
@@ -716,35 +718,58 @@ export const ThreeCarScene: React.FC<Props> = ({
     dotsGeometry.setAttribute('position',new THREE.Float32BufferAttribute(dotPositions,3));
     dotsGeometry.setAttribute('color',new THREE.Float32BufferAttribute(dotColors,3));
     const constellationUniforms = {
-      uTime:{value:0},uPointer:{value:new THREE.Vector2(-10,-10)},uHover:{value:0},
-      uPixelRatio:{value:Math.min(window.devicePixelRatio||1,1.5)}
+      uTime: { value: 0 },
+      uPointer: { value: new THREE.Vector2(-10, -10) },
+      uHover: { value: 0 },
+      uPixelRatio: { value: Math.min(window.devicePixelRatio || 1, 1.5) },
+      uRippleTime: { value: 99.0 },
+      uRippleStrength: { value: 0.0 }
     };
     const dotsMaterial = new THREE.ShaderMaterial({
-      uniforms:constellationUniforms,vertexColors:true,transparent:true,depthWrite:false,
-      vertexShader:`
-        uniform float uTime,uHover,uPixelRatio; uniform vec2 uPointer;
-        varying vec3 vDotColor; varying float vOpacity;
+      uniforms: constellationUniforms,
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      vertexShader: `
+        uniform float uTime, uHover, uPixelRatio, uRippleTime, uRippleStrength;
+        uniform vec2 uPointer;
+        varying vec3 vDotColor;
+        varying float vOpacity;
         void main(){
-          vec4 clip=projectionMatrix*modelViewMatrix*vec4(position,1.0);
-          vec2 screen=clip.xy/max(abs(clip.w),.001);
-          vec2 delta=screen-uPointer;
-          float distanceToPointer=length(delta);
-          float influence=(1.0-smoothstep(.02,.33,distanceToPointer))*uHover;
+          vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          vec2 screen = clip.xy / max(abs(clip.w), .001);
+          vec2 delta = screen - uPointer;
+          float distanceToPointer = length(delta);
+          float influence = (1.0 - smoothstep(.02, .33, distanceToPointer)) * uHover;
           // Soft repulsion and return to the grid, matching the supplied reference.
-          clip.xy+=normalize(delta+vec2(.0001))*influence*.055*clip.w;
-          float pulse=.5+.5*sin(uTime*1.1+position.x*.6+position.y*.8);
-          gl_Position=clip;
-          gl_PointSize=(2.4+pulse*.5+influence*1.8)*uPixelRatio;
-          vDotColor=mix(color,vec3(1.0,.77,.30),influence);
-          vOpacity=.34+pulse*.18+influence*.25;
+          clip.xy += normalize(delta + vec2(.0001)) * influence * .055 * clip.w;
+          
+          // Concentric water-droplet ripples radiating outward from center ("გეგონება წვეთი ჩავარდა წყალში ეფექტით")
+          float distFromCenter = length(vec2(position.x, position.y - 1.2));
+          float waveFront = distFromCenter - (uRippleTime * 14.0);
+          float rippleWave = sin(waveFront * 1.4) * exp(-abs(waveFront) * 0.26);
+          float rippleDecay = clamp(1.0 - (uRippleTime / 2.8), 0.0, 1.0) * uRippleStrength;
+          float finalRipple = rippleWave * rippleDecay;
+          
+          vec2 rippleDir = normalize(vec2(position.x, position.y - 1.2) + vec2(0.0001));
+          clip.xy += rippleDir * (finalRipple * 0.055) * clip.w;
+
+          float pulse = .5 + .5 * sin(uTime * 1.1 + position.x * .6 + position.y * .8);
+          gl_Position = clip;
+          gl_PointSize = (2.4 + pulse * .5 + influence * 1.8 + abs(finalRipple) * 5.0) * uPixelRatio;
+          
+          vec3 waterGlow = vec3(0.55, 0.85, 1.0);
+          vDotColor = mix(mix(color, vec3(1.0, .77, .30), influence), waterGlow, clamp(finalRipple * 1.8, 0.0, 1.0));
+          vOpacity = .34 + pulse * .18 + influence * .25 + clamp(finalRipple * 0.65, -0.15, 0.55);
         }`,
-      fragmentShader:`
-        varying vec3 vDotColor; varying float vOpacity;
+      fragmentShader: `
+        varying vec3 vDotColor;
+        varying float vOpacity;
         void main(){
-          float radius=length(gl_PointCoord-vec2(.5));
-          float alpha=(1.0-smoothstep(.12,.5,radius))*vOpacity;
-          if(alpha<.015)discard;
-          gl_FragColor=vec4(vDotColor,alpha);
+          float radius = length(gl_PointCoord - vec2(.5));
+          float alpha = (1.0 - smoothstep(.12, .5, radius)) * vOpacity;
+          if (alpha < .015) discard;
+          gl_FragColor = vec4(vDotColor, alpha);
         }`
     });
     const showroomDots=new THREE.Points(dotsGeometry,dotsMaterial);showroomDots.name='ShowroomConstellationDots';scene.add(showroomDots);
@@ -814,6 +839,11 @@ export const ThreeCarScene: React.FC<Props> = ({
     });
     floorMirror.rotation.x=-Math.PI/2;floorMirror.position.y=-.026;stageGroup.add(floorMirror);
 
+    // Dynamic podium illumination light for exploded view showcase ("ქვედა ფონი აინთოს თეთრ სარკისებრი ეფექტის პოდიუმზე")
+    const podiumLight = new THREE.PointLight(0xffffff, 0, 9, 1.4);
+    podiumLight.position.set(0, 3.2, 0);
+    scene.add(podiumLight);
+
 
 
     // 7. Master Automotive Model Hierarchy
@@ -842,7 +872,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         const corner = new THREE.Vector3(x ? box.max.x : box.min.x, y ? box.max.y : box.min.y, z ? box.max.z : box.min.z).sub(center);
         distance = Math.max(distance, corner.dot(direction) + Math.max(Math.abs(corner.dot(right)) / Math.tan(horizontal), Math.abs(corner.dot(up)) / Math.tan(vertical)));
       }
-      distance *= 1.18;
+      distance *= 1.32;
       targetCamLookRef.current = center;
       targetCamPosRef.current = center.clone().addScaledVector(direction, distance);
       controls.maxDistance = Math.max(22, distance * 1.2);
@@ -1683,8 +1713,14 @@ export const ThreeCarScene: React.FC<Props> = ({
     const clock = new THREE.Clock();
     const idlePodium = new THREE.Color(0x172b38);
     const scanPodium = new THREE.Color(0x101e30);
+    const whitePodium = new THREE.Color(0xf6f9fc);
+    const idleSide = new THREE.Color(0x0c1721);
+    const whiteSide = new THREE.Color(0xdce3ed);
     const idleRing = new THREE.Color(0xc3c8d0);
     const scanRing = new THREE.Color(0x477da3);
+    const whiteRing = new THREE.Color(0xffffff);
+    const idleMirror = new THREE.Color(0x5e6067);
+    const whiteMirror = new THREE.Color(0xf4f8fc);
     let fillProgress = solidTargetRef.current;
     visual.fill.value = fillProgress;
     let scanPhase = 0;
@@ -1700,6 +1736,29 @@ export const ThreeCarScene: React.FC<Props> = ({
       const delta = Math.min(elapsedTime - previousTime, .05);
       if (!inViewport || document.hidden) { previousTime = elapsedTime; return; }
       previousTime = elapsedTime;
+
+      // Natural Water Droplet Ripple animation on showroom dome dots ("გეგონება წვეთი ჩავარდა წყალში ეფექტით")
+      if (rippleActiveRef.current) {
+        rippleTimeRef.current += delta;
+        constellationUniforms.uRippleTime.value = rippleTimeRef.current;
+        constellationUniforms.uRippleStrength.value = THREE.MathUtils.damp(
+          constellationUniforms.uRippleStrength.value,
+          1.0,
+          5.0,
+          delta
+        );
+        if (rippleTimeRef.current > 3.2) {
+          rippleActiveRef.current = false;
+        }
+      } else {
+        constellationUniforms.uRippleStrength.value = THREE.MathUtils.damp(
+          constellationUniforms.uRippleStrength.value,
+          0.0,
+          3.0,
+          delta
+        );
+      }
+
       const fillStep = delta / (reducedMotion ? .15 : 2.8);
       fillProgress = THREE.MathUtils.clamp(fillProgress + Math.sign(solidTargetRef.current - fillProgress) * Math.min(Math.abs(solidTargetRef.current - fillProgress), fillStep), 0, 1);
       visual.fill.value = fillProgress * fillProgress * (3 - 2 * fillProgress);
@@ -1719,8 +1778,8 @@ export const ThreeCarScene: React.FC<Props> = ({
         controls.enabled = false;
         const isMobileScreen = (containerRef.current?.clientWidth || window.innerWidth) < 640;
         const targetForegroundCam = isMobileScreen
-          ? new THREE.Vector3(3.45, 1.75, 3.95)
-          : new THREE.Vector3(4.15, 2.05, 4.65);
+          ? new THREE.Vector3(3.95, 1.95, 4.55)
+          : new THREE.Vector3(4.75, 2.35, 5.35);
         const targetForegroundLook = new THREE.Vector3(0, 0.75, 0);
 
         if (Number.isNaN(sequence.startAngle)) {
@@ -1729,21 +1788,28 @@ export const ThreeCarScene: React.FC<Props> = ({
           sequence.initialCamPos = camera.position.clone();
           controls.target.copy(targetForegroundLook);
         }
-        if (sequence.elapsed < 1.2 && !sequence.revealing) {
-          const approach = THREE.MathUtils.smoothstep(sequence.elapsed, 0, 1.2);
+        if (sequence.elapsed < 0.85 && !sequence.revealing) {
+          const approach = THREE.MathUtils.smoothstep(sequence.elapsed, 0, 0.85);
           const startPos = sequence.initialCamPos || camera.position;
           camera.position.lerpVectors(startPos, targetForegroundCam, approach);
           controls.target.lerpVectors(controls.target, targetForegroundLook, approach * 0.15);
           targetCamPosRef.current = null;
           targetCamLookRef.current = null;
-          if (sequence.elapsed > .3) { solidTargetRef.current = 0; setIsGhostMode(previous => previous ? previous : true); }
+          // Trigger X-Ray transparency and water drop ripple on background dots
+          if (sequence.elapsed > 0.15 && solidTargetRef.current !== 0) {
+            solidTargetRef.current = 0;
+            setIsGhostMode(previous => previous ? previous : true);
+            rippleTimeRef.current = 0;
+            rippleActiveRef.current = true;
+          }
         } else if (!sequence.revealing && sequence.active) {
           camera.position.lerp(targetForegroundCam, 0.05);
           controls.target.lerp(targetForegroundLook, 0.05);
         }
         if (!sequence.revealing) {
           sequence.elapsed += delta;
-          const turn = Math.min(sequence.elapsed / 3.8, 1);
+          // Snappy, agile scanning turn: 2.1 seconds ("ტესტირების მომენტი სკანირების აჩქარებული")
+          const turn = Math.min(sequence.elapsed / 2.1, 1);
           const eased = turn * turn * (3 - 2 * turn);
           carMasterGroup.rotation.y = sequence.startAngle + Math.PI * 2 * eased;
           if (turn >= 1 && !liveStateRef.current.isScanning) {
@@ -1764,7 +1830,7 @@ export const ThreeCarScene: React.FC<Props> = ({
               sequenceCallbacks.current.onSequenceBusyChange?.(false);
             }
           } else if (turn >= 1) setScanStage(previous => previous === 'waiting' ? previous : 'waiting');
-        } else if (currentExplodeRef.current > .96) {
+        } else if (currentExplodeRef.current > .94) {
           const matches = componentsList.filter(comp => liveStateRef.current.dtcCodes.some(code => comp.matchingCodes.some(prefix => code.code.toUpperCase().includes(prefix))));
           const matched = matches.find(comp => comp.id.endsWith('_sensor') || comp.id === 'fuel_injectors') || matches[0];
           if (matched) {
@@ -1781,8 +1847,8 @@ export const ThreeCarScene: React.FC<Props> = ({
       }
       if (!sequence.active) controls.enabled = true;
 
-      // Smooth interpolation for Exploded View separation
-      currentExplodeRef.current += (targetExplodeRef.current - currentExplodeRef.current) * 0.08;
+      // Smooth interpolation for Exploded View separation (frame-rate independent & calm transition)
+      currentExplodeRef.current = THREE.MathUtils.damp(currentExplodeRef.current, targetExplodeRef.current, 3.4, delta);
       const curExp = currentExplodeRef.current;
 
       // Displace Unibody Cage & Ghost Body (Lifts high UP)
@@ -1828,22 +1894,29 @@ export const ThreeCarScene: React.FC<Props> = ({
         node.position.copy(rest).addScaledVector(offset, curExp);
       });
 
-      // Neon Emissive Breathing Highlight for Faulty Components
-      const pulse = (Math.sin(elapsedTime * 4.2) + 1) / 2; // 0 to 1
+      // Sophisticated calm breathing highlight for faulty components ("უფრო დახვეწილად და მშვიდად")
+      const calmPulse = 0.5 + 0.5 * Math.sin(elapsedTime * 2.2);
+      // Defect glow softly eases in as the car parts expand
+      const faultRevealEase = THREE.MathUtils.clamp(curExp * 1.35, 0, 1);
 
       componentsList.forEach(comp => {
         const mats = glowMatsRef.current[comp.id];
         const light = lightsRef.current[comp.id];
-        const hasFault = !(sequenceRef.current.active && liveStateRef.current.isScanning) && liveStateRef.current.dtcCodes.some(c =>
+        const hasFault = liveStateRef.current.dtcCodes.some(c =>
           comp.matchingCodes.some(m => c.code.toUpperCase().includes(m.toUpperCase()))
         );
         const isSelected = activePinRef.current === comp.id;
-        // Only components with active DTC faults pulse/blink. Selected components without faults have a steady calm glow.
-        const intensity = hasFault ? (.7 + pulse * .45) : isSelected ? 0.45 : 0;
+
+        // Elegant, calm illumination: soft breathing glow instead of harsh flickering
+        const intensity = hasFault
+          ? (0.45 + calmPulse * 0.40) * faultRevealEase
+          : isSelected
+            ? 0.45
+            : 0;
 
         if (mats) {
           mats.forEach(mat => {
-            if (intensity > 0) {
+            if (intensity > 0.01) {
               mat.emissive.set(comp.color);
               mat.emissiveIntensity = intensity;
             } else {
@@ -1852,7 +1925,7 @@ export const ThreeCarScene: React.FC<Props> = ({
             }
           });
         }
-        if (light) light.intensity = hasFault ? (.45 + pulse * .35) : isSelected ? 0.35 : 0;
+        if (light) light.intensity = hasFault ? (.45 + calmPulse * .35) * faultRevealEase : isSelected ? 0.35 : 0;
       });
 
       if (modelReadyRef.current && Math.abs(curExp - framedExplode) > .003) {
@@ -1890,6 +1963,15 @@ export const ThreeCarScene: React.FC<Props> = ({
         const easeDrive = 1 - Math.pow(1 - tDrive, 3); // Decelerates naturally as it reaches the center
         car.position.z = -13.0 * (1 - easeDrive);
 
+        // Realistic wheel spinning during entrance drive-in ("შემოსვლის დროს მანქანას ბორბლები უტრიალებდეს")
+        const wheelRadius = 0.34;
+        const wheelRotationAngle = car.position.z / wheelRadius;
+        wheelParts.forEach(({ node }) => {
+          if (node.name.startsWith('Rim') || node.name.startsWith('BrakeDisc')) {
+            node.rotation.x = wheelRotationAngle;
+          }
+        });
+
         // Phase 2: As it arrives on the podium, it smoothly rotates from straight (0) into showcase angle (-0.30 rad)
         let rotProgress = 0;
         if (t > 0.48) {
@@ -1903,6 +1985,12 @@ export const ThreeCarScene: React.FC<Props> = ({
           car.position.set(0, 0, 0);
           car.scale.set(1, 1, 1);
           car.rotation.y = -0.30;
+          // Settle wheels on arrival
+          wheelParts.forEach(({ node }) => {
+            if (node.name.startsWith('Rim') || node.name.startsWith('BrakeDisc')) {
+              node.rotation.x = 0;
+            }
+          });
           // Strictly stop in the tilted presentation position!
           liveStateRef.current.autoRotate = false;
           setAutoRotate(false);
@@ -1924,9 +2012,28 @@ export const ThreeCarScene: React.FC<Props> = ({
       const scanning = liveStateRef.current.isScanning || sequenceRef.current.active;
       visual.scanStrength.value = THREE.MathUtils.damp(visual.scanStrength.value, scanning ? 1 : 0, 4, delta);
       const focus = visual.scanStrength.value;
-      podiumMat.color.copy(idlePodium).lerp(scanPodium, focus);
+
+      // White Mirror Podium Transition when exploded ("როცა გაიშლება და ნაწილებად დადგება ქვედა ფონი აინთოს თეთრ სარკისებრი ეფექტის პოდიუმზე")
+      const explodeBlend = THREE.MathUtils.smoothstep(curExp, 0.05, 0.95);
+
+      const currentBasePodium = new THREE.Color().copy(idlePodium).lerp(scanPodium, focus);
+      podiumMat.color.copy(currentBasePodium).lerp(whitePodium, explodeBlend);
+      podiumMat.roughness = THREE.MathUtils.lerp(0.12, 0.025, explodeBlend); // Ultra-glossy mirror sheen
+      podiumMat.metalness = THREE.MathUtils.lerp(0.85, 0.92, explodeBlend);
+
+      podiumSide.color.copy(idleSide).lerp(whiteSide, explodeBlend);
+      podiumSide.roughness = THREE.MathUtils.lerp(0.22, 0.08, explodeBlend);
+
+      const currentBaseRing = new THREE.Color().copy(idleRing).lerp(scanRing, focus);
+      goldRingMat.color.copy(currentBaseRing).lerp(whiteRing, explodeBlend);
+
+      if (floorMirror && (floorMirror as any).material?.uniforms?.['color']) {
+        (floorMirror as any).material.uniforms['color'].value.copy(idleMirror).lerp(whiteMirror, explodeBlend);
+      }
+
+      podiumLight.intensity = explodeBlend * 2.6;
+
       backdropMaterial.color.set(0x17191e).lerp(new THREE.Color(0x081323), focus);
-      goldRingMat.color.copy(idleRing).lerp(scanRing, focus);
       (gridHelper.material as THREE.Material).opacity = THREE.MathUtils.lerp(.35, .10, focus);
       if (scanning && !reducedMotion) scanPhase = (scanPhase + delta / 2.0) % 1;
       visual.scanZ.value = reducedMotion ? 0 : THREE.MathUtils.lerp(-2.65, 2.65, .5 - .5 * Math.cos(scanPhase * Math.PI * 2));
@@ -2064,6 +2171,10 @@ export const ThreeCarScene: React.FC<Props> = ({
     setIsGhostMode(newMode);
 
     solidTargetRef.current = newMode ? 0 : 1;
+    if (newMode) {
+      rippleTimeRef.current = 0;
+      rippleActiveRef.current = true;
+    }
   };
 
   // Focus and Zoom Camera onto Selected Component

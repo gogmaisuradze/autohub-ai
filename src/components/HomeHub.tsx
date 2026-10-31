@@ -18,7 +18,8 @@ import {
   ParkingSquare,
   Calendar,
   Navigation as NavigationIcon,
-  AlertTriangle
+  AlertTriangle,
+  GraduationCap
 } from 'lucide-react';
 
 interface Props {
@@ -85,12 +86,22 @@ export const HomeHub: React.FC<Props> = ({
     {
       id: 'fines' as TabType,
       title: 'საპატრულო',
-      subtitle: 'ვიდეოჯარიმები და მართვის მოწმობის ბილეთები',
+      subtitle: 'ვიდეოჯარიმები და 20%-იანი ფასდაკლების ვადა',
       icon: ShieldAlert,
       badgeText: pendingFines.length > 0 ? `${pendingFines.length}` : 'OK',
       badgeColor: pendingFines.length > 0 ? 'bg-gold text-navy font-bold shadow-gold-soft' : 'bg-emerald-500 text-white font-bold shadow-sm',
       badgeSubtext: pendingFines.length > 0 ? `${totalFineDiscounted} ₾ ვადაში` : 'სისტემა სუფთაა',
       tag: pendingFines.length > 0 ? 'აქტიური ჯარიმა' : '0 ჯარიმა'
+    },
+    {
+      id: 'exam' as TabType,
+      title: 'მართვის მოწმობა',
+      subtitle: '2026 წლის ოფიციალური საგამოცდო ბილეთები',
+      icon: GraduationCap,
+      badgeText: '2026',
+      badgeColor: 'bg-indigo-600 text-white font-black shadow-sm',
+      badgeSubtext: 'A • B • C • D',
+      tag: 'თეორიული გამოცდა'
     },
     {
       id: 'parking' as TabType,

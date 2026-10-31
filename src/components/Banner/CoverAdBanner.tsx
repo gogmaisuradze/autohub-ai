@@ -285,6 +285,7 @@ export const DIGITAL_SERVICES: DigitalServiceItem[] = [
 
 export interface CoverAdBannerProps {
   onNavigateTab?: (tab: TabType) => void;
+  onStartObdScan?: () => void;
   onOpenObdModal?: () => void;
   onOpenVinHistory?: () => void;
   onOpenBookingModal?: () => void;
@@ -294,6 +295,7 @@ export interface CoverAdBannerProps {
 
 export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
   onNavigateTab,
+  onStartObdScan,
   onOpenObdModal,
   onOpenVinHistory,
   onOpenBookingModal,
@@ -391,18 +393,27 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
     sounds.playSuccess();
     setIsCatalogExpanded(false);
 
+    if (service.id === 'obd') {
+      if (onStartObdScan) {
+        onStartObdScan();
+      } else if (onNavigateTab) {
+        onNavigateTab('obd');
+      }
+      return;
+    }
+
+    if (service.id === 'driving_test') {
+      if (onNavigateTab) {
+        onNavigateTab('exam');
+      }
+      return;
+    }
+
     if (service.id === 'vin_check') {
       if (onOpenVinHistory) {
         onOpenVinHistory();
       } else if (onNavigateTab) {
         onNavigateTab('service');
-      }
-      return;
-    }
-
-    if (service.id === 'obd') {
-      if (onNavigateTab) {
-        onNavigateTab('obd');
       }
       return;
     }
@@ -415,8 +426,19 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
   const handleSecondaryAction = (service = current) => {
     sounds.playClick();
 
-    if (service.id === 'obd' && onOpenObdModal) {
-      onOpenObdModal();
+    if (service.id === 'obd') {
+      if (onOpenObdModal) {
+        onOpenObdModal();
+      } else {
+        handleAction(service);
+      }
+      return;
+    }
+
+    if (service.id === 'driving_test') {
+      if (onNavigateTab) {
+        onNavigateTab('exam');
+      }
       return;
     }
 
@@ -493,8 +515,9 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                 <CheckCircle2 size={12} className="text-emerald-400" />
                 0 DTC შეცდომა (Clean)
               </span>
-              <span className="px-1.5 py-0.5 rounded-full bg-gold/20 text-gold text-[9px] font-bold border border-gold/30">
-                🤖 AI მექანიკოსი
+              <span className="px-2 py-0.5 rounded-full bg-gold text-slate-950 text-[9px] font-black shadow-xs flex items-center gap-1">
+                <span>⚡ სკანირება</span>
+                <ArrowRight size={10} />
               </span>
             </div>
           </div>
@@ -531,8 +554,9 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                 <Clock size={12} />
                 დარჩენილია 7 დღე
               </span>
-              <span className="text-slate-300 font-mono text-[9px]">
-                ქულები: 100 / 100
+              <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center gap-1 shadow-xs">
+                <span>ჯარიმები</span>
+                <ArrowRight size={10} />
               </span>
             </div>
           </div>
@@ -568,8 +592,11 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
             </div>
 
             <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
-              <span className="text-slate-300 font-bold">SMS 9110 გაგზავნილია</span>
-              <span className="text-[9px] font-mono text-slate-400">22:00-მდე ფასიანი</span>
+              <span className="text-slate-300 font-bold">SMS 9110</span>
+              <span className="px-2 py-0.5 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center gap-1 shadow-xs">
+                <span>რუკაზე ნახვა</span>
+                <ArrowRight size={10} />
+              </span>
             </div>
           </div>
         );
@@ -606,7 +633,10 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
             <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
               <span className="text-slate-400">შემდეგი: 128k კმ</span>
-              <span className="font-bold text-gold">ჯამი: 420 ₾</span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-black flex items-center gap-1 shadow-xs">
+                <span>დღიურის გახსნა</span>
+                <ArrowRight size={10} />
+              </span>
             </div>
           </div>
         );
@@ -641,7 +671,10 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
             <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
               <span className="text-cyan-300 font-bold">Bus Lane კამერა</span>
-              <span className="text-emerald-400 font-bold">🟢 თავისუფალია</span>
+              <span className="px-2 py-0.5 rounded-full bg-cyan-500 text-slate-950 text-[9px] font-black flex items-center gap-1 shadow-xs">
+                <span>რადარების რუკა</span>
+                <ArrowRight size={10} />
+              </span>
             </div>
           </div>
         );
@@ -675,7 +708,10 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
             <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
               <span className="text-indigo-300 font-bold">მზადყოფნა: 94%</span>
-              <span className="text-slate-400 font-mono text-[9px]">33 თემატიკა</span>
+              <span className="px-2 py-0.5 rounded-full bg-indigo-500 text-white text-[9px] font-bold flex items-center gap-1 shadow-xs">
+                <span>ტესტის დაწყება</span>
+                <ArrowRight size={10} />
+              </span>
             </div>
           </div>
         );
@@ -709,7 +745,10 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
             <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
               <span className="text-purple-300 font-bold">სტატუსი: Clean Title</span>
-              <span className="text-emerald-400 font-bold">Run & Drive</span>
+              <span className="px-2 py-0.5 rounded-full bg-purple-500 text-white text-[9px] font-bold flex items-center gap-1 shadow-xs">
+                <span>VIN შემოწმება</span>
+                <ArrowRight size={10} />
+              </span>
             </div>
           </div>
         );
@@ -762,9 +801,14 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
         <div className="space-y-2 sm:space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-mono font-bold border flex items-center gap-1.5 shadow-xs backdrop-blur-md ${current.tagColor}`}>
+              <span
+                onClick={() => handleAction(current)}
+                className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-mono font-bold border flex items-center gap-1.5 shadow-xs backdrop-blur-md cursor-pointer hover:scale-105 transition-transform ${current.tagColor}`}
+                title="დააჭირეთ გასახსნელად"
+              >
                 <CurrentIcon size={13} />
                 <span>{current.tag}</span>
+                <ArrowRight size={11} className="opacity-70" />
               </span>
               <span className="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[9px] font-mono font-black bg-gold/20 text-gold border border-gold/40">
                 {current.badge}
@@ -809,7 +853,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
             </div>
           </div>
 
-          {/* Quick Horizontal Direction Selector Tabs (Clean bright glowing pills) */}
+          {/* Quick Horizontal Direction Selector Tabs (Clean bright glowing pills - click active tab to immediately navigate/scan!) */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none select-none">
             {DIGITAL_SERVICES.map((srv, idx) => {
               const Icon = srv.icon;
@@ -818,15 +862,23 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
                 <button
                   key={srv.id}
                   type="button"
-                  onClick={() => handleSelectService(idx)}
-                  className={`px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap border transition-all flex items-center gap-1.5 shrink-0 ${
+                  onClick={() => {
+                    if (isActive) {
+                      handleAction(srv);
+                    } else {
+                      handleSelectService(idx);
+                    }
+                  }}
+                  className={`px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
                     isActive
-                      ? 'bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 border-gold shadow-md font-black'
-                      : 'bg-slate-900/70 hover:bg-slate-900 text-slate-200 hover:text-white border-white/10 backdrop-blur-md'
+                      ? 'bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 border-gold shadow-md font-black hover:scale-105 active:scale-95'
+                      : 'bg-slate-900/70 hover:bg-slate-900 text-slate-200 hover:text-white border-white/10 backdrop-blur-md hover:border-gold/30'
                   }`}
+                  title={isActive ? `${srv.shortName} - დააჭირეთ გასახსნელად` : `${srv.shortName} - არჩევა`}
                 >
                   <Icon size={12} className={isActive ? 'text-slate-950' : 'text-gold'} />
                   <span>{srv.shortName}</span>
+                  {isActive && <ArrowRight size={11} className="text-slate-950 ml-0.5 animate-pulse" />}
                 </button>
               );
             })}
@@ -847,9 +899,25 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
             </p>
           </div>
 
-          {/* Right: Sleek Frosted Glass HUD Widget (Tucked neatly to top-right) */}
-          <div className="lg:col-span-4 xl:col-span-4 hidden lg:flex items-start justify-end pt-0.5">
+          {/* Right: Sleek Frosted Glass HUD Widget (Tucked neatly to top-right, fully clickable!) */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => handleAction(current)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleAction(current);
+              }
+            }}
+            className="lg:col-span-4 xl:col-span-4 hidden lg:flex items-start justify-end pt-0.5 cursor-pointer group/hud relative transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] outline-hidden"
+            title={`${current.shortName} - დააჭირეთ გასახსნელად`}
+          >
             {renderVisualCard()}
+            <div className="absolute top-2 right-2 opacity-0 group-hover/hud:opacity-100 transition-opacity px-2 py-0.5 rounded-lg bg-gold text-slate-950 text-[10px] font-black shadow-lg flex items-center gap-1 z-30 pointer-events-none">
+              <span>გახსნა</span>
+              <ArrowRight size={11} />
+            </div>
           </div>
         </div>
 
@@ -858,14 +926,16 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
         {/* Bottom Zone: Highlights 4-Pill Strip + CTA Action Bar (Distributed Tastefully at Lower Section) */}
         <div className="space-y-3 pt-2">
-          {/* Highlights Grid (Horizontal 4-Pill Strip, Never Obscuring the Vehicle) */}
+          {/* Highlights Grid (Horizontal 4-Pill Strip, Never Obscuring the Vehicle - Clickable to open!) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5 max-w-4xl">
             {current.highlights.map((h, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl backdrop-blur-md bg-slate-950/85 border border-white/25 text-[11px] sm:text-xs font-bold text-white shadow-md transition-all hover:border-gold/60 hover:bg-slate-900"
+                onClick={() => handleAction(current)}
+                className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl backdrop-blur-md bg-slate-950/85 border border-white/25 text-[11px] sm:text-xs font-bold text-white shadow-md transition-all hover:border-gold/60 hover:bg-slate-900 cursor-pointer group/pill"
+                title={`${current.shortName} - დააჭირეთ გადასასვლელად`}
               >
-                <CheckCircle2 size={15} className="text-gold shrink-0 drop-shadow-xs" />
+                <CheckCircle2 size={15} className="text-gold shrink-0 drop-shadow-xs group-hover/pill:scale-110 transition-transform" />
                 <span className="truncate drop-shadow-xs">{h}</span>
               </div>
             ))}

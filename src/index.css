@@ -415,7 +415,8 @@
 }
 
 /* Leaflet Dark Neon Map Customizations */
-.custom-leaflet-marker {
+.custom-leaflet-marker,
+.custom-parking-zone-badge {
   background: transparent !important;
   border: none !important;
 }

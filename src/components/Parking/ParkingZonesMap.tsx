@@ -43,9 +43,9 @@ interface Props {
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
 const CITY_COORDINATES: Record<'tbilisi' | 'batumi' | 'kutaisi', { center: [number, number]; zoom: number }> = {
-  tbilisi: { center: [41.7120, 44.7850], zoom: 14.5 },
-  batumi: { center: [41.6500, 41.6400], zoom: 14.5 },
-  kutaisi: { center: [42.2700, 42.7030], zoom: 14.5 }
+  tbilisi: { center: [41.7120, 44.7850], zoom: 16.0 },
+  batumi: { center: [41.6500, 41.6400], zoom: 16.0 },
+  kutaisi: { center: [42.2700, 42.7030], zoom: 16.0 }
 };
 
 export const ParkingZonesMap: React.FC<Props> = ({
@@ -418,17 +418,32 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
     const bounds = mapInstanceRef.current.getBounds().pad(0.2);
     const zoom = mapInstanceRef.current.getZoom();
-    const isCompact = zoom < 14;
+    const isFarZoom = zoom < 15;
 
     filteredZones.forEach(zone => {
       const center = zone.geometry?.center || zone.center;
       if (!center || !center[0] || !center[1]) return;
 
+      const rawPolygon = (zone.geometry?.polygon && zone.geometry.polygon.length >= 3)
+        ? zone.geometry.polygon
+        : (zone.polygon && zone.polygon.length >= 3)
+          ? zone.polygon
+          : null;
+
+      // Ensure EVERY parking spot has a cleanly delineated, physically painted box on the asphalt
+      const effectivePolygon: [number, number][] = rawPolygon || [
+        [center[0] - 0.000030, center[1] - 0.000022],
+        [center[0] + 0.000030, center[1] - 0.000022],
+        [center[0] + 0.000030, center[1] + 0.000022],
+        [center[0] - 0.000030, center[1] + 0.000022],
+        [center[0] - 0.000030, center[1] - 0.000022]
+      ];
+
       const latLng = L.latLng(center[0], center[1]);
       let inBounds = bounds.contains(latLng);
-      if (!inBounds && zone.geometry?.polygon && zone.geometry.polygon.length >= 3) {
+      if (!inBounds && effectivePolygon.length >= 3) {
         try {
-          inBounds = bounds.intersects(L.latLngBounds(zone.geometry.polygon));
+          inBounds = bounds.intersects(L.latLngBounds(effectivePolygon));
         } catch {
           inBounds = false;
         }
@@ -437,64 +452,76 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
       const isSelected = selectedZoneId === zone.id || selectedZoneId === zone.lotCode || selectedZoneId === zone.zoneNumber;
 
-      // Draw Delineated Polygon
-      if (zone.geometry?.polygon && zone.geometry.polygon.length >= 3) {
-        const polygon = L.polygon(zone.geometry.polygon, {
-          color: isSelected ? '#fbbf24' : (zone.tariffCategory === 'A' ? '#2563EB' : zone.tariffCategory === 'B' ? '#D97706' : '#059669'),
-          fillColor: isSelected ? '#fbbf24' : (zone.tariffCategory === 'A' ? '#3B82F6' : zone.tariffCategory === 'B' ? '#F59E0B' : '#10B981'),
-          fillOpacity: isSelected ? 0.75 : 0.45,
-          weight: isSelected ? 4 : 2.5,
-          dashArray: isSelected ? undefined : '4 3'
+      // Draw Delineated Parking Space Polygon (Solid, vibrant, painted parking bay)
+      const strokeColor = isSelected ? '#fbbf24' : (zone.tariffCategory === 'A' ? '#1e40af' : zone.tariffCategory === 'B' ? '#b45309' : '#047857');
+      const fillColor = isSelected ? '#fbbf24' : (zone.tariffCategory === 'A' ? '#3b82f6' : zone.tariffCategory === 'B' ? '#f59e0b' : '#10b981');
+
+      const polygon = L.polygon(effectivePolygon, {
+        color: strokeColor,
+        weight: isSelected ? 3.5 : 2.5,
+        opacity: 0.95,
+        fillColor: fillColor,
+        fillOpacity: isSelected ? 0.85 : 0.60
+      });
+
+      polygon.on('click', () => {
+        sounds.playClick();
+        onSelectZone(zone);
+        marker.openPopup();
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo(center, 17, { duration: 0.8 });
+        }
+      });
+
+      polygon.on('mouseover', () => {
+        setHoveredZone(zone);
+        polygon.setStyle({ weight: 4.5, fillOpacity: 0.90, color: '#fcd34d' });
+      });
+      polygon.on('mouseout', () => {
+        setHoveredZone(null);
+        polygon.setStyle({
+          weight: isSelected ? 3.5 : 2.5,
+          fillOpacity: isSelected ? 0.85 : 0.60,
+          color: strokeColor
         });
+      });
 
-        polygon.on('click', () => {
-          sounds.playClick();
-          onSelectZone(zone);
-          marker.openPopup();
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.flyTo(center, 16.5, { duration: 0.8 });
-          }
-        });
+      polygonLayerGroupRef.current.addLayer(polygon);
 
-        polygon.on('mouseover', () => setHoveredZone(zone));
-        polygon.on('mouseout', () => setHoveredZone(null));
-
-        polygonLayerGroupRef.current.addLayer(polygon);
-      }
-
-      // Marker Icon (Visible at ALL zoom levels!)
-      const badgeHtml = isCompact
+      // Marker Icon - positioned ABOVE the parking stall so the delineated space is 100% visible!
+      const badgeHtml = isFarZoom
         ? `
           <div class="relative flex items-center justify-center cursor-pointer group">
-            <div class="w-6 h-6 rounded-full flex items-center justify-center font-mono font-black text-[11px] shadow-md transition-transform hover:scale-125 ${
+            <div class="w-4 h-4 rounded-full flex items-center justify-center font-mono font-black text-[9px] shadow-md transition-transform hover:scale-125 ${
               isSelected
-                ? 'bg-gold text-navy ring-2 ring-white scale-110'
+                ? 'bg-gold text-navy ring-2 ring-white scale-125'
                 : 'bg-navy text-gold border border-gold/70'
             }">
-              <span>🅿️</span>
+              <span>P</span>
             </div>
           </div>
         `
         : `
-          <div class="relative flex items-center justify-center cursor-pointer group">
-            <div class="px-2 py-1 rounded-xl font-mono font-black text-xs flex items-center gap-1 shadow-lg transition-transform hover:scale-110 ${
+          <div class="relative flex flex-col items-center cursor-pointer group pointer-events-auto">
+            <div class="px-2 py-0.5 rounded-lg font-mono font-black text-[11px] flex items-center gap-1 shadow-md transition-transform group-hover:scale-110 ${
               isSelected
-                ? 'bg-gold text-navy ring-2 ring-white scale-110'
-                : 'bg-navy text-gold border border-gold/60'
+                ? 'bg-gold text-navy ring-2 ring-white scale-105'
+                : 'bg-slate-950/90 text-gold border border-gold/70 backdrop-blur-xs'
             }">
               <span class="w-1.5 h-1.5 rounded-full ${
                 zone.tariffCategory === 'A' ? 'bg-blue-400' : zone.tariffCategory === 'B' ? 'bg-amber-400' : 'bg-emerald-400'
               }"></span>
               <span>#${zone.lotCode}</span>
             </div>
+            <div class="w-1.5 h-1.5 rotate-45 -mt-1 ${isSelected ? 'bg-gold' : 'bg-slate-950'} border-r border-b border-gold/70"></div>
           </div>
         `;
 
       const customIcon = L.divIcon({
         className: 'custom-parking-zone-badge',
         html: badgeHtml,
-        iconSize: isCompact ? [24, 24] : [44, 24],
-        iconAnchor: isCompact ? [12, 12] : [22, 12]
+        iconSize: isFarZoom ? [16, 16] : [48, 28],
+        iconAnchor: isFarZoom ? [8, 8] : [24, 28]
       });
 
       const marker = L.marker(center, { icon: customIcon });
@@ -611,9 +638,12 @@ export const ParkingZonesMap: React.FC<Props> = ({
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-navy text-gold">
                   {cityZones.length} ლოტი
                 </span>
+                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-300">
+                  🅿️ დახაზული სივრცეები
+                </span>
               </div>
               <p className="text-[11px] text-slate-500 font-mono">
-                {city === 'tbilisi' ? 'ზუსტი მუნიციპალური კონტურები და კოდები • განახლებულია 28.10.2026' : 'ადგილების სია • გადაამოწმეთ ადგილზე'}
+                {city === 'tbilisi' ? 'დახაზული საპარკინგე ადგილები და მუნიციპალური კონტურები • განახლებულია 28.10.2026' : 'ადგილების სია • გადაამოწმეთ ადგილზე'}
               </p>
             </div>
           </div>
