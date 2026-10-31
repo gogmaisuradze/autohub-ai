@@ -1161,6 +1161,7 @@ export const App: React.FC = () => {
           onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
           onScrollPastBanner={() => scrollToMainContent(950)}
           isTourActive={isSiteTourActive}
+          activeTab={activeTab}
         />
         </React.Suspense>
       </div>

@@ -291,6 +291,7 @@ export interface CoverAdBannerProps {
   onOpenBookingModal?: () => void;
   onScrollPastBanner?: () => void;
   isTourActive?: boolean;
+  activeTab?: TabType;
 }
 
 export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
@@ -300,9 +301,15 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
   onOpenVinHistory,
   onOpenBookingModal,
   onScrollPastBanner,
-  isTourActive = false
+  isTourActive = false,
+  activeTab
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // განყოფილების გვერდზე ბანერი ამ განყოფილების სლაიდს აჩვენებს და არ ტრიალებს
+  const tabSlideIndex = activeTab && activeTab !== 'home' ? DIGITAL_SERVICES.findIndex(s => s.actionTab === activeTab) : -1;
+  const [currentIndex, setCurrentIndex] = useState(() => Math.max(0, tabSlideIndex));
+  useEffect(() => {
+    if (tabSlideIndex >= 0) setCurrentIndex(tabSlideIndex);
+  }, [tabSlideIndex]);
   const [loadedSlides, setLoadedSlides] = useState(() => new Set([0, 1]));
   useEffect(() => {
     setLoadedSlides(previous => {
@@ -323,7 +330,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
 
   // Auto-advance rotation every 7 seconds (paused during interactive site tour)
   useEffect(() => {
-    if (isPaused || isDismissed || isCatalogExpanded || isTourActive) return;
+    if (isPaused || isDismissed || isCatalogExpanded || isTourActive || tabSlideIndex >= 0) return;
 
     timerRef.current = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % totalServices);
@@ -332,7 +339,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPaused, isDismissed, isCatalogExpanded, isTourActive, totalServices]);
+  }, [isPaused, isDismissed, isCatalogExpanded, isTourActive, tabSlideIndex, totalServices]);
 
   // Global Keyboard ArrowLeft / ArrowRight Navigation for Cover Slides
   useEffect(() => {
