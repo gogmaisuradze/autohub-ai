@@ -1766,7 +1766,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         );
       }
 
-      const fillStep = delta / (reducedMotion ? .15 : 2.8);
+      const fillStep = delta / (reducedMotion ? .15 : 4.0);
       fillProgress = THREE.MathUtils.clamp(fillProgress + Math.sign(solidTargetRef.current - fillProgress) * Math.min(Math.abs(solidTargetRef.current - fillProgress), fillStep), 0, 1);
       visual.fill.value = fillProgress * fillProgress * (3 - 2 * fillProgress);
       visual.lift.value = currentExplodeRef.current * 1.10;
