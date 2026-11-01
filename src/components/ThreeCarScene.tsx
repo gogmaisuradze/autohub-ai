@@ -1281,8 +1281,10 @@ export const ThreeCarScene: React.FC<Props> = ({
         const native = mesh.material as THREE.MeshStandardMaterial;
         const glass = ghostGlassMat.clone();
         glass.side = THREE.FrontSide; // Mirror housings are separate; do not paint inward-facing body surfaces.
-        glass.normalMap = native.normalMap;
-        glass.normalScale.copy(native.normalScale).multiplyScalar(.18);
+        // Thin imported body panels produce self-shadow acne and their baked
+        // normal map contains dark seams. Use the panel normals for clean paint.
+        glass.normalMap = null;
+        mesh.receiveShadow = false;
         glass.userData.solidRoughness = .19;
         glass.userData.solidMetalness = .36;
         mesh.material = glass;
