@@ -1,5 +1,12 @@
 import React from 'react';
 import { MapCategoryKey } from './MapCategoriesCoverflow';
+import {
+  Fuel3DPin,
+  Charging3DPin,
+  Service3DPin,
+  Radar3DCoin,
+  Hazard3DCoin
+} from './Map3DPins';
 
 interface VisualProps {
   categoryKey: MapCategoryKey;
@@ -210,21 +217,14 @@ export const ThematicCategoryVisual: React.FC<VisualProps> = ({
               return (
                 <div className="relative flex flex-col items-center">
                   {/* Floating Pill Badge */}
-                  <div className="px-3 py-1 rounded-full bg-white text-[#1A73E8] font-bold text-xs shadow-md border border-[#DADCE0] -mb-1.5 z-20 whitespace-nowrap flex items-center gap-1.5">
+                  <div className="px-3 py-1 rounded-full bg-white text-[#132238] font-bold text-xs shadow-md border border-[#DADCE0] -mb-2 z-20 whitespace-nowrap flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
                     <span className="text-[11px] font-mono font-black text-slate-900">80 კმ/სთ</span>
                     <span className="text-[10px] text-slate-500">• რადარი</span>
                   </div>
 
-                  {/* Circular Map Pin */}
-                  <div className="relative w-12 h-12 rounded-full bg-[#1A73E8] text-white flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-[#1A73E8]/30 z-10">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-
-                  {/* Pin Pointer Arrow */}
-                  <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#1A73E8] -mt-[1px]" />
+                  {/* 3D Porcelain White Coin Badge */}
+                  <Radar3DCoin className="w-16 h-16 drop-shadow-2xl hover:scale-105 transition-transform" />
                 </div>
               );
 
@@ -267,74 +267,54 @@ export const ThematicCategoryVisual: React.FC<VisualProps> = ({
             case 'hazard':
               return (
                 <div className="relative flex flex-col items-center">
-                  <div className="px-3 py-1 rounded-full bg-[#EA4335] text-white font-bold text-xs shadow-md border border-white -mb-1.5 z-20 whitespace-nowrap flex items-center gap-1">
+                  <div className="px-3 py-1 rounded-full bg-amber-500 text-slate-950 font-bold text-xs shadow-md border border-white -mb-2 z-20 whitespace-nowrap flex items-center gap-1">
                     <span>⚠️</span>
                     <span>საგზაო საფრთხე</span>
                   </div>
 
-                  <div className="relative w-12 h-12 rounded-full bg-[#EA4335] text-white flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-[#EA4335]/30 z-10">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-
-                  <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#EA4335] -mt-[1px]" />
+                  {/* 3D Golden Hazard Coin Badge */}
+                  <Hazard3DCoin className="w-16 h-16 drop-shadow-2xl hover:scale-105 transition-transform" />
                 </div>
               );
 
             case 'fuel':
               return (
                 <div className="relative flex flex-col items-center">
-                  <div className="px-3 py-1 rounded-full bg-white text-[#202124] font-bold text-xs font-mono shadow-md border border-[#DADCE0] -mb-1.5 z-20 whitespace-nowrap flex items-center gap-1.5">
-                    <span className="text-emerald-600 font-black">2.89₾</span>
+                  <div className="px-3 py-1 rounded-full bg-white text-[#202124] font-bold text-xs font-mono shadow-md border border-[#DADCE0] -mb-2 z-20 whitespace-nowrap flex items-center gap-1.5">
+                    <span className="text-amber-600 font-black">2.89₾</span>
                     <span className="text-[10px] text-slate-500">• Gulf / Wissol</span>
                   </div>
 
-                  <div className="relative w-12 h-12 rounded-full bg-[#1E8E3E] text-white flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-[#1E8E3E]/30 z-10">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9h2a2 2 0 012 2v7a2 2 0 01-2 2h-2" />
-                    </svg>
-                  </div>
-
-                  <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#1E8E3E] -mt-[1px]" />
+                  {/* 3D Navy & Gold Fuel Pin */}
+                  <Fuel3DPin className="w-14 h-18 drop-shadow-2xl hover:scale-105 transition-transform" />
                 </div>
               );
 
             case 'charging':
               return (
                 <div className="relative flex flex-col items-center">
-                  <div className="px-3 py-1 rounded-full bg-white text-[#007B83] font-bold text-xs font-mono shadow-md border border-[#DADCE0] -mb-1.5 z-20 whitespace-nowrap flex items-center gap-1.5">
+                  <div className="px-3 py-1 rounded-full bg-white text-[#132238] font-bold text-xs font-mono shadow-md border border-[#DADCE0] -mb-2 z-20 whitespace-nowrap flex items-center gap-1.5">
                     <span>⚡</span>
                     <span className="font-black">EV Fast</span>
                     <span className="text-[10px] text-slate-500">150 kW</span>
                   </div>
 
-                  <div className="relative w-12 h-12 rounded-full bg-[#007B83] text-white flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-[#007B83]/30 z-10">
-                    <svg className="w-6 h-6 text-white fill-current" viewBox="0 0 24 24">
-                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                    </svg>
-                  </div>
-
-                  <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#007B83] -mt-[1px]" />
+                  {/* 3D Porcelain White & Gold Lightning Pin */}
+                  <Charging3DPin className="w-14 h-18 drop-shadow-2xl hover:scale-105 transition-transform" />
                 </div>
               );
 
             case 'service':
               return (
                 <div className="relative flex flex-col items-center">
-                  <div className="px-3 py-1 rounded-full bg-white text-[#1967D2] font-bold text-xs shadow-md border border-[#DADCE0] -mb-1.5 z-20 whitespace-nowrap flex items-center gap-1.5">
+                  <div className="px-3 py-1 rounded-full bg-white text-[#132238] font-bold text-xs shadow-md border border-[#DADCE0] -mb-2 z-20 whitespace-nowrap flex items-center gap-1.5">
                     <span>🔧</span>
                     <span className="font-black text-slate-900">სერვისი</span>
                     <span className="text-[10px] text-slate-500">• 24/7 ვულკანიზაცია</span>
                   </div>
 
-                  <div className="relative w-12 h-12 rounded-full bg-[#1967D2] text-white flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-[#1967D2]/30 z-10">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
-                    </svg>
-                  </div>
-
-                  <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#1967D2] -mt-[1px]" />
+                  {/* 3D Navy & Golden Base Wrench Pin */}
+                  <Service3DPin className="w-14 h-18 drop-shadow-2xl hover:scale-105 transition-transform" />
                 </div>
               );
 

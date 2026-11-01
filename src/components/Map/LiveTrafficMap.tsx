@@ -10,6 +10,13 @@ import { getPreferredLocation, watchPreferredLocation, LocationFix } from '../..
 import AddReportModal from './AddReportModal';
 import { MapCategoriesCoverflow } from './MapCategoriesCoverflow';
 import {
+  getFuel3DPinHtml,
+  getCharging3DPinHtml,
+  getService3DPinHtml,
+  getRadar3DCoinHtml,
+  getHazard3DCoinHtml
+} from './Map3DPins';
+import {
   Navigation,
   Compass,
   Plus,
@@ -1380,16 +1387,13 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
               </div>
             `;
           } else {
-            // General Radar / Camera
+            // General Radar / Camera - AutoHub 3D Porcelain & Navy Camera Coin Badge
             iconHtml = `
               <div class="relative flex flex-col items-center cursor-pointer group">
-                <div class="px-1.5 py-0.2 rounded-full bg-[#1A73E8] text-white font-mono font-bold text-[9px] shadow-xs border border-white -mb-1 z-20 whitespace-nowrap">
-                  რადარი
+                <div class="px-2 py-0.5 rounded-full bg-[#132238] text-white font-mono font-bold text-[9px] shadow-xs border border-white -mb-1.5 z-20 whitespace-nowrap">
+                  📷 რადარი
                 </div>
-                <div class="relative w-8 h-8 rounded-full bg-[#1A73E8] text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 transition-transform z-10">
-                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                </div>
-                <div class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-[#1A73E8] -mt-[1px]"></div>
+                ${getRadar3DCoinHtml()}
               </div>
             `;
           }
@@ -1399,13 +1403,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           markerClass = 'hazard-marker';
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-[#EA4335] text-white font-bold text-[9px] shadow-xs border border-white -mb-1.5 z-20 whitespace-nowrap">
-                საფრთხე
+              <div class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[9px] shadow-xs border border-white -mb-1.5 z-20 whitespace-nowrap">
+                ⚠️ საფრთხე
               </div>
-              <div class="relative w-8 h-8 rounded-full bg-[#EA4335] text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 transition-transform z-10">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-              </div>
-              <div class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-[#EA4335] -mt-[1px]"></div>
+              ${getHazard3DCoinHtml()}
             </div>
           `;
           break;
@@ -1424,13 +1425,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           const lowestPrice = item.fuel_prices ? (item.fuel_prices.regular_92 || item.fuel_prices.premium_95) : null;
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-white text-[#202124] font-bold text-[9px] font-mono shadow-xs border border-[#DADCE0] -mb-1.5 z-20 whitespace-nowrap">
+              <div class="px-2 py-0.5 rounded-full bg-white text-[#132238] font-bold text-[9px] font-mono shadow-xs border border-[#DADCE0] -mb-1.5 z-20 whitespace-nowrap">
                 ${lowestPrice ? `${lowestPrice.toFixed(2)}₾` : fuelBrand}
               </div>
-              <div class="relative w-8 h-8 rounded-full bg-[#1E8E3E] text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 transition-transform z-10">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9h2a2 2 0 012 2v7a2 2 0 01-2 2h-2"/></svg>
-              </div>
-              <div class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-[#1E8E3E] -mt-[1px]"></div>
+              ${getFuel3DPinHtml()}
             </div>
           `;
           break;
@@ -1439,13 +1437,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           markerClass = 'charging-marker';
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-white text-[#007B83] font-bold text-[9px] font-mono shadow-xs border border-[#DADCE0] -mb-1.5 z-20 whitespace-nowrap">
+              <div class="px-2 py-0.5 rounded-full bg-white text-[#132238] font-bold text-[9px] font-mono shadow-xs border border-[#DADCE0] -mb-1.5 z-20 whitespace-nowrap">
                 ⚡ ${item.brand || 'EV Fast'}
               </div>
-              <div class="relative w-8 h-8 rounded-full bg-[#007B83] text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 transition-transform z-10">
-                <svg class="w-4 h-4 text-white fill-current" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              </div>
-              <div class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-[#007B83] -mt-[1px]"></div>
+              ${getCharging3DPinHtml()}
             </div>
           `;
           break;
@@ -1454,13 +1449,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           markerClass = 'service-marker';
           iconHtml = `
             <div class="relative flex flex-col items-center cursor-pointer group">
-              <div class="px-2 py-0.5 rounded-full bg-white text-[#202124] font-bold text-[9px] shadow-xs border border-[#DADCE0] -mb-1.5 z-20 whitespace-nowrap">
+              <div class="px-2 py-0.5 rounded-full bg-white text-[#132238] font-bold text-[9px] shadow-xs border border-[#DADCE0] -mb-1.5 z-20 whitespace-nowrap">
                 🔧 ${item.brand || 'სერვისი'}
               </div>
-              <div class="relative w-8 h-8 rounded-full bg-[#1967D2] text-white flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 transition-transform z-10">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-              </div>
-              <div class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-[#1967D2] -mt-[1px]"></div>
+              ${getService3DPinHtml()}
             </div>
           `;
           break;
