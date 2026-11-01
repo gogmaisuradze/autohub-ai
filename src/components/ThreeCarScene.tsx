@@ -7,6 +7,9 @@ import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { DtcCode, VehicleProfile } from '../types';
 import { CarScenePoster } from './CarScenePoster';
+import { CarLoadingIntro } from './CarLoadingIntro';
+import { fitCarBody } from '../services/fitCarBody';
+import { getCarIntroFrame } from '../services/carIntroTimeline';
 import { sounds } from '../services/soundEffects';
 import { preloadCarModel, getPreloadedCarModel } from '../services/modelPreloader';
 import {
@@ -112,6 +115,19 @@ export const ThreeCarScene: React.FC<Props> = ({
   entranceTrigger
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showLoadingIntro] = useState(() => !getPreloadedCarModel()
+    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    && !(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData);
+  const introTimelineRef = useRef({ active: showLoadingIntro, live: false, time: .28, startedAt: 0 });
+  const updateIntroProgress = useCallback((seconds: number) => {
+    if (!introTimelineRef.current.live) introTimelineRef.current.time = seconds;
+  }, []);
+  const handoffIntro = useCallback((seconds: number) => {
+    introTimelineRef.current.live = true;
+    introTimelineRef.current.time = seconds;
+    introTimelineRef.current.startedAt = performance.now() - seconds * 1000;
+    setIsGhostMode(seconds >= 2.65);
+  }, []);
 
   const [scanStage, setScanStage] = useState<'idle' | 'rotating' | 'waiting' | 'reveal' | 'fault' | 'clean' | 'error'>('idle');
   const sequenceRef = useRef<{
@@ -221,7 +237,7 @@ export const ThreeCarScene: React.FC<Props> = ({
 
   // Trigger 3D car entrance drive-in: starts straight in background along floor, drives forward, then rotates to showcase angle
   const triggerEntranceFlyIn = useCallback(() => {
-    if (!carMasterGroupRef.current) return;
+    if (!carMasterGroupRef.current || introTimelineRef.current.active) return;
     const car = carMasterGroupRef.current;
     car.position.set(0, 0, -13.0);
     car.scale.set(1, 1, 1);
@@ -607,6 +623,11 @@ export const ThreeCarScene: React.FC<Props> = ({
     controlsRef.current = controls;
 
     controls.addEventListener('start', () => {
+      if (introTimelineRef.current.live && introTimelineRef.current.active) {
+        introTimelineRef.current.active = false;
+        solidTargetRef.current = 0;
+        setIsGhostMode(true);
+      }
       targetCamPosRef.current = null;
       targetCamLookRef.current = null;
     });
@@ -1138,6 +1159,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       root.rotation.y = Math.PI; // Blender-ის წინა მხარე -> three +Z
       carMasterGroup.add(root);
       root.updateWorldMatrix(true, true);
+      fitCarBody(root);
 
       const meshesOf = (name: string): THREE.Mesh[] => {
         const node = root.getObjectByName(name);
@@ -1372,8 +1394,8 @@ export const ThreeCarScene: React.FC<Props> = ({
         const native = mesh.material as THREE.MeshStandardMaterial;
         const glass = ghostGlassMat.clone();
         glass.side = THREE.FrontSide; // Mirror housings are separate; do not paint inward-facing body surfaces.
-        glass.normalMap = native.normalMap;
-        glass.normalScale.copy(native.normalScale).multiplyScalar(0.08);
+        glass.normalMap = null;
+        mesh.receiveShadow = false;
         glass.userData = {
           ...ghostGlassMat.userData,
           solidColor: 0xfca311,
@@ -1692,6 +1714,12 @@ export const ThreeCarScene: React.FC<Props> = ({
       root.traverse((o: any) => { if (o.isMesh) remaining.push(o); });
       remaining.forEach(attachNativeDetail);
       const bodyMaterials = new Set<THREE.Material>(bodyMaterialsRef.current);
+      // Keep one shader variant throughout the fade; toggling transparency
+      // here or in the animation loop causes visible compilation stalls.
+      bodyMaterialsRef.current.forEach(material => {
+        material.transparent = true;
+        material.depthWrite = true;
+      });
       const processedMaterials = new Set<THREE.Material>();
       carMasterGroup.traverse(node => {
         if (!(node instanceof THREE.Mesh) || node.name.startsWith('LicensePlate_')) return;
@@ -1866,7 +1894,15 @@ export const ThreeCarScene: React.FC<Props> = ({
         );
       }
 
-      const fillStep = delta / (reducedMotion ? .15 : 2.0);
+      const intro = introTimelineRef.current;
+      const introSeconds = intro.live ? (performance.now() - intro.startedAt) / 1000 : intro.time;
+      const introFrame = intro.active ? getCarIntroFrame(introSeconds) : null;
+      if (introFrame) {
+        fillProgress = introFrame.fill;
+        solidTargetRef.current = introFrame.fill;
+        entranceAnimRef.current.active = false;
+      }
+      const fillStep = delta / (reducedMotion ? .15 : 4.0);
       fillProgress = THREE.MathUtils.clamp(fillProgress + Math.sign(solidTargetRef.current - fillProgress) * Math.min(Math.abs(solidTargetRef.current - fillProgress), fillStep), 0, 1);
       visual.fill.value = fillProgress * fillProgress * (3 - 2 * fillProgress);
       visual.lift.value = currentExplodeRef.current * 1.10;
@@ -1874,11 +1910,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       // ფარები ინთება როცა მანქანა მკაფიო/მყარი ხდება
       if (headlightMat) headlightMat.emissiveIntensity = 0.12 + fillProgress * .85;
       if (taillightMat) taillightMat.emissiveIntensity = 0.12 + fillProgress * .75;
-      bodyMaterialsRef.current.forEach(mat => {
-        const translucent = visual.fill.value < .999;
-        if(mat.transparent !== translucent){mat.transparent=translucent;mat.needsUpdate=true;}
-        mat.depthWrite = true; // Always write depth so interior geometry never pierces the outer hood or body
-      });
+
 
       const sequence = sequenceRef.current;
       if (sequence.active && modelReadyRef.current) {
@@ -2181,6 +2213,29 @@ export const ThreeCarScene: React.FC<Props> = ({
         carMasterGroup.rotation.x = 0;
       }
 
+      if (introFrame && modelReadyRef.current) {
+        carMasterGroup.position.set(0, 0, introFrame.z);
+        carMasterGroup.rotation.set(0, introFrame.yaw, 0);
+        camera.position.copy(width < 640 ? new THREE.Vector3(7.2,3.2,8.6) : new THREE.Vector3(5.6,2.6,6.7));
+        // Match the video's object-cover crop on wide and narrow screens.
+        const clipAspect = (width < 640 ? 390 : 960) / 540;
+        const matchedFov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(18)) * Math.min(1, clipAspect / camera.aspect)));
+        if (Math.abs(camera.fov - matchedFov) > .001) {
+          camera.fov = matchedFov;
+          camera.updateProjectionMatrix();
+        }
+        controls.target.set(0, .75, 0);
+        targetCamPosRef.current = null;
+        targetCamLookRef.current = null;
+        wheelParts.forEach(({ node }) => {
+          if (node.name.startsWith('Rim') || node.name.startsWith('BrakeDisc')) node.rotation.x = introFrame.z / .34;
+        });
+        if (introFrame.done && intro.live) {
+          intro.active = false;
+          solidTargetRef.current = 0;
+          setIsGhostMode(true);
+        }
+      }
       carMasterGroup.updateWorldMatrix(true, false);
       visual.carInverse.value.copy(carMasterGroup.matrixWorld).invert();
 
@@ -2323,7 +2378,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       <div className="absolute bottom-2 left-3 z-20 max-w-[65%] text-[11px] text-slate-400 hover:text-slate-200 pointer-events-auto">
         BMW M4 · 3D ვიზუალიზაცია · <a className="underline" href={`${import.meta.env.BASE_URL}models/bmw-diagnostic-credits.json`} target="_blank" rel="noreferrer">3D ავტორები</a>
       </div>
-      <CarScenePoster hidden={!modelLoading && !modelError} message={modelError ? '3D ვერ ჩაიტვირთა' : modelProgress === 100 ? '3D მოდელი მზადდება…' : modelProgress === null ? '3D მოდელი იტვირთება…' : `3D მოდელი იტვირთება… ${modelProgress}%`} />
+      {showLoadingIntro ? <CarLoadingIntro ready={!modelLoading} error={modelError} onProgress={updateIntroProgress} onHandoff={handoffIntro} /> : <CarScenePoster hidden={!modelLoading && !modelError} message={modelError ? '3D ვერ ჩაიტვირთა' : modelProgress === 100 ? '3D მოდელი მზადდება…' : modelProgress === null ? '3D მოდელი იტვირთება…' : `3D მოდელი იტვირთება… ${modelProgress}%`} />}
       {/* 1. TOP FLOATING CONTROL HUD BAR */}
       <div ref={topControlsRef} className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-col lg:flex-row lg:flex-wrap lg:items-center lg:justify-between gap-2 pointer-events-none">
         
@@ -2870,3 +2925,4 @@ export const ThreeCarScene: React.FC<Props> = ({
 };
 
 export default ThreeCarScene;
+
