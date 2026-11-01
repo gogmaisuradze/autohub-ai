@@ -16,6 +16,8 @@ import {
   Layers,
   Sparkles,
   RotateCw,
+  RotateCcw,
+  Pause,
   Eye,
   Bot,
   AlertTriangle,
@@ -32,12 +34,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Zap,
-  ZoomIn,
-  ZoomOut,
-  MousePointerClick,
-  Lock,
-  Unlock
+  Zap
 } from 'lucide-react';
 
 interface Props {
@@ -276,47 +273,8 @@ export const ThreeCarScene: React.FC<Props> = ({
   const [leftHudOpen, setLeftHudOpen] = useState<boolean>(false);
   const [rightHudOpen, setRightHudOpen] = useState<boolean>(false);
 
-  // Scroll & Zoom Isolation states (Prevents trapping page scroll on wheel or touch)
-  const [isControlsUnlocked, setIsControlsUnlocked] = useState<boolean>(false);
-  const isControlsUnlockedRef = useRef<boolean>(false);
-  const [showGestureHint, setShowGestureHint] = useState<boolean>(false);
-  const gestureHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showTwoFingerOverlay, setShowTwoFingerOverlay] = useState<boolean>(false);
-  const twoFingerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleToggleControlsLock = useCallback(() => {
-    sounds.playClick();
-    setIsControlsUnlocked(prev => {
-      const next = !prev;
-      isControlsUnlockedRef.current = next;
-      if (controlsRef.current) {
-        controlsRef.current.enableZoom = next;
-      }
-      return next;
-    });
-  }, []);
-
-  const handleZoomStep = useCallback((direction: 'in' | 'out') => {
-    if (!cameraRef.current || !controlsRef.current) return;
-    sounds.playClick();
-    const cam = cameraRef.current;
-    const target = controlsRef.current.target;
-    const factor = direction === 'in' ? 0.82 : 1.22;
-    const offset = new THREE.Vector3().subVectors(cam.position, target).multiplyScalar(factor);
-    const newDistance = offset.length();
-    if (newDistance >= controlsRef.current.minDistance && newDistance <= controlsRef.current.maxDistance) {
-      cam.position.copy(target).add(offset);
-      controlsRef.current.update();
-    }
-  }, []);
-
   const handleScrollPastStudio = useCallback(() => {
     sounds.playClick();
-    setIsControlsUnlocked(false);
-    isControlsUnlockedRef.current = false;
-    if (controlsRef.current) {
-      controlsRef.current.enableZoom = false;
-    }
     const nextSection =
       document.getElementById('diagnostic-results-section') ||
       document.getElementById('three-car-studio')?.nextElementSibling;
@@ -333,36 +291,6 @@ export const ThreeCarScene: React.FC<Props> = ({
     } else {
       window.scrollBy({ top: 480, behavior: 'smooth' });
     }
-  }, []);
-
-  // Exit interactive mode on outside click or Escape key
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        if (isControlsUnlockedRef.current) {
-          setIsControlsUnlocked(false);
-          isControlsUnlockedRef.current = false;
-          if (controlsRef.current) {
-            controlsRef.current.enableZoom = false;
-          }
-        }
-      }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isControlsUnlockedRef.current) {
-        setIsControlsUnlocked(false);
-        isControlsUnlockedRef.current = false;
-        if (controlsRef.current) {
-          controlsRef.current.enableZoom = false;
-        }
-      }
-    };
-    window.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
   }, []);
 
   // References to Three.js elements
@@ -618,8 +546,8 @@ export const ThreeCarScene: React.FC<Props> = ({
     controls.minDistance = 2.0;
     controls.maxDistance = 22.0;
     controls.maxPolarAngle = Math.PI / 2 + 0.05;
-    // Default wheel zoom disabled so normal page scroll is never trapped!
-    controls.enableZoom = isControlsUnlockedRef.current;
+    controls.enableZoom = true;
+    controls.enableRotate = true;
     controlsRef.current = controls;
 
     controls.addEventListener('start', () => {
@@ -631,58 +559,6 @@ export const ThreeCarScene: React.FC<Props> = ({
       targetCamPosRef.current = null;
       targetCamLookRef.current = null;
     });
-
-    // Cooperative wheel & 2-finger touch handling on canvas container
-    const domEl = containerRef.current;
-    const onCanvasWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey || isControlsUnlockedRef.current) {
-        controls.enableZoom = true;
-      } else {
-        controls.enableZoom = false;
-        setShowGestureHint(true);
-        if (gestureHintTimerRef.current) clearTimeout(gestureHintTimerRef.current);
-        gestureHintTimerRef.current = setTimeout(() => {
-          setShowGestureHint(false);
-        }, 1600);
-      }
-    };
-
-    const onCanvasTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1 && !isControlsUnlockedRef.current) {
-        // 1 finger without unlock: disable rotation so webpage scrolls smoothly!
-        controls.enableRotate = false;
-        setShowTwoFingerOverlay(true);
-        if (twoFingerTimerRef.current) clearTimeout(twoFingerTimerRef.current);
-        twoFingerTimerRef.current = setTimeout(() => setShowTwoFingerOverlay(false), 1600);
-      } else if (e.touches.length >= 2 || isControlsUnlockedRef.current) {
-        // 2 fingers (or unlocked): full interactive rotate & pinch-zoom!
-        controls.enableRotate = true;
-        controls.enableZoom = true;
-        setShowTwoFingerOverlay(false);
-      }
-    };
-
-    const onCanvasTouchMove = (e: TouchEvent) => {
-      if (e.touches.length >= 2 || isControlsUnlockedRef.current) {
-        controls.enableRotate = true;
-        controls.enableZoom = true;
-        setShowTwoFingerOverlay(false);
-      }
-    };
-
-    const onCanvasTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length === 0) {
-        setShowTwoFingerOverlay(false);
-        controls.enableRotate = true;
-      }
-    };
-
-    if (domEl) {
-      domEl.addEventListener('wheel', onCanvasWheel, { passive: true });
-      domEl.addEventListener('touchstart', onCanvasTouchStart, { passive: true });
-      domEl.addEventListener('touchmove', onCanvasTouchMove, { passive: true });
-      domEl.addEventListener('touchend', onCanvasTouchEnd, { passive: true });
-    }
 
     // 5. Studio Lighting Rig: High-contrast automotive studio lighting
     // Low ambient to preserve deep, ink-black tones and prevent washing out ("შავი ფერი არ იცრიცებოდეს")
@@ -2152,7 +2028,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         !targetCamPosRef.current &&
         curExp < 0.05
       ) {
-        carMasterGroup.rotation.y += 0.0018;
+        carMasterGroup.rotation.y -= 0.0018;
       }
 
       // A calm surface-following sweep, independent of frame rate, with a soft exit.
@@ -2304,14 +2180,6 @@ export const ThreeCarScene: React.FC<Props> = ({
         if (o.isMesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach((m: THREE.Material) => m.dispose()); }
       });
       window.removeEventListener('resize', handleResize);
-      if (domEl) {
-        domEl.removeEventListener('wheel', onCanvasWheel);
-        domEl.removeEventListener('touchstart', onCanvasTouchStart);
-        domEl.removeEventListener('touchmove', onCanvasTouchMove);
-        domEl.removeEventListener('touchend', onCanvasTouchEnd);
-      }
-      if (gestureHintTimerRef.current) clearTimeout(gestureHintTimerRef.current);
-      if (twoFingerTimerRef.current) clearTimeout(twoFingerTimerRef.current);
       renderer.domElement.removeEventListener('pointermove',onHoverMove);
       renderer.domElement.removeEventListener('pointerleave',hideHover);
       renderer.domElement.removeEventListener('pointerdown',onHoverDown);
@@ -2380,28 +2248,40 @@ export const ThreeCarScene: React.FC<Props> = ({
       </div>
       {showLoadingIntro ? <CarLoadingIntro ready={!modelLoading} error={modelError} onProgress={updateIntroProgress} onHandoff={handoffIntro} /> : <CarScenePoster hidden={!modelLoading && !modelError} message={modelError ? '3D ვერ ჩაიტვირთა' : modelProgress === 100 ? '3D მოდელი მზადდება…' : modelProgress === null ? '3D მოდელი იტვირთება…' : `3D მოდელი იტვირთება… ${modelProgress}%`} />}
       {/* 1. TOP FLOATING CONTROL HUD BAR */}
-      <div ref={topControlsRef} className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-col lg:flex-row lg:flex-wrap lg:items-center lg:justify-between gap-2 pointer-events-none">
+      <div ref={topControlsRef} className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
         
-        {/* Left: Window Status Badge & Active Vehicle Plate */}
-        <div className="flex w-full lg:w-auto min-w-0 flex-wrap items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 pointer-events-auto shadow-sm">
+        {/* Left: Window Status Badge & Active Vehicle Plate + Eye Icon for Ghost Mode */}
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 pointer-events-auto shadow-sm shrink-0">
           <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
           <span className="text-[11px] sm:text-xs font-black text-navy font-mono tracking-tight flex items-center gap-1 sm:gap-1.5">
             <Cpu size={12} className="text-gold" />
             <span className="break-words">{vehicle ? `${vehicle.brand} ${vehicle.model}` : 'DIGITAL TWIN X-RAY'}</span>
           </span>
           {vehicle?.plate_number && (
-            <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-md bg-white text-navy font-mono text-[10px] sm:text-[11px] font-black border border-slate-300 shadow-xs ml-0.5">
+            <div className="flex shrink-0 items-center gap-1 px-1.5 py-0.5 rounded-md bg-white text-navy font-mono text-[10px] sm:text-[11px] font-black border border-slate-300 shadow-xs">
               <span className="text-blue-700 text-[9px] sm:text-[10px] font-bold">🇬🇪 GE</span>
               <span>{vehicle.plate_number}</span>
             </div>
           )}
+          {/* Eye Icon for Ghost Mode (თვალი დარჩა და გადავიდა მარცხნივ მანქანის მონაცემებთან) */}
+          <button
+            type="button"
+            onClick={toggleGhostMode}
+            className={`p-1 sm:p-1.5 rounded-full transition-all border cursor-pointer ${
+              isGhostMode
+                ? 'bg-navy text-gold border-gold/40 shadow-xs'
+                : 'bg-slate-100 text-slate-500 hover:text-navy border-slate-200'
+            }`}
+            title={isGhostMode ? 'Ghost მინა აქტიურია (გამჭვირვალე) - დაკლიკეთ მყარ ძარაზე გადასართავად' : 'მყარი ძარა - დაკლიკეთ Ghost მინაზე გადასართავად'}
+            aria-label="Ghost მინის გადართვა"
+          >
+            <Eye size={13} className={isGhostMode ? 'text-gold' : 'text-slate-600'} />
+          </button>
         </div>
 
-        {/* Right HUD Controls: Ghost / Solid Toggle, Exploded View Slider & Reset */}
-        <div className="grid w-full lg:w-auto grid-cols-6 lg:flex lg:flex-wrap items-center gap-2 pointer-events-auto">
-          
-          {/* Quick Scan Button right on 3D Screen */}
-          {onStartScan && (
+        {/* Center: Clean & Sleek Scan Button (სკანირება ცენტრში და უფრო სადა დიზაინი) */}
+        {onStartScan && (
+          <div className="pointer-events-auto flex items-center justify-center order-first sm:order-none w-full sm:w-auto">
             <button
               type="button"
               onClick={() => {
@@ -2409,169 +2289,97 @@ export const ThreeCarScene: React.FC<Props> = ({
                 onStartScan();
               }}
               disabled={scanVisualActive || modelLoading || modelError}
-              className={`col-span-2 min-w-0 min-h-[44px] justify-center px-1.5 sm:px-4 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md active:scale-95 border ${
+              className={`px-4 py-1.5 sm:py-2 rounded-full text-xs font-black flex items-center gap-2 transition-all backdrop-blur-md border shadow-sm active:scale-95 cursor-pointer ${
                 scanVisualActive
-                  ? 'bg-amber-400 text-slate-950 border-amber-500 animate-pulse cursor-wait'
-                  : 'bg-gradient-to-r from-gold via-amber-400 to-gold text-slate-950 hover:shadow-gold-soft hover:scale-105 border-gold shadow-sm'
+                  ? 'bg-navy text-gold border-gold/60 animate-pulse'
+                  : 'bg-white/95 hover:bg-white text-navy border-slate-200 hover:border-gold/50 shadow-sm hover:shadow'
               }`}
               title="3D დიაგნოსტიკური სკანირება"
             >
-              <Zap size={13} className={scanVisualActive ? 'animate-bounce' : 'fill-slate-950 text-slate-950'} />
+              <Zap size={13} className={scanVisualActive ? 'animate-bounce text-gold fill-gold' : 'text-gold fill-gold'} />
               <span>{scanVisualActive ? 'სკანირება...' : 'სკანირება'}</span>
             </button>
-          )}
+          </div>
+        )}
+
+        {/* Right HUD Controls: Combined Explode & Slider, Rotate/Pause, Reset Camera */}
+        <div className="flex items-center gap-2 pointer-events-auto shrink-0">
           
-          {/* Ghost Glass / Solid Body Toggle */}
-          <button
-            onClick={toggleGhostMode}
-            className={`col-span-2 min-w-0 min-h-[44px] justify-center px-1.5 sm:px-3.5 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-sm ${
-              isGhostMode
-                ? 'bg-navy text-white shadow-md'
-                : 'neu-btn text-navy'
-            }`}
-            title="გადართვა: გამჭვირვალე Ghost X-Ray / მყარი ძარა"
-          >
-            <Eye size={13} className={isGhostMode ? 'text-gold' : 'text-navy'} />
-            <span>{isGhostMode ? 'Ghost მინა' : 'მყარი ძარა'}</span>
-          </button>
+          {/* Combined Exploded View & Slider (დაშლის ღილაკი და პროცენტულად ერთად გაერთიანებული) */}
+          <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full border border-slate-200 shadow-sm">
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setExplodeFactor(prev => (prev > 0.05 ? 0 : 1));
+              }}
+              className={`px-2 py-0.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                explodeFactor > 0.05
+                  ? 'bg-navy text-gold shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+              title={explodeFactor > 0.05 ? 'აწყობა (0%)' : 'დაშლა (100%)'}
+            >
+              <Layers size={12} />
+              <span>{explodeFactor > 0.05 ? 'აწყობა' : 'დაშლა'}</span>
+              <span className="font-mono text-[10px] font-black text-gold">
+                {Math.round(explodeFactor * 100)}%
+              </span>
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={explodeFactor}
+              onChange={(e) => setExplodeFactor(parseFloat(e.target.value))}
+              aria-label="დაშლის დონე"
+              className="w-16 sm:w-24 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-gold"
+            />
+          </div>
 
-          {/* Quick Exploded View Toggle Button */}
+          {/* Turntable Rotate / Pause Toggle (დატრიალის ღილაკი პირიქით ტრიალებს და პაუზად კეთდება) */}
           <button
-            onClick={() => {
-              sounds.playClick();
-              setExplodeFactor(prev => (prev > 0.5 ? 0 : 1));
-            }}
-            className={`col-span-2 min-w-0 min-h-[44px] justify-center px-1.5 sm:px-3.5 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-sm ${
-              explodeFactor > 0.5
-                ? 'bg-gold text-navy shadow-gold-soft'
-                : 'neu-btn text-navy'
-            }`}
-          >
-            <Layers size={13} />
-            <span>{explodeFactor > 0.5 ? 'აწყობა' : 'დაშლა'}</span>
-          </button>
-
-          {/* Turntable Auto-Rotate Toggle */}
-          <button
+            type="button"
             onClick={() => {
               sounds.playClick();
               setAutoRotate(r => !r);
             }}
-            className="w-full lg:w-11 h-11 rounded-xl neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
-            title="ტრიალის ჩართვა/გამორთვა"
-            aria-label="ტრიალის ჩართვა/გამორთვა"
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border shadow-sm cursor-pointer ${
+              autoRotate
+                ? 'bg-navy text-gold border-gold/40'
+                : 'bg-white/95 hover:bg-white text-slate-600 hover:text-navy border-slate-200'
+            }`}
+            title={autoRotate ? 'დაპაუზება (პაუზა)' : 'დატრიალება'}
+            aria-label={autoRotate ? 'დაპაუზება' : 'დატრიალება'}
             aria-pressed={autoRotate}
           >
-            <RotateCw size={13} className={autoRotate ? 'text-gold' : 'text-slate-400'} />
+            {autoRotate ? (
+              <Pause size={13} className="text-gold fill-gold" />
+            ) : (
+              <RotateCcw size={13} />
+            )}
           </button>
 
           {/* Reset Camera View */}
           <button
+            type="button"
             onClick={handleResetCamera}
-            className="w-full lg:w-11 h-11 rounded-xl neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
+            className="w-9 h-9 rounded-full bg-white/95 hover:bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:text-navy transition-all shadow-sm cursor-pointer"
             title="საწყის ხედზე დაბრუნება"
             aria-label="საწყის ხედზე დაბრუნება"
           >
             <Maximize2 size={13} />
           </button>
 
-          {/* Interactive 3D Zoom Lock/Unlock Toggle */}
-          <button
-            onClick={handleToggleControlsLock}
-            className={`w-full lg:w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
-              isControlsUnlocked
-                ? 'bg-emerald-500 text-white shadow-md ring-2 ring-emerald-300'
-                : 'neu-circle text-navy hover:text-gold'
-            }`}
-            title={isControlsUnlocked ? '3D ზუმი ჩართულია (დაკლიკეთ ჩასაკეტად)' : '3D ზუმის განბლოკვა (ორჯერ დაკლიკეთ)'}
-            aria-label="3D ზუმის რეჟიმი"
-            aria-pressed={isControlsUnlocked}
-          >
-            {isControlsUnlocked ? <Unlock size={13} /> : <Lock size={13} />}
-          </button>
-
-          {/* Step Zoom In (+) */}
-          <button
-            onClick={() => handleZoomStep('in')}
-            className="w-full lg:w-11 h-11 rounded-xl neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
-            title="3D მოახლოება (+)"
-            aria-label="3D მოახლოება"
-          >
-            <ZoomIn size={13} />
-          </button>
-
-          {/* Step Zoom Out (-) */}
-          <button
-            onClick={() => handleZoomStep('out')}
-            className="w-full lg:w-11 h-11 rounded-xl neu-circle flex items-center justify-center text-navy hover:text-gold transition-all"
-            title="3D დაშორება (-)"
-            aria-label="3D დაშორება"
-          >
-            <ZoomOut size={13} />
-          </button>
-
-      {/* 2. EXPLODED VIEW SCRUB SLIDER (Floating Top-Left) */}
-      <div className="col-span-4 min-w-0 h-11 lg:w-48 pointer-events-auto bg-white/90 backdrop-blur-md px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
-        <Sliders size={12} className="text-gold" />
-        <span className="text-[10px] sm:text-[11px] font-bold text-navy whitespace-nowrap">
-          {Math.round(explodeFactor * 100)}%
-        </span>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={explodeFactor}
-          onChange={(e) => setExplodeFactor(parseFloat(e.target.value))}
-          aria-label="დაშლის დონე"
-          className="min-w-0 w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-gold"
-        />
-      </div>
-
         </div>
       </div>
 
-      {/* 3. 3D WEBGL CANVAS MOUNT */}
+      {/* 2. 3D WEBGL CANVAS MOUNT */}
       <div
         ref={containerRef}
-        onDoubleClick={handleToggleControlsLock}
         className="relative w-full h-full max-w-full overflow-hidden cursor-grab active:cursor-grabbing touch-pan-y"
-        title="ორჯერ დაკლიკეთ 3D ზუმის გასააქტიურებლად/გასათიშად"
       />
-
-      {/* Active Interactive 3D Zoom Pill Badge */}
-      {isControlsUnlocked && (
-        <div className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-full bg-slate-950/90 backdrop-blur-md text-emerald-300 border border-emerald-400/50 shadow-xl flex items-center gap-2 animate-fade-in text-xs font-bold pointer-events-auto">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>3D ზუმი ჩართულია • ორჯერ დაკლიკეთ ან დააჭირეთ Esc-ს</span>
-          <button
-            onClick={handleToggleControlsLock}
-            className="p-1 rounded-full hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
-            title="3D ზუმის გამორთვა"
-          >
-            <X size={13} />
-          </button>
-        </div>
-      )}
-
-      {/* 2-Finger Touch Overlay (Mobile/Tablet Google-style gesture hint) */}
-      {showTwoFingerOverlay && !isControlsUnlocked && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/40 backdrop-blur-[2px] pointer-events-none animate-fade-in transition-opacity">
-          <div className="px-5 py-3 rounded-2xl bg-slate-950/90 text-white text-xs sm:text-sm font-bold border border-white/20 shadow-2xl flex items-center gap-2.5">
-            <span className="text-xl">✌️</span>
-            <span>გამოიყენეთ <strong>2 თითი</strong> 3D მოდელის სამართავად</span>
-          </div>
-        </div>
-      )}
-
-      {/* Momentary Wheel Scroll Hint */}
-      {showGestureHint && !isControlsUnlocked && !showTwoFingerOverlay && (
-        <div className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-2xl bg-slate-950/90 backdrop-blur-md text-white text-xs font-semibold border border-white/20 shadow-2xl flex items-center gap-2 pointer-events-none animate-fade-in">
-          <MousePointerClick size={16} className="text-gold animate-bounce" />
-          <span>გამოიყენეთ <strong>2 თითი (Pinch)</strong> ან <strong>⌘ / Ctrl + Scroll</strong> 3D ზუმისთვის</span>
-        </div>
-      )}
-
       {/* Floating Quick Exit / Scroll Past Button */}
       <button
         type="button"
