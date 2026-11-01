@@ -1070,25 +1070,30 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     osmLayerRef.current = osmLayer;
 
     // 2. CartoDB Dark Matter (true native dark theme, sleek slate/navy, zero CSS filter lag)
-    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
       subdomains: 'abcd',
       maxZoom: 20,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
     });
     darkLayerRef.current = darkLayer;
 
-    // 3. Google Hybrid (crystal clear satellite + road & street name overlays in Georgian!)
-    const satLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-      subdomains: ['0', '1', '2', '3'],
-      maxZoom: 20,
-      attribution: 'Map data &copy; Google'
+    // 3. ESRI Satellite World Imagery + Road/Street Boundaries Overlay (100% reliable, zero CORS/quota blocks)
+    const satBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
     });
+    const satLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19
+    });
+    const satLayer = L.layerGroup([satBase, satLabels]);
     satLayerRef.current = satLayer;
 
     // Attach initial layer
     const initialLayer = mapTheme === 'dark' ? darkLayer : mapTheme === 'satellite' ? satLayer : osmLayer;
     initialLayer.addTo(map);
-    initialLayer.bringToBack();
+    if (typeof (initialLayer as any).bringToBack === 'function') {
+      (initialLayer as any).bringToBack();
+    }
     if (mapContainerRef.current) {
       mapContainerRef.current.classList.remove('dark-map-tiles');
       if (mapTheme === 'dark') {
@@ -1100,8 +1105,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       }
     }
 
-    // Zoom control on top-right
-    L.control.zoom({ position: 'topright' }).addTo(map);
+    // Zoom control placed on bottom-left so top-right is completely free for theme switcher
+    L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
     // Group layer for all reports
     const markersLayer = L.layerGroup().addTo(map);
@@ -1175,7 +1180,9 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     if (!map.hasLayer(targetLayer)) {
       targetLayer.addTo(map);
     }
-    targetLayer.bringToBack();
+    if (typeof (targetLayer as any).bringToBack === 'function') {
+      (targetLayer as any).bringToBack();
+    }
 
     // 2. Remove other layers gracefully
     const allLayers = [osm, dark, sat];
@@ -1199,7 +1206,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
     // Immediate size invalidation to force rendering
     setTimeout(() => { try { map.invalidateSize({ pan: false }); } catch (e) {} }, 40);
-  }, [mapTheme]);
+  }, [mapTheme, isLeafletReady]);
 
   // Helper: Format relative time in Georgian
   const formatTimeAgo = (timestamp: number) => {
@@ -2218,7 +2225,42 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             </span>
           )}
         </div>
-        <div className="text-[11px] text-slate-500">
+
+        {/* Quick Theme Switcher in Status Bar */}
+        <div className="flex items-center gap-1 p-0.5 rounded-xl bg-slate-100 border border-slate-200 text-xs">
+          <button
+            type="button"
+            onClick={() => handleThemeChange('street')}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+              mapTheme === 'street' ? 'bg-white text-navy shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
+            }`}
+            title="სტანდარტული ქუჩების რუკა"
+          >
+            🗺️ ქუჩები
+          </button>
+          <button
+            type="button"
+            onClick={() => handleThemeChange('dark')}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+              mapTheme === 'dark' ? 'bg-[#152238] text-amber-400 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
+            }`}
+            title="მუქი რუკა (Dark Matter)"
+          >
+            🌙 მუქი
+          </button>
+          <button
+            type="button"
+            onClick={() => handleThemeChange('satellite')}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+              mapTheme === 'satellite' ? 'bg-amber-500 text-navy shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
+            }`}
+            title="სატელიტური რუკა ქუჩებით (ESRI World Imagery)"
+          >
+            🛰️ სატელიტი
+          </button>
+        </div>
+
+        <div className="text-[11px] text-slate-500 hidden sm:block">
           <span>იხელმძღვანელეთ საგზაო ნიშნებით • </span>
           <a
             href="https://www.openstreetmap.org/copyright"
@@ -2349,10 +2391,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
         {/* Floating Layer Theme Switcher on Map (Dark, Street, Satellite) */}
         <div
-          onPointerDown={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          className="absolute top-4 right-14 z-20 flex items-center gap-1 p-1 rounded-2xl bg-navy/95 backdrop-blur-md border border-slate-700/80 shadow-lg text-xs"
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-3 right-3 z-[500] pointer-events-auto flex items-center gap-1 p-1 rounded-2xl bg-navy/95 backdrop-blur-md border-2 border-white/20 shadow-2xl text-xs"
         >
           {/* Lock / Unlock Toggle Button */}
           <button
@@ -2368,14 +2408,9 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </button>
           <button
             type="button"
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleThemeChange('dark');
-            }}
+            onClick={() => handleThemeChange('dark')}
             className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-              mapTheme === 'dark' ? 'bg-gold text-navy shadow-xs font-black' : 'text-slate-300 hover:text-white'
+              mapTheme === 'dark' ? 'bg-gold text-navy shadow-md font-black ring-1 ring-white/50' : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
             title="CartoDB Dark Matter მუქი რეჟიმი"
           >
@@ -2383,14 +2418,9 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </button>
           <button
             type="button"
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleThemeChange('street');
-            }}
+            onClick={() => handleThemeChange('street')}
             className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-              mapTheme === 'street' ? 'bg-gold text-navy shadow-xs font-black' : 'text-slate-300 hover:text-white'
+              mapTheme === 'street' ? 'bg-gold text-navy shadow-md font-black ring-1 ring-white/50' : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
             title="სტანდარტული ქუჩების რუკა"
           >
@@ -2398,16 +2428,11 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </button>
           <button
             type="button"
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleThemeChange('satellite');
-            }}
+            onClick={() => handleThemeChange('satellite')}
             className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-              mapTheme === 'satellite' ? 'bg-gold text-navy shadow-xs font-black' : 'text-slate-300 hover:text-white'
+              mapTheme === 'satellite' ? 'bg-gold text-navy shadow-md font-black ring-1 ring-white/50' : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
-            title="Google Hybrid სატელიტი ქუჩების სახელებით"
+            title="სატელიტური რუკა ქუჩებით (ESRI World Imagery)"
           >
             <span>🛰️ სატელიტი</span>
           </button>
