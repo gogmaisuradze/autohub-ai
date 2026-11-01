@@ -1590,6 +1590,11 @@ export const ThreeCarScene: React.FC<Props> = ({
       root.traverse((o: any) => { if (o.isMesh) remaining.push(o); });
       remaining.forEach(attachNativeDetail);
       const bodyMaterials = new Set<THREE.Material>(bodyMaterialsRef.current);
+      bodyMaterialsRef.current.forEach(material => {
+        material.transparent = true;
+        material.alphaHash = false;
+        material.depthWrite = false;
+      });
       const processedMaterials = new Set<THREE.Material>();
       carMasterGroup.traverse(node => {
         if (!(node instanceof THREE.Mesh) || node.name.startsWith('LicensePlate_')) return;
@@ -1769,16 +1774,10 @@ export const ThreeCarScene: React.FC<Props> = ({
       // ფარები ინთება როცა მანქანა მკაფიო/მყარი ხდება
       if (headlightMat) headlightMat.emissiveIntensity = 0.12 + fillProgress * .85;
       if (taillightMat) taillightMat.emissiveIntensity = 0.12 + fillProgress * .75;
+      // Keep the same blended shader throughout the transition. Changing
+      // transparent/alphaHash here recompiles physical materials mid-animation.
       bodyMaterialsRef.current.forEach(mat => {
-        // Alpha hashing resolves intersecting shell triangles per pixel instead
-        // of sorting whole meshes. Keep depth enabled throughout the paint wave.
-        const fading = visual.fill.value < .999;
-        if (mat.transparent || mat.alphaHash !== fading) {
-          mat.transparent = false;
-          mat.alphaHash = fading;
-          mat.needsUpdate = true;
-        }
-        mat.depthWrite = true;
+        mat.depthWrite = visual.fill.value >= .999;
       });
 
       const sequence = sequenceRef.current;
