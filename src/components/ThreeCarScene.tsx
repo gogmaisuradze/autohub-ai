@@ -239,12 +239,14 @@ export const ThreeCarScene: React.FC<Props> = ({
     car.position.set(0, 0, -13.0);
     car.scale.set(1, 1, 1);
     car.rotation.set(0, 0, 0); // Straight forward facing viewer
-    solidTargetRef.current = 0;
-    setIsGhostMode(true);
+    solidTargetRef.current = 1; // "ჯერ უნდა ჩანდეს მანქანა" — full solid car arrives
+    setIsGhostMode(false);
+    setShowInternalParts(false);
+    showInternalPartsRef.current = false;
     entranceAnimRef.current = {
       active: true,
       startTime: performance.now(),
-      duration: 2.4
+      duration: 2.8
     };
     try { sounds.playScanSweep(); } catch {}
   }, []);
@@ -264,8 +266,13 @@ export const ThreeCarScene: React.FC<Props> = ({
       }
     }
   }, [entranceTrigger, triggerEntranceFlyIn]);
-  const [isGhostMode, setIsGhostMode] = useState<boolean>(true); // Starts transparent on entrance; fills with color as it arrives
-  const solidTargetRef = useRef(0);
+  const [isGhostMode, setIsGhostMode] = useState<boolean>(false);
+  const [showInternalParts, setShowInternalParts] = useState<boolean>(false);
+  const showInternalPartsRef = useRef<boolean>(false);
+  useEffect(() => {
+    showInternalPartsRef.current = showInternalParts;
+  }, [showInternalParts]);
+  const solidTargetRef = useRef(1); // Full solid visible car first
   const rippleTimeRef = useRef<number>(99);
   const rippleActiveRef = useRef<boolean>(false);
   const [explodeFactor, setExplodeFactor] = useState<number>(0); // 0 to 1
@@ -902,13 +909,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           uniform vec3 uGhostColor, uPaintColor, uFillOrigin; varying vec3 vCarSurface;\n` + shader.fragmentShader;
         if (body) {
           shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-            float carZ = vCarSurface.z;
-            float frontZ = 2.65;
-            float rearZ = -2.65;
-            float waveZ = mix(frontZ + 0.35, rearZ - 0.35, uFill);
-            float painted = smoothstep(waveZ - 0.30, waveZ + 0.30, carZ);
-            if (uFill <= 0.001) painted = 0.0;
-            if (uFill >= 0.999) painted = 1.0;
+            float painted = clamp(uFill, 0.0, 1.0);
             float surfaceAlpha = clamp(diffuseColor.a / max(opacity, .001), 0.0, 1.0);
             vec3 solidSurface = ${mat.userData.keepSurfaceColor ? 'diffuseColor.rgb * uPaintColor' : 'uPaintColor'};
             diffuseColor.rgb = mix(uGhostColor, solidSurface, painted);
@@ -1997,10 +1998,11 @@ export const ThreeCarScene: React.FC<Props> = ({
         }
         car.rotation.y = -0.30 * rotProgress;
 
-        // Arrival color rise: vehicle starts transparent, then as it arrives on the podium (t > 0.42), color rises and fills the body
-        if (t > 0.42 && solidTargetRef.current === 0) {
-          solidTargetRef.current = 1;
-          setIsGhostMode(false);
+        // "სკანირების გვერდზე პირიქით უნდა იყოს, ჯერ უნდა ჩანდეს მანქანა და მერე ქრებოდეს"
+        // Enters as a full solid car; once settled on the podium (t > 0.82), it smoothly fades:
+        if (t > 0.82 && solidTargetRef.current === 1) {
+          solidTargetRef.current = 0;
+          setIsGhostMode(true);
         }
 
         if (t >= 1) {
@@ -2115,8 +2117,11 @@ export const ThreeCarScene: React.FC<Props> = ({
       carMasterGroup.updateWorldMatrix(true, false);
       visual.carInverse.value.copy(carMasterGroup.matrixWorld).invert();
 
-      for(const id of ['engine','ecu','cooling','suspension','battery','ignition_coil','oxygen_sensor','coolant_sensor','throttle_sensor','fuel_injectors','fuel_pump','intake_sensor','knock_sensor','map_sensor']){
-        const group=groupsRef.current[id];if(group)group.visible=visual.fill.value<.999||curExp>.01;
+      // "არ უნდა გამოჩნდეს არც ერთი მონაკვეთი, სანამ თვალს არ დააჭერ და არ გამოჩნდება, დანარჩენი უნდა იყოს უხილავი"
+      const internalSectionsVisible = showInternalPartsRef.current || curExp > 0.01 || sequenceRef.current.revealing;
+      for (const id of ['engine', 'ecu', 'cooling', 'suspension', 'battery', 'ignition_coil', 'oxygen_sensor', 'coolant_sensor', 'throttle_sensor', 'fuel_injectors', 'fuel_pump', 'intake_sensor', 'knock_sensor', 'map_sensor']) {
+        const group = groupsRef.current[id];
+        if (group) group.visible = internalSectionsVisible;
       }
       controls.update();
       if(hoverInside&&!hoverDragging&&performance.now()-lastHoverCheck>65){
@@ -2191,16 +2196,23 @@ export const ThreeCarScene: React.FC<Props> = ({
     };
   }, []); // Run once on mount
 
-  // Toggle Ghost Glass vs Solid Body Shell
+  // Toggle Ghost Glass vs Solid Body Shell and Internal Parts Visibility
   const toggleGhostMode = () => {
     sounds.playClick();
-    const newMode = !isGhostMode;
-    setIsGhostMode(newMode);
+    const nextShowParts = !showInternalParts;
+    setShowInternalParts(nextShowParts);
+    showInternalPartsRef.current = nextShowParts;
 
-    solidTargetRef.current = newMode ? 0 : 1;
-    if (newMode) {
+    if (nextShowParts) {
+      // Eye clicked: reveal internal components & switch to ghost glass
+      setIsGhostMode(true);
+      solidTargetRef.current = 0;
       rippleTimeRef.current = 0;
       rippleActiveRef.current = true;
+    } else {
+      // Eye toggled off: hide internal components & restore solid body
+      setIsGhostMode(false);
+      solidTargetRef.current = 1;
     }
   };
 
@@ -2263,19 +2275,19 @@ export const ThreeCarScene: React.FC<Props> = ({
               <span>{vehicle.plate_number}</span>
             </div>
           )}
-          {/* Eye Icon for Ghost Mode (თვალი დარჩა და გადავიდა მარცხნივ მანქანის მონაცემებთან) */}
+          {/* Eye Icon for Ghost Mode & Internal Sections (თვალი: შიდა დეტალების გამოჩენა/დამალვა) */}
           <button
             type="button"
             onClick={toggleGhostMode}
             className={`p-1 sm:p-1.5 rounded-full transition-all border cursor-pointer ${
-              isGhostMode
+              showInternalParts
                 ? 'bg-navy text-gold border-gold/40 shadow-xs'
                 : 'bg-slate-100 text-slate-500 hover:text-navy border-slate-200'
             }`}
-            title={isGhostMode ? 'Ghost მინა აქტიურია (გამჭვირვალე) - დაკლიკეთ მყარ ძარაზე გადასართავად' : 'მყარი ძარა - დაკლიკეთ Ghost მინაზე გადასართავად'}
-            aria-label="Ghost მინის გადართვა"
+            title={showInternalParts ? 'შიდა დეტალების დამალვა (მყარი ძარა)' : 'შიდა დეტალების გამოჩენა (Ghost X-Ray)'}
+            aria-label="შიდა დეტალების გამოჩენა/დამალვა"
           >
-            <Eye size={13} className={isGhostMode ? 'text-gold' : 'text-slate-600'} />
+            <Eye size={13} className={showInternalParts ? 'text-gold' : 'text-slate-600'} />
           </button>
         </div>
 
