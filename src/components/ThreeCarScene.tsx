@@ -1646,6 +1646,39 @@ export const ThreeCarScene: React.FC<Props> = ({
         layer.name = 'LaserSection_' + source.name; layer.visible = false; layer.renderOrder = 5;
         source.add(layer); scanLayerMeshes.push(layer);
       });
+      // Opaque paint must occlude rear surfaces even while other panels fade.
+      const depthPanels: { surface: THREE.Mesh; depth: THREE.Mesh }[] = [];
+      const depthMaterials = new Map<THREE.Material, THREE.MeshStandardMaterial>();
+      carMasterGroup.traverse(node => {
+        if (!(node instanceof THREE.Mesh)) return;
+        const materials = Array.isArray(node.material) ? node.material : [node.material];
+        if (!materials.every(material => bodyMaterials.has(material))) return;
+        const masks = materials.map(source => {
+          const existing = depthMaterials.get(source);
+          if (existing) return existing;
+          const mask = (source as THREE.MeshStandardMaterial).clone();
+          mask.transparent = false;
+          mask.depthWrite = true;
+          mask.colorWrite = false;
+          applySurfaceEffects(mask, true);
+          const compileSurface = mask.onBeforeCompile;
+          mask.onBeforeCompile = function(shader, renderer) {
+            compileSurface.call(this, shader, renderer);
+            shader.fragmentShader = shader.fragmentShader.replace(
+              '#include <opaque_fragment>',
+              'if (diffuseColor.a < .999) discard;\n#include <opaque_fragment>'
+            );
+          };
+          mask.customProgramCacheKey = () => 'autohub-paint-depth-v1-' + source.uuid;
+          depthMaterials.set(source, mask);
+          return mask;
+        });
+        const depth = new THREE.Mesh(node.geometry, Array.isArray(node.material) ? masks : masks[0]);
+        depth.name = 'PaintDepth_' + node.name;
+        depth.renderOrder = -10;
+        depthPanels.push({ surface: node, depth });
+      });
+      depthPanels.forEach(({ surface, depth }) => surface.add(depth));
       carMasterGroup.remove(root);
       hoverParts.clear();
       carMasterGroup.traverse(node => {
