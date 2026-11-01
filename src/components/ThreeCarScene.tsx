@@ -164,8 +164,8 @@ export const ThreeCarScene: React.FC<Props> = ({
     setScanStage('rotating');
     setExplodeFactor(0);
     targetExplodeRef.current = 0;
-    solidTargetRef.current = 1;
-    setIsGhostMode(false);
+    solidTargetRef.current = 0;
+    setIsGhostMode(true);
     setAutoRotate(false);
     setActivePin(null);
     activePinRef.current = null;
@@ -226,10 +226,12 @@ export const ThreeCarScene: React.FC<Props> = ({
     car.position.set(0, 0, -13.0);
     car.scale.set(1, 1, 1);
     car.rotation.set(0, 0, 0); // Straight forward facing viewer
+    solidTargetRef.current = 0;
+    setIsGhostMode(true);
     entranceAnimRef.current = {
       active: true,
       startTime: performance.now(),
-      duration: 2.2
+      duration: 2.4
     };
     try { sounds.playScanSweep(); } catch {}
   }, []);
@@ -249,8 +251,8 @@ export const ThreeCarScene: React.FC<Props> = ({
       }
     }
   }, [entranceTrigger, triggerEntranceFlyIn]);
-  const [isGhostMode, setIsGhostMode] = useState<boolean>(false); // Show the finished paint first; X-ray remains available
-  const solidTargetRef = useRef(1);
+  const [isGhostMode, setIsGhostMode] = useState<boolean>(true); // Starts transparent on entrance; fills with color as it arrives
+  const solidTargetRef = useRef(0);
   const rippleTimeRef = useRef<number>(99);
   const rippleActiveRef = useRef<boolean>(false);
   const [explodeFactor, setExplodeFactor] = useState<number>(0); // 0 to 1
@@ -661,12 +663,14 @@ export const ThreeCarScene: React.FC<Props> = ({
       domEl.addEventListener('touchend', onCanvasTouchEnd, { passive: true });
     }
 
-    // 5. Studio Lighting Rig (Clean blueprint studio lighting)
-    const ambientLight = new THREE.AmbientLight(0xd9efff, 0.65);
+    // 5. Studio Lighting Rig: High-contrast automotive studio lighting
+    // Low ambient to preserve deep, ink-black tones and prevent washing out ("შავი ფერი არ იცრიცებოდეს")
+    const ambientLight = new THREE.AmbientLight(0x1e2430, 0.16);
     scene.add(ambientLight);
 
-    const mainKeyLight = new THREE.DirectionalLight(0xf1fbff, 3.0);
-    mainKeyLight.position.set(6, 12, 6);
+    // Focused key directional light creating crisp, razor-sharp specular glints ("ბლიკები")
+    const mainKeyLight = new THREE.DirectionalLight(0xfff5ea, 2.8);
+    mainKeyLight.position.set(5.5, 9.5, 5.0);
     mainKeyLight.castShadow = true;
     mainKeyLight.shadow.mapSize.width = 1024;
     mainKeyLight.shadow.mapSize.height = 1024;
@@ -679,12 +683,14 @@ export const ThreeCarScene: React.FC<Props> = ({
     mainKeyLight.shadow.camera.bottom = -4;
     scene.add(mainKeyLight);
 
-    const softFillLight = new THREE.DirectionalLight(0xecf0ff, 1.7);
-    softFillLight.position.set(-6, 5, -5);
+    // Subtle soft fill light preserving high shadow contrast
+    const softFillLight = new THREE.DirectionalLight(0xffeedb, 0.45);
+    softFillLight.position.set(-6, 4, -4);
     scene.add(softFillLight);
 
-    const rimLight = new THREE.DirectionalLight(0xf0f5ff, 0.85);
-    rimLight.position.set(4, 2, -6);
+    // Crisp rim backlight tracing car shoulders and spoiler
+    const rimLight = new THREE.DirectionalLight(0xfff2e0, 1.15);
+    rimLight.position.set(4, 3, -6.5);
     scene.add(rimLight);
 
     // 6. High-Tech Blueprint Stage Floor (Matching the technical digital grid in photo)
@@ -692,7 +698,7 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     // Dark spherical showroom with a suspended honeycomb light canopy.
     const backdropGeometry = new THREE.SphereGeometry(28, 64, 40);
-    const backdropMaterial = new THREE.MeshStandardMaterial({ color: 0x17191e, roughness: .55, metalness: .25, side: THREE.BackSide });
+    const backdropMaterial = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: .85, metalness: .1, side: THREE.BackSide });
     const backdrop = new THREE.Mesh(backdropGeometry, backdropMaterial);
     backdrop.position.y = 1.2; scene.add(backdrop);
     // Constellation reference adapted to a spherical, dots-only showroom backdrop.
@@ -774,38 +780,13 @@ export const ThreeCarScene: React.FC<Props> = ({
     });
     const showroomDots=new THREE.Points(dotsGeometry,dotsMaterial);showroomDots.name='ShowroomConstellationDots';scene.add(showroomDots);
 
-    const canopy = new THREE.Group();canopy.position.y=4.1;
-    const neonCore = new THREE.MeshBasicMaterial({color:new THREE.Color(.91,.96,1).multiplyScalar(1.1),toneMapped:false});
-    const neonHalo = new THREE.MeshBasicMaterial({color:0xfff3df,transparent:true,opacity:.045,depthWrite:false});
-    const edges=new Set<string>();
-    const neonTube=(a:THREE.Vector3,b:THREE.Vector3)=>{
-      const midpoint=a.clone().add(b).multiplyScalar(.5),direction=b.clone().sub(a);
-      const length=direction.length();direction.normalize();
-      for(const [radius,material] of [[.014,neonCore],[.044,neonHalo]] as const){
-        const tube=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,length,6),material);
-        tube.position.copy(midpoint);tube.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction);canopy.add(tube);
-      }
-    };
-    const hexSize=.85;
-    for(let q=-1;q<=1;q++)for(let r=-1;r<=1;r++){
-      if(Math.abs(q+r)>1)continue;
-      const cx=hexSize*1.5*q,cz=hexSize*Math.sqrt(3)*(r+q/2);
-      const corners=Array.from({length:6},(_,i)=>new THREE.Vector3(cx+hexSize*Math.cos(i*Math.PI/3),0,cz+hexSize*Math.sin(i*Math.PI/3)));
-      for(let i=0;i<6;i++){
-        const a=corners[i],b=corners[(i+1)%6];
-        const key=[a.toArray().map(v=>v.toFixed(3)).join(','),b.toArray().map(v=>v.toFixed(3)).join(',')].sort().join('|');
-        if(!edges.has(key)){edges.add(key);neonTube(a,b);}
-      }
-    }
-    scene.add(canopy);
-
     const podiumGeo = new THREE.CylinderGeometry(3.15, 3.28, .22, 72);
     const podiumMat = new THREE.MeshStandardMaterial({
-      color: 0x172b38,
-      roughness: 0.12,
-      metalness: 0.85
+      color: 0x0a0f16,
+      roughness: 0.06,
+      metalness: 0.90
     });
-    const podiumSide = new THREE.MeshStandardMaterial({ color: 0x0c1721, roughness: .22, metalness: .8 });
+    const podiumSide = new THREE.MeshStandardMaterial({ color: 0x06090e, roughness: .20, metalness: .85 });
     const podium = new THREE.Mesh(podiumGeo, [podiumSide, podiumMat, podiumSide]);
     podium.position.y = -.14;
     podium.castShadow = true;
@@ -822,7 +803,7 @@ export const ThreeCarScene: React.FC<Props> = ({
 
     // Warm Gold Outer Ring
     const goldRingGeo = new THREE.RingGeometry(3.145, 3.17, 72);
-    const goldRingMat = new THREE.MeshBasicMaterial({ color: 0xc3c8d0, side: THREE.DoubleSide });
+    const goldRingMat = new THREE.MeshBasicMaterial({ color: 0xfca311, side: THREE.DoubleSide });
     const goldRing = new THREE.Mesh(goldRingGeo, goldRingMat);
     goldRing.rotation.x = -Math.PI / 2;
     goldRing.position.y = -.025;
@@ -830,19 +811,112 @@ export const ThreeCarScene: React.FC<Props> = ({
     stageGroup.add(goldRing);
 
     scene.add(stageGroup);
-    // Bake these exact ceiling lights into paint/window reflections once.
-    const showroomPmrem=new THREE.PMREMGenerator(renderer);
-    const showroomEnvironment=showroomPmrem.fromScene(scene,.045,.1,30);
-    scene.environment=showroomEnvironment.texture;showroomPmrem.dispose();
-    const floorMirror=new Reflector(new THREE.CircleGeometry(3.14,72),{
-      textureWidth:width<640?512:768,textureHeight:width<640?512:768,clipBias:.003,color:0x5e6067
-    });
-    floorMirror.rotation.x=-Math.PI/2;floorMirror.position.y=-.026;stageGroup.add(floorMirror);
 
-    // Dynamic podium illumination light for exploded view showcase ("ქვედა ფონი აინთოს თეთრ სარკისებრი ეფექტის პოდიუმზე")
-    const podiumLight = new THREE.PointLight(0xffffff, 0, 9, 1.4);
-    podiumLight.position.set(0, 3.2, 0);
-    scene.add(podiumLight);
+    // Dedicated automotive studio HDR lighting rig for PMREM environment map:
+    // Pure black void with high-intensity linear strip lights — creates razor-sharp,
+    // blinding specular glints ("ბლიკები") while keeping blacks 100% deep, rich, and saturated!
+    const envScene = new THREE.Scene();
+    
+    // 1. Studio backdrop enclosure — Pure pitch black so non-highlight surfaces stay deep, saturated black
+    const envRoom = new THREE.Mesh(
+      new THREE.SphereGeometry(32, 32, 24),
+      new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })
+    );
+    envScene.add(envRoom);
+
+    // 2. Linear automotive strip lights for sharp, crisp specular glints ("ბლიკები"):
+    const makeStudioSoftbox = (w: number, h: number, pos: THREE.Vector3, target: THREE.Vector3, intensity: number) => {
+      const p = new THREE.Mesh(
+        new THREE.PlaneGeometry(w, h),
+        new THREE.MeshBasicMaterial({
+          color: new THREE.Color(1.0, 0.95, 0.88).multiplyScalar(intensity),
+          side: THREE.DoubleSide
+        })
+      );
+      p.position.copy(pos);
+      p.lookAt(target);
+      envScene.add(p);
+    };
+
+    // Roof & hood linear light strip:
+    makeStudioSoftbox(1.0, 7.5, new THREE.Vector3(0, 6.5, 0.4), new THREE.Vector3(0, 0, 0.4), 4.2);
+    // Left waistline linear strip (creates razor-sharp shoulder glint):
+    makeStudioSoftbox(9.5, 0.35, new THREE.Vector3(-6.2, 1.9, 0), new THREE.Vector3(0, 0.6, 0), 4.5);
+    // Right waistline linear strip:
+    makeStudioSoftbox(9.5, 0.35, new THREE.Vector3(6.2, 1.9, 0), new THREE.Vector3(0, 0.6, 0), 4.5);
+    // Front brow strip (sharp nose & hood curvature glint):
+    makeStudioSoftbox(4.5, 0.40, new THREE.Vector3(0, 3.4, 6.8), new THREE.Vector3(0, 0.5, 1.5), 3.5);
+    // Rear spoiler & haunches strip:
+    makeStudioSoftbox(4.5, 0.40, new THREE.Vector3(0, 3.4, -6.8), new THREE.Vector3(0, 0.5, -1.0), 3.0);
+
+    const envPmrem = new THREE.PMREMGenerator(renderer);
+    const studioEnvTarget = envPmrem.fromScene(envScene, 0.04, 0.1, 40);
+    scene.environment = studioEnvTarget.texture;
+    envPmrem.dispose();
+    envScene.traverse(obj => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry.dispose();
+        if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+        else obj.material.dispose();
+      }
+    });
+
+    // High-contrast piano-black showroom reflector shader:
+    // Pure, razor-sharp, 100% geometric mirror reflection of the exact honeycomb lighting lattice & yellow car.
+    // Zero artificial blur, zero hazy specular blobs, zero fuzzy halos.
+    const floorShader = {
+      name: 'ShowroomFloorShader',
+      uniforms: {
+        color: { value: new THREE.Color(0x06090f) },
+        tDiffuse: { value: null },
+        textureMatrix: { value: null }
+      },
+      vertexShader: /* glsl */`
+        uniform mat4 textureMatrix;
+        varying vec4 vUv;
+        #include <common>
+        #include <logdepthbuf_pars_vertex>
+        void main() {
+          vUv = textureMatrix * vec4( position, 1.0 );
+          gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+          #include <logdepthbuf_vertex>
+        }
+      `,
+      fragmentShader: /* glsl */`
+        uniform vec3 color;
+        uniform sampler2D tDiffuse;
+        varying vec4 vUv;
+        #include <logdepthbuf_pars_fragment>
+        void main() {
+          #include <logdepthbuf_fragment>
+          vec4 refl = texture2DProj( tDiffuse, vUv );
+          
+          // Pure Piano-Black Obsidian Glass Pedestal:
+          // Deep glossy dark surface
+          vec3 floorBase = color; // #06090f
+          
+          // Laser-sharp, identical reflection of the exact overhead honeycomb lattice:
+          // Unblurred, crisp geometric mirror output!
+          vec3 finalColor = floorBase * 0.12 + refl.rgb * 1.20;
+          
+          gl_FragColor = vec4( finalColor, 1.0 );
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }
+      `
+    };
+    const floorMirror = new Reflector(new THREE.CircleGeometry(3.14, 96), {
+      textureWidth: typeof window !== 'undefined' && window.innerWidth < 640 ? 1024 : 2048,
+      textureHeight: typeof window !== 'undefined' && window.innerWidth < 640 ? 1024 : 2048,
+      clipBias: 0.003,
+      shader: floorShader,
+      color: 0x06090f
+    });
+    floorMirror.rotation.x = -Math.PI / 2;
+    floorMirror.position.y = -0.026;
+    stageGroup.add(floorMirror);
+
+
 
 
 
@@ -922,8 +996,8 @@ export const ThreeCarScene: React.FC<Props> = ({
           uScanStrength: visual.scanStrength, uCarInverse: visual.carInverse,
           uGhostColor: { value: mat.userData.ghostColor ? new THREE.Color(mat.userData.ghostColor) : ghostColor }, uPaintColor: { value: solidColor },
           uGhostAlpha: { value: mat.userData.ghostOpacity ?? .26 },
-          uSolidRoughness: { value: mat.userData.solidRoughness ?? .30 },
-          uSolidMetalness: { value: mat.userData.solidMetalness ?? .40 }
+          uSolidRoughness: { value: mat.userData.solidRoughness ?? .07 },
+          uSolidMetalness: { value: mat.userData.solidMetalness ?? .35 }
         });
         shader.vertexShader = 'uniform mat4 uCarInverse; varying vec3 vCarSurface;\n' + shader.vertexShader;
         shader.vertexShader = shader.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvCarSurface = (uCarInverse * modelMatrix * vec4(transformed, 1.0)).xyz;');
@@ -931,19 +1005,20 @@ export const ThreeCarScene: React.FC<Props> = ({
           uniform vec3 uGhostColor, uPaintColor, uFillOrigin; varying vec3 vCarSurface;\n` + shader.fragmentShader;
         if (body) {
           shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-            vec3 fillPoint = vCarSurface - vec3(0.0, uLift, 0.0);
-            float waveDistance = distance(fillPoint, uFillOrigin);
-            float waveRadius = uFill * (uFillReach + .18);
-            float painted = 1.0 - smoothstep(waveRadius - .12, waveRadius + .12, waveDistance);
-            if (uFill <= .001) painted = 0.0;
-            if (uFill >= .999) painted = 1.0;
+            float carZ = vCarSurface.z;
+            float frontZ = 2.65;
+            float rearZ = -2.65;
+            float waveZ = mix(frontZ + 0.35, rearZ - 0.35, uFill);
+            float painted = smoothstep(waveZ - 0.30, waveZ + 0.30, carZ);
+            if (uFill <= 0.001) painted = 0.0;
+            if (uFill >= 0.999) painted = 1.0;
             float surfaceAlpha = clamp(diffuseColor.a / max(opacity, .001), 0.0, 1.0);
             vec3 solidSurface = ${mat.userData.keepSurfaceColor ? 'diffuseColor.rgb * uPaintColor' : 'uPaintColor'};
             diffuseColor.rgb = mix(uGhostColor, solidSurface, painted);
             diffuseColor.a = surfaceAlpha * mix(uGhostAlpha, 1.0, painted);
             diffuseColor.a *= 1.0 - exp(-pow((vCarSurface.z - uScanZ) / .18, 2.0)) * uScanStrength * .85 * (1.0 - painted);`);
-          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(.13, uSolidRoughness, painted);');
-          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(.03, uSolidMetalness, painted);');
+          shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>\nroughnessFactor = mix(.06, uSolidRoughness, painted);`);
+          shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>\nmetalnessFactor = mix(.02, uSolidMetalness, painted);`);
         }
         shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
           float scanBand = exp(-pow((vCarSurface.z - uScanZ) / .035, 2.0));
@@ -1239,11 +1314,17 @@ export const ThreeCarScene: React.FC<Props> = ({
       carMasterGroup.add(bodyGrp);
       groupsRef.current['body'] = bodyGrp;
       // Mirror pieces were merged into paint, plastic and translucent cabin meshes.
-      // Keep their original geometry, but give both housings one consistent finish.
+      // Keep their original geometry, but give both housings one consistent finish: deep gloss M-Sport piano black.
       const mirrorHousingMaterial = new THREE.MeshPhysicalMaterial({
-        color:0x0c1014,roughness:.38,metalness:.03,clearcoat:.45,clearcoatRoughness:.18,envMapIntensity:.35,side:THREE.DoubleSide
+        color: 0x010204,
+        roughness: 0.04,
+        metalness: 0.05,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.015,
+        envMapIntensity: 1.6,
+        side: THREE.DoubleSide
       });
-      const mirrorGroups=['Body_Paint','Body_Trim','Body_Interior'];
+      const mirrorGroups=['Body_Interior'];
       for(const groupName of mirrorGroups)for(const mesh of meshesOf(groupName)){
         if(Array.isArray(mesh.material))continue;
         const geometry=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();
@@ -1270,36 +1351,55 @@ export const ThreeCarScene: React.FC<Props> = ({
         geometry.dispose();
       }
 
+      // Authentic automotive metallic lacquer with wet-look polyurethane clearcoat (mirror-smooth & punchy specular glints)
       const ghostGlassMat = new THREE.MeshPhysicalMaterial({
-        color: 0xaecbe6, transmission: 0.0, opacity: 0.26, transparent: true,
-        roughness: 0.14, ior: 1.45, metalness: 0.05, clearcoat: 1.0, depthWrite: false
+        color: 0xfca311,
+        transmission: 0.0,
+        opacity: 0.28,
+        transparent: true,
+        roughness: 0.02,
+        ior: 1.60,
+        metalness: 0.15,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.01,
+        envMapIntensity: 2.2,
+        depthWrite: true
       });
-      ghostGlassMat.userData.ghostOpacity = 0.26;
-      ghostGlassMat.userData.solidColor = 0xe5e8eb; // Pearl white automotive lacquer
+      ghostGlassMat.userData.ghostOpacity = 0.28;
+      ghostGlassMat.userData.solidColor = 0xfca311; // Rich automotive gold/yellow (matching the hero slider #FCA311)
       bodyMaterialsRef.current = [ghostGlassMat];
       meshesOf('Body_Paint').forEach(mesh => {
         const native = mesh.material as THREE.MeshStandardMaterial;
         const glass = ghostGlassMat.clone();
         glass.side = THREE.FrontSide; // Mirror housings are separate; do not paint inward-facing body surfaces.
-        // Thin imported body panels produce self-shadow acne and their baked
-        // normal map contains dark seams. Use the panel normals for clean paint.
-        glass.normalMap = null;
-        mesh.receiveShadow = false;
-        glass.userData.solidRoughness = .19;
-        glass.userData.solidMetalness = .36;
+        glass.normalMap = native.normalMap;
+        glass.normalScale.copy(native.normalScale).multiplyScalar(0.08);
+        glass.userData = {
+          ...ghostGlassMat.userData,
+          solidColor: 0xfca311,
+          solidRoughness: 0.02,
+          solidMetalness: 0.15
+        };
+        glass.clearcoat = 1.0;
+        glass.clearcoatRoughness = 0.01;
+        glass.ior = 1.60;
+        glass.envMapIntensity = 2.2;
+        glass.depthWrite = true;
         mesh.material = glass;
+        mesh.renderOrder = 2; // Always render outer body after inner mechanicals
         bodyMaterialsRef.current.push(glass);
         bodyGrp.attach(mesh);
       });
-      // წინა ცხაური (BMW M Kidney Grille — თანაბარი ქარხნული პრიალა შავი შეფერილობა)
+      // წინა ცხაური (BMW M Kidney Grille — ღრმა, მდიდარი პრიალა შავი შეფერილობა)
       meshesOf('Body_Grille').forEach(mesh => {
         const native = mesh.material as THREE.MeshStandardMaterial;
         const material = new THREE.MeshPhysicalMaterial({
-          color: 0x0e1014,
-          roughness: 0.20,
-          metalness: 0.12,
-          clearcoat: 0.85,
-          clearcoatRoughness: 0.10,
+          color: 0x010204,
+          roughness: 0.04,
+          metalness: 0.08,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.015,
+          envMapIntensity: 1.6,
           side: THREE.DoubleSide
         });
         if (native && native.map) material.map = native.map;
@@ -1309,10 +1409,10 @@ export const ThreeCarScene: React.FC<Props> = ({
         }
         material.userData = {
           ghostOpacity: 0.18,
-          solidColor: 0x0e1014,
+          solidColor: 0x010204,
           keepSurfaceColor: false,
-          solidRoughness: 0.20,
-          solidMetalness: 0.12
+          solidRoughness: 0.04,
+          solidMetalness: 0.08
         };
         mesh.material = material;
         bodyMaterialsRef.current.push(material);
@@ -1323,18 +1423,19 @@ export const ThreeCarScene: React.FC<Props> = ({
       meshesOf('Body_Trim').forEach(mesh => {
         const native = mesh.material as THREE.MeshStandardMaterial;
         const material = new THREE.MeshPhysicalMaterial({
-          color: 0x14171c,
-          roughness: 0.36,
+          color: 0x020305,
+          roughness: 0.05,
           metalness: 0.05,
-          clearcoat: 0.45,
-          clearcoatRoughness: 0.20
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.02,
+          envMapIntensity: 1.5
         });
         if (native && native.map) material.map = native.map;
         material.userData = {
           ghostOpacity: 0.14,
-          solidColor: 0x14171c,
+          solidColor: 0x020305,
           keepSurfaceColor: false,
-          solidRoughness: 0.36,
+          solidRoughness: 0.05,
           solidMetalness: 0.05
         };
         mesh.material = material;
@@ -1345,14 +1446,15 @@ export const ThreeCarScene: React.FC<Props> = ({
       // მინები — ავთენტური ქარხნული ტონირებული საავტომობილო მინა (საქარე მინა/ფანჯრები)
       const windowMat = new THREE.MeshPhysicalMaterial({
         color: 0x16202c,
-        transmission: 0.12,
-        opacity: 0.72,
+        transmission: 0.15,
+        opacity: 0.76,
         transparent: true,
-        roughness: 0.06,
-        ior: 1.52,
-        metalness: 0.08,
+        roughness: 0.02,
+        ior: 1.54,
+        metalness: 0.06,
         clearcoat: 1.0,
-        clearcoatRoughness: 0.04,
+        clearcoatRoughness: 0.02,
+        envMapIntensity: 1.30,
         depthWrite: true,
         side: THREE.DoubleSide
       });
@@ -1534,8 +1636,8 @@ export const ThreeCarScene: React.FC<Props> = ({
         geometry.dispose();
       });
 
-      // თავფარები — ანათებს თეთრ-ცისფრად
-      const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xddeeff, emissiveIntensity: 0.3, roughness: 0.12, metalness: 0.0 });
+      // თავფარები — ანათებს სუფთა თეთრ-ცისფრად (მინა), იატაკზე ბუნდოვანი ლაქების გარეშე
+      const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xddeeff, emissiveIntensity: 0.9, roughness: 0.10, metalness: 0.0 });
       meshesOf('Body_LightsF').forEach(m => { m.material = headMat; bodyGrp.attach(m); });
       headlightMat = headMat;
       // უკანა ფარები — წითელი
@@ -1590,11 +1692,6 @@ export const ThreeCarScene: React.FC<Props> = ({
       root.traverse((o: any) => { if (o.isMesh) remaining.push(o); });
       remaining.forEach(attachNativeDetail);
       const bodyMaterials = new Set<THREE.Material>(bodyMaterialsRef.current);
-      bodyMaterialsRef.current.forEach(material => {
-        material.transparent = true;
-        material.alphaHash = false;
-        material.depthWrite = false;
-      });
       const processedMaterials = new Set<THREE.Material>();
       carMasterGroup.traverse(node => {
         if (!(node instanceof THREE.Mesh) || node.name.startsWith('LicensePlate_')) return;
@@ -1628,7 +1725,10 @@ export const ThreeCarScene: React.FC<Props> = ({
       // stochastic alpha dithering or displaced duplicate geometry.
       bodyMaterialsRef.current.forEach(material => {
         if(!material.userData.keepSurfaceColor){
-          material.clearcoat=1;material.clearcoatRoughness=.08;material.ior=1.5;
+          material.clearcoat = 1.0;
+          material.clearcoatRoughness = 0.025;
+          material.ior = 1.56;
+          material.reflectivity = 0.9;
         }
       });
       carMasterGroup.updateWorldMatrix(true, true);
@@ -1718,15 +1818,15 @@ export const ThreeCarScene: React.FC<Props> = ({
     // =========================================================================
     let animId: number;
     const clock = new THREE.Clock();
-    const idlePodium = new THREE.Color(0x172b38);
-    const scanPodium = new THREE.Color(0x101e30);
+    const idlePodium = new THREE.Color(0x0a0f16);
+    const scanPodium = new THREE.Color(0x060c14);
     const whitePodium = new THREE.Color(0xf6f9fc);
-    const idleSide = new THREE.Color(0x0c1721);
+    const idleSide = new THREE.Color(0x06090e);
     const whiteSide = new THREE.Color(0xdce3ed);
-    const idleRing = new THREE.Color(0xc3c8d0);
-    const scanRing = new THREE.Color(0x477da3);
+    const idleRing = new THREE.Color(0xfca311);
+    const scanRing = new THREE.Color(0x38bdf8);
     const whiteRing = new THREE.Color(0xffffff);
-    const idleMirror = new THREE.Color(0x5e6067);
+    const idleMirror = new THREE.Color(0x080c12);
     const whiteMirror = new THREE.Color(0xf4f8fc);
     let fillProgress = solidTargetRef.current;
     visual.fill.value = fillProgress;
@@ -1766,7 +1866,7 @@ export const ThreeCarScene: React.FC<Props> = ({
         );
       }
 
-      const fillStep = delta / (reducedMotion ? .15 : 4.0);
+      const fillStep = delta / (reducedMotion ? .15 : 2.0);
       fillProgress = THREE.MathUtils.clamp(fillProgress + Math.sign(solidTargetRef.current - fillProgress) * Math.min(Math.abs(solidTargetRef.current - fillProgress), fillStep), 0, 1);
       visual.fill.value = fillProgress * fillProgress * (3 - 2 * fillProgress);
       visual.lift.value = currentExplodeRef.current * 1.10;
@@ -1774,10 +1874,10 @@ export const ThreeCarScene: React.FC<Props> = ({
       // ფარები ინთება როცა მანქანა მკაფიო/მყარი ხდება
       if (headlightMat) headlightMat.emissiveIntensity = 0.12 + fillProgress * .85;
       if (taillightMat) taillightMat.emissiveIntensity = 0.12 + fillProgress * .75;
-      // Keep the same blended shader throughout the transition. Changing
-      // transparent/alphaHash here recompiles physical materials mid-animation.
       bodyMaterialsRef.current.forEach(mat => {
-        mat.depthWrite = visual.fill.value >= .999;
+        const translucent = visual.fill.value < .999;
+        if(mat.transparent !== translucent){mat.transparent=translucent;mat.needsUpdate=true;}
+        mat.depthWrite = true; // Always write depth so interior geometry never pierces the outer hood or body
       });
 
       const sequence = sequenceRef.current;
@@ -1791,7 +1891,8 @@ export const ThreeCarScene: React.FC<Props> = ({
 
         if (Number.isNaN(sequence.startAngle)) {
           sequence.startAngle = carMasterGroup.rotation.y;
-          fillProgress = 1; visual.fill.value = 1;
+          solidTargetRef.current = 0;
+          setIsGhostMode(true);
           sequence.initialCamPos = camera.position.clone();
           controls.target.copy(targetForegroundLook);
         }
@@ -1815,20 +1916,26 @@ export const ThreeCarScene: React.FC<Props> = ({
         }
         if (!sequence.revealing) {
           sequence.elapsed += delta;
-          // Snappy, agile scanning turn: 2.1 seconds ("ტესტირების მომენტი სკანირების აჩქარებული")
-          const turn = Math.min(sequence.elapsed / 2.1, 1);
+          // Single smooth 360-degree rotation: 2.4s ("სკანირების დროს ერთი უნდა გაატაროს, დატრიალდეს და გაჩერდეს და გაიშალოს")
+          const scanDuration = 2.4;
+          const turn = Math.min(sequence.elapsed / scanDuration, 1.0);
           const eased = turn * turn * (3 - 2 * turn);
           carMasterGroup.rotation.y = sequence.startAngle + Math.PI * 2 * eased;
-          if (turn >= 1 && !liveStateRef.current.isScanning) {
+
+          // Single laser pass from front (+2.65) to back (-2.65) exactly once
+          visual.scanZ.value = THREE.MathUtils.lerp(2.65, -2.65, eased);
+
+          if (turn >= 1.0 && !liveStateRef.current.isScanning) {
             if (scanOutcomeRef.current === 'error') {
               sequence.active = false;
               setScanStage('error');
               sequenceCallbacks.current.onSequenceBusyChange?.(false);
             } else if (liveStateRef.current.dtcCodes.length > 0) {
+              // Rotation stops cleanly at resting angle, laser finishes, vehicle calmly unfolds in place
               sequence.revealing = true;
               setScanStage('reveal');
-              targetExplodeRef.current = 1;
-              setExplodeFactor(1);
+              targetExplodeRef.current = 1.0;
+              setExplodeFactor(1.0);
             } else {
               sequence.active = false;
               solidTargetRef.current = 1;
@@ -1836,12 +1943,11 @@ export const ThreeCarScene: React.FC<Props> = ({
               setScanStage('clean');
               sequenceCallbacks.current.onSequenceBusyChange?.(false);
             }
-          } else if (turn >= 1) setScanStage(previous => previous === 'waiting' ? previous : 'waiting');
+          } else if (turn >= 1.0) setScanStage(previous => previous === 'waiting' ? previous : 'waiting');
         } else if (currentExplodeRef.current > .94) {
           const matches = componentsList.filter(comp => liveStateRef.current.dtcCodes.some(code => comp.matchingCodes.some(prefix => code.code.toUpperCase().includes(prefix))));
           const matched = matches.find(comp => comp.id.endsWith('_sensor') || comp.id === 'fuel_injectors') || matches[0];
           if (matched) {
-            fitWholeAssembly();
             activePinRef.current = matched.id;
             setActivePin(matched.id);
             setInfoCardOpen(true);
@@ -1935,10 +2041,6 @@ export const ThreeCarScene: React.FC<Props> = ({
         if (light) light.intensity = hasFault ? (.45 + calmPulse * .35) * faultRevealEase : isSelected ? 0.35 : 0;
       });
 
-      if (modelReadyRef.current && Math.abs(curExp - framedExplode) > .003) {
-        if (curExp > .01 || framedExplode > .01) fitWholeAssembly();
-        framedExplode = curExp;
-      }
 
       // Smooth Camera & Target Gliding
       if (targetCamPosRef.current) {
@@ -1987,6 +2089,12 @@ export const ThreeCarScene: React.FC<Props> = ({
         }
         car.rotation.y = -0.30 * rotProgress;
 
+        // Arrival color rise: vehicle starts transparent, then as it arrives on the podium (t > 0.42), color rises and fills the body
+        if (t > 0.42 && solidTargetRef.current === 0) {
+          solidTargetRef.current = 1;
+          setIsGhostMode(false);
+        }
+
         if (t >= 1) {
           entranceAnimRef.current.active = false;
           car.position.set(0, 0, 0);
@@ -2017,7 +2125,23 @@ export const ThreeCarScene: React.FC<Props> = ({
 
       // A calm surface-following sweep, independent of frame rate, with a soft exit.
       const scanning = liveStateRef.current.isScanning || sequenceRef.current.active;
-      visual.scanStrength.value = THREE.MathUtils.damp(visual.scanStrength.value, scanning ? 1 : 0, 4, delta);
+      const isExplodedIdle = curExp > 0.85 && !scanning;
+
+      if (isExplodedIdle) {
+        // "გაშლილი რომ გაჩერდება, ოდნავ ტალღა გადადიოდეს 2 წამიან ინტერვალთ, ნელი"
+        // Subtle, slow holographic wave passing across the unfolded vehicle every 2 seconds
+        const cyclePeriod = 2.0;
+        const cycle = (elapsedTime % cyclePeriod) / cyclePeriod;
+        visual.scanZ.value = THREE.MathUtils.lerp(2.65, -2.65, cycle);
+        const wavePulse = Math.sin(cycle * Math.PI);
+        visual.scanStrength.value = THREE.MathUtils.damp(visual.scanStrength.value, wavePulse * 0.38, 8, delta);
+      } else {
+        visual.scanStrength.value = THREE.MathUtils.damp(visual.scanStrength.value, scanning ? 1 : 0, 4, delta);
+        if (!sequenceRef.current.active) {
+          if (scanning && !reducedMotion) scanPhase = (scanPhase + delta / 2.0) % 1;
+          visual.scanZ.value = reducedMotion ? 0 : THREE.MathUtils.lerp(-2.65, 2.65, .5 - .5 * Math.cos(scanPhase * Math.PI * 2));
+        }
+      }
       const focus = visual.scanStrength.value;
 
       // White Mirror Podium Transition when exploded ("როცა გაიშლება და ნაწილებად დადგება ქვედა ფონი აინთოს თეთრ სარკისებრი ეფექტის პოდიუმზე")
@@ -2025,11 +2149,11 @@ export const ThreeCarScene: React.FC<Props> = ({
 
       const currentBasePodium = new THREE.Color().copy(idlePodium).lerp(scanPodium, focus);
       podiumMat.color.copy(currentBasePodium).lerp(whitePodium, explodeBlend);
-      podiumMat.roughness = THREE.MathUtils.lerp(0.12, 0.025, explodeBlend); // Ultra-glossy mirror sheen
-      podiumMat.metalness = THREE.MathUtils.lerp(0.85, 0.92, explodeBlend);
+      podiumMat.roughness = THREE.MathUtils.lerp(0.06, 0.025, explodeBlend); // Ultra-glossy mirror sheen
+      podiumMat.metalness = THREE.MathUtils.lerp(0.90, 0.95, explodeBlend);
 
       podiumSide.color.copy(idleSide).lerp(whiteSide, explodeBlend);
-      podiumSide.roughness = THREE.MathUtils.lerp(0.22, 0.08, explodeBlend);
+      podiumSide.roughness = THREE.MathUtils.lerp(0.20, 0.08, explodeBlend);
 
       const currentBaseRing = new THREE.Color().copy(idleRing).lerp(scanRing, focus);
       goldRingMat.color.copy(currentBaseRing).lerp(whiteRing, explodeBlend);
@@ -2038,46 +2162,20 @@ export const ThreeCarScene: React.FC<Props> = ({
         (floorMirror as any).material.uniforms['color'].value.copy(idleMirror).lerp(whiteMirror, explodeBlend);
       }
 
-      podiumLight.intensity = explodeBlend * 2.6;
-
-      backdropMaterial.color.set(0x17191e).lerp(new THREE.Color(0x081323), focus);
+      backdropMaterial.color.set(0x000000).lerp(new THREE.Color(0x020610), focus);
       (gridHelper.material as THREE.Material).opacity = THREE.MathUtils.lerp(.35, .10, focus);
-      if (scanning && !reducedMotion) scanPhase = (scanPhase + delta / 2.0) % 1;
-      visual.scanZ.value = reducedMotion ? 0 : THREE.MathUtils.lerp(-2.65, 2.65, .5 - .5 * Math.cos(scanPhase * Math.PI * 2));
+
       laserRig.visible = visual.scanStrength.value > .005;
       scanLayerMeshes.forEach(mesh => { mesh.visible = visual.scanStrength.value > .03; });
       laserRig.rotation.copy(carMasterGroup.rotation);
       laserSheet.position.z = visual.scanZ.value;
       laserTrace.position.z = visual.scanZ.value;
       laserLight.position.z = visual.scanZ.value;
-      traceMaterial.opacity = visual.scanStrength.value * .65;
-      laserLight.intensity = visual.scanStrength.value * .55;
+      traceMaterial.opacity = visual.scanStrength.value * (isExplodedIdle ? 0.32 : 0.65);
+      laserLight.intensity = visual.scanStrength.value * (isExplodedIdle ? 0.25 : 0.55);
       rimLight.intensity = .7 + visual.scanStrength.value * .35;
 
-      // Laser-Synchronized 3D Vibration ("ტესტირების დროს სკანირების ლაზერის მიხედვით ოდნავ ვიბრირებდეს")
-      if (focus > 0.01) {
-        const laserDist = Math.abs(visual.scanZ.value);
-        const onCarProximity = Math.max(0.25, 1.0 - laserDist / 2.65);
-        
-        // High-frequency harmonic oscillation (simulating laser ultrasonic scan resonance)
-        const vib1 = Math.sin(elapsedTime * 64.0);
-        const vib2 = Math.cos(elapsedTime * 92.0);
-        const vib3 = Math.sin(elapsedTime * 128.0);
-        
-        // Intensity factor modulated by laser scan strength and beam proximity on vehicle
-        const intensityFactor = focus * (0.65 + 0.35 * onCarProximity);
-        const vibAmp = 0.0032 * intensityFactor; // Subtle 3.2mm micro-vibration in 3D world units
-        
-        carMasterGroup.position.x = (vib1 * 0.7 + vib2 * 0.3) * vibAmp;
-        carMasterGroup.position.y = (vib2 * 0.8 + vib3 * 0.2) * (vibAmp * 0.65);
-        carMasterGroup.position.z = (vib3 * 0.7 + vib1 * 0.3) * (vibAmp * 0.8);
-        
-        // Subtle micro-rotational tremor
-        carMasterGroup.rotation.z = Math.sin(elapsedTime * 70.0) * (vibAmp * 0.35);
-        carMasterGroup.rotation.x = Math.cos(elapsedTime * 58.0) * (vibAmp * 0.25);
-
-
-      } else if (!entranceAnimRef.current.active) {
+      if (!entranceAnimRef.current.active) {
         carMasterGroup.position.set(0, 0, 0);
         carMasterGroup.rotation.z = 0;
         carMasterGroup.rotation.x = 0;
@@ -2090,7 +2188,6 @@ export const ThreeCarScene: React.FC<Props> = ({
         const group=groupsRef.current[id];if(group)group.visible=visual.fill.value<.999||curExp>.01;
       }
       controls.update();
-      canopy.visible = camera.position.y < canopy.position.y - .3;
       if(hoverInside&&!hoverDragging&&performance.now()-lastHoverCheck>65){
         lastHoverCheck=performance.now();
         carMasterGroup.updateWorldMatrix(true,true);
@@ -2143,7 +2240,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       viewportObserver.disconnect();
       dotsGeometry.dispose(); dotsMaterial.dispose();
       floorMirror.getRenderTarget().dispose();
-      showroomEnvironment.dispose();
+      studioEnvTarget.dispose();
       environmentTarget.dispose();
       dracoLoader.dispose();
       scene.traverse((o: any) => {
@@ -2212,7 +2309,7 @@ export const ThreeCarScene: React.FC<Props> = ({
     <div className={`relative w-full h-[540px] sm:h-[620px] md:h-[640px] rounded-3xl overflow-hidden neu-surface select-none touch-pan-y transition-all duration-700 ${
       scanVisualActive
         ? 'ring-4 ring-cyan-500/60 shadow-[0_0_45px_rgba(34,211,238,0.35),0_16px_36px_rgba(15,23,42,0.25)] border border-cyan-400 z-30'
-        : 'border border-white shadow-sm bg-gradient-to-b from-[#FAFBFC] via-[#F2F3F5] to-[#E8EBEF]'
+        : 'border border-slate-200/80 shadow-md bg-white'
     }`}>
       
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none transition-opacity duration-1000" style={{ background: 'radial-gradient(ellipse at 50% 48%, #1a3047 0%, #0b1728 58%, #050b14 100%)', opacity: scanVisualActive ? 1 : 0 }} />
@@ -2223,10 +2320,10 @@ export const ThreeCarScene: React.FC<Props> = ({
           <span>სკანირება</span>
         </div>
       )}
-      <div className="absolute bottom-2 left-3 z-20 max-w-[65%] text-[11px] text-slate-500 pointer-events-auto">
+      <div className="absolute bottom-2 left-3 z-20 max-w-[65%] text-[11px] text-slate-400 hover:text-slate-200 pointer-events-auto">
         BMW M4 · 3D ვიზუალიზაცია · <a className="underline" href={`${import.meta.env.BASE_URL}models/bmw-diagnostic-credits.json`} target="_blank" rel="noreferrer">3D ავტორები</a>
       </div>
-      <CarScenePoster hidden={!modelLoading && !modelError} message={modelError ? '3D ვერ ჩაიტვირთა — ნაჩვენებია ფოტო' : modelProgress === 100 ? '3D მოდელი მზადდება…' : modelProgress === null ? '3D მოდელი იტვირთება…' : `3D მოდელი იტვირთება… ${modelProgress}%`} />
+      <CarScenePoster hidden={!modelLoading && !modelError} message={modelError ? '3D ვერ ჩაიტვირთა' : modelProgress === 100 ? '3D მოდელი მზადდება…' : modelProgress === null ? '3D მოდელი იტვირთება…' : `3D მოდელი იტვირთება… ${modelProgress}%`} />
       {/* 1. TOP FLOATING CONTROL HUD BAR */}
       <div ref={topControlsRef} className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 right-2.5 sm:right-4 z-20 flex flex-col lg:flex-row lg:flex-wrap lg:items-center lg:justify-between gap-2 pointer-events-none">
         

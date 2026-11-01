@@ -97,7 +97,8 @@ export const ObdModule: React.FC<Props> = ({
   const [isInstructionsOpen, setIsInstructionsOpen] = useState<boolean>(false);
   const [showPortHint, setShowPortHint] = useState<boolean>(false);
   useRevealResult(`${isInstructionsOpen}:${selectedInstructionType}`, 'obd-instructions-result', isInstructionsOpen);
-  useRevealResult(scanOutcome, 'diagnostic-results-section', scanOutcome === 'success');
+  // Disabled auto-scroll to results so screen stays fixed on the 3D car exploded view without jumping down
+  useRevealResult(scanOutcome, 'diagnostic-results-section', false);
 
 
   useEffect(() => {

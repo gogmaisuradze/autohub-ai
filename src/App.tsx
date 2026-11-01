@@ -1190,7 +1190,7 @@ export const App: React.FC = () => {
 
         {/* Sub-department Views */}
         {activeTab === 'obd' && (
-          <React.Suspense fallback={<div className="relative h-[540px] sm:h-[620px] md:h-[640px] rounded-3xl overflow-hidden"><CarScenePoster message="დიაგნოსტიკა იტვირთება…" /></div>}>
+          <React.Suspense fallback={<div className="relative h-[540px] sm:h-[620px] md:h-[640px] rounded-3xl overflow-hidden bg-white"><CarScenePoster message="დიაგნოსტიკა იტვირთება…" /></div>}>
           <ObdModule
             vehicle={vehicle}
             telemetry={telemetry}
