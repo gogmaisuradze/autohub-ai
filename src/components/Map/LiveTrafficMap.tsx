@@ -9,6 +9,7 @@ import { mapDataService } from '../../services/mapDataService';
 import { getPreferredLocation, watchPreferredLocation, LocationFix } from '../../services/locationService';
 import AddReportModal from './AddReportModal';
 import { LocationDetailModal } from './LocationDetailModal';
+import { getCompanyBrandData, CompanyBrandData } from './mapBrandUtils';
 import { MapCategoriesCoverflow } from './MapCategoriesCoverflow';
 import {
   getFuel3DPinHtml,
@@ -457,259 +458,6 @@ interface Props {
   vehicle?: VehicleProfile;
 }
 
-export interface CompanyBrandData {
-  brandName: string;
-  categoryLabel: string;
-  categoryBadgeClass: string;
-  phone?: string;
-  website?: string;
-  logoSvg: string;
-}
-
-export function getCompanyBrandData(item: MapReport): CompanyBrandData {
-  const brandRaw = (item.brand || '').trim();
-  const titleRaw = (item.title || '').trim();
-  const combined = `${brandRaw} ${titleRaw}`.toLowerCase();
-
-  // 1. FUEL STATIONS
-  if (item.type === 'fuel' || combined.includes('fuel') || combined.includes('გასამართ') || combined.includes('ბენზინ') || combined.includes('wissol') || combined.includes('gulf') || combined.includes('rompetrol') || combined.includes('socar') || combined.includes('lukoil') || combined.includes('portal')) {
-    if (combined.includes('wissol') || combined.includes('ვისოლ')) {
-      return {
-        brandName: 'Wissol • ვისოლი',
-        categoryLabel: '⛽ ავტოგასამართი',
-        categoryBadgeClass: 'bg-amber-100 text-amber-950 border border-amber-300',
-        phone: item.phone || '*2000',
-        website: item.website || 'https://wissol.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#F36F21"/><path d="M6 10L13 28L18 15L23 28L30 10H24.5L21 21.5L18 13.5L15 21.5L11.5 10H6Z" fill="#FFFFFF"/><circle cx="18" cy="8" r="2.2" fill="#FFE500"/></svg>`
-      };
-    }
-    if (combined.includes('gulf') || combined.includes('გალფ') || combined.includes('sun petroleum')) {
-      return {
-        brandName: 'Gulf • გალფი',
-        categoryLabel: '⛽ ავტოგასამართი',
-        categoryBadgeClass: 'bg-orange-100 text-orange-950 border border-orange-300',
-        phone: item.phone || '*0007',
-        website: item.website || 'https://gulf.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><circle cx="18" cy="18" r="17" fill="#002D62" stroke="#FF5F00" stroke-width="2"/><ellipse cx="18" cy="18" rx="13" ry="10" fill="#FF5F00"/><text x="18" y="21.5" font-family="Arial, sans-serif" font-weight="900" font-size="9" fill="#FFFFFF" text-anchor="middle">Gulf</text></svg>`
-      };
-    }
-    if (combined.includes('rompetrol') || combined.includes('რომპეტროლ')) {
-      return {
-        brandName: 'Rompetrol • რომპეტროლი',
-        categoryLabel: '⛽ ავტოგასამართი',
-        categoryBadgeClass: 'bg-rose-100 text-rose-950 border border-rose-300',
-        phone: item.phone || '032 291 07 27',
-        website: item.website || 'https://rompetrol.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#E30613"/><circle cx="18" cy="18" r="8" fill="#FFED00"/><circle cx="18" cy="18" r="3.5" fill="#1C1917"/></svg>`
-      };
-    }
-    if (combined.includes('socar') || combined.includes('სოკარ')) {
-      return {
-        brandName: 'SOCAR • სოკარი',
-        categoryLabel: '⛽ ავტოგასამართი',
-        categoryBadgeClass: 'bg-sky-100 text-sky-950 border border-sky-300',
-        phone: item.phone || '*0001',
-        website: item.website || 'https://socar.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#004B87"/><path d="M18 5C18 5 10 15 10 22C10 26.5 13.5 30 18 30C22.5 30 26 26.5 26 22C26 15 18 5 18 5Z" fill="#00A859"/><circle cx="18" cy="21" r="3.5" fill="#FFFFFF"/></svg>`
-      };
-    }
-    if (combined.includes('lukoil') || combined.includes('ლუკოილ')) {
-      return {
-        brandName: 'Lukoil • ლუკოილი',
-        categoryLabel: '⛽ ავტოგასამართი',
-        categoryBadgeClass: 'bg-red-100 text-red-950 border border-red-300',
-        phone: item.phone || '032 238 00 00',
-        website: item.website || 'https://lukoil.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#E30613"/><path d="M18 7C18 7 11 16 11 22C11 26 14 29 18 29C22 29 25 26 25 22C25 16 18 7 18 7Z" fill="#FFFFFF"/></svg>`
-      };
-    }
-    if (combined.includes('portal') || combined.includes('პორტალ')) {
-      return {
-        brandName: 'Portal • პორტალი',
-        categoryLabel: '⛽ ავტოგასამართი',
-        categoryBadgeClass: 'bg-purple-100 text-purple-950 border border-purple-300',
-        phone: item.phone || '032 249 00 00',
-        website: item.website || 'https://portal.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#3B0764"/><circle cx="18" cy="18" r="10" fill="none" stroke="#F59E0B" stroke-width="2.5"/><circle cx="18" cy="18" r="4.5" fill="#F59E0B"/></svg>`
-      };
-    }
-    if (combined.includes('connect') || combined.includes('ქონექთ')) {
-      return {
-        brandName: 'Connect • ქონექთი',
-        categoryLabel: '⛽ ავტოგასამართი',
-        categoryBadgeClass: 'bg-teal-100 text-teal-950 border border-teal-300',
-        phone: item.phone,
-        website: item.website,
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#0D9488"/><circle cx="13" cy="18" r="4" fill="#FFFFFF"/><circle cx="23" cy="18" r="4" fill="#FEF08A"/><line x1="13" y1="18" x2="23" y2="18" stroke="#FFFFFF" stroke-width="2"/></svg>`
-      };
-    }
-    return {
-      brandName: item.brand || item.title || 'ავტოგასამართი სადგური',
-      categoryLabel: '⛽ ავტოგასამართი',
-      categoryBadgeClass: 'bg-emerald-100 text-emerald-950 border border-emerald-300',
-      phone: item.phone,
-      website: item.website,
-      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#15803D"/><path d="M10 11H22V27H10V11Z" fill="#FFFFFF"/><path d="M23 15H25C26 15 27 16 27 17V24" stroke="#FFFFFF" stroke-width="2"/><circle cx="16" cy="16" r="2.5" fill="#15803D"/></svg>`
-    };
-  }
-
-  // 2. EV CHARGING STATIONS
-  if (item.type === 'charging' || combined.includes('charg') || combined.includes('დამტენ') || combined.includes('ev ')) {
-    if (combined.includes('space') || combined.includes('სპეის')) {
-      return {
-        brandName: 'E-Space • ი-სპეისი',
-        categoryLabel: '⚡ EV დამტენი',
-        categoryBadgeClass: 'bg-teal-100 text-teal-950 border border-teal-300',
-        phone: item.phone || '032 205 22 55',
-        website: item.website || 'https://e-space.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#0891B2"/><path d="M20 5L10 19H17L14 31L26 15H19L22 5H20Z" fill="#A3E635"/></svg>`
-      };
-    }
-    if (combined.includes('martev') || combined.includes('მარტივ')) {
-      return {
-        brandName: 'martEV • მარტივი',
-        categoryLabel: '⚡ EV დამტენი',
-        categoryBadgeClass: 'bg-emerald-100 text-emerald-950 border border-emerald-300',
-        phone: item.phone,
-        website: item.website,
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#15803D"/><path d="M19 6L11 18H17L15 30L25 15H18L21 6H19Z" fill="#FFFFFF"/></svg>`
-      };
-    }
-    if (combined.includes('tesla') || combined.includes('ტესლა')) {
-      return {
-        brandName: 'Tesla Supercharger',
-        categoryLabel: '⚡ Supercharger',
-        categoryBadgeClass: 'bg-red-100 text-red-950 border border-red-300',
-        phone: item.phone,
-        website: item.website || 'https://tesla.com',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#E11D48"/><path d="M8 12C14 10 22 10 28 12L27 15C22 13 14 13 9 15L8 12ZM18 16V30H15V17C12 17 9 17.5 7 18.5L6 16C10 14.5 15 14 18 14C21 14 26 14.5 30 16L29 18.5C27 17.5 24 17 21 17V30H18V16Z" fill="#FFFFFF"/></svg>`
-      };
-    }
-    return {
-      brandName: item.brand || item.title || 'EV დამტენი სადგური',
-      categoryLabel: '⚡ EV დამტენი',
-      categoryBadgeClass: 'bg-teal-100 text-teal-950 border border-teal-300',
-      phone: item.phone,
-      website: item.website,
-      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#0D9488"/><path d="M19 6L11 18H17L15 30L25 15H18L21 6H19Z" fill="#FFFFFF"/></svg>`
-    };
-  }
-
-  // 3. SERVICE & AUTO PARTS BRANDS
-  if (item.type === 'service' || item.type === 'parts' || combined.includes('service') || combined.includes('სერვის') || combined.includes('ნაწილ') || combined.includes('tegeta') || combined.includes('amboli')) {
-    if (combined.includes('tegeta') || combined.includes('თეგეტა')) {
-      return {
-        brandName: 'Tegeta Motors • თეგეტა',
-        categoryLabel: '🔧 ავტოსერვისი & ნაწილები',
-        categoryBadgeClass: 'bg-blue-100 text-blue-950 border border-blue-300',
-        phone: item.phone || '032 226 44 44',
-        website: item.website || 'https://tegetamotors.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#0F172A"/><path d="M7 10H29V14H21V28H15V14H7V10Z" fill="#EF4444"/><circle cx="18" cy="7" r="2" fill="#3B82F6"/></svg>`
-      };
-    }
-    if (combined.includes('amboli') || combined.includes('ამბოლ')) {
-      return {
-        brandName: 'Amboli • ამბოლი',
-        categoryLabel: '🔩 ავტონაწილები & სერვისი',
-        categoryBadgeClass: 'bg-red-100 text-red-950 border border-red-300',
-        phone: item.phone || '032 215 40 40',
-        website: item.website || 'https://amboli.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#DC2626"/><path d="M18 7L27 28H22L20 22H16L14 28H9L18 7ZM17 15L16.5 18H19.5L19 15L18 11.5L17 15Z" fill="#FFFFFF"/></svg>`
-      };
-    }
-    if (combined.includes('vianor') || combined.includes('ვიანორ')) {
-      return {
-        brandName: 'Vianor • ვიანორი',
-        categoryLabel: '🛞 საბურავები & სერვისი',
-        categoryBadgeClass: 'bg-orange-100 text-orange-950 border border-orange-300',
-        phone: item.phone,
-        website: item.website || 'https://vianor.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#EA580C"/><text x="18" y="24" font-family="Arial, sans-serif" font-weight="900" font-size="14" fill="#FFFFFF" text-anchor="middle">V</text></svg>`
-      };
-    }
-    if (combined.includes('würth') || combined.includes('ვიურტ')) {
-      return {
-        brandName: 'Würth Georgia • ვიურტი',
-        categoryLabel: '🔩 ინსტრუმენტები & ნაწილები',
-        categoryBadgeClass: 'bg-red-100 text-red-950 border border-red-300',
-        phone: item.phone,
-        website: item.website || 'https://wuerth.ge',
-        logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#DC2626"/><circle cx="14" cy="18" r="4.5" fill="#FFFFFF"/><circle cx="22" cy="18" r="4.5" fill="#FFFFFF"/></svg>`
-      };
-    }
-    return {
-      brandName: item.brand || item.title || (item.type === 'parts' ? 'ავტონაწილები' : 'ავტოსერვისი'),
-      categoryLabel: item.type === 'parts' ? '🔩 ავტონაწილები' : '🔧 ავტოსერვისი',
-      categoryBadgeClass: item.type === 'parts' ? 'bg-purple-100 text-purple-950 border border-purple-300' : 'bg-indigo-100 text-indigo-950 border border-indigo-300',
-      phone: item.phone,
-      website: item.website,
-      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#4338CA"/><path d="M14.7 9.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-4.5 4.5a2 2 0 01-2.8-2.8l4.5-4.5a6 6 0 017.94-7.94l-3.76 3.76z" fill="#FFFFFF"/></svg>`
-    };
-  }
-
-  // 4. PARKING (Municipal / Official)
-  if (item.type === 'parking' || combined.includes('parking') || combined.includes('პარკინგ')) {
-    return {
-      brandName: item.code ? `თბილისის პარკინგი #${item.code}` : 'მუნიციპალური პარკინგი',
-      categoryLabel: '🅿️ საპარკინგე ზონა',
-      categoryBadgeClass: 'bg-blue-100 text-blue-950 border border-blue-300',
-      phone: item.phone || '032 293 44 44',
-      website: item.website || 'https://parking.tbilisi.gov.ge',
-      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#1A73E8"/><text x="18" y="26" font-family="Arial, sans-serif" font-weight="900" font-size="20" fill="#FFFFFF" text-anchor="middle">P</text></svg>`
-    };
-  }
-
-  // 5. RADAR & POLICE
-  if (item.type === 'radar' || item.type === 'patrol') {
-    return {
-      brandName: item.type === 'patrol' ? 'შსს საპატრულო პოლიცია' : (item.speed_limit_kmh ? `სიჩქარის რადარი · ${item.speed_limit_kmh} კმ/სთ` : 'საგზაო კამერა / რადარი'),
-      categoryLabel: item.type === 'patrol' ? '🚓 საპატრულო ეკიპაჟი' : '📷 სიჩქარის კონტროლი',
-      categoryBadgeClass: 'bg-indigo-100 text-indigo-950 border border-indigo-300',
-      phone: '112 / 032 241 42 42',
-      website: 'https://police.ge',
-      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#1E3A8A"/><path d="M18 6L26 9.5V17C26 22.5 22.5 26.5 18 29C13.5 26.5 10 22.5 10 17V9.5L18 6Z" fill="#2563EB" stroke="#F59E0B" stroke-width="1.5"/><path d="M18 11.5L19.5 15.2L23.5 15.5L20.4 18L21.5 22L18 19.8L14.5 22L15.6 18L12.5 15.5L16.5 15.2L18 11.5Z" fill="#F59E0B"/></svg>`
-    };
-  }
-
-  // 6. SHOWROOM / DEALERS
-  if (item.type === 'showroom' || combined.includes('mercedes') || combined.includes('bmw') || combined.includes('toyota') || combined.includes('audi') || combined.includes('hyundai') || combined.includes('ford') || combined.includes('porsche')) {
-    const matchedBrand =
-      combined.includes('bmw') ? 'BMW' :
-      combined.includes('mercedes') ? 'Mercedes-Benz' :
-      combined.includes('toyota') ? 'Toyota' :
-      combined.includes('audi') ? 'Audi' :
-      combined.includes('hyundai') ? 'Hyundai' :
-      combined.includes('porsche') ? 'Porsche' :
-      combined.includes('ford') ? 'Ford' :
-      (item.brand || 'ავტოსალონი');
-    return {
-      brandName: `${matchedBrand} • ოფიციალური დილერი`,
-      categoryLabel: '🏢 ავტოსალონი',
-      categoryBadgeClass: 'bg-slate-100 text-slate-950 border border-slate-300',
-      phone: item.phone,
-      website: item.website,
-      logoSvg: `<svg viewBox="0 0 36 36" class="w-full h-full"><rect width="36" height="36" rx="8" fill="#18181B"/><circle cx="18" cy="18" r="11" fill="none" stroke="#F59E0B" stroke-width="2"/><text x="18" y="22" font-family="Arial, sans-serif" font-weight="900" font-size="10" fill="#F59E0B" text-anchor="middle">★</text></svg>`
-    };
-  }
-
-  // 7. CAR WASH / JAMS / REPAIR / HAZARDS
-  const fallbackIcons: Record<string, { label: string; bg: string; color: string; icon: string }> = {
-    car_wash: { label: '🧼 ავტოსამრეცხაო', bg: 'bg-sky-100 text-sky-950 border border-sky-300', color: '#0284C7', icon: '🧼' },
-    traffic_jam: { label: '🔴 საგზაო საცობი', bg: 'bg-rose-100 text-rose-950 border border-rose-300', color: '#E11D48', icon: '🔴' },
-    road_repair: { label: '🚧 საგზაო სამუშაოები', bg: 'bg-amber-100 text-amber-950 border border-amber-300', color: '#D97706', icon: '🚧' },
-    hazard: { label: '⚠️ საგზაო საფრთხე', bg: 'bg-red-100 text-red-950 border border-red-300', color: '#DC2626', icon: '⚠️' }
-  };
-  const fb = fallbackIcons[item.type] || { label: item.title, bg: 'bg-slate-100 text-slate-800 border border-slate-300', color: '#475569', icon: '📍' };
-
-  return {
-    brandName: item.brand || item.title || 'საგზაო ობიექტი',
-    categoryLabel: fb.label,
-    categoryBadgeClass: fb.bg,
-    phone: item.phone,
-    website: item.website,
-    logoSvg: `<div class="w-full h-full flex items-center justify-center text-base bg-slate-50">${fb.icon}</div>`
-  };
-}
 
 export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -1058,6 +806,16 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
     mapInstanceRef.current = map;
 
+    // Pre-attach initial base layer immediately
+    const initialLayer = mapTheme === 'dark' ? darkLayer : mapTheme === 'satellite' ? satLayer : osmLayer;
+    if (!map.hasLayer(initialLayer)) {
+      initialLayer.addTo(map);
+    }
+    if (typeof initialLayer.bringToBack === 'function') {
+      initialLayer.bringToBack();
+    }
+    currentBaseLayerRef.current = initialLayer;
+
     // Apply the active theme
     applyMapTheme(mapTheme);
 
@@ -1099,16 +857,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       satLabelsRef.current = null;
       currentBaseLayerRef.current = null;
     };
-  }, [isLeafletReady]);
-
-  // Synchronize Leaflet events with Theme Switcher container
-  useEffect(() => {
-    if (themeSwitcherRef.current && (window as any).L?.DomEvent) {
-      try {
-        (window as any).L.DomEvent.disableClickPropagation(themeSwitcherRef.current);
-        (window as any).L.DomEvent.disableScrollPropagation(themeSwitcherRef.current);
-      } catch {}
-    }
   }, [isLeafletReady]);
 
   // Synchronize mapTheme state changes with Leaflet
@@ -2284,12 +2032,14 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         {/* Floating Layer Theme Switcher on Map (Dark, Street, Satellite) */}
         <div
           ref={themeSwitcherRef}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           className="absolute top-3 right-3 z-[500] pointer-events-auto flex items-center gap-1 p-1 rounded-2xl bg-navy/95 backdrop-blur-md border-2 border-white/20 shadow-2xl text-xs"
         >
           <button
             type="button"
             onClick={() => handleThemeChange('dark')}
-            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
               mapTheme === 'dark' ? 'bg-gold text-navy shadow-md font-black ring-1 ring-white/50' : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
             title="CartoDB Dark Matter მუქი რეჟიმი"
@@ -2299,7 +2049,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           <button
             type="button"
             onClick={() => handleThemeChange('street')}
-            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
               mapTheme === 'street' ? 'bg-gold text-navy shadow-md font-black ring-1 ring-white/50' : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
             title="სტანდარტული ქუჩების რუკა"
@@ -2309,7 +2059,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           <button
             type="button"
             onClick={() => handleThemeChange('satellite')}
-            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
               mapTheme === 'satellite' ? 'bg-gold text-navy shadow-md font-black ring-1 ring-white/50' : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
             title="სატელიტური რუკა ქუჩებით (Google Hybrid)"

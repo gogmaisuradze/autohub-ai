@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapReport } from '../../types';
 import { sounds } from '../../services/soundEffects';
-import { getCompanyBrandData } from './LiveTrafficMap';
+import { getCompanyBrandData } from './mapBrandUtils';
 import { getGeorgiaRegionName } from '../../services/cameraService';
 import {
   X,
