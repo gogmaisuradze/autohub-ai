@@ -55,6 +55,8 @@ export const Header: React.FC<Props> = ({
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const vehicleTriggerRef = useRef<HTMLDivElement>(null);
+  const mobileVehicleTriggerRef = useRef<HTMLDivElement>(null);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
   const vehicleList = allVehicles && allVehicles.length > 0 ? allVehicles : VEHICLE_PRESETS;
@@ -65,7 +67,12 @@ export const Header: React.FC<Props> = ({
     if (!dropdownOpen && !langDropdownOpen) return;
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       const target = e.target as Node;
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target) &&
+        !vehicleTriggerRef.current?.contains(target) &&
+        !mobileVehicleTriggerRef.current?.contains(target)
+      ) {
         setDropdownOpen(false);
       }
       if (langDropdownRef.current && !langDropdownRef.current.contains(target)) {
@@ -84,7 +91,7 @@ export const Header: React.FC<Props> = ({
   const renderGarageDropdown = () => (
     <div
       ref={dropdownRef}
-      className="absolute left-0 right-0 sm:left-auto sm:right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-xs sm:w-72 rounded-3xl neu-card p-2 shadow-2xl z-50 animate-fade-in border border-slate-200 bg-white"
+      className="absolute left-0 right-0 sm:left-auto sm:right-0 mt-2 w-full sm:w-80 rounded-3xl neu-card p-3 shadow-2xl z-[100] animate-fade-in border border-slate-200 bg-white"
     >
       <div className="px-3 py-2 text-[10px] font-mono uppercase text-slate-400 border-b border-slate-100 flex items-center justify-between">
         <span>{isGe ? 'გარაჟი / მანქანის შეცვლა' : 'Garage / Change Car'}</span>
@@ -172,7 +179,7 @@ export const Header: React.FC<Props> = ({
   );
 
   return (
-    <header className="w-full max-w-full overflow-hidden border-b border-white/60 transition-colors">
+    <header className="w-full max-w-full overflow-visible border-b border-white/60 transition-colors relative z-40">
       {/* ROW 1: Brand & Top Action Controls */}
       <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-0 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-4 w-full">
         
@@ -271,14 +278,18 @@ export const Header: React.FC<Props> = ({
 
           {/* 2. Desktop Vehicle Pill (only shown on md: and up) */}
           {hasSelectedVehicle && vehicle ? (
-            <div data-tour="header-vehicle" className="relative hidden md:block">
+            <div ref={vehicleTriggerRef} data-tour="header-vehicle" className="relative hidden md:block">
               <button
+                type="button"
                 onClick={() => {
                   sounds.playClick();
-                  setDropdownOpen(!dropdownOpen);
+                  setDropdownOpen((prev) => !prev);
                 }}
-                className="btn-stitch-soft px-3.5 sm:px-4 py-2 text-navy text-xs font-bold flex items-center gap-2"
+                className={`btn-stitch-soft px-3.5 sm:px-4 py-2 text-navy text-xs font-bold flex items-center gap-2 cursor-pointer transition-all ${
+                  dropdownOpen ? 'ring-2 ring-gold/60 bg-white shadow-md' : ''
+                }`}
                 title={isGe ? 'მანქანები / გარაჟი' : 'Vehicles / Garage'}
+                aria-expanded={dropdownOpen}
               >
                 <Car className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gold shrink-0" />
                 <span className="font-bold text-navy truncate">
@@ -287,7 +298,7 @@ export const Header: React.FC<Props> = ({
                 {vehicle.plate_number && (
                   <GeorgianLicensePlate plate={vehicle.plate_number} size="sm" variant="white" />
                 )}
-                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+                <ChevronDown className={`w-3 h-3 text-slate-400 shrink-0 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-gold' : ''}`} />
               </button>
               {dropdownOpen && renderGarageDropdown()}
             </div>
@@ -386,14 +397,18 @@ export const Header: React.FC<Props> = ({
       {/* ROW 2: Mobile Vehicle Selector Bar (Lifts the vehicle pill above navigation on mobile) */}
       <div className="md:hidden px-2.5 pb-2 pt-0.5 max-w-7xl mx-auto w-full">
         {hasSelectedVehicle && vehicle ? (
-          <div data-tour="header-vehicle-mobile" className="relative w-full">
+          <div ref={mobileVehicleTriggerRef} data-tour="header-vehicle-mobile" className="relative w-full">
             <button
+              type="button"
               onClick={() => {
                 sounds.playClick();
-                setDropdownOpen(!dropdownOpen);
+                setDropdownOpen((prev) => !prev);
               }}
-              className="btn-stitch-soft w-full px-3 py-1.5 rounded-2xl text-navy text-xs font-bold flex items-center justify-between shadow-xs border border-white/80 active:scale-[0.99] transition-all"
+              className={`btn-stitch-soft w-full px-3 py-1.5 rounded-2xl text-navy text-xs font-bold flex items-center justify-between shadow-xs border border-white/80 active:scale-[0.99] transition-all cursor-pointer ${
+                dropdownOpen ? 'ring-2 ring-gold/60 bg-white' : ''
+              }`}
               title={isGe ? 'მანქანები / გარაჟი' : 'Vehicles / Garage'}
+              aria-expanded={dropdownOpen}
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Car className="w-4 h-4 text-gold shrink-0" />
@@ -405,7 +420,7 @@ export const Header: React.FC<Props> = ({
                 {vehicle.plate_number && (
                   <GeorgianLicensePlate plate={vehicle.plate_number} size="xs" variant="white" />
                 )}
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-gold' : ''}`} />
               </div>
             </button>
             {dropdownOpen && renderGarageDropdown()}
