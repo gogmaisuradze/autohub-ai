@@ -909,7 +909,15 @@ export const ThreeCarScene: React.FC<Props> = ({
           uniform vec3 uGhostColor, uPaintColor, uFillOrigin; varying vec3 vCarSurface;\n` + shader.fragmentShader;
         if (body) {
           shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-            float painted = clamp(uFill, 0.0, 1.0);
+            // The rear is -Z: lose paint from the trunk toward the hood.
+            // A broad, gently curved boundary reads as a flowing glass wave.
+            float waveSurface = vCarSurface.z
+              + .055 * sin(vCarSurface.x * 3.0)
+              + .025 * sin(vCarSurface.y * 4.0);
+            float waveFront = mix(2.95, -2.95, clamp(uFill, 0.0, 1.0));
+            float painted = smoothstep(waveFront - .28, waveFront + .28, waveSurface);
+            if (uFill <= .001) painted = 0.0;
+            if (uFill >= .999) painted = 1.0;
             float surfaceAlpha = clamp(diffuseColor.a / max(opacity, .001), 0.0, 1.0);
             vec3 solidSurface = ${mat.userData.keepSurfaceColor ? 'diffuseColor.rgb * uPaintColor' : 'uPaintColor'};
             diffuseColor.rgb = mix(uGhostColor, solidSurface, painted);
@@ -924,7 +932,7 @@ export const ThreeCarScene: React.FC<Props> = ({
           outgoingLight += (vec3(.72, .93, 1.0) * scanBand * 1.6 + vec3(.06, .32, .60) * scanHalo * .32) * uScanStrength;
           #include <opaque_fragment>`);
       };
-      mat.customProgramCacheKey = () => body ? (mat.userData.keepSurfaceColor ? 'autohub-single-native-v1' : 'autohub-single-paint-v1') : 'autohub-surface-scan-v3';
+      mat.customProgramCacheKey = () => body ? (mat.userData.keepSurfaceColor ? 'autohub-rear-wave-native-v2' : 'autohub-rear-wave-paint-v2') : 'autohub-surface-scan-v3';
       mat.needsUpdate = true;
     };
     // A restrained volumetric light sheet moves through the whole vehicle.
@@ -1999,8 +2007,8 @@ export const ThreeCarScene: React.FC<Props> = ({
         car.rotation.y = -0.30 * rotProgress;
 
         // "სკანირების გვერდზე პირიქით უნდა იყოს, ჯერ უნდა ჩანდეს მანქანა და მერე ქრებოდეს"
-        // Enters as a full solid car; once settled on the podium (t > 0.82), it smoothly fades:
-        if (t > 0.82 && solidTargetRef.current === 1) {
+        // Enters as a full solid car; after fully stopping on the podium (t >= 1), it smoothly fades:
+        if (t >= 1 && solidTargetRef.current === 1) {
           solidTargetRef.current = 0;
           setIsGhostMode(true);
         }
