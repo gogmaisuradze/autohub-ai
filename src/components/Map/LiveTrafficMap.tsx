@@ -41,9 +41,6 @@ import {
   Wrench,
   Droplets,
   Cog,
-  Lock,
-  Unlock,
-  MousePointerClick,
   ChevronDown,
   X,
   Construction,
@@ -842,7 +839,9 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       const found = reports.find(r => r.id === id);
       if (found) {
         sounds.playSuccess();
-        setDetailModalReport(found);
+        setTimeout(() => {
+          setDetailModalReport(found);
+        }, 60);
       }
     };
     return () => {
@@ -850,37 +849,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     };
   }, [reports]);
 
-  // Map Scroll & Zoom Isolation states (Prevents trapping page scroll on wheel or touch)
-  const [isMapUnlocked, setIsMapUnlocked] = useState<boolean>(false);
-  const isMapUnlockedRef = useRef<boolean>(false);
-  const [showMapGestureHint, setShowMapGestureHint] = useState<boolean>(false);
-  const mapGestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showTwoFingerOverlay, setShowTwoFingerOverlay] = useState<boolean>(false);
-  const twoFingerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleToggleMapLock = useCallback(() => {
-    sounds.playClick();
-    setIsMapUnlocked(prev => {
-      const next = !prev;
-      isMapUnlockedRef.current = next;
-      if (mapInstanceRef.current) {
-        if (next) {
-          mapInstanceRef.current.scrollWheelZoom.enable();
-        } else {
-          mapInstanceRef.current.scrollWheelZoom.disable();
-        }
-      }
-      return next;
-    });
-  }, []);
-
   const handleScrollPastMap = useCallback(() => {
     sounds.playClick();
-    setIsMapUnlocked(false);
-    isMapUnlockedRef.current = false;
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.scrollWheelZoom.disable();
-    }
     const nextSection =
       document.getElementById('live-map-bottom-section') ||
       document.getElementById('map-search-categories') ||
@@ -898,36 +868,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     } else {
       window.scrollBy({ top: 480, behavior: 'smooth' });
     }
-  }, []);
-
-  // Exit interactive map mode on outside click or Escape key
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (mapContainerRef.current && !mapContainerRef.current.contains(e.target as Node)) {
-        if (isMapUnlockedRef.current) {
-          setIsMapUnlocked(false);
-          isMapUnlockedRef.current = false;
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.scrollWheelZoom.disable();
-          }
-        }
-      }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isMapUnlockedRef.current) {
-        setIsMapUnlocked(false);
-        isMapUnlockedRef.current = false;
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.scrollWheelZoom.disable();
-        }
-      }
-    };
-    window.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
   }, []);
 
   // 1. Ensure Leaflet is loaded independently and reliably
@@ -1090,60 +1030,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       zoomControl: false,
       attributionControl: true,
       preferCanvas: true,
-      scrollWheelZoom: false, // Disable accidental wheel scroll hijacking
-      closePopupOnClick: false // Keep popup on the pin open when clicking or dragging the map!
+      scrollWheelZoom: true,
+      doubleClickZoom: false,
+      closePopupOnClick: false
     });
-
-    // Cooperative wheel gesture handler: Ctrl/Cmd + wheel allows zoom; normal wheel scrolls the webpage
-    const domEl = mapContainerRef.current;
-    const onMapWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey || isMapUnlockedRef.current) {
-        map.scrollWheelZoom.enable();
-      } else {
-        map.scrollWheelZoom.disable();
-        setShowMapGestureHint(true);
-        if (mapGestureTimerRef.current) clearTimeout(mapGestureTimerRef.current);
-        mapGestureTimerRef.current = setTimeout(() => {
-          setShowMapGestureHint(false);
-        }, 1600);
-      }
-    };
-
-    // 2-finger touch handler: 1 finger scrolls page, 2 fingers drag/zoom map
-    const onMapTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1 && !isMapUnlockedRef.current) {
-        map.dragging.disable();
-        setShowTwoFingerOverlay(true);
-        if (twoFingerTimerRef.current) clearTimeout(twoFingerTimerRef.current);
-        twoFingerTimerRef.current = setTimeout(() => setShowTwoFingerOverlay(false), 1600);
-      } else if (e.touches.length >= 2 || isMapUnlockedRef.current) {
-        map.dragging.enable();
-        map.touchZoom.enable();
-        setShowTwoFingerOverlay(false);
-      }
-    };
-
-    const onMapTouchMove = (e: TouchEvent) => {
-      if (e.touches.length >= 2 || isMapUnlockedRef.current) {
-        map.dragging.enable();
-        map.touchZoom.enable();
-        setShowTwoFingerOverlay(false);
-      }
-    };
-
-    const onMapTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length === 0) {
-        setShowTwoFingerOverlay(false);
-        map.dragging.enable();
-      }
-    };
-
-    if (domEl) {
-      domEl.addEventListener('wheel', onMapWheel, { passive: true });
-      domEl.addEventListener('touchstart', onMapTouchStart, { passive: true });
-      domEl.addEventListener('touchmove', onMapTouchMove, { passive: true });
-      domEl.addEventListener('touchend', onMapTouchEnd, { passive: true });
-    }
 
     map.on('moveend', () => setMapRevision(v => v + 1));
 
@@ -1218,14 +1108,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     return () => {
       resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
-      if (domEl) {
-        domEl.removeEventListener('wheel', onMapWheel);
-        domEl.removeEventListener('touchstart', onMapTouchStart);
-        domEl.removeEventListener('touchmove', onMapTouchMove);
-        domEl.removeEventListener('touchend', onMapTouchEnd);
-      }
-      if (mapGestureTimerRef.current) clearTimeout(mapGestureTimerRef.current);
-      if (twoFingerTimerRef.current) clearTimeout(twoFingerTimerRef.current);
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
@@ -1767,16 +1649,15 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         if (now - lastClickTimestamp < 450) {
           // Double click detected!
           sounds.playSuccess();
-          setDetailModalReport(item);
+          setTimeout(() => {
+            setDetailModalReport(item);
+          }, 80);
           return;
         }
         lastClickTimestamp = now;
 
         sounds.playClick();
         setSelectedReport(item);
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.panTo([item.lat, item.lng], { animate: true, duration: 0.35 });
-        }
         marker.openPopup();
       });
 
@@ -1787,7 +1668,9 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           e.originalEvent.preventDefault();
         }
         sounds.playSuccess();
-        setDetailModalReport(item);
+        setTimeout(() => {
+          setDetailModalReport(item);
+        }, 80);
       });
 
       marker.on('popupclose', () => {
@@ -2406,7 +2289,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         {/* Leaflet DOM Node */}
         <div
           ref={mapContainerRef}
-          onDoubleClick={handleToggleMapLock}
           className={`w-full h-full z-0 transition-colors duration-300 ${
             mapTheme === 'dark'
               ? 'bg-[#12161f]'
@@ -2414,41 +2296,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
               ? 'bg-black'
               : 'bg-[#f8fafc]'
           }`}
-          title="ორჯერ დაკლიკეთ რუკის ზუმის გასააქტიურებლად/გასათიშად"
         />
-
-        {/* Active Map Zoom Pill Badge */}
-        {isMapUnlocked && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-full bg-slate-950/90 backdrop-blur-md text-emerald-300 border border-emerald-400/50 shadow-xl flex items-center gap-2 animate-fade-in text-xs font-bold pointer-events-auto">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>რუკის ზუმი ჩართულია • ორჯერ დაკლიკეთ ან დააჭირეთ Esc-ს</span>
-            <button
-              onClick={handleToggleMapLock}
-              className="p-0.5 rounded-full hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
-              title="რუკის ზუმის გამორთვა"
-            >
-              <X size={13} />
-            </button>
-          </div>
-        )}
-
-        {/* 2-Finger Touch Overlay (Google Maps gesture hint) */}
-        {showTwoFingerOverlay && !isMapUnlocked && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/40 backdrop-blur-[2px] pointer-events-none animate-fade-in transition-opacity">
-            <div className="px-5 py-3 rounded-2xl bg-slate-950/90 text-white text-xs sm:text-sm font-bold border border-white/20 shadow-2xl flex items-center gap-2.5">
-              <span className="text-xl">✌️</span>
-              <span>გამოიყენეთ <strong>2 თითი</strong> რუკის სამართავად</span>
-            </div>
-          </div>
-        )}
-
-        {/* Momentary Wheel Scroll Hint */}
-        {showMapGestureHint && !isMapUnlocked && !showTwoFingerOverlay && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-2xl bg-slate-950/90 backdrop-blur-md text-white text-xs font-semibold border border-white/20 shadow-2xl flex items-center gap-2 pointer-events-none animate-fade-in">
-            <MousePointerClick size={16} className="text-gold animate-bounce" />
-            <span>გამოიყენეთ <strong>2 თითი (Pinch)</strong> ან <strong>⌘ / Ctrl + Scroll</strong> რუკის ზუმისთვის</span>
-          </div>
-        )}
 
         {/* Floating Quick Exit / Scroll Past Button */}
         <button
@@ -2474,18 +2322,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           ref={themeSwitcherRef}
           className="absolute top-3 right-3 z-[500] pointer-events-auto flex items-center gap-1 p-1 rounded-2xl bg-navy/95 backdrop-blur-md border-2 border-white/20 shadow-2xl text-xs"
         >
-          {/* Lock / Unlock Toggle Button */}
-          <button
-            type="button"
-            onClick={handleToggleMapLock}
-            className={`px-2 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-              isMapUnlocked ? 'bg-emerald-500 text-white shadow-xs font-black' : 'text-slate-300 hover:text-white'
-            }`}
-            title={isMapUnlocked ? 'რუკის ზუმი აქტიურია (ჩასაკეტად დაკლიკეთ)' : 'რუკის ზუმის განბლოკვა (ორჯერ დაკლიკეთ)'}
-          >
-            {isMapUnlocked ? <Unlock size={11} /> : <Lock size={11} />}
-            <span className="hidden sm:inline">{isMapUnlocked ? 'ზუმი აქტიური' : 'ზუმი ჩაკეტილი'}</span>
-          </button>
           <button
             type="button"
             onClick={() => handleThemeChange('dark')}

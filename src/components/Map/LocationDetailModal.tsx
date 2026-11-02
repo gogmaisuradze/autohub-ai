@@ -58,6 +58,13 @@ export const LocationDetailModal: React.FC<Props> = ({
 }) => {
   const isGe = lang === 'ge';
   const [copiedCoords, setCopiedCoords] = useState(false);
+  const openTimeRef = React.useRef<number>(Date.now());
+
+  useEffect(() => {
+    if (isOpen) {
+      openTimeRef.current = Date.now();
+    }
+  }, [isOpen]);
 
   // Close on Escape key
   useEffect(() => {
@@ -92,16 +99,27 @@ export const LocationDetailModal: React.FC<Props> = ({
     setTimeout(() => setCopiedCoords(false), 2000);
   };
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // Prevent accidental closure from the trailing clicks of a double-click gesture
+    if (Date.now() - openTimeRef.current < 450) return;
+    if (e.target === e.currentTarget) {
+      sounds.playClick();
+      onClose();
+    }
+  };
+
   const wazeUrl = `https://waze.com/ul?ll=${report.lat},${report.lng}&navigate=yes`;
   const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${report.lat},${report.lng}`;
 
   return (
     <div
-      onClick={onClose}
+      onClick={handleBackdropClick}
+      onDoubleClick={(e) => e.stopPropagation()}
       className="fixed inset-0 z-[1250] flex items-center justify-center p-3 sm:p-5 overflow-y-auto bg-slate-950/75 backdrop-blur-md animate-fade-in"
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden my-auto animate-scale-up text-navy max-h-[90vh] flex flex-col"
       >
         {/* ======================================================== */}
