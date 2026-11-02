@@ -721,7 +721,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const osmLayerRef = useRef<any>(null);
   const darkLayerRef = useRef<any>(null);
   const satLayerRef = useRef<any>(null);
+  const satLabelsRef = useRef<any>(null);
+  const currentBaseLayerRef = useRef<any>(null);
   const routesLayerRef = useRef<any>(null);
+  const themeSwitcherRef = useRef<HTMLDivElement | null>(null);
 
   const [showAlternativeRoutes, setShowAlternativeRoutes] = useState<boolean>(false);
   const [activeRouteId, setActiveRouteId] = useState<string>('route-heroes-sq');
@@ -734,12 +737,79 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     return 'street';
   });
 
+  const applyMapTheme = useCallback((theme: 'dark' | 'street' | 'satellite') => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    let target: any = null;
+    if (theme === 'dark') target = darkLayerRef.current;
+    else if (theme === 'satellite') target = satLayerRef.current;
+    else target = osmLayerRef.current;
+
+    if (!target) return;
+
+    // 1. Remove previous base layer if different
+    if (currentBaseLayerRef.current && currentBaseLayerRef.current !== target) {
+      if (map.hasLayer(currentBaseLayerRef.current)) {
+        map.removeLayer(currentBaseLayerRef.current);
+      }
+    }
+
+    // 2. Add new target layer and send to back
+    if (!map.hasLayer(target)) {
+      map.addLayer(target);
+    }
+    if (typeof target.bringToBack === 'function') {
+      target.bringToBack();
+    }
+    currentBaseLayerRef.current = target;
+
+    // 3. Satellite labels overlay
+    const labels = satLabelsRef.current;
+    if (labels) {
+      if (theme === 'satellite') {
+        if (!map.hasLayer(labels)) {
+          map.addLayer(labels);
+        }
+        if (typeof labels.bringToBack === 'function') {
+          labels.bringToBack();
+        }
+        if (typeof target.bringToBack === 'function') {
+          target.bringToBack();
+        }
+      } else {
+        if (map.hasLayer(labels)) {
+          map.removeLayer(labels);
+        }
+      }
+    }
+
+    // 4. Update container background color
+    if (mapContainerRef.current) {
+      mapContainerRef.current.classList.remove('dark-map-tiles');
+      if (theme === 'dark') {
+        mapContainerRef.current.style.backgroundColor = '#12161f';
+      } else if (theme === 'satellite') {
+        mapContainerRef.current.style.backgroundColor = '#000000';
+      } else {
+        mapContainerRef.current.style.backgroundColor = '#f8fafc';
+      }
+    }
+
+    setTimeout(() => {
+      try {
+        map.invalidateSize({ pan: false });
+      } catch {}
+    }, 40);
+  }, []);
+
   const handleThemeChange = (newTheme: 'dark' | 'street' | 'satellite') => {
     sounds.playClick();
     setMapTheme(newTheme);
     try {
       localStorage.setItem('autohub_map_theme', newTheme);
     } catch {}
+    applyMapTheme(newTheme);
   };
   const [cameraStatus, setCameraStatus] = useState('მონაცემები იტვირთება…');
   const [reports, setReports] = useState<MapReport[]>([]);
@@ -1061,7 +1131,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
     map.on('moveend', () => setMapRevision(v => v + 1));
 
-    // Pre-create and cache all 3 tile layers for instant, lag-free switching
+    // Pre-create and cache all tile layers for instant, lag-free switching
     // 1. OpenStreetMap standard tiles (100% reliable)
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -1069,7 +1139,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     });
     osmLayerRef.current = osmLayer;
 
-    // 2. CartoDB Dark Matter (true native dark theme, sleek slate/navy, zero CSS filter lag)
+    // 2. CartoDB Dark Matter (true native dark theme)
     const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
       subdomains: 'abcd',
       maxZoom: 20,
@@ -1077,33 +1147,18 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     });
     darkLayerRef.current = darkLayer;
 
-    // 3. ESRI Satellite World Imagery + Road/Street Boundaries Overlay (100% reliable, zero CORS/quota blocks)
-    const satBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    // 3. ESRI Satellite World Imagery (high-resolution satellite)
+    const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
       attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
     });
+    satLayerRef.current = satLayer;
+
+    // 4. ESRI Satellite Streets & Labels Overlay
     const satLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19
     });
-    const satLayer = L.layerGroup([satBase, satLabels]);
-    satLayerRef.current = satLayer;
-
-    // Attach initial layer
-    const initialLayer = mapTheme === 'dark' ? darkLayer : mapTheme === 'satellite' ? satLayer : osmLayer;
-    initialLayer.addTo(map);
-    if (typeof (initialLayer as any).bringToBack === 'function') {
-      (initialLayer as any).bringToBack();
-    }
-    if (mapContainerRef.current) {
-      mapContainerRef.current.classList.remove('dark-map-tiles');
-      if (mapTheme === 'dark') {
-        mapContainerRef.current.style.backgroundColor = '#12161f';
-      } else if (mapTheme === 'satellite') {
-        mapContainerRef.current.style.backgroundColor = '#000000';
-      } else {
-        mapContainerRef.current.style.backgroundColor = '#f8fafc';
-      }
-    }
+    satLabelsRef.current = satLabels;
 
     // Zoom control placed on bottom-left so top-right is completely free for theme switcher
     L.control.zoom({ position: 'bottomleft' }).addTo(map);
@@ -1117,6 +1172,9 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     routesLayerRef.current = routesLayer;
 
     mapInstanceRef.current = map;
+
+    // Apply the active theme
+    applyMapTheme(mapTheme);
 
     // Map Click handler - allows placing a point directly by clicking
     map.on('click', (e: any) => {
@@ -1161,52 +1219,25 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       osmLayerRef.current = null;
       darkLayerRef.current = null;
       satLayerRef.current = null;
+      satLabelsRef.current = null;
+      currentBaseLayerRef.current = null;
     };
   }, [isLeafletReady]);
 
-  // Instant, lag-free theme switching (toggles cached native tile layers without re-downloading)
+  // Synchronize Leaflet events with Theme Switcher container
   useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    const osm = osmLayerRef.current;
-    const dark = darkLayerRef.current;
-    const sat = satLayerRef.current;
-    if (!osm || !dark || !sat) return;
-
-    const targetLayer = mapTheme === 'dark' ? dark : mapTheme === 'satellite' ? sat : osm;
-
-    // 1. Add target layer FIRST so map never blanks out or flashes grey
-    if (!map.hasLayer(targetLayer)) {
-      targetLayer.addTo(map);
+    if (themeSwitcherRef.current && (window as any).L?.DomEvent) {
+      try {
+        (window as any).L.DomEvent.disableClickPropagation(themeSwitcherRef.current);
+        (window as any).L.DomEvent.disableScrollPropagation(themeSwitcherRef.current);
+      } catch {}
     }
-    if (typeof (targetLayer as any).bringToBack === 'function') {
-      (targetLayer as any).bringToBack();
-    }
+  }, [isLeafletReady]);
 
-    // 2. Remove other layers gracefully
-    const allLayers = [osm, dark, sat];
-    allLayers.forEach(l => {
-      if (l !== targetLayer && map.hasLayer(l)) {
-        map.removeLayer(l);
-      }
-    });
-
-    // 3. Update container background color
-    if (mapContainerRef.current) {
-      mapContainerRef.current.classList.remove('dark-map-tiles');
-      if (mapTheme === 'dark') {
-        mapContainerRef.current.style.backgroundColor = '#12161f';
-      } else if (mapTheme === 'satellite') {
-        mapContainerRef.current.style.backgroundColor = '#000000';
-      } else {
-        mapContainerRef.current.style.backgroundColor = '#f8fafc';
-      }
-    }
-
-    // Immediate size invalidation to force rendering
-    setTimeout(() => { try { map.invalidateSize({ pan: false }); } catch (e) {} }, 40);
-  }, [mapTheme, isLeafletReady]);
+  // Synchronize mapTheme state changes with Leaflet
+  useEffect(() => {
+    applyMapTheme(mapTheme);
+  }, [mapTheme, applyMapTheme]);
 
   // Helper: Format relative time in Georgian
   const formatTimeAgo = (timestamp: number) => {
@@ -2391,7 +2422,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
         {/* Floating Layer Theme Switcher on Map (Dark, Street, Satellite) */}
         <div
-          onClick={(e) => e.stopPropagation()}
+          ref={themeSwitcherRef}
           className="absolute top-3 right-3 z-[500] pointer-events-auto flex items-center gap-1 p-1 rounded-2xl bg-navy/95 backdrop-blur-md border-2 border-white/20 shadow-2xl text-xs"
         >
           {/* Lock / Unlock Toggle Button */}
