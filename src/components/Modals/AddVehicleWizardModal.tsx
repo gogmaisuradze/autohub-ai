@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { VehicleProfile } from '../../types';
 import { sounds } from '../../services/soundEffects';
+import { DocumentCameraScannerModal } from './DocumentCameraScannerModal';
 import {
   Car,
   ChevronRight,
@@ -14,7 +15,8 @@ import {
   ShieldCheck,
   Wifi,
   Fuel,
-  Gauge
+  Gauge,
+  Camera
 } from 'lucide-react';
 
 interface Props {
@@ -46,6 +48,23 @@ export const AddVehicleWizardModal: React.FC<Props> = ({
   initialStep = 1
 }) => {
   const [step, setStep] = useState<number>(initialStep);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+
+  const handleScanComplete = (scanned: any) => {
+    sounds.playSuccess();
+    setFormData((prev) => ({
+      ...prev,
+      plate_number: scanned.plateNumber || prev.plate_number,
+      vin: scanned.vin || prev.vin,
+      tech_passport: scanned.techPassport || prev.tech_passport,
+      brand: scanned.brand || prev.brand,
+      model: scanned.model || prev.model,
+      year: scanned.year || prev.year,
+      engine: scanned.engine || prev.engine,
+      horsepower: scanned.horsepower || prev.horsepower,
+      fuel_type: scanned.fuelType || prev.fuel_type
+    }));
+  };
 
   // Allow closing via Escape key
   React.useEffect(() => {
@@ -266,6 +285,31 @@ export const AddVehicleWizardModal: React.FC<Props> = ({
         {/* STEP 1: IDENTITY & PLATE NUMBER */}
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in zoom-in-95">
+            {/* AI Photo Scan Fast-Fill Button */}
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white flex items-center justify-between gap-3 shadow-xs border border-gold/30">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gold/20 flex items-center justify-center text-gold shrink-0">
+                  <Camera size={16} />
+                </div>
+                <div>
+                  <div className="text-xs font-black text-gold">
+                    ტექ-პასპორტის / მანქანის AI სკანერი
+                  </div>
+                  <div className="text-[10px] text-slate-300">
+                    გადაუღეთ ფოტო და ყველა ველი ავტომატურად შეივსება
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsScannerOpen(true)}
+                className="px-3 py-1.5 rounded-xl text-xs font-black bg-gold hover:bg-amber-400 text-navy shadow-xs flex items-center gap-1.5 transition-all active:scale-95 shrink-0 cursor-pointer"
+              >
+                <Camera size={13} className="stroke-[2.5]" />
+                <span>📸 ფოტოთი შევსება</span>
+              </button>
+            </div>
+
             <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/60 flex items-start gap-3">
               <Sparkles className="w-5 h-5 text-gold shrink-0 mt-0.5" />
               <p className="text-xs text-navy leading-relaxed">
@@ -603,6 +647,14 @@ export const AddVehicleWizardModal: React.FC<Props> = ({
         </div>
 
       </div>
+
+      {/* AI Camera OCR Scanner Modal */}
+      <DocumentCameraScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        docType="tech_passport"
+        onScanComplete={handleScanComplete}
+      />
     </div>
   );
 };

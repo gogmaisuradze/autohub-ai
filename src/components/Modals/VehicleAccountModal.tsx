@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { VehicleProfile } from '../../types';
 import { sounds } from '../../services/soundEffects';
 import { GeorgianLicensePlate } from '../ui/GeorgianLicensePlate';
+import { DocumentCameraScannerModal, ScannedVehicleData } from './DocumentCameraScannerModal';
 import {
   X,
   Car,
@@ -14,7 +15,8 @@ import {
   Zap,
   Plus,
   Edit3,
-  Layers
+  Layers,
+  Camera
 } from 'lucide-react';
 
 interface Props {
@@ -52,8 +54,22 @@ export const VehicleAccountModal: React.FC<Props> = ({
   const [ptiExpiryDate, setPtiExpiryDate] = useState(vehicle.pti_expiry_date || '');
   const [obdIp, setObdIp] = useState(vehicle.obd_ip || '192.168.0.10');
   const [obdPort, setObdPort] = useState(vehicle.obd_port || 35000);
-
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [saveSuccessNotice, setSaveSuccessNotice] = useState(false);
+
+  const handleScanComplete = (scanned: any) => {
+    sounds.playSuccess();
+    if (scanned.plateNumber) setPlateNumber(scanned.plateNumber);
+    if (scanned.vin) setVin(scanned.vin);
+    if (scanned.techPassport) setTechPassport(scanned.techPassport);
+    if (scanned.brand) setBrand(scanned.brand);
+    if (scanned.model) setModel(scanned.model);
+    if (scanned.year) setYear(scanned.year);
+    if (scanned.engine) setEngine(scanned.engine);
+    if (scanned.horsepower) setHorsepower(scanned.horsepower);
+    if (scanned.fuelType) setFuelType(scanned.fuelType);
+    setSaveSuccessNotice(false);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -184,6 +200,33 @@ export const VehicleAccountModal: React.FC<Props> = ({
               <GeorgianLicensePlate plate={plateNumber} size="md" variant="white" />
             )}
           </div>
+        </div>
+
+        {/* AI Camera OCR Scanner Action Banner */}
+        <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white flex flex-wrap items-center justify-between gap-2.5 shadow-sm border border-gold/30">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gold/20 border border-gold/40 flex items-center justify-center text-gold shrink-0">
+              <Camera size={18} />
+            </div>
+            <div>
+              <div className="text-xs font-black text-gold flex items-center gap-1.5">
+                <span>{isGe ? 'ტექ-პასპორტის & მანქანის AI სკანერი' : 'AI Tech-Passport & Vehicle Scanner'}</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-400">OCR LIVE</span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                {isGe ? 'გადაუღეთ ფოტო ტექ-პასპორტს ან მანქანას და მონაცემები შეივსება' : 'Take a photo of vehicle doc to auto-fill specs'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsScannerOpen(true)}
+            className="px-3.5 py-2 rounded-xl text-xs font-black bg-gold hover:bg-amber-400 text-navy shadow-sm flex items-center gap-1.5 transition-all active:scale-95 shrink-0 cursor-pointer"
+          >
+            <Camera size={14} className="stroke-[2.5]" />
+            <span>{isGe ? '📸 ტექ-პასპორტის სკანირება' : '📸 Scan Tech Doc'}</span>
+          </button>
         </div>
 
         {saveSuccessNotice && (
@@ -442,6 +485,15 @@ export const VehicleAccountModal: React.FC<Props> = ({
           </div>
         </form>
       </div>
+
+      {/* AI Camera OCR Scanner Modal */}
+      <DocumentCameraScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        docType="tech_passport"
+        onScanComplete={handleScanComplete}
+        lang={lang}
+      />
     </div>
   );
 };

@@ -19,6 +19,7 @@ import {
   Award
 } from 'lucide-react';
 import { PHOTO_AVATARS, renderDriverAvatar } from '../Fines/driverAvatars';
+import { DocumentCameraScannerModal, ScannedIdCardData } from './DocumentCameraScannerModal';
 
 interface Props {
   isOpen: boolean;
@@ -57,8 +58,20 @@ export const UserAccountModal: React.FC<Props> = ({
   const [licenseNumber, setLicenseNumber] = useState('TR-908124');
   const [licenseCategories, setLicenseCategories] = useState('B, B1');
   const [isPhotoPickerOpen, setIsPhotoPickerOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [saveSuccessNotice, setSaveSuccessNotice] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleScanComplete = (scanned: any) => {
+    sounds.playSuccess();
+    if (scanned.fullName) setFullName(scanned.fullName);
+    if (scanned.personalNumber) setPersonalNumber(scanned.personalNumber);
+    if (scanned.phone) setPhone(scanned.phone);
+    if (scanned.licenseNumber) setLicenseNumber(scanned.licenseNumber);
+    if (scanned.licenseCategories) setLicenseCategories(scanned.licenseCategories);
+    if (scanned.photoUrl) setPhotoUrl(scanned.photoUrl);
+    setSaveSuccessNotice(false);
+  };
 
   // Synchronize when vehicle or isOpen changes
   useEffect(() => {
@@ -169,6 +182,33 @@ export const UserAccountModal: React.FC<Props> = ({
               <X size={16} />
             </button>
           </div>
+        </div>
+
+        {/* AI Camera OCR Scanner Action Banner */}
+        <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white flex flex-wrap items-center justify-between gap-2.5 shadow-sm border border-gold/30">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gold/20 border border-gold/40 flex items-center justify-center text-gold shrink-0">
+              <Camera size={18} />
+            </div>
+            <div>
+              <div className="text-xs font-black text-gold flex items-center gap-1.5">
+                <span>{isGe ? 'პირადობის / მართვის მოწმობის AI სკანერი' : 'AI ID & License Scanner'}</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-400">OCR LIVE</span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                {isGe ? 'გადაუღეთ ფოტო დოკუმენტს და მონაცემები ავტომატურად შეივსება' : 'Take a photo of ID to auto-fill details'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsScannerOpen(true)}
+            className="px-3.5 py-2 rounded-xl text-xs font-black bg-gold hover:bg-amber-400 text-navy shadow-sm flex items-center gap-1.5 transition-all active:scale-95 shrink-0 cursor-pointer"
+          >
+            <Camera size={14} className="stroke-[2.5]" />
+            <span>{isGe ? '📸 ფოტოს გადაღება / სკანირება' : '📸 Scan Photo'}</span>
+          </button>
         </div>
 
         {/* ======================================================== */}
@@ -497,6 +537,15 @@ export const UserAccountModal: React.FC<Props> = ({
           </div>
         </form>
       </div>
+
+      {/* AI Camera OCR Scanner Modal */}
+      <DocumentCameraScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        docType="id_card"
+        onScanComplete={handleScanComplete}
+        lang={lang}
+      />
     </div>
   );
 };
