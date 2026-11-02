@@ -746,49 +746,33 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
     if (!target) return;
 
-    // 1. Remove previous base layer if different
-    if (currentBaseLayerRef.current && currentBaseLayerRef.current !== target) {
-      if (map.hasLayer(currentBaseLayerRef.current)) {
-        map.removeLayer(currentBaseLayerRef.current);
-      }
-    }
-
-    // 2. Add new target layer and send to back
+    // 1. Add new target layer FIRST and bring to back so the screen NEVER flashes or goes black
     if (!map.hasLayer(target)) {
-      map.addLayer(target);
+      target.addTo(map);
     }
     if (typeof target.bringToBack === 'function') {
       target.bringToBack();
     }
     currentBaseLayerRef.current = target;
 
-    // 3. Satellite labels overlay
-    const labels = satLabelsRef.current;
-    if (labels) {
-      if (theme === 'satellite') {
-        if (!map.hasLayer(labels)) {
-          map.addLayer(labels);
-        }
-        if (typeof labels.bringToBack === 'function') {
-          labels.bringToBack();
-        }
-        if (typeof target.bringToBack === 'function') {
-          target.bringToBack();
-        }
-      } else {
-        if (map.hasLayer(labels)) {
-          map.removeLayer(labels);
-        }
+    // 2. Remove other base layers smoothly AFTER target is attached
+    const baseLayers = [osmLayerRef.current, darkLayerRef.current, satLayerRef.current];
+    baseLayers.forEach(layer => {
+      if (layer && layer !== target && map.hasLayer(layer)) {
+        map.removeLayer(layer);
       }
+    });
+
+    if (satLabelsRef.current && map.hasLayer(satLabelsRef.current)) {
+      map.removeLayer(satLabelsRef.current);
     }
 
-    // 4. Update container background color
+    // 3. Update container background color
     if (mapContainerRef.current) {
-      mapContainerRef.current.classList.remove('dark-map-tiles');
       if (theme === 'dark') {
         mapContainerRef.current.style.backgroundColor = '#12161f';
       } else if (theme === 'satellite') {
-        mapContainerRef.current.style.backgroundColor = '#000000';
+        mapContainerRef.current.style.backgroundColor = '#0b1320';
       } else {
         mapContainerRef.current.style.backgroundColor = '#f8fafc';
       }
@@ -1046,25 +1030,20 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     osmLayerRef.current = osmLayer;
 
     // 2. CartoDB Dark Matter (true native dark theme)
-    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       subdomains: 'abcd',
       maxZoom: 20,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
     });
     darkLayerRef.current = darkLayer;
 
-    // 3. ESRI Satellite World Imagery (high-resolution satellite)
-    const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
+    // 3. Google Hybrid Satellite (Ultra-fast, high-resolution satellite with full Georgian streets and labels)
+    const satLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      subdomains: ['0', '1', '2', '3'],
+      maxZoom: 20,
+      attribution: 'Map data &copy; Google'
     });
     satLayerRef.current = satLayer;
-
-    // 4. ESRI Satellite Streets & Labels Overlay
-    const satLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19
-    });
-    satLabelsRef.current = satLabels;
 
     // Zoom control placed on bottom-left so top-right is completely free for theme switcher
     L.control.zoom({ position: 'bottomleft' }).addTo(map);
@@ -2298,17 +2277,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           }`}
         />
 
-        {/* Floating Quick Exit / Scroll Past Button */}
-        <button
-          type="button"
-          onClick={handleScrollPastMap}
-          className="absolute bottom-4 right-4 z-20 px-3.5 py-2 rounded-2xl bg-white/95 hover:bg-white text-navy font-bold text-xs shadow-md border border-slate-200/90 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 group pointer-events-auto"
-          title="სერვისებზე და ფასებზე ჩასვლა"
-        >
-          <span>სერვისებზე ჩასვლა</span>
-          <ChevronDown size={14} className="text-gold group-hover:translate-y-0.5 transition-transform" />
-        </button>
-
         {/* Loading overlay if Leaflet is still preparing */}
         {!isLeafletReady && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-navy/80 backdrop-blur-sm text-white">
@@ -2348,7 +2316,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
               mapTheme === 'satellite' ? 'bg-gold text-navy shadow-md font-black ring-1 ring-white/50' : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
-            title="სატელიტური რუკა ქუჩებით (ESRI World Imagery)"
+            title="სატელიტური რუკა ქუჩებით (Google Hybrid)"
           >
             <span>🛰️ სატელიტი</span>
           </button>
@@ -2387,17 +2355,32 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </div>
         )}
 
-        {/* Floating Action Button (FAB) Bottom Right */}
-        <button
-          onClick={() => {
-            sounds.playClick();
-            setIsAddModalOpen(true);
-          }}
-          className="absolute bottom-5 right-5 z-10 px-5 py-3.5 rounded-full bg-gradient-to-r from-gold to-amber-500 text-navy font-black text-xs shadow-[0_4px_20px_rgba(252,163,17,0.45)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border-2 border-white"
-        >
-          <Plus size={18} />
-          <span>შეტყობინების დამატება</span>
-        </button>
+        {/* Floating Bottom-Right Controls Stack (No overlap!) */}
+        <div className="absolute bottom-5 right-5 z-20 flex flex-col items-end gap-2.5 pointer-events-auto">
+          {/* 1. Scroll past map button */}
+          <button
+            type="button"
+            onClick={handleScrollPastMap}
+            className="px-3.5 py-2 rounded-2xl bg-white/95 hover:bg-white text-navy font-bold text-xs shadow-md border border-slate-200/90 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 group cursor-pointer"
+            title="სერვისებზე და ფასებზე ჩასვლა"
+          >
+            <span>სერვისებზე ჩასვლა</span>
+            <ChevronDown size={14} className="text-gold group-hover:translate-y-0.5 transition-transform" />
+          </button>
+
+          {/* 2. Floating Action Button (FAB) Add Report */}
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              setIsAddModalOpen(true);
+            }}
+            className="px-5 py-3.5 rounded-full bg-gradient-to-r from-gold to-amber-500 text-navy font-black text-xs shadow-[0_4px_20px_rgba(252,163,17,0.45)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border-2 border-white cursor-pointer"
+          >
+            <Plus size={18} />
+            <span>შეტყობინების დამატება</span>
+          </button>
+        </div>
 
         {/* Selected Marker Rich Info Card (Slides up when any marker is clicked) */}
         {selectedReport && (() => {
