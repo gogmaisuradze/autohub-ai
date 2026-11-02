@@ -15,6 +15,8 @@ import { VinHistoryModal } from './components/Modals/VinHistoryModal';
 import { ServiceBookingModal } from './components/Booking/ServiceBookingModal';
 import { FloatingMechanicWidget } from './components/AiMechanic/FloatingMechanicWidget';
 import { ParkingConfirmationModal } from './components/Parking/ParkingConfirmationModal';
+import { UserAccountModal } from './components/Modals/UserAccountModal';
+import { VehicleAccountModal } from './components/Modals/VehicleAccountModal';
 import { parkingSessionService } from './services/parkingSessionService';
 import { ParkingSession } from './types/parkingSession';
 import { DtcCode, FineItem, ServiceBookingItem, ServiceItem, TelemetryData, VehicleProfile } from './types';
@@ -857,7 +859,84 @@ export const App: React.FC = () => {
 
   // Modal States
   const [isAddVehicleModalOpen, setIsAddVehicleModalOpen] = useState(false);
+  const [isUserAccountModalOpen, setIsUserAccountModalOpen] = useState(false);
+  const [isVehicleAccountModalOpen, setIsVehicleAccountModalOpen] = useState(false);
   const [wizardInitialData, setWizardInitialData] = useState<Partial<VehicleProfile> | undefined>(undefined);
+
+  // User Profile & Vehicle Profile Synchronizers
+  const handleSaveUserData = (data: {
+    driver_name: string;
+    driver_personal_number: string;
+    driver_phone: string;
+    driver_photo_url?: string;
+    driver_license_points?: number;
+  }) => {
+    setVehicle((prev) => {
+      const updated = {
+        ...prev,
+        driver_name: data.driver_name,
+        driver_personal_number: data.driver_personal_number,
+        driver_phone: data.driver_phone,
+        driver_photo_url: data.driver_photo_url || prev.driver_photo_url,
+        driver_license_points: data.driver_license_points ?? prev.driver_license_points
+      };
+      try {
+        localStorage.setItem('autohub_vehicle_profile', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    setAllVehicles((prevList) => {
+      const updatedList = prevList.map((v) =>
+        v.id === vehicle.id
+          ? {
+              ...v,
+              driver_name: data.driver_name,
+              driver_personal_number: data.driver_personal_number,
+              driver_phone: data.driver_phone,
+              driver_photo_url: data.driver_photo_url || v.driver_photo_url,
+              driver_license_points: data.driver_license_points ?? v.driver_license_points
+            }
+          : v
+      );
+      try {
+        const key = accountMode === 'visitor' ? 'autohub_visitor_vehicles' : 'autohub_owner_vehicles';
+        localStorage.setItem(key, JSON.stringify(updatedList));
+      } catch {}
+      return updatedList;
+    });
+  };
+
+  const handleSaveVehicleData = (updatedVehicle: VehicleProfile) => {
+    setVehicle(updatedVehicle);
+    try {
+      localStorage.setItem('autohub_vehicle_profile', JSON.stringify(updatedVehicle));
+    } catch {}
+
+    setAllVehicles((prevList) => {
+      const updatedList = prevList.map((v) => (v.id === updatedVehicle.id ? updatedVehicle : v));
+      try {
+        const key = accountMode === 'visitor' ? 'autohub_visitor_vehicles' : 'autohub_owner_vehicles';
+        localStorage.setItem(key, JSON.stringify(updatedList));
+      } catch {}
+      return updatedList;
+    });
+  };
+
+  const handleNewUserAccount = () => {
+    sounds.playClick();
+    if (accountMode !== 'visitor') {
+      handleToggleAccountMode();
+    }
+    setVehicle((prev) => ({
+      ...prev,
+      driver_name: '',
+      driver_personal_number: '',
+      driver_phone: '',
+      driver_photo_url: 'avatar_dog'
+    }));
+    setIsUserAccountModalOpen(true);
+  };
   const [fieldPrompt, setFieldPrompt] = useState<{
     isOpen: boolean;
     fieldType: PromptFieldType;
@@ -1124,6 +1203,9 @@ export const App: React.FC = () => {
           onNavigateHome={() => handleTabChange('home')}
           onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
           onOpenBookingModal={() => handleOpenBookingModal()}
+          onOpenUserAccountModal={() => setIsUserAccountModalOpen(true)}
+          onOpenVehicleAccountModal={() => setIsVehicleAccountModalOpen(true)}
+          onNewUserAccount={handleNewUserAccount}
           dtcCount={dtcCodes.length}
           finesCount={fines.filter(f => f.status === 'pending').length}
           onSelectTab={handleTabChange}
@@ -1531,6 +1613,29 @@ export const App: React.FC = () => {
           }}
         />
       )}
+
+      {/* User Account / Driver Profile Modal */}
+      <UserAccountModal
+        isOpen={isUserAccountModalOpen}
+        onClose={() => setIsUserAccountModalOpen(false)}
+        vehicle={vehicle}
+        accountMode={accountMode}
+        onSaveUserData={handleSaveUserData}
+        onToggleAccountMode={handleToggleAccountMode}
+        onNewAccount={handleNewUserAccount}
+        lang={lang}
+      />
+
+      {/* Vehicle Account / Registration Certificate Modal */}
+      <VehicleAccountModal
+        isOpen={isVehicleAccountModalOpen}
+        onClose={() => setIsVehicleAccountModalOpen(false)}
+        vehicle={vehicle}
+        onSaveVehicle={handleSaveVehicleData}
+        onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
+        onOpenGarageTab={() => handleTabChange('garage')}
+        lang={lang}
+      />
 
       {/* PWA Install Banner - შენახულია და გამორთულია (საჭიროებისას ჩაირთვება ტელეფონზე) */}
       {/* <PwaInstallBanner /> */}

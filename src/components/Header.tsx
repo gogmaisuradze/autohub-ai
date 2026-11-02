@@ -10,8 +10,14 @@ import {
   Plus,
   Trash2,
   Check,
-  HelpCircle
+  HelpCircle,
+  User,
+  Sparkles,
+  RefreshCw,
+  FileText,
+  Crown
 } from 'lucide-react';
+import { renderDriverAvatar } from './Fines/driverAvatars';
 
 interface Props {
   vehicle?: VehicleProfile | null;
@@ -23,6 +29,9 @@ interface Props {
   onNavigateHome: () => void;
   onOpenAddVehicle?: () => void;
   onOpenBookingModal?: () => void;
+  onOpenUserAccountModal?: () => void;
+  onOpenVehicleAccountModal?: () => void;
+  onNewUserAccount?: () => void;
   dtcCount?: number;
   finesCount?: number;
   onSelectTab?: (tab: TabType) => void;
@@ -43,6 +52,9 @@ export const Header: React.FC<Props> = ({
   onDeleteVehicle,
   onNavigateHome,
   onOpenAddVehicle,
+  onOpenUserAccountModal,
+  onOpenVehicleAccountModal,
+  onNewUserAccount,
   onSelectTab,
   lang = 'ge',
   onToggleLang,
@@ -91,86 +103,196 @@ export const Header: React.FC<Props> = ({
   const renderGarageDropdown = () => (
     <div
       ref={dropdownRef}
-      className="absolute left-0 right-0 sm:left-auto sm:right-0 mt-2 w-full sm:w-80 rounded-3xl neu-card p-3 shadow-2xl z-[100] animate-fade-in border border-slate-200 bg-white"
+      className="absolute left-0 right-0 sm:left-auto sm:right-0 mt-2 w-full sm:w-88 md:w-96 rounded-3xl neu-card p-3 shadow-2xl z-[100] animate-fade-in border border-slate-200 bg-white"
     >
-      <div className="px-3 py-2 text-[10px] font-mono uppercase text-slate-400 border-b border-slate-100 flex items-center justify-between">
-        <span>{isGe ? 'გარაჟი / მანქანის შეცვლა' : 'Garage / Change Car'}</span>
+      {/* ---------------------------------------------------- */}
+      {/* SECTION 1: USER ACCOUNT & PROFILE (მომხმარებლის ექაუნთი) */}
+      {/* ---------------------------------------------------- */}
+      <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/90 mb-2.5">
+        <div className="flex items-center justify-between text-[10px] font-mono uppercase text-slate-400 font-bold mb-1.5">
+          <span>{isGe ? '👤 მომხმარებლის პროფილი' : '👤 User Profile'}</span>
+          <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] flex items-center gap-1 ${
+            accountMode === 'owner' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-blue-100 text-blue-900 border border-blue-300'
+          }`}>
+            {accountMode === 'owner' ? <Crown size={10} className="text-gold" /> : <User size={10} className="text-blue-700" />}
+            <span>{accountMode === 'owner' ? (isGe ? 'მფლობელი' : 'Owner') : (isGe ? 'ვიზიტორი' : 'Guest')}</span>
+          </span>
+        </div>
+
+        {/* User preview banner */}
+        <div className="flex items-center gap-2.5 py-1">
+          <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-300 shadow-xs shrink-0 bg-slate-900">
+            {renderDriverAvatar(vehicle?.driver_photo_url, 'w-full h-full')}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-black text-navy truncate">
+              {vehicle?.driver_name ? (
+                vehicle.driver_name
+              ) : (
+                <span className="text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded text-[11px] font-black inline-flex items-center gap-1">
+                  ⚠️ {isGe ? 'შეუვსებელი პროფილი' : 'Incomplete Profile'}
+                </span>
+              )}
+            </div>
+            <div className="text-[10px] font-mono text-slate-400 truncate mt-0.5">
+              {vehicle?.driver_personal_number ? `ID: ${vehicle.driver_personal_number}` : (isGe ? 'პირადი ნომერი შეუვსებელია' : 'Personal ID missing')}
+            </div>
+          </div>
+        </div>
+
+        {/* User Account Action Buttons */}
+        <div className="grid grid-cols-2 gap-1.5 mt-2 pt-2 border-t border-slate-200/70">
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              setDropdownOpen(false);
+              onOpenUserAccountModal?.();
+            }}
+            className="w-full py-1.5 px-2 rounded-xl bg-white hover:bg-slate-100 text-navy text-[11px] font-bold flex items-center justify-center gap-1.5 border border-slate-200 shadow-xs transition-all"
+            title={isGe ? 'პროფილის ნახვა და შევსება' : 'View & Fill Profile'}
+          >
+            <User size={13} className="text-gold shrink-0" />
+            <span className="truncate">{isGe ? 'პროფილი / შევსება' : 'Profile / Edit'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              setDropdownOpen(false);
+              onNewUserAccount?.();
+            }}
+            className="w-full py-1.5 px-2 rounded-xl bg-gold/15 hover:bg-gold/25 text-navy text-[11px] font-bold flex items-center justify-center gap-1.5 border border-gold/40 shadow-xs transition-all"
+            title={isGe ? 'ახალი ექაუნთის რეგისტრაცია / შექმნა' : 'Create New Account'}
+          >
+            <Sparkles size={12} className="text-gold shrink-0" />
+            <span className="truncate">{isGe ? '✨ ახალი ექაუნთი' : '✨ New Account'}</span>
+          </button>
+        </div>
+
+        {onToggleAccountMode && (
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              onToggleAccountMode();
+            }}
+            className="w-full mt-1.5 py-1 px-2 rounded-lg bg-slate-200/60 hover:bg-slate-200 text-slate-600 text-[10px] font-bold flex items-center justify-center gap-1 transition-all"
+          >
+            <RefreshCw size={10} />
+            <span className="truncate">
+              {accountMode === 'owner'
+                ? (isGe ? '👤 ვიზიტორის რეჟიმზე გადართვა (სუფთა პროფილი)' : 'Switch to Guest Mode')
+                : (isGe ? '👑 მფლობელის რეჟიმზე გადართვა (Mercedes + BMW)' : 'Switch to Owner Mode')}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* ---------------------------------------------------- */}
+      {/* SECTION 2: VEHICLE ACCOUNT & FLEET (მანქანის ექაუნთი)   */}
+      {/* ---------------------------------------------------- */}
+      <div className="px-1 py-1 text-[10px] font-mono uppercase text-slate-400 border-b border-slate-100 flex items-center justify-between">
+        <span>{isGe ? '🚗 მანქანის ექაუნთი & ავტოპარკი' : '🚗 Vehicle Account & Fleet'}</span>
         <span className="font-bold text-gold">
           {vehicleList.length} {isGe ? 'ავტომობილი' : 'Vehicles'}
         </span>
       </div>
 
-      {/* Button to navigate directly to Garage & Vehicle Profile */}
-      <button
-        type="button"
-        onClick={() => {
-          sounds.playSuccess();
-          onSelectTab?.('garage');
-          setDropdownOpen(false);
-        }}
-        className="w-full my-1.5 py-2.5 px-3 rounded-2xl bg-navy text-white hover:bg-slate-800 text-xs font-black flex items-center justify-center gap-2 transition-all shadow-sm border border-gold/40"
-      >
-        <Car size={15} className="text-gold shrink-0" />
-        <span className="truncate">{isGe ? '🚗 ჩემი გარაჟი & პროფილის ნახვა' : '🚗 My Garage & View Profile'}</span>
-      </button>
-
-      {vehicleList.map((preset) => (
-        <div
-          key={preset.id}
-          className={`w-full p-2.5 rounded-2xl transition-all flex items-center justify-between my-1 ${
-            preset.id === vehicle?.id
-              ? 'bg-gold/15 text-navy font-bold border border-gold/30'
-              : 'hover:bg-slate-50 text-slate-700'
-          }`}
+      {/* Vehicle Action Buttons */}
+      <div className="grid grid-cols-2 gap-1.5 my-2">
+        <button
+          type="button"
+          onClick={() => {
+            sounds.playClick();
+            setDropdownOpen(false);
+            onOpenVehicleAccountModal?.();
+          }}
+          className="w-full py-2 px-2 rounded-xl bg-navy text-gold hover:bg-slate-800 text-[11px] font-black flex items-center justify-center gap-1.5 transition-all shadow-xs border border-gold/40"
+          title={isGe ? 'მანქანის ექაუნთი & ტექ-პასპორტი' : 'Vehicle Account & Registration'}
         >
+          <FileText size={13} className="text-gold shrink-0" />
+          <span className="truncate">{isGe ? 'მანქანის ექაუნთი' : 'Vehicle Account'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            sounds.playSuccess();
+            onSelectTab?.('garage');
+            setDropdownOpen(false);
+          }}
+          className="w-full py-2 px-2 rounded-xl bg-white text-navy hover:bg-slate-100 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs border border-slate-200"
+          title={isGe ? 'ჩემი გარაჟი & პროფილის ნახვა' : 'My Garage & Fleet'}
+        >
+          <Car size={13} className="text-gold shrink-0" />
+          <span className="truncate">{isGe ? 'ჩემი გარაჟი' : 'My Garage'}</span>
+        </button>
+      </div>
+
+      {/* List of Vehicles */}
+      <div className="max-h-44 overflow-y-auto no-scrollbar space-y-1">
+        {vehicleList.map((preset) => (
           <div
-            onClick={() => {
-              sounds.playSuccess();
-              onChangeVehicle(preset);
-              onSelectTab?.('garage');
-              setDropdownOpen(false);
-            }}
-            className="flex-1 cursor-pointer min-w-0"
+            key={preset.id}
+            className={`w-full p-2 rounded-2xl transition-all flex items-center justify-between ${
+              preset.id === vehicle?.id
+                ? 'bg-gold/15 text-navy font-bold border border-gold/30 shadow-xs'
+                : 'hover:bg-slate-50 text-slate-700'
+            }`}
           >
-            <div className="text-xs font-bold text-navy truncate">
-              {preset.brand} {preset.model}
+            <div
+              onClick={() => {
+                sounds.playSuccess();
+                onChangeVehicle(preset);
+                setDropdownOpen(false);
+              }}
+              className="flex-1 cursor-pointer min-w-0"
+            >
+              <div className="text-xs font-bold text-navy truncate flex items-center gap-1.5">
+                <span>{preset.brand} {preset.model}</span>
+                {preset.id === vehicle?.id && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+              </div>
+              <div className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">
+                {preset.engine}
+              </div>
             </div>
-            <div className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">
-              {preset.engine}
+            <div className="flex items-center gap-1.5 shrink-0 ml-2">
+              <GeorgianLicensePlate plate={preset.plate_number} size="xs" variant="white" />
+              {onDeleteVehicle && vehicleList.length > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    sounds.playClick();
+                    if (window.confirm(isGe ? `ნამდვილად გსურთ ${preset.brand} ${preset.model}-ის წაშლა?` : `Delete ${preset.brand} ${preset.model}?`)) {
+                      onDeleteVehicle(preset.id);
+                    }
+                  }}
+                  className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                  title={isGe ? 'მანქანის წაშლა' : 'Delete Vehicle'}
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0 ml-2">
-            <GeorgianLicensePlate plate={preset.plate_number} size="xs" variant="white" />
-            {onDeleteVehicle && vehicleList.length > 1 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  sounds.playClick();
-                  if (window.confirm(isGe ? `ნამდვილად გსურთ ${preset.brand} ${preset.model}-ის წაშლა?` : `Delete ${preset.brand} ${preset.model}?`)) {
-                    onDeleteVehicle(preset.id);
-                  }
-                }}
-                className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
-                title={isGe ? 'მანქანის წაშლა' : 'Delete Vehicle'}
-              >
-                <Trash2 size={13} />
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       {onOpenAddVehicle && (
-        <div className="pt-2 border-t border-slate-100 mt-1">
+        <div className="pt-2 border-t border-slate-100 mt-2">
           <button
             onClick={() => {
               sounds.playClick();
               setDropdownOpen(false);
               onOpenAddVehicle();
             }}
-            className="w-full py-2.5 px-3 rounded-2xl bg-gold/15 hover:bg-gold/25 text-navy text-xs font-black flex items-center justify-center gap-2 transition-all border border-gold/30"
+            className="w-full py-2 px-3 rounded-2xl bg-gold/15 hover:bg-gold/25 text-navy text-xs font-black flex items-center justify-center gap-2 transition-all border border-gold/30"
           >
-            <Plus size={14} className="text-gold" />
+            <Plus size={14} className="text-gold stroke-[3]" />
             <span>{isGe ? '+ ახალი მანქანის დამატება' : '+ Add New Vehicle'}</span>
           </button>
         </div>
@@ -213,36 +335,47 @@ export const Header: React.FC<Props> = ({
         {/* 2. Right Controls */}
         <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
           
-          {/* 0. Account Mode Switcher */}
-          {onToggleAccountMode && (
-            <button
-              onClick={() => {
-                sounds.playClick();
+          {/* 0. Account Profile / Mode Button */}
+          <button
+            onClick={() => {
+              sounds.playClick();
+              if (onOpenUserAccountModal) {
+                onOpenUserAccountModal();
+              } else if (onToggleAccountMode) {
                 onToggleAccountMode();
-              }}
-              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl text-xs font-black flex items-center gap-1 sm:gap-1.5 border transition-all ${
-                accountMode === 'owner'
-                  ? 'bg-amber-50/90 text-amber-950 border-amber-300 shadow-xs hover:bg-amber-100'
-                  : 'bg-blue-50/90 text-blue-950 border-blue-300 shadow-xs hover:bg-blue-100'
-              }`}
-              title={
-                accountMode === 'owner'
-                  ? 'ჩემი ექაუნთი (2 მანქანა: Mercedes + BMW) • დააჭირეთ სტუმრის რეჟიმზე გადასართავად'
-                  : 'სტუმრის ექაუნთი (1 მანქანა) • დააჭირეთ ჩემს ექაუნთზე დასაბრუნებლად'
               }
-            >
-              <span className="text-xs sm:text-sm">{accountMode === 'owner' ? '👑' : '👤'}</span>
-              <span className="hidden lg:inline">
-                {accountMode === 'owner' ? 'ჩემი ექაუნთი' : 'სტუმრის ექაუნთი'}
-              </span>
-              <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-md ${
-                accountMode === 'owner' ? 'bg-amber-200/80 text-amber-950 font-bold' : 'bg-blue-200/80 text-blue-950 font-bold'
-              }`}>
-                <span className="sm:hidden">{accountMode === 'owner' ? 'Owner' : 'Guest'}</span>
-                <span className="hidden sm:inline">{accountMode === 'owner' ? 'Owner (2)' : 'Visitor (1)'}</span>
-              </span>
-            </button>
-          )}
+            }}
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl text-xs font-black flex items-center gap-1 sm:gap-1.5 border transition-all cursor-pointer ${
+              accountMode === 'owner'
+                ? 'bg-amber-50/90 text-amber-950 border-amber-300 shadow-xs hover:bg-amber-100'
+                : 'bg-blue-50/90 text-blue-950 border-blue-300 shadow-xs hover:bg-blue-100'
+            }`}
+            title={
+              isGe
+                ? 'მომხმარებლის ექაუნთი • დააჭირეთ პროფილის სანახავად და შესავსებად'
+                : 'User Account • Click to view and fill profile'
+            }
+          >
+            <span className="text-xs sm:text-sm">{accountMode === 'owner' ? '👑' : '👤'}</span>
+            <span className="hidden lg:inline truncate max-w-[120px]">
+              {vehicle?.driver_name ? (
+                vehicle.driver_name
+              ) : accountMode === 'owner' ? (
+                'ჩემი ექაუნთი'
+              ) : (
+                'სტუმრის ექაუნთი'
+              )}
+            </span>
+            {!vehicle?.driver_name && (
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" title={isGe ? 'შეავსეთ პროფილი' : 'Fill Profile'} />
+            )}
+            <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-md ${
+              accountMode === 'owner' ? 'bg-amber-200/80 text-amber-950 font-bold' : 'bg-blue-200/80 text-blue-950 font-bold'
+            }`}>
+              <span className="sm:hidden">{accountMode === 'owner' ? 'Owner' : 'Guest'}</span>
+              <span className="hidden sm:inline">{accountMode === 'owner' ? 'Owner (2)' : 'Visitor (1)'}</span>
+            </span>
+          </button>
 
           {/* 1. OBD-II Status Indicator */}
           <button
