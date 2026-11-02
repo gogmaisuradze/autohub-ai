@@ -8,6 +8,7 @@ import { loadCameras, getGeorgiaRegionName } from '../../services/cameraService'
 import { mapDataService } from '../../services/mapDataService';
 import { getPreferredLocation, watchPreferredLocation, LocationFix } from '../../services/locationService';
 import AddReportModal from './AddReportModal';
+import { LocationDetailModal } from './LocationDetailModal';
 import { MapCategoriesCoverflow } from './MapCategoriesCoverflow';
 import {
   getFuel3DPinHtml,
@@ -818,6 +819,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [filterType, setFilterType] = useState<MapPointType | 'all' | 'none'>('radar');
   const [categoryViewMode, setCategoryViewMode] = useState<'coverflow' | 'grid'>('coverflow');
   const [selectedReport, setSelectedReport] = useState<MapReport | null>(null);
+  const [detailModalReport, setDetailModalReport] = useState<MapReport | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFix, setLocationFix] = useState<LocationFix | null>(null);
   const [locationError, setLocationError] = useState('');
@@ -833,6 +835,20 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   useRevealResult(`${filterType}:${activeMapView}`, 'live-traffic-map-canvas');
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Expose global opener for in-popup HTML buttons
+  useEffect(() => {
+    (window as any).autohubOpenDetailModal = (id: string) => {
+      const found = reports.find(r => r.id === id);
+      if (found) {
+        sounds.playSuccess();
+        setDetailModalReport(found);
+      }
+    };
+    return () => {
+      delete (window as any).autohubOpenDetailModal;
+    };
+  }, [reports]);
 
   // Map Scroll & Zoom Isolation states (Prevents trapping page scroll on wheel or touch)
   const [isMapUnlocked, setIsMapUnlocked] = useState<boolean>(false);
@@ -1714,6 +1730,17 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
               <span>Google Maps ↗</span>
             </a>
           </div>
+
+          <!-- Full Details Modal CTA (Double click hint & button) -->
+          <div class="mt-2 pt-1.5 border-t border-[#E8EAED]">
+            <button
+              type="button"
+              onclick="window.autohubOpenDetailModal && window.autohubOpenDetailModal('${escapeHtml(item.id)}')"
+              class="w-full py-1.5 px-2 rounded-xl bg-navy text-gold hover:bg-slate-800 text-[11px] font-black flex items-center justify-center gap-1.5 shadow-xs border border-gold/40 transition-all cursor-pointer"
+            >
+              <span>🔍 სრული ინფორმაციის ფანჯარა (ორმაგი კლიკი)</span>
+            </button>
+          </div>
         </div>
       `;
 
@@ -1729,16 +1756,38 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         closeButton: true
       });
 
+      let lastClickTimestamp = 0;
+
       marker.on('click', (e: any) => {
         if (e?.originalEvent) {
           e.originalEvent.stopPropagation();
         }
+
+        const now = Date.now();
+        if (now - lastClickTimestamp < 450) {
+          // Double click detected!
+          sounds.playSuccess();
+          setDetailModalReport(item);
+          return;
+        }
+        lastClickTimestamp = now;
+
         sounds.playClick();
         setSelectedReport(item);
         if (mapInstanceRef.current) {
           mapInstanceRef.current.panTo([item.lat, item.lng], { animate: true, duration: 0.35 });
         }
         marker.openPopup();
+      });
+
+      // Dedicated double-click event listener on marker
+      marker.on('dblclick', (e: any) => {
+        if (e?.originalEvent) {
+          e.originalEvent.stopPropagation();
+          e.originalEvent.preventDefault();
+        }
+        sounds.playSuccess();
+        setDetailModalReport(item);
       });
 
       marker.on('popupclose', () => {
@@ -2524,6 +2573,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
               onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
+              onDoubleClick={() => {
+                sounds.playSuccess();
+                setDetailModalReport(selectedReport);
+              }}
               className="absolute bottom-3 left-3 right-3 sm:left-4 sm:right-auto sm:max-w-md z-30 p-4 rounded-3xl bg-white/98 backdrop-blur-xl border border-[#DADCE0] text-[#202124] shadow-[0_12px_32px_rgba(60,64,67,0.22)] animate-fade-in"
             >
               {/* Header: Company Logo + Badge + Name + Close */}
@@ -2671,6 +2724,19 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                   </a>
                 </div>
               </div>
+
+              {/* Full Details Modal Window CTA */}
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playSuccess();
+                  setDetailModalReport(selectedReport);
+                }}
+                className="w-full mt-2.5 py-2 px-3 rounded-xl bg-navy text-gold hover:bg-slate-800 text-xs font-black flex items-center justify-center gap-1.5 shadow-xs border border-gold/40 transition-all cursor-pointer"
+              >
+                <Sparkles size={13} className="text-gold" />
+                <span>🔍 სრული ინფორმაციის ფანჯარა (ორმაგი კლიკი)</span>
+              </button>
             </div>
           );
         })()}
@@ -2973,6 +3039,18 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         onClose={() => setIsAddModalOpen(false)}
         onAddReport={handleAddNewReport}
         currentCoords={clickedCoords || userLocation}
+      />
+
+      {/* Location Rich Details Modal Window (Opens on Double-Click or Click) */}
+      <LocationDetailModal
+        isOpen={Boolean(detailModalReport)}
+        report={detailModalReport}
+        onClose={() => setDetailModalReport(null)}
+        userCoords={userLocation}
+        onSelectAlternativeRoute={(routeId) => {
+          setActiveRouteId(routeId);
+          setShowAlternativeRoutes(true);
+        }}
       />
 
     </div>
