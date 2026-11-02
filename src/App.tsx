@@ -1228,25 +1228,27 @@ export const App: React.FC = () => {
         />
       </div>
 
-      {/* Cover Advertising Banner (Wider panoramic layout for grand automotive photography) */}
-      <div id="cover-banner-section" data-tour="cover-banner" className="hidden md:block w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
-        <React.Suspense fallback={<BannerFallback />}>
-        <CoverAdBanner
-          onNavigateTab={handleTabChange}
-          onStartObdScan={() => {
-            setIsObdConnected(true);
-            handleTabChange('obd');
-            setAutoStartScanTrigger(Date.now());
-          }}
-          onOpenBookingModal={() => handleOpenBookingModal()}
-          onOpenObdModal={() => setIsObdAdapterModalOpen(true)}
-          onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
-          onScrollPastBanner={() => scrollToMainContent(950)}
-          isTourActive={isSiteTourActive}
-          activeTab={activeTab}
-        />
-        </React.Suspense>
-      </div>
+      {/* Cover Advertising Banner (Wider panoramic layout for grand automotive photography - hidden on map tab for instant full map view) */}
+      {activeTab !== 'map' && (
+        <div id="cover-banner-section" data-tour="cover-banner" className="hidden md:block w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 pt-3 sm:pt-4">
+          <React.Suspense fallback={<BannerFallback />}>
+          <CoverAdBanner
+            onNavigateTab={handleTabChange}
+            onStartObdScan={() => {
+              setIsObdConnected(true);
+              handleTabChange('obd');
+              setAutoStartScanTrigger(Date.now());
+            }}
+            onOpenBookingModal={() => handleOpenBookingModal()}
+            onOpenObdModal={() => setIsObdAdapterModalOpen(true)}
+            onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
+            onScrollPastBanner={() => scrollToMainContent(950)}
+            isTourActive={isSiteTourActive}
+            activeTab={activeTab}
+          />
+          </React.Suspense>
+        </div>
+      )}
 
       {/* 3. Main Content Container (Unified wide layout matching CoverAdBanner) */}
       <main id="main-content" className="w-full max-w-[1720px] 2xl:max-w-[1860px] mx-auto px-2.5 sm:px-5 lg:px-7 py-3 sm:py-5 pb-16 sm:pb-24 overflow-x-hidden">

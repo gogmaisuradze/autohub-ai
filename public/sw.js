@@ -1,7 +1,7 @@
 // AutoHub AI - Production Service Worker
 // Handles Offline App Shell Caching, Web Push Reminders & Notification Interactions
 
-const CACHE_NAME = 'autohub-cache-v3';
+const CACHE_NAME = 'autohub-cache-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

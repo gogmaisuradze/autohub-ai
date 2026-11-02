@@ -44,7 +44,7 @@ class LeafletLoader {
     this.loadPromise = new Promise((resolve, reject) => {
       try {
         // Ensure CSS is present
-        const CSS_HREF = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        const CSS_HREF = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
         let existingLink = document.querySelector(`link[href*="leaflet.css"]`) as HTMLLinkElement | null;
         if (!existingLink) {
           const link = document.createElement('link');
@@ -55,7 +55,7 @@ class LeafletLoader {
         }
 
         // Check if script element already exists
-        const SCRIPT_SRC = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        const SCRIPT_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
         let existingScript = document.querySelector(`script[src*="leaflet.js"]`) as HTMLScriptElement | null;
 
         const checkReadyInterval = setInterval(() => {

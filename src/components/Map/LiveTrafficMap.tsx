@@ -511,11 +511,18 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       }
     });
 
-    if (satLabelsRef.current && map.hasLayer(satLabelsRef.current)) {
-      map.removeLayer(satLabelsRef.current);
+    // 3. Handle Satellite street and place labels overlay
+    if (theme === 'satellite') {
+      if (satLabelsRef.current && !map.hasLayer(satLabelsRef.current)) {
+        satLabelsRef.current.addTo(map);
+      }
+    } else {
+      if (satLabelsRef.current && map.hasLayer(satLabelsRef.current)) {
+        map.removeLayer(satLabelsRef.current);
+      }
     }
 
-    // 3. Update container background color
+    // 4. Update container background color
     if (mapContainerRef.current) {
       if (theme === 'dark') {
         mapContainerRef.current.style.backgroundColor = '#12161f';
@@ -767,13 +774,20 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       closePopupOnClick: false
     });
 
-    map.on('moveend', () => setMapRevision(v => v + 1));
+    let moveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+    map.on('moveend', () => {
+      if (moveDebounceTimer) clearTimeout(moveDebounceTimer);
+      moveDebounceTimer = setTimeout(() => {
+        setMapRevision(v => v + 1);
+      }, 700);
+    });
 
     // Pre-create and cache all tile layers for instant, lag-free switching
-    // 1. OpenStreetMap standard tiles (100% reliable)
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
+    // 1. Street: CartoDB Voyager (High-speed, crisp, vivid road labels, 100% unblocked)
+    const osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 20,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
     });
     osmLayerRef.current = osmLayer;
 
@@ -785,13 +799,21 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     });
     darkLayerRef.current = darkLayer;
 
-    // 3. Google Hybrid Satellite (Ultra-fast, high-resolution satellite with full Georgian streets and labels)
-    const satLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-      subdomains: ['0', '1', '2', '3'],
-      maxZoom: 20,
-      attribution: 'Map data &copy; Google'
+    // 3. Esri World Imagery Satellite (High-resolution global satellite photography)
+    const satLayer = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      maxNativeZoom: 18,
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar'
     });
     satLayerRef.current = satLayer;
+
+    // 3b. Satellite street labels overlay
+    const satLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 20,
+      pane: 'overlayPane'
+    });
+    satLabelsRef.current = satLabels;
 
     // Zoom control placed on bottom-left so top-right is completely free for theme switcher
     L.control.zoom({ position: 'bottomleft' }).addTo(map);
@@ -843,6 +865,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     }
 
     return () => {
+      if (moveDebounceTimer) clearTimeout(moveDebounceTimer);
       resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
       clearTimeout(t1);
@@ -1358,8 +1381,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         className: 'light-google-popup',
         maxWidth: 320,
         minWidth: 260,
-        autoPan: true,
-        autoPanPadding: [20, 20],
+        autoPan: false,
         closeOnClick: false,
         autoClose: false,
         closeButton: true
@@ -2012,6 +2034,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         {/* Leaflet DOM Node */}
         <div
           ref={mapContainerRef}
+          style={{ width: '100%', height: '100%', minHeight: '560px' }}
           className={`w-full h-full z-0 transition-colors duration-300 ${
             mapTheme === 'dark'
               ? 'bg-[#12161f]'
@@ -2101,8 +2124,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           </div>
         )}
 
-        {/* Floating Bottom-Right Controls Stack (No overlap!) */}
-        <div className="absolute bottom-5 right-5 z-20 flex flex-col items-end gap-2.5 pointer-events-auto">
+        {/* Floating Bottom-Right Controls Stack (Hidden on mobile when marker card is open, no overlap!) */}
+        <div className={`absolute bottom-4 right-3 sm:bottom-5 sm:right-5 z-20 flex-col items-end gap-2 sm:gap-2.5 pointer-events-auto ${selectedReport ? 'hidden sm:flex' : 'flex'}`}>
           {/* 1. Scroll past map button */}
           <button
             type="button"
@@ -2121,7 +2144,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
               sounds.playClick();
               setIsAddModalOpen(true);
             }}
-            className="px-5 py-3.5 rounded-full bg-gradient-to-r from-gold to-amber-500 text-navy font-black text-xs shadow-[0_4px_20px_rgba(252,163,17,0.45)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border-2 border-white cursor-pointer"
+            className="px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-full bg-gradient-to-r from-gold to-amber-500 text-navy font-black text-xs shadow-[0_4px_20px_rgba(252,163,17,0.45)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border-2 border-white cursor-pointer"
           >
             <Plus size={18} />
             <span>შეტყობინების დამატება</span>
