@@ -1652,10 +1652,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         }, 80);
       });
 
-      marker.on('popupclose', () => {
-        setSelectedReport(prev => (prev?.id === item.id ? null : prev));
-      });
-
       marker.addTo(layer);
     });
   }, [reports, filterType, searchQuery, isLeafletReady]);
@@ -2389,6 +2385,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
           return (
             <div
+              onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
@@ -2420,13 +2417,15 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
                     {selectedReport.cameraSource ? 'OSM OpenData' : formatTimeAgo(selectedReport.timestamp)}
                   </span>
                   <button
-                    onClick={() => {
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       sounds.playClick();
                       setSelectedReport(null);
                       mapInstanceRef.current?.closePopup();
                     }}
-                    className="w-7 h-7 rounded-full bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#5F6368] hover:text-[#202124] flex items-center justify-center text-xs font-bold transition-all"
-                    title="დახურვა"
+                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 flex items-center justify-center text-sm font-black transition-all cursor-pointer shadow-xs border border-slate-200"
+                    title="დახურვა (X)"
                   >
                     ✕
                   </button>
