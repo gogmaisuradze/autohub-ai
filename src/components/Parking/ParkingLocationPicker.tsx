@@ -498,7 +498,7 @@ export default function ParkingLocationPicker({
 
         {/* Footnote information */}
         <p className="text-[11px] text-slate-500 leading-relaxed">
-          AutoHub ჩართავს შეხსენებას. გადახდა და ოფიციალური გააქტიურება სრულდება მუნიციპალურ სერვისში — გადაამოწმეთ იგივე ლოტის კოდი და ავტომობილის ნომერი.
+          CarMe ჩართავს შეხსენებას. გადახდა და ოფიციალური გააქტიურება სრულდება მუნიციპალურ სერვისში — გადაამოწმეთ იგივე ლოტის კოდი და ავტომობილის ნომერი.
         </p>
 
         {/* Official Tbilisi link */}

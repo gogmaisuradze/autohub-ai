@@ -304,7 +304,7 @@ export const ServiceLogModule: React.FC<Props> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base sm:text-lg font-black text-navy tracking-tight">
-                  AutoHub ციფრული სერვის-წიგნაკი
+                  CarMe ციფრული სერვის-წიგნაკი
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-200">
                   23+ კომპონენტი

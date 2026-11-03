@@ -74,7 +74,7 @@ export function RegaliaMedalsModal({
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-gold animate-pulse" />
               <span className="text-[11px] font-mono font-black uppercase tracking-wider text-gold">
-                AutoHub Driving Academy • 9-საფეხურიანი რანგები
+                CarMe Driving Academy • 9-საფეხურიანი რანგები
               </span>
             </div>
             <h3 className="text-lg sm:text-2xl font-black text-white flex items-center gap-2.5">

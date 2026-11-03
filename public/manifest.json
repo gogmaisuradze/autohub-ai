@@ -1,6 +1,6 @@
 {
-  "short_name": "V1 AutoHub",
-  "name": "V1 AutoHub AI - ჭკვიანი ავტო-ჰაბი და AI დიაგნოსტიკა",
+  "short_name": "CarMe",
+  "name": "CarMe - ჭკვიანი ავტო-პლატფორმა და AI დიაგნოსტიკა (carme.ge)",
   "icons": [
     {
       "src": "/icon.svg",
@@ -20,9 +20,9 @@
     }
   ],
   "start_url": "/",
-  "background_color": "#EDF1F7",
+  "background_color": "#ECEAE5",
   "theme_color": "#14213D",
   "display": "standalone",
   "orientation": "portrait",
-  "description": "All-in-One ჭკვიანი ავტო-ჰაბი, OBD-II რეალურ დროში დიაგნოსტიკა, საპატრულო ჯარიმები და ქართველი AI მექანიკოსი."
+  "description": "CarMe (carme.ge) — All-in-One ჭკვიანი ავტო-პლატფორმა, OBD-II რეალურ დროში დიაგნოსტიკა, საპატრულო ჯარიმები და ქართველი AI მექანიკოსი."
 }

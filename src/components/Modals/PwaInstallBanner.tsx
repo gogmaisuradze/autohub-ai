@@ -35,11 +35,11 @@ export const PwaInstallBanner: React.FC = () => {
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-50 p-4 rounded-3xl bg-dark-900 border border-cyan-500/40 shadow-glow-cyan animate-bounce-subtle">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-neon flex items-center justify-center shrink-0 border border-cyan-500/30">
-            <Smartphone className="w-5 h-5" />
+          <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-md shrink-0 border border-amber-400/50 bg-slate-900">
+            <img src="/carme-emblem-square.png?v=2" alt="CarMe.ge" className="w-full h-full object-cover" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white">დააინსტალირეთ AutoHub AI</h4>
+            <h4 className="text-xs font-bold text-white">დააინსტალირეთ CarMe (carme.ge)</h4>
             <p className="text-[11px] text-slate-400 mt-0.5">
               დაამატეთ ეკრანზე PWA აპლიკაციის სახით ოფლაინ დიაგნოსტიკისთვის
             </p>

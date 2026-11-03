@@ -45,21 +45,21 @@ interface Props {
 
 const ADAPTER_PRICING: Record<ObdAdapterType, { name: string; modelCode: string; price: number; badge: string; desc: string }> = {
   cloud_4g: {
-    name: 'AutoHub 4G LTE Cloud + GPS Tracker',
+    name: 'CarMe 4G LTE Cloud + GPS Tracker',
     modelCode: '4G LTE GPS Telematics',
     price: 119,
     badge: '★ რეკომენდებული • 24/7 Cloud',
     desc: 'დისტანციური მონიტორინგი ნებისმიერი წერტილიდან, SIM ბარათით, ცოცხალი GPS და სიგნალიზაცია'
   },
   wifi: {
-    name: 'AutoHub Wi-Fi ELM327 Pro (vLinker)',
+    name: 'CarMe Wi-Fi ELM327 Pro (vLinker)',
     modelCode: 'vLinker FD+ Wi-Fi',
     price: 49,
     badge: 'სწრაფი Wi-Fi',
     desc: 'iOS & Android თავსებადი, 50 PID/წმ, შეცდომების ჩაქრობა და ცოცხალი სენსორები'
   },
   bluetooth: {
-    name: 'AutoHub Bluetooth 5.0 BLE (vLinker MC+)',
+    name: 'CarMe Bluetooth 5.0 BLE (vLinker MC+)',
     modelCode: 'BLE 5.0 Low Energy',
     price: 69,
     badge: 'ულტრა-დაბალი ენერგომოხმარება',
@@ -508,13 +508,13 @@ export const ObdAdapterConnectModal: React.FC<Props> = ({
             {/* Visual Stream Handshake: Phone <—— Minimalist Telemetry Stream ——> Car */}
             <div className="relative pt-2 pb-3 px-2 flex items-center justify-between gap-3 sm:gap-6">
               
-              {/* Phone Node (AutoHub AI) */}
+              {/* Phone Node (CarMe) */}
               <div className="flex flex-col items-center shrink-0">
                 <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-navy text-gold flex items-center justify-center shadow-lg relative border border-gold/30">
                   <Smartphone className="w-6 h-6 sm:w-7 sm:h-7 text-gold" />
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white absolute -top-1 -right-1 shadow-xs animate-pulse" />
                 </div>
-                <span className="text-[11px] font-black text-navy mt-1.5 font-mono tracking-tight">AutoHub AI</span>
+                <span className="text-[11px] font-black text-navy mt-1.5 font-mono tracking-tight">CarMe</span>
                 <span className="text-[9px] font-mono text-slate-400 uppercase">Live App</span>
               </div>
 

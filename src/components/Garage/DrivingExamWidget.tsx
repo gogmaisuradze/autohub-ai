@@ -958,7 +958,7 @@ export const DrivingExamWidget: React.FC = () => {
                     {totalCategoryCount || categoryConfig.count} სასწავლო ბილეთი
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-white/10 text-slate-300 border border-white/10 hidden sm:inline-block">
-                    32 სასწავლო თემა • AutoHub
+                    32 სასწავლო თემა • CarMe
                   </span>
                 </div>
 

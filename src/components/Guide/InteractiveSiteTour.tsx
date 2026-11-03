@@ -59,7 +59,7 @@ export const TAB_TOUR_METADATA: Record<TabType, TabMeta> = {
     id: 'home',
     name_ge: 'მთავარი გვერდი',
     icon: '🏠',
-    summary: 'თქვენ გაეცანით AutoHub-ის მთავარი გვერდის ყველა ძირითად სერვისსა და შესაძლებლობას.'
+    summary: 'თქვენ გაეცანით CarMe-ს მთავარი გვერდის ყველა ძირითად სერვისსა და შესაძლებლობას.'
   },
   obd: {
     id: 'obd',
@@ -148,7 +148,7 @@ export const PAGE_TOUR_STEPS: Record<TabType, TourStep[]> = {
       title: 'ციფრული სერვისების ქავერ-ბანერი',
       subtitle: '7 DIGITAL SERVICES & GLAMOUR COVERS',
       badge: '3 / 7',
-      description: 'AutoHub-ის 7 ძირითადი ციფრული სერვისი თემატური ავტო-ფოტოებითა და ცოცხალი ვიჯეტებით. ზედა ღილაკებით შეგიძლიათ სწრაფად გადართოთ სერვისები და გახსნათ შესაბამისი მოდული.',
+      description: 'CarMe-ს 7 ძირითადი ციფრული სერვისი თემატური ავტო-ფოტოებითა და ცოცხალი ვიჯეტებით. ზედა ღილაკებით შეგიძლიათ სწრაფად გადართოთ სერვისები და გახსნათ შესაბამისი მოდული.',
       icon: Layers,
       requiredTab: 'home',
       placement: 'bottom-right'
@@ -1044,7 +1044,7 @@ export const InteractiveSiteTour: React.FC<Props> = ({
 
                   <div>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-gold/20 text-gold border border-gold/40">
-                      AutoHub AI გიდი
+                      CarMe AI გიდი
                     </span>
                     <h4 className="text-base sm:text-lg font-black text-white mt-0.5 tracking-tight flex items-center gap-1.5">
                       <span>გამარჯობა!</span>

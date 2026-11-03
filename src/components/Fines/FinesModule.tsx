@@ -1797,7 +1797,7 @@ export const FinesModule: React.FC<Props> = ({
                 </div>
               )}
               <div className="flex justify-between text-xs text-slate-500">
-                <span>საკომისიო (AutoHub Pay):</span>
+                <span>საკომისიო (CarMe Pay):</span>
                 <span className="font-bold text-emerald-600">0.00 ₾ (უფასო)</span>
               </div>
               <div className="pt-2 border-t border-slate-200 flex justify-between items-baseline">

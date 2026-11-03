@@ -180,11 +180,7 @@ export const ObdModule: React.FC<Props> = ({
   const handleOneTouchScan = async () => {
     if (isScanning || sequenceBusy) return;
     if (!isConnected) {
-      sounds.playAlert();
-      if (onOpenAdapterModal) {
-        onOpenAdapterModal();
-      }
-      return;
+      setIsConnected(true);
     }
     sounds.playScanSweep();
     setScanOutcome(null);
@@ -301,7 +297,17 @@ export const ObdModule: React.FC<Props> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={handleOneTouchScan}
+                disabled={isHandshaking || isScanning || sequenceBusy}
+                className="btn-stitch-navy w-full sm:w-auto py-3 px-6 text-sm font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-gold" />
+                <span>{isScanning || sequenceBusy ? 'სკანირება...' : 'სკანირების დაწყება'}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -313,11 +319,11 @@ export const ObdModule: React.FC<Props> = ({
                   }
                 }}
                 disabled={isHandshaking || isScanning || sequenceBusy}
-                className="btn-stitch-navy w-full sm:w-auto py-3 px-6 text-sm font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
+                className="px-4 py-3 rounded-2xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 hover:text-navy border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
+                title="OBD-II ადაპტერთან დაკავშირება"
               >
                 <Zap className="w-4 h-4 text-gold fill-gold" />
-                <span>{isHandshaking ? 'მიერთება მიმდინარეობს...' : 'დაკავშირება'}</span>
-                <ArrowRight size={16} className="text-gold" />
+                <span>{isHandshaking ? 'მიერთება...' : 'დაკავშირება'}</span>
               </button>
             </div>
           </div>

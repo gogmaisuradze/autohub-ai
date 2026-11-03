@@ -54,9 +54,9 @@ class Obd4gService {
           {
             deviceId: 'OBD4G-IMEI-863412059123456',
             imei: '863412059123456',
-            serialNumber: 'AH4G-2026-GEO-01',
+            serialNumber: 'CM4G-2026-GEO-01',
             vehicleId: 'CAR_01',
-            label: 'AutoHub 4G Smart Dongle (Mercedes GLA)',
+            label: 'CarMe 4G Smart Dongle (Mercedes GLA)',
             hasGnss: true,
             hasIgnitionWire: true,
             firmwareVersion: 'v2.4.1-TTC-GEO',

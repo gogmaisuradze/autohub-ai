@@ -472,7 +472,7 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
           className="px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-900 text-gold text-xs font-bold border border-gold/40 shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 group"
         >
           <Tag size={13} className="text-gold group-hover:scale-110 transition-transform" />
-          <span>📢 AutoHub ციფრული სერვისები (გამოჩენა)</span>
+          <span>📢 CarMe ციფრული სერვისები (გამოჩენა)</span>
         </button>
       </div>
     );
@@ -1022,12 +1022,12 @@ export const CoverAdBanner: React.FC<CoverAdBannerProps> = ({
         <div className="relative z-20 border-t border-slate-800 bg-slate-950 p-4 sm:p-6 animate-fade-in">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gold/20 text-gold flex items-center justify-center font-bold">
-                <Layers size={15} />
+              <div className="w-8 h-8 rounded-xl overflow-hidden border border-gold/40 shadow-sm shrink-0">
+                <img src="/carme-emblem-square.png?v=2" alt="CarMe" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h3 className="text-sm sm:text-base font-black text-white">
-                  AutoHub-ის 7 ძირითადი ციფრული სერვისი & დეტალური განმარტებები
+                  CarMe-ს 7 ძირითადი ციფრული სერვისი & დეტალური განმარტებები
                 </h3>
                 <p className="text-xs text-slate-400">
                   აირჩიეთ ნებისმიერი სერვისი და გადადით შესაბამის მოდულში

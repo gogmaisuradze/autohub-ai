@@ -67,7 +67,7 @@ export const GEORGIAN_SERVICE_PROVIDERS: ServiceProviderOption[] = [
   },
   {
     id: 'autohub_mobile_doc',
-    name: 'AutoHub VIP მობილური ექიმი (ადგილზე მოსვლით)',
+    name: 'CarMe VIP მობილური ექიმი (ადგილზე მოსვლით)',
     address: 'ადგილზე მომსახურება თბილისის მასშტაბით (სახლთან/ოფისთან)',
     phone: '+995 599 00 11 22',
     rating: 5.0,
@@ -196,7 +196,7 @@ export function getComparisonForService(
             `ორიგინალი ${decoded.brand} ქარხნული ფილტრი`,
             '30-წერტილიანი სრული ელექტრონული დიაგნოსტიკა',
             'ციფრული სერვის-წიგნაკის ოფიციალური დამოწმება',
-            'უფასო გამოძახება AutoHub VIP მობილური ექიმით'
+            'უფასო გამოძახება CarMe VIP მობილური ექიმით'
           ]
         }
       ],
@@ -394,7 +394,7 @@ export function getComparisonForService(
             'რიგის გარეშე პირდაპირი შესვლა ბოქსში',
             'ოფიციალური სახელმწიფო სერტიფიკატი',
             'ციფრული ანგარიშის ბაზაში ატვირთვა',
-            'AutoHub-ის წლიური ავტო-შეხსენება'
+            'CarMe-ს წლიური ავტო-შეხსენება'
           ]
         },
         {
@@ -405,7 +405,7 @@ export function getComparisonForService(
           badge: '100% გარანტირებული ჩაბარება',
           badgeColor: 'bg-navy text-gold border-navy font-bold',
           price_gel: 95,
-          parts_brand: 'Greenway VIP + AutoHub ექიმის წინასწარი ტესტი',
+          parts_brand: 'Greenway VIP + CarMe ექიმის წინასწარი ტესტი',
           warranty: 'გარანტირებული ჩაბარება',
           duration: '45 წუთი',
           features: [
@@ -482,7 +482,7 @@ export function getComparisonForService(
           `ოფიციალური ${decoded.brand} ქარხნული ნაწილები`,
           'სრული ელექტრონული დიაგნოსტიკა',
           '2-წლიანი ოფიციალური გარანტია',
-          'უფასო გამოძახება AutoHub VIP მობილური ექიმით'
+          'უფასო გამოძახება CarMe VIP მობილური ექიმით'
         ]
       }
     ],

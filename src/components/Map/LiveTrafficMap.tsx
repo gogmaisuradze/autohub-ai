@@ -684,7 +684,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       if (!ac.signal.aborted) {
         setBackendPois(pois);
         const modeLabel = mapDataService.isStaticMode() ? 'სტატიკური ბაზა' : 'Live API';
-        setCameraStatus(`🟢 AutoHub Map (${modeLabel}) • ${pois.length} ობიექტი ეკრანზე • 9 000+ ბაზაში`);
+        setCameraStatus(`🟢 CarMe Map (${modeLabel}) • ${pois.length} ობიექტი ეკრანზე • 9 000+ ბაზაში`);
       }
     } catch (e: any) {
       if (e?.name !== 'AbortError') {
@@ -726,7 +726,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       const backendAlive = isBackendHealthy.status === 'fulfilled' && isBackendHealthy.value;
       if (backendAlive) {
         const modeLabel = mapDataService.isStaticMode() ? 'სტატიკური ბაზა' : 'Live API';
-        setCameraStatus(`🟢 AutoHub Map აქტიურია (${modeLabel}) • 9 000+ ობიექტი (OSM & მუნიციპალური პარკინგი)`);
+        setCameraStatus(`🟢 CarMe Map აქტიურია (${modeLabel}) • 9 000+ ობიექტი (OSM & მუნიციპალური პარკინგი)`);
         if (filterType !== 'none') {
           if (mapInstanceRef.current) {
             fetchViewportPois(filterType);
@@ -1598,7 +1598,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h3 className="text-lg sm:text-xl font-black tracking-tight text-navy">
-                  AutoHub ცოცხალი საგზაო რუკა
+                  CarMe ცოცხალი საგზაო რუკა
                 </h3>
                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -2127,18 +2127,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
         {/* Floating Bottom-Right Controls Stack (Hidden on mobile when marker card is open, no overlap!) */}
         <div className={`absolute bottom-4 right-3 sm:bottom-5 sm:right-5 z-20 flex-col items-end gap-2 sm:gap-2.5 pointer-events-auto ${selectedReport ? 'hidden sm:flex' : 'flex'}`}>
-          {/* 1. Scroll past map button */}
-          <button
-            type="button"
-            onClick={handleScrollPastMap}
-            className="px-3.5 py-2 rounded-2xl bg-white/95 hover:bg-white text-navy font-bold text-xs shadow-md border border-slate-200/90 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 group cursor-pointer"
-            title="სერვისებზე და ფასებზე ჩასვლა"
-          >
-            <span>სერვისებზე ჩასვლა</span>
-            <ChevronDown size={14} className="text-gold group-hover:translate-y-0.5 transition-transform" />
-          </button>
-
-          {/* 2. Floating Action Button (FAB) Add Report */}
+          {/* Floating Action Button (FAB) Add Report */}
           <button
             type="button"
             onClick={() => {

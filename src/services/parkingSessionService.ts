@@ -316,7 +316,7 @@ class ParkingSessionService {
     sounds.playAlert();
 
     const lotName = this.currentSession.lot.street_ge || `ლოტი #${this.currentSession.lot.lotCode}`;
-    const title = 'AutoHub AI — პარკირების შეხსენება ⚠️';
+    const title = 'CarMe — პარკირების შეხსენება ⚠️ (carme.ge)';
     const body = `${this.currentSession.plateNumber} (${lotName}): უფასო/სატარიფო ვადა იწურება ${this.currentSession.reminderMinutesBefore} წუთში (${formatTbilisiTime(this.currentSession.expiresAt)})!`;
 
     // 1. Try Service Worker Notification (works in background)

@@ -305,20 +305,24 @@ export const Header: React.FC<Props> = ({
       {/* ROW 1: Brand & Top Action Controls */}
       <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-0 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-4 w-full">
         
-        {/* 1. Left: Brand & Subtitle with V1 Circular Logo */}
+        {/* 1. Left: Brand & Subtitle with CarMe Circular Logo */}
         <div
           className="flex items-center gap-2 sm:gap-3 cursor-pointer group min-w-0 shrink-0"
           onClick={onNavigateHome}
         >
-          {/* V1 Circular Geometric Badge */}
-          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-full bg-white neu-circle flex items-center justify-center font-black text-gold text-sm sm:text-lg shadow-sm border border-white group-hover:scale-105 transition-transform shrink-0">
-            <span className="font-mono text-gold font-black">V1</span>
+          {/* CarMe 3D Emblem Badge */}
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white neu-circle flex items-center justify-center overflow-hidden shadow-sm border border-amber-300/50 group-hover:scale-105 transition-transform shrink-0 p-0.5">
+            <img
+              src="/carme-emblem-square.png?v=2"
+              alt="CarMe.ge Logo"
+              className="w-full h-full object-cover rounded-full"
+            />
           </div>
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <h1 className="text-sm sm:text-lg font-black tracking-tight text-navy">
-                {isGe ? 'ავტო-ჰაბი AI' : 'AutoHub AI'}
+                CarMe
               </h1>
               <span className="px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono font-bold border border-gold text-gold shrink-0">
                 PRO
@@ -326,8 +330,8 @@ export const Header: React.FC<Props> = ({
             </div>
             <p className="text-[11px] sm:text-xs text-slate-500 hidden min-[600px]:block truncate">
               {isGe
-                ? 'ავტო-ჰაბი სივრცე • OBD-II ტელემეტრია & AI მექანიკოსი'
-                : 'AutoHub Space • OBD-II Telemetry & AI Mechanic'}
+                ? 'AutoHub • OBD-II ტელემეტრია & AI მექანიკოსი'
+                : 'AutoHub • OBD-II Telemetry & AI Mechanic'}
             </p>
           </div>
         </div>

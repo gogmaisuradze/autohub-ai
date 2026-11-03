@@ -497,14 +497,14 @@ export const AiMechanicChat: React.FC<Props> = ({
         {/* Header Bar */}
         <div data-tour="ai-chat-header" className="p-3 sm:p-4 bg-white border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full neu-circle flex items-center justify-center font-bold text-navy shadow-sm shrink-0">
-              <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-gold" />
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full neu-circle flex items-center justify-center font-bold text-navy shadow-sm shrink-0 overflow-hidden border border-amber-300/40 p-0.5">
+              <img src="/carme-emblem-square.png?v=2" alt="CarMe AI" className="w-full h-full object-cover rounded-full" />
             </div>
 
             <div>
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <h2 className="text-sm sm:text-base font-extrabold text-navy tracking-wide">
-                  AutoHub AI მექანიკოსი
+                  CarMe AI მექანიკოსი
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 shrink-0">
                   <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gold" />
@@ -650,12 +650,12 @@ export const AiMechanicChat: React.FC<Props> = ({
                 key={msg.id}
                 className={`flex items-start gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}
               >
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold overflow-hidden ${
                   isMe
                     ? 'bg-navy text-white shadow-md'
-                    : 'neu-circle text-navy'
+                    : 'neu-circle text-navy border border-amber-300/40 p-0.5'
                 }`}>
-                  {isMe ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4 text-gold" />}
+                  {isMe ? <User className="w-4 h-4" /> : <img src="/carme-emblem-square.png?v=2" alt="CarMe AI" className="w-full h-full object-cover rounded-full" />}
                 </div>
 
                 <div className={`max-w-[88%] sm:max-w-[80%] rounded-3xl p-4 shadow-sm select-text ${
@@ -723,8 +723,8 @@ export const AiMechanicChat: React.FC<Props> = ({
 
           {isLoading && (
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full neu-circle flex items-center justify-center">
-                <Bot className="w-4 h-4 text-gold animate-spin" />
+              <div className="w-9 h-9 rounded-full neu-circle flex items-center justify-center overflow-hidden border border-amber-300/40 p-0.5">
+                <img src="/carme-emblem-square.png?v=2" alt="CarMe AI" className="w-full h-full object-cover rounded-full animate-pulse" />
               </div>
               <div className="px-4 py-3 rounded-2xl neu-card text-slate-600 text-xs flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-gold animate-bounce"></span>

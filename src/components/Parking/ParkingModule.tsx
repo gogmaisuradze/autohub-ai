@@ -889,7 +889,7 @@ export const ParkingModule: React.FC<Props> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base sm:text-lg font-black text-navy tracking-tight">
-                  AutoHub ჭკვიანი პარკინგი
+                  CarMe ჭკვიანი პარკინგი
                 </h3>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
                   activeSession.isActive
@@ -1562,7 +1562,7 @@ export const ParkingModule: React.FC<Props> = ({
                         ? '🏛️ ოფიციალურად გააქტიურებულია ოპერატორთან'
                         : parkingSession?.status === 'user_confirmed_parking'
                         ? '🟡 მომხმარებლის მიერ დადასტურებული პარკირება'
-                        : '🔔 AutoHub შეხსენების ტაიმერი (შიდა სისტემა)'}
+                        : '🔔 CarMe შეხსენების ტაიმერი (შიდა სისტემა)'}
                     </span>
                     <span className="text-[10px] text-slate-400 font-mono">
                       სესია #{parkingSession?.sessionId.slice(-6) || 'LIVE'}
@@ -1577,7 +1577,7 @@ export const ParkingModule: React.FC<Props> = ({
                 <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-white font-bold block mb-0.5">
-                    ⚠️ ყურადღება: ეს არის AutoHub-ის შიდა შეხსენების ტაიმერი!
+                    ⚠️ ყურადღება: ეს არის CarMe-ს შიდა შეხსენების ტაიმერი!
                   </strong>
                   <p className="text-slate-200 leading-relaxed text-[11px]">
                     ადგილობრივი ტაიმერი <strong>არ წარმოადგენს</strong> მუნიციპალური პარკირების ოფიციალურ საფასურის გადახდას. მუნიციპალური ჯარიმის თავიდან ასაცილებლად, აუცილებელია პარკირების ოფიციალურად გააქტიურება მუნიციპალურ სერვისში.
@@ -1866,7 +1866,7 @@ export const ParkingModule: React.FC<Props> = ({
             {showOperatorReqs && (
               <div className="pt-3 border-t border-slate-800 space-y-3 animate-fade-in text-xs">
                 <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-400/30 text-amber-200 text-[11px] leading-relaxed">
-                  ⚠️ <strong>იურიდიული დაცვა:</strong> მხოლოდ საიტზე (msmap / parking.tbilisi.gov.ge) ხილული ფენის არსებობა <strong>არ წარმოადგენს</strong> მონაცემთა კომერციული გამოყენების ნებართვას. AutoHub AI არ აჩვენებს დაუდასტურებელ „თავისუფალი ადგილების“ რაოდენობას და იყენებს მხოლოდ გადამოწმებულ ოფიციალურ ტარიფებს.
+                  ⚠️ <strong>იურიდიული დაცვა:</strong> მხოლოდ საიტზე (msmap / parking.tbilisi.gov.ge) ხილული ფენის არსებობა <strong>არ წარმოადგენს</strong> მონაცემთა კომერციული გამოყენების ნებართვას. CarMe არ აჩვენებს დაუდასტურებელ „თავისუფალი ადგილების“ რაოდენობას და იყენებს მხოლოდ გადამოწმებულ ოფიციალურ ტარიფებს.
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -64,7 +64,7 @@ const SERVICE_PROVIDERS = [
     types: ['doctor_mechanic', 'obd_diagnostics', 'brakes_chassis']
   },
   {
-    name: 'AutoHub VIP მობილური ექიმი (ადგილზე მოსვლით)',
+    name: 'CarMe VIP მობილური ექიმი (ადგილზე მოსვლით)',
     address: 'თბილისის მასშტაბით გამოძახებით (VIP Service)',
     phone: '+995 599 00 11 22',
     rating: 5.0,
