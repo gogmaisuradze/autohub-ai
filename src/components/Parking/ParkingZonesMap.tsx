@@ -69,13 +69,8 @@ export const ParkingZonesMap: React.FC<Props> = ({
   // States: Map Loader & Theme
   const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>(() => {
-    try {
-      const saved = localStorage.getItem('autohub_map_theme');
-      if (saved === 'dark' || saved === 'street' || saved === 'satellite') return saved;
-    } catch {}
-    return 'street';
-  });
+  // მხოლოდ Light (ღია) რუკა — მუქი/სატელიტი დროებით გამორთულია (შავდება), ამიტომ ყოველთვის 'street'
+  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>('street');
 
   const handleThemeChange = (newTheme: 'dark' | 'street' | 'satellite') => {
     sounds.playClick();
@@ -115,11 +110,6 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
   const handleScrollPastMap = useCallback(() => {
     sounds.playClick();
-    setIsMapUnlocked(false);
-    isMapUnlockedRef.current = false;
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.scrollWheelZoom.disable();
-    }
     const nextSection =
       document.getElementById('parking-city-selector-section') ||
       document.getElementById('parking-zones-list-section') ||
@@ -208,9 +198,9 @@ export const ParkingZonesMap: React.FC<Props> = ({
         center: cityConfig.center,
         zoom: cityConfig.zoom,
         zoomControl: false,
-        attributionControl: true,
+        attributionControl: false,
         preferCanvas: true,
-        scrollWheelZoom: false // Disable accidental wheel scroll hijacking
+        scrollWheelZoom: 'center' // ზუმი ყოველთვის ცენტრში (ბოქლომის გარეშე)
       });
 
       // Cooperative wheel gesture handler: Ctrl/Cmd + wheel allows zoom; normal wheel scrolls the webpage
@@ -258,7 +248,6 @@ export const ParkingZonesMap: React.FC<Props> = ({
       };
 
       if (domEl) {
-        domEl.addEventListener('wheel', onMapWheel, { passive: true });
         domEl.addEventListener('touchstart', onMapTouchStart, { passive: true });
         domEl.addEventListener('touchmove', onMapTouchMove, { passive: true });
         domEl.addEventListener('touchend', onMapTouchEnd, { passive: true });
@@ -795,7 +784,6 @@ export const ParkingZonesMap: React.FC<Props> = ({
           {/* Map Mount Point */}
           <div
             ref={mapContainerRef}
-            onDoubleClick={handleToggleMapLock}
             className={`w-full h-full z-0 transition-colors duration-300 ${
               mapTheme === 'dark'
                 ? 'bg-[#12161f]'
@@ -882,36 +870,14 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
           {/* Prominent Floating Map Theme Switcher on Top Right */}
           <div className="absolute top-3 right-3 z-[400] p-1 rounded-2xl bg-navy/95 backdrop-blur-md border-2 border-white/30 shadow-2xl flex items-center gap-1 pointer-events-auto">
-            {/* Lock / Unlock Toggle Button */}
             <button
               type="button"
-              onClick={handleToggleMapLock}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                isMapUnlocked ? 'bg-emerald-500 text-white shadow-xs font-black' : 'text-slate-300 hover:text-white'
-              }`}
-              title={isMapUnlocked ? 'რუკის ზუმი აქტიურია (ჩასაკეტად დაკლიკეთ)' : 'რუკის ზუმის განბლოკვა (ორჯერ დაკლიკეთ)'}
+              onClick={() => handleThemeChange('street')}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-gold text-navy shadow-md font-black ring-2 ring-white/60"
+              title="ქუჩების რუკა (OSM)"
             >
-              {isMapUnlocked ? <Unlock size={12} /> : <Lock size={12} />}
-              <span className="hidden sm:inline">{isMapUnlocked ? 'ზუმი აქტიური' : 'ზუმი ჩაკეტილი'}</span>
+              <span>🗺️ ღია</span>
             </button>
-            {(['dark', 'street', 'satellite'] as const).map(t => {
-              const isActive = mapTheme === t;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => handleThemeChange(t)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    isActive
-                      ? 'bg-gold text-navy shadow-md font-black ring-2 ring-white/60 scale-105'
-                      : 'text-slate-200 hover:text-white hover:bg-white/10'
-                  }`}
-                  title={`${t === 'dark' ? 'მუქი (CartoDB)' : t === 'street' ? 'ქუჩები (OSM)' : 'სატელიტი (Google Hybrid)'} რუკის რეჟიმი`}
-                >
-                  <span>{t === 'dark' ? '🌙 მუქი' : t === 'street' ? '🗺️ ღია' : '🛰️ სატელიტი'}</span>
-                </button>
-              );
-            })}
           </div>
 
           {/* Map Floating Legend at Top Left */}

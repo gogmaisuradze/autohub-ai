@@ -475,13 +475,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [showAlternativeRoutes, setShowAlternativeRoutes] = useState<boolean>(false);
   const [activeRouteId, setActiveRouteId] = useState<string>('route-heroes-sq');
 
-  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>(() => {
-    try {
-      const saved = localStorage.getItem('autohub_map_theme');
-      if (saved === 'dark' || saved === 'street' || saved === 'satellite') return saved;
-    } catch {}
-    return 'street';
-  });
+  // მხოლოდ Light (ქუჩები) — მუქი/სატელიტი დროებით გამორთულია (შავდება), ყოველთვის 'street'
+  const [mapTheme, setMapTheme] = useState<'dark' | 'street' | 'satellite'>('street');
 
   const applyMapTheme = useCallback((theme: 'dark' | 'street' | 'satellite') => {
     const map = mapInstanceRef.current;
@@ -767,9 +762,9 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       center: [tbilisiLat, tbilisiLng],
       zoom: 13,
       zoomControl: false,
-      attributionControl: true,
+      attributionControl: false,
       preferCanvas: true,
-      scrollWheelZoom: true,
+      scrollWheelZoom: 'center',
       doubleClickZoom: false,
       closePopupOnClick: false
     });
@@ -1947,26 +1942,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           >
             🗺️ ქუჩები
           </button>
-          <button
-            type="button"
-            onClick={() => handleThemeChange('dark')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-              mapTheme === 'dark' ? 'bg-[#152238] text-amber-400 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
-            }`}
-            title="მუქი რუკა (Dark Matter)"
-          >
-            🌙 მუქი
-          </button>
-          <button
-            type="button"
-            onClick={() => handleThemeChange('satellite')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-              mapTheme === 'satellite' ? 'bg-amber-500 text-navy shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
-            }`}
-            title="სატელიტური რუკა ქუჩებით (ESRI World Imagery)"
-          >
-            🛰️ სატელიტი
-          </button>
         </div>
 
         <div className="text-[11px] text-slate-500 hidden sm:block">
@@ -2062,16 +2037,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         >
           <button
             type="button"
-            onClick={() => handleThemeChange('dark')}
-            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
-              mapTheme === 'dark' ? 'bg-gold text-navy shadow-md font-black ring-1 ring-white/50' : 'text-slate-300 hover:text-white hover:bg-white/10'
-            }`}
-            title="CartoDB Dark Matter მუქი რეჟიმი"
-          >
-            <span>🌙 მუქი</span>
-          </button>
-          <button
-            type="button"
             onClick={() => handleThemeChange('street')}
             className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
               mapTheme === 'street' ? 'bg-gold text-navy shadow-md font-black ring-1 ring-white/50' : 'text-slate-300 hover:text-white hover:bg-white/10'
@@ -2079,16 +2044,6 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
             title="სტანდარტული ქუჩების რუკა"
           >
             <span>🗺️ ქუჩები</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleThemeChange('satellite')}
-            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
-              mapTheme === 'satellite' ? 'bg-gold text-navy shadow-md font-black ring-1 ring-white/50' : 'text-slate-300 hover:text-white hover:bg-white/10'
-            }`}
-            title="სატელიტური რუკა ქუჩებით (Google Hybrid)"
-          >
-            <span>🛰️ სატელიტი</span>
           </button>
         </div>
 
