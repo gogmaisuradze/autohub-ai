@@ -63,6 +63,15 @@ interface Props {
 import { PHOTO_AVATARS, renderDriverAvatar, type PhotoAvatarPreset } from './driverAvatars';
 export { PHOTO_AVATARS, renderDriverAvatar, type PhotoAvatarPreset };
 
+// ოფიციალური სახელმწიფო სერვისების ბმულები — რეალური შემოწმება/გადახდა/ქულები.
+// საჯარო API არ არსებობს, ამიტომ აპი გადაამისამართებს ოფიციალურ გვერდებზე.
+const OFFICIAL_LINKS = {
+  finesCheck: 'https://videos.police.ge', // ვიდეო/საპატრულო ჯარიმების შემოწმება ნომრით
+  finesPay: 'https://my.gov.ge',          // ჯარიმის ოფიციალური გადახდა
+  points: 'https://sa.gov.ge',            // მომსახურების სააგენტო — მოწმობის სტატუსი & ქულები
+  policeGe: 'https://police.ge'           // საპატრულო პოლიცია — შემოწმება/გასაჩივრება
+};
+
 export const FinesModule: React.FC<Props> = ({
   vehicle,
   fines,
@@ -121,6 +130,12 @@ export const FinesModule: React.FC<Props> = ({
 
   // SMS Notification Toast Notice State
   const [smsToastNotice, setSmsToastNotice] = useState<string | null>(null);
+
+  // ოფიციალურ გვერდზე გადასვლა ახალ ფანჯარაში (უსაფრთხო)
+  const openOfficial = (url: string) => {
+    sounds.playClick();
+    try { window.open(url, '_blank', 'noopener,noreferrer'); } catch {}
+  };
 
   const handleSendTestSms = (fine: FineItem) => {
     sounds.playSuccess();
@@ -321,62 +336,25 @@ export const FinesModule: React.FC<Props> = ({
     setSelectedFineForPayment(fine);
   };
 
-  // Process Ticket Payment
+  // ჯარიმის გადახდა — გადამისამართება ოფიციალურ გადახდის გვერდზე (my.gov.ge).
+  // საჯარო გადახდის API არ არსებობს, ამიტომ რეალური გადახდა ოფიციალურ პორტალზე სრულდება;
+  // აპი ყალბ ქვითარს არ გამოსცემს. გადახდის შემდეგ მომხმარებელი „გადახდილად" მონიშნავს ხელით.
   const handleExecutePayment = () => {
     if (!selectedFineForPayment) return;
-    sounds.playClick();
-    setIsProcessingPayment(true);
+    const ticket = selectedFineForPayment.ticket_number || selectedFineForPayment.id;
+    openOfficial(OFFICIAL_LINKS.finesPay);
+    setSelectedFineForPayment(null);
+    setSmsToastNotice(`💳 გადახდა ოფიციალურ გვერდზეა (my.gov.ge). ქვითრის ნომერი: ${ticket}. გადახდის დასრულების შემდეგ დააჭირეთ ჯარიმაზე „გადახდილად მონიშვნა".`);
+  };
 
-    const now = new Date();
-    const formattedDate = `${now.toISOString().slice(0, 10)} ${now.toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' })}`;
-    const randomTxn = `TXN-GEO-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-    const randomAuth = `AUTH-${Math.floor(10000 + Math.random() * 90000)}`;
-
-    const paymentAmount = selectedFineForPayment.discount_expires_days > 0
-      ? selectedFineForPayment.discounted_amount_gel
-      : selectedFineForPayment.amount_gel;
-
-    const receiptData: FinePaymentReceipt = {
-      txn_id: randomTxn,
-      ticket_number: selectedFineForPayment.ticket_number || selectedFineForPayment.id,
-      amount_paid: paymentAmount,
-      payment_date: formattedDate,
-      payment_method: paymentMethod === 'applepay' ? 'Apple Pay' : paymentMethod === 'tbc' ? 'TBC Pay' : paymentMethod === 'bog' ? 'BOG Express' : 'Visa Debit (•••• 8842)',
-      auth_code: randomAuth,
-      card_last4: '8842',
-      payer_name: driverName
-    };
-
-    setTimeout(() => {
-      // If points were deducted for this violation, reflect it in the driver's license balance
-      if (selectedFineForPayment.points_deducted && selectedFineForPayment.points_deducted > 0) {
-        const newBalance = Math.max(0, driverPoints - selectedFineForPayment.points_deducted);
-        onUpdateVehicle({ driver_license_points: newBalance });
-      }
-
-      // Update fine in state to paid with receipt
-      const updatedList = fines.map(f => {
-        if (f.id === selectedFineForPayment.id) {
-          return {
-            ...f,
-            status: 'paid' as const,
-            payment_receipt: receiptData
-          };
-        }
-        return f;
-      });
-
-      onUpdateFines(updatedList);
-      setIsProcessingPayment(false);
-      sounds.playSuccess();
-
-      // Show receipt modal
-      const paidFineWithReceipt = updatedList.find(f => f.id === selectedFineForPayment.id);
-      setSelectedFineForPayment(null);
-      if (paidFineWithReceipt) {
-        setReceiptFine(paidFineWithReceipt);
-      }
-    }, 1300);
+  // ჯარიმის ხელით „გადახდილად" მონიშვნა — მას შემდეგ რაც მომხმარებელმა ოფიციალურად გადაიხადა.
+  const handleMarkFinePaid = (fine: FineItem) => {
+    sounds.playSuccess();
+    const updatedList = fines.map(f =>
+      f.id === fine.id ? { ...f, status: 'paid' as const } : f
+    );
+    onUpdateFines(updatedList);
+    setSelectedFineForPayment(null);
   };
 
   // Search by Ticket Number
@@ -404,27 +382,9 @@ export const FinesModule: React.FC<Props> = ({
       }
       setTicketSearchInput('');
     } else {
-      // Simulate finding a patrol fine from national police.ge database
-      const newCustomFine: FineItem = {
-        id: `PT-${query}`,
-        ticket_number: `ოქმი #${query}`,
-        amount_gel: 50,
-        discounted_amount_gel: 40,
-        discount_expires_days: 14,
-        date: new Date().toISOString().slice(0, 10),
-        location: 'თბილისი, საპატრულო ეკიპაჟის ქვითარი',
-        violation_type: 'საგზაო ნიშნის მოთხოვნის შეუსრულებლობა (ადგილზე გამოწერილი)',
-        plate_number: vehicle.plate_number,
-        status: 'pending',
-        points_deducted: 5,
-        points_status: 'deducted',
-        article_law_ge: 'ასკ მუხლი 125, ნაწილი 1',
-        points_explanation_ge: 'საგზაო ნიშნის შეუსრულებლობა ითვალისწინებს 5 ქულის დაკლებას მართვის მოწმობაზე.'
-      };
-      onUpdateFines([newCustomFine, ...fines]);
-      setSelectedFineForPayment(newCustomFine);
-      setTicketSearchInput('');
-      sounds.playSuccess();
+      // ლოკალურად ვერ მოიძებნა — ვამისამართებთ ოფიციალურ გვერდზე (ყალბ ჯარიმას არ ვქმნით).
+      setSearchError(`ქვითარი "${query}" აპის ჩანაწერებში ვერ მოიძებნა. შეამოწმეთ/გადაიხადეთ ოფიციალურ გვერდზე.`);
+      openOfficial(OFFICIAL_LINKS.finesCheck);
     }
   };
 
@@ -947,6 +907,17 @@ export const FinesModule: React.FC<Props> = ({
               <div className="text-[10px] text-slate-500 font-mono">
                 {100 - driverPoints > 0 ? `დაკლებული: -${100 - driverPoints} ქულა` : 'სრული 100 ქულა შენარჩუნებულია'}
               </div>
+              {/* ქულა = აპის შეფასება; ოფიციალური ბალანსი — მომსახურების სააგენტოზე */}
+              <div className="text-[9px] text-slate-400 italic">აპის შეფასება — ოფიციალური ბალანსი სააგენტოზეა</div>
+              <button
+                onClick={() => openOfficial(OFFICIAL_LINKS.points)}
+                className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-[11px] font-black hover:bg-slate-800 transition"
+                title="ქულების და მართვის მოწმობის სტატუსის ოფიციალური შემოწმება — მომსახურების სააგენტო"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>შეამოწმე ქულები ოფიციალურად</span>
+                <ExternalLink className="w-3 h-3 opacity-70" />
+              </button>
             </div>
 
             {/* Bottom MRZ Security Barcode Lines */}
@@ -1072,6 +1043,28 @@ export const FinesModule: React.FC<Props> = ({
                     : 'ჯარიმები არ არის ✓'}
                 </span>
               </button>
+
+              {/* ოფიციალური სერვისები — პირდაპირი ბმულები (მუშაობს n8n-ის მდგომარეობის მიუხედავად) */}
+              <div className="grid grid-cols-2 gap-2 pt-0.5">
+                <button
+                  onClick={() => openOfficial(OFFICIAL_LINKS.finesCheck)}
+                  className="py-2 px-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-100 text-[10px] font-bold flex items-center justify-center gap-1.5 border border-slate-700 transition"
+                  title="ოფიციალური შემოწმება ნომრით — videos.police.ge"
+                >
+                  <Search className="w-3 h-3" />
+                  <span>ოფიც. შემოწმება</span>
+                  <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                </button>
+                <button
+                  onClick={() => openOfficial(OFFICIAL_LINKS.finesPay)}
+                  className="py-2 px-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-100 text-[10px] font-bold flex items-center justify-center gap-1.5 border border-slate-700 transition"
+                  title="ოფიციალური გადახდა — my.gov.ge"
+                >
+                  <CreditCard className="w-3 h-3" />
+                  <span>ოფიც. გადახდა</span>
+                  <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                </button>
+              </div>
             </div>
 
           </div>
@@ -1815,8 +1808,8 @@ export const FinesModule: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Payment Method Selector */}
-            <div className="space-y-2">
+            {/* გადახდის მეთოდის ასარჩევი დამალულია — გადახდა ოფიციალურ გვერდზე (my.gov.ge) სრულდება */}
+            <div className="hidden">
               <label className="text-xs font-bold text-slate-500 block">გადახდის მეთოდი</label>
               <div className="grid grid-cols-3 gap-2">
                 <button
@@ -1860,78 +1853,43 @@ export const FinesModule: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Card Details (if card method chosen) */}
-            {paymentMethod === 'card' && (
-              <div className="space-y-3 p-4 rounded-2xl bg-white border border-slate-200/80">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1">ბარათის ნომერი</label>
-                  <input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono text-sm text-navy focus:outline-none"
-                    placeholder="4127 •••• •••• ••••"
-                  />
+            {/* ოფიციალური გადახდის ინფო — აპი ბარათის მონაცემებს არ აგროვებს */}
+            <div className="space-y-2 p-4 rounded-2xl bg-white border border-slate-200/80">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-200">
+                  <ShieldCheck className="w-4 h-4" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-400 block mb-1">მოქმედების ვადა</label>
-                    <input
-                      type="text"
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono text-xs text-navy focus:outline-none"
-                      placeholder="MM/YY"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-400 block mb-1">CVC / CVV</label>
-                    <input
-                      type="password"
-                      value={cardCvv}
-                      onChange={(e) => setCardCvv(e.target.value)}
-                      maxLength={4}
-                      className="w-full px-3.5 py-2 rounded-xl neu-inset font-mono text-xs text-navy focus:outline-none"
-                      placeholder="•••"
-                    />
-                  </div>
+                <div className="text-[11px] text-slate-600 font-medium leading-relaxed">
+                  გადახდა ოფიციალურ სახელმწიფო პორტალზე (<span className="font-bold text-navy">my.gov.ge</span>) სრულდება — უსაფრთხოდ, შენი ბანკით. აპი ბარათის მონაცემებს <span className="font-bold">არ</span> ინახავს. გადახდის შემდეგ დააჭირე „გადახდილად მონიშვნა".
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Security Note & Pay Button */}
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-bold">
-                <Lock className="w-3.5 h-3.5 text-emerald-600" />
-                <span>256-bit SSL დაცული გადახდა • ოფიციალური police.ge არხი</span>
-              </div>
-
+            {/* Action Buttons */}
+            <div className="space-y-2.5 pt-2">
+              <button
+                type="button"
+                onClick={handleExecutePayment}
+                className="btn-stitch-primary w-full py-3.5 text-xs font-black"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>ოფიციალურ გვერდზე გადახდა ({selectedFineForPayment.discount_expires_days > 0 ? selectedFineForPayment.discounted_amount_gel : selectedFineForPayment.amount_gel} ₾)</span>
+              </button>
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedFineForPayment(null)}
-                  disabled={isProcessingPayment}
-                  className="btn-stitch-soft w-1/3 py-3 text-xs font-bold"
+                  className="btn-stitch-soft w-1/2 py-3 text-xs font-bold"
                 >
                   გაუქმება
                 </button>
                 <button
                   type="button"
-                  onClick={handleExecutePayment}
-                  disabled={isProcessingPayment}
-                  className="btn-stitch-primary w-2/3 py-3.5 text-xs font-black"
+                  onClick={() => handleMarkFinePaid(selectedFineForPayment)}
+                  className="w-1/2 py-3 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 transition"
                 >
-                  {isProcessingPayment ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-navy" />
-                      <span>მუშავდება...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4 stroke-[3]" />
-                      <span>ქვითრის გადახდა ({selectedFineForPayment.discount_expires_days > 0 ? selectedFineForPayment.discounted_amount_gel : selectedFineForPayment.amount_gel} ₾)</span>
-                    </>
-                  )}
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>გადახდილად მონიშვნა</span>
                 </button>
               </div>
             </div>
