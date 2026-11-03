@@ -2153,8 +2153,10 @@ export const ThreeCarScene: React.FC<Props> = ({
       carMasterGroup.updateWorldMatrix(true, false);
       visual.carInverse.value.copy(carMasterGroup.matrixWorld).invert();
 
-      // "არ უნდა გამოჩნდეს არც ერთი მონაკვეთი, სანამ თვალს არ დააჭერ და არ გამოჩნდება, დანარჩენი უნდა იყოს უხილავი"
-      const internalSectionsVisible = showInternalPartsRef.current || curExp > 0.01 || sequenceRef.current.revealing;
+      // შიგთავსი ნაწილები (ძრავა, დაკიდება, გამონაბოლქვი, რადიატორი, აკუმულატორი, სენსორები):
+      // გამჭვირვალობის (Ghost X-Ray), სკანირების ან დაშლის დროს ყველა შიდა ნაწილი სრულად ჩანს და არ ქრება
+      const isCarTransparent = isGhostMode || solidTargetRef.current < 0.95 || visual.fill.value < 0.95;
+      const internalSectionsVisible = isCarTransparent || showInternalPartsRef.current || curExp > 0.005 || sequenceRef.current.active;
       for (const id of ['engine', 'ecu', 'cooling', 'exhaust', 'chassis', 'suspension', 'battery', 'ignition_coil', 'oxygen_sensor', 'coolant_sensor', 'throttle_sensor', 'fuel_injectors', 'fuel_pump', 'intake_sensor', 'knock_sensor', 'map_sensor']) {
         const group = groupsRef.current[id];
         if (group) group.visible = internalSectionsVisible;
