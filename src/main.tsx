@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { flespiService } from './services/flespiService';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -77,3 +78,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+// flespi ცოცხალი ტელემეტრიის პოლინგი — გააქტიურდება მხოლოდ real რეჟიმში და flespi ტოკენის არსებობისას
+flespiService.start();
