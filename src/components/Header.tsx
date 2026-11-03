@@ -313,7 +313,7 @@ export const Header: React.FC<Props> = ({
           {/* CarMe 3D Emblem Badge */}
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white neu-circle flex items-center justify-center overflow-hidden shadow-sm border border-amber-300/50 group-hover:scale-105 transition-transform shrink-0 p-0.5">
             <img
-              src="/carme-emblem-square.png?v=2"
+              src="/carme-circle-badge.png?v=3"
               alt="CarMe.ge Logo"
               className="w-full h-full object-cover rounded-full"
             />
