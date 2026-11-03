@@ -782,24 +782,25 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       }, 700);
     });
 
-    // Pre-create and cache all tile layers for instant, lag-free switching
-    // 1. Street: CartoDB Voyager (High-speed, crisp, vivid road labels, 100% unblocked)
-    const osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
+    // ტაილების წინასწარ შექმნა და ქეშირება — სწრაფი, შეფერხების გარეშე გადართვისთვის
+    // 1. ქუჩები: OpenStreetMap-ის სტანდარტული ტაილები (უფასო, გასაღების გარეშე)
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      subdomains: 'abc',
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
     });
     osmLayerRef.current = osmLayer;
 
-    // 2. CartoDB Dark Matter (true native dark theme)
-    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
+    // 2. მუქი თემა: იგივე OSM ტაილები CSS-ინვერსიით (უფასო, გასაღების გარეშე)
+    const darkLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      subdomains: 'abc',
+      maxZoom: 19,
+      className: 'map-dark-tiles',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
     });
     darkLayerRef.current = darkLayer;
 
-    // 3. Esri World Imagery Satellite (High-resolution global satellite photography)
+    // 3. Esri World Imagery სატელიტი (მაღალი გარჩევადობის გლობალური სატელიტური ფოტო, უფასო)
     const satLayer = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
       maxNativeZoom: 18,
@@ -807,10 +808,10 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     });
     satLayerRef.current = satLayer;
 
-    // 3b. Satellite street labels overlay
-    const satLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20,
+    // 3b. სატელიტზე ქუჩების/დასახელებების overlay (Esri reference, უფასო)
+    const satLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      maxNativeZoom: 18,
       pane: 'overlayPane'
     });
     satLabelsRef.current = satLabels;

@@ -546,3 +546,8 @@
 @media (prefers-reduced-motion: reduce) {
   .exam-timer-attention { animation: none; }
 }
+
+/* მუქი რუკა: უფასო OSM ტაილების CSS-ინვერსია (გასაღების გარეშე, CARTO-ს ნაცვლად) */
+.map-dark-tiles {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.95) grayscale(0.15);
+}
