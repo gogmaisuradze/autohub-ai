@@ -3,7 +3,8 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/autohub-ai/' : '/',
+  // custom დომენი carme.ge — საიტი root-ზე ემსახურება, ამიტომ base = '/'
+  base: '/',
   plugins: [react()],
   resolve: {
     alias: {
