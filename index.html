@@ -14,11 +14,32 @@
     <title>CarMe - All-in-One ჭკვიანი ავტო-პლატფორმა & AI დიაგნოსტიკა | carme.ge</title>
     
     <script>
-      // Production Service Worker Registration for Offline Cache & Web Push Reminders
+      // 1. Force instant dynamic circular favicon in browser tab (bypasses browser favicon cache)
+      (function() {
+        try {
+          var circleUrl = '/carme-circle-badge.png?v=' + Date.now();
+          var existing = document.querySelectorAll("link[rel*='icon']");
+          existing.forEach(function(el) { el.parentNode.removeChild(el); });
+          var link = document.createElement('link');
+          link.type = 'image/png';
+          link.rel = 'shortcut icon';
+          link.href = circleUrl;
+          document.head.appendChild(link);
+          var icon32 = document.createElement('link');
+          icon32.type = 'image/png';
+          icon32.sizes = '32x32';
+          icon32.rel = 'icon';
+          icon32.href = circleUrl;
+          document.head.appendChild(icon32);
+        } catch (e) {}
+      })();
+
+      // 2. Production Service Worker Registration with automatic update check
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js').then(function(reg) {
-            console.log('CarMe ServiceWorker active:', reg.scope);
+            reg.update();
+            console.log('CarMe ServiceWorker active & updated:', reg.scope);
           }).catch(function(err) {
             console.warn('ServiceWorker registration optional warning:', err);
           });

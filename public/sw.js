@@ -1,11 +1,14 @@
-// AutoHub AI - Production Service Worker
+// CarMe AI - Production Service Worker
 // Handles Offline App Shell Caching, Web Push Reminders & Notification Interactions
 
-const CACHE_NAME = 'autohub-cache-v4';
+const CACHE_NAME = 'carme-cache-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/carme-circle-badge.png',
+  '/favicon-32x32.png',
+  '/favicon-16x16.png',
   '/icon.svg',
   '/favicon.ico'
 ];
