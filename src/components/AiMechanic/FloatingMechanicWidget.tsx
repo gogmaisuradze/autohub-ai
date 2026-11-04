@@ -121,7 +121,7 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
 
   if (isDismissed) {
     return (
-      <div className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-40 font-sans">
+      <div className="fixed bottom-24 md:bottom-6 right-3 sm:right-6 z-40 font-sans">
         <button
           onClick={() => {
             sounds.playSuccess();
@@ -143,7 +143,7 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
   }
 
   return (
-    <div data-tour="ai-floating-widget" className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-40 font-sans">
+    <div data-tour="ai-floating-widget" className="fixed bottom-24 md:bottom-6 right-3 sm:right-6 z-40 font-sans">
       <AnimatePresence mode="wait">
         {/* 1. COLLAPSED FLOATING PILL BUTTON */}
         {!isOpen && (

@@ -242,7 +242,7 @@ export const Navigation: React.FC<Props> = ({
       {/* ----------------------------------------------------------- */}
       <nav
         data-tour="mobile-bottom-nav"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#ECEAE5]/95 backdrop-blur-2xl border-t border-slate-300/80 shadow-[0_-6px_24px_rgba(0,0,0,0.08)] pb-[max(0.6rem,env(safe-area-inset-bottom,0px))] pt-1 px-1.5 select-none"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#ECEAE5] border-t border-slate-300 shadow-[0_-6px_24px_rgba(0,0,0,0.08)] pb-[max(0.85rem,env(safe-area-inset-bottom,0px))] pt-1.5 px-1.5 select-none"
         style={{ touchAction: 'manipulation' }}
       >
         <div className="grid grid-cols-5 gap-1 items-center max-w-md mx-auto">
@@ -259,7 +259,7 @@ export const Navigation: React.FC<Props> = ({
                   setIsMoreSheetOpen(false);
                   onSelectTab(tab.id);
                 }}
-                className={`relative flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-150 active:scale-90 ${
+                className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-150 active:scale-90 ${
                   isActive
                     ? 'text-navy font-black'
                     : 'text-slate-500 hover:text-navy'
@@ -270,9 +270,9 @@ export const Navigation: React.FC<Props> = ({
                   <span className="absolute -top-1 w-7 h-1 rounded-full bg-gold shadow-[0_0_8px_rgba(217,119,6,0.6)]" />
                 )}
 
-                <div className="relative flex items-center justify-center w-7 h-7">
+                <div className="relative flex items-center justify-center w-8 h-8">
                   <Icon
-                    className={`w-5 h-5 transition-transform duration-150 ${
+                    className={`w-6 h-6 transition-transform duration-150 ${
                       isActive ? 'text-gold scale-110' : 'text-slate-500'
                     }`}
                   />
@@ -288,7 +288,7 @@ export const Navigation: React.FC<Props> = ({
                 </div>
 
                 <span
-                  className={`text-[10px] tracking-tight mt-0.5 whitespace-nowrap ${
+                  className={`text-[11px] tracking-tight mt-0.5 whitespace-nowrap ${
                     isActive ? 'font-black text-navy' : 'font-medium text-slate-500'
                   }`}
                 >
@@ -305,7 +305,7 @@ export const Navigation: React.FC<Props> = ({
               sounds.playClick();
               setIsMoreSheetOpen((prev) => !prev);
             }}
-            className={`relative flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-150 active:scale-90 ${
+            className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-150 active:scale-90 ${
               isMoreActive || isMoreSheetOpen
                 ? 'text-navy font-black'
                 : 'text-slate-500 hover:text-navy'
@@ -316,9 +316,9 @@ export const Navigation: React.FC<Props> = ({
               <span className="absolute -top-1 w-7 h-1 rounded-full bg-gold shadow-[0_0_8px_rgba(217,119,6,0.6)]" />
             )}
 
-            <div className="relative flex items-center justify-center w-7 h-7">
+            <div className="relative flex items-center justify-center w-8 h-8">
               <MoreHorizontal
-                className={`w-5 h-5 transition-transform duration-150 ${
+                className={`w-6 h-6 transition-transform duration-150 ${
                   isMoreActive || isMoreSheetOpen ? 'text-gold scale-110' : 'text-slate-500'
                 }`}
               />
@@ -330,7 +330,7 @@ export const Navigation: React.FC<Props> = ({
             </div>
 
             <span
-              className={`text-[10px] tracking-tight mt-0.5 whitespace-nowrap ${
+              className={`text-[11px] tracking-tight mt-0.5 whitespace-nowrap ${
                 isMoreActive || isMoreSheetOpen ? 'font-black text-navy' : 'font-medium text-slate-500'
               }`}
             >

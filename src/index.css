@@ -28,6 +28,15 @@
 }
 
 /* Mobile Safe-Area Utilities */
+.header-safe-top {
+  padding-top: max(env(safe-area-inset-top, 0px), 14px);
+}
+@media (min-width: 768px) {
+  .header-safe-top {
+    padding-top: max(env(safe-area-inset-top, 0px), 0px);
+  }
+}
+
 .pb-safe {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
 }

@@ -301,7 +301,7 @@ export const Header: React.FC<Props> = ({
   );
 
   return (
-    <header className="w-full max-w-full overflow-visible border-b border-white/60 transition-colors relative z-40">
+    <header className="w-full max-w-full overflow-visible border-b border-slate-300/80 transition-colors relative z-40 bg-[#ECEAE5]">
       {/* ROW 1: Brand & Top Action Controls */}
       <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-0 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-4 w-full">
         
@@ -311,9 +311,9 @@ export const Header: React.FC<Props> = ({
           onClick={onNavigateHome}
         >
           {/* CarMe 3D Emblem Badge */}
-          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white neu-circle flex items-center justify-center overflow-hidden shadow-sm border border-amber-300/50 group-hover:scale-105 transition-transform shrink-0 p-0.5">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-md border-2 border-amber-400 group-hover:scale-105 transition-transform shrink-0 p-0.5">
             <img
-              src="/carme-circle-badge.png?v=3"
+              src="/carme-circle-badge.png?v=4"
               alt="CarMe.ge Logo"
               className="w-full h-full object-cover rounded-full"
             />
@@ -321,14 +321,14 @@ export const Header: React.FC<Props> = ({
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <h1 className="text-sm sm:text-lg font-black tracking-tight text-navy">
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
                 CarMe
               </h1>
-              <span className="px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono font-bold border border-gold text-gold shrink-0">
+              <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-black bg-white text-amber-600 border-2 border-amber-500 shadow-xs tracking-wider shrink-0">
                 PRO
               </span>
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-500 hidden min-[600px]:block truncate">
+            <p className="text-[11px] sm:text-xs text-slate-600 font-medium hidden min-[600px]:block truncate">
               {isGe
                 ? 'AutoHub • OBD-II ტელემეტრია & AI მექანიკოსი'
                 : 'AutoHub • OBD-II Telemetry & AI Mechanic'}
@@ -349,10 +349,10 @@ export const Header: React.FC<Props> = ({
                 onToggleAccountMode();
               }
             }}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl text-xs font-black flex items-center gap-1 sm:gap-1.5 border transition-all cursor-pointer ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-xl sm:rounded-2xl text-xs font-black flex items-center gap-1 sm:gap-1.5 border-2 transition-all cursor-pointer shadow-xs ${
               accountMode === 'owner'
-                ? 'bg-amber-50/90 text-amber-950 border-amber-300 shadow-xs hover:bg-amber-100'
-                : 'bg-blue-50/90 text-blue-950 border-blue-300 shadow-xs hover:bg-blue-100'
+                ? 'bg-white text-slate-900 border-amber-400 hover:bg-amber-50'
+                : 'bg-white text-slate-900 border-blue-400 hover:bg-blue-50'
             }`}
             title={
               isGe
@@ -373,8 +373,8 @@ export const Header: React.FC<Props> = ({
             {!vehicle?.driver_name && (
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" title={isGe ? 'შეავსეთ პროფილი' : 'Fill Profile'} />
             )}
-            <span className={`text-[9px] sm:text-[10px] font-mono px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-md ${
-              accountMode === 'owner' ? 'bg-amber-200/80 text-amber-950 font-bold' : 'bg-blue-200/80 text-blue-950 font-bold'
+            <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded-md font-black ${
+              accountMode === 'owner' ? 'bg-amber-100 text-amber-950' : 'bg-blue-100 text-blue-950'
             }`}>
               <span className="sm:hidden">{accountMode === 'owner' ? 'Owner' : 'Guest'}</span>
               <span className="hidden sm:inline">{accountMode === 'owner' ? 'Owner (2)' : 'Visitor (1)'}</span>
@@ -392,10 +392,10 @@ export const Header: React.FC<Props> = ({
                 onSelectTab?.('obd');
               }
             }}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs transition-all select-none cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-black transition-all select-none cursor-pointer shadow-xs border-2 ${
               isObdConnected
-                ? 'bg-emerald-500/20 text-emerald-950 border border-emerald-400 font-extrabold shadow-[0_0_16px_rgba(16,185,129,0.5)] hover:shadow-[0_0_24px_rgba(16,185,129,0.7)]'
-                : 'btn-stitch-soft text-slate-500 font-bold hover:text-amber-600'
+                ? 'bg-emerald-500 text-white border-emerald-400 font-extrabold shadow-[0_0_16px_rgba(16,185,129,0.5)] hover:shadow-[0_0_24px_rgba(16,185,129,0.7)]'
+                : 'bg-white text-slate-800 border-slate-300 hover:border-amber-400 hover:text-amber-600'
             }`}
             title={
               isObdConnected
@@ -404,8 +404,8 @@ export const Header: React.FC<Props> = ({
             }
           >
             <span
-              className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
-                isObdConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
+              className={`w-2 h-2 rounded-full ${
+                isObdConnected ? 'bg-white animate-pulse' : 'bg-slate-400'
               }`}
             />
             <span className="font-mono tracking-tight font-black text-[10px] sm:text-xs">
@@ -462,10 +462,10 @@ export const Header: React.FC<Props> = ({
                 sounds.playSuccess();
                 onOpenTour();
               }}
-              className="btn-stitch-soft w-7 h-7 sm:w-auto sm:px-3 sm:py-1.5 rounded-full text-xs font-bold text-navy hover:text-gold flex items-center justify-center sm:gap-1.5 transition-all shadow-xs"
+              className="w-8 h-8 sm:w-auto sm:px-3 sm:py-1.5 rounded-full bg-white text-slate-800 hover:text-amber-600 hover:border-amber-400 font-bold border-2 border-slate-300 flex items-center justify-center sm:gap-1.5 transition-all shadow-xs"
               title={isGe ? 'საიტის გიდი • ინტერაქტიული ტური' : 'Site Tour Guide'}
             >
-              <HelpCircle size={14} className="text-gold" />
+              <HelpCircle size={14} className="text-amber-500" />
               <span className="hidden md:inline font-bold">{isGe ? 'გიდი' : 'Tour'}</span>
             </button>
           )}
@@ -481,7 +481,7 @@ export const Header: React.FC<Props> = ({
                 sounds.playClick();
                 setLangDropdownOpen(!langDropdownOpen);
               }}
-              className="btn-stitch-soft w-7 h-7 sm:w-9 sm:h-9 rounded-full p-0 flex items-center justify-center text-sm sm:text-lg"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white text-slate-900 border-2 border-slate-300 hover:border-amber-400 p-0 flex items-center justify-center text-sm sm:text-base shadow-xs"
               title={isGe ? 'ენის შეცვლა (ქართული)' : 'Change Language (English)'}
             >
               <span className="select-none leading-none">
@@ -532,7 +532,7 @@ export const Header: React.FC<Props> = ({
       </div>
 
       {/* ROW 2: Mobile Vehicle Selector Bar (Lifts the vehicle pill above navigation on mobile) */}
-      <div className="md:hidden px-2.5 pb-2 pt-0.5 max-w-7xl mx-auto w-full">
+      <div className="md:hidden px-2.5 pb-2.5 pt-1 max-w-7xl mx-auto w-full">
         {hasSelectedVehicle && vehicle ? (
           <div ref={mobileVehicleTriggerRef} data-tour="header-vehicle-mobile" className="relative w-full">
             <button
@@ -541,15 +541,15 @@ export const Header: React.FC<Props> = ({
                 sounds.playClick();
                 setDropdownOpen((prev) => !prev);
               }}
-              className={`btn-stitch-soft w-full px-3 py-1.5 rounded-2xl text-navy text-xs font-bold flex items-center justify-between shadow-xs border border-white/80 active:scale-[0.99] transition-all cursor-pointer ${
-                dropdownOpen ? 'ring-2 ring-gold/60 bg-white' : ''
+              className={`w-full px-3.5 py-2 rounded-2xl bg-white text-slate-900 text-xs font-black flex items-center justify-between shadow-xs border-2 border-slate-300 active:scale-[0.99] transition-all cursor-pointer ${
+                dropdownOpen ? 'ring-2 ring-gold border-amber-400 bg-white' : ''
               }`}
               title={isGe ? 'მანქანები / გარაჟი' : 'Vehicles / Garage'}
               aria-expanded={dropdownOpen}
             >
               <div className="flex items-center gap-2 min-w-0">
-                <Car className="w-4 h-4 text-gold shrink-0" />
-                <span className="font-extrabold text-navy truncate">
+                <Car className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="font-extrabold text-slate-900 truncate">
                   {vehicle.brand} {vehicle.model}
                 </span>
               </div>
@@ -557,7 +557,7 @@ export const Header: React.FC<Props> = ({
                 {vehicle.plate_number && (
                   <GeorgianLicensePlate plate={vehicle.plate_number} size="xs" variant="white" />
                 )}
-                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-gold' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-500 shrink-0 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-amber-500' : ''}`} />
               </div>
             </button>
             {dropdownOpen && renderGarageDropdown()}
@@ -568,10 +568,10 @@ export const Header: React.FC<Props> = ({
               sounds.playClick();
               onOpenAddVehicle?.();
             }}
-            className="btn-stitch-primary w-full py-1.5 px-3 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5 shadow-xs"
+            className="w-full py-2 px-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 shadow-sm border border-amber-600"
             title={isGe ? 'ახალი ავტომობილის დამატება' : 'Add New Vehicle'}
           >
-            <Plus className="w-3.5 h-3.5 text-navy shrink-0 stroke-[3]" />
+            <Plus className="w-4 h-4 text-slate-950 shrink-0 stroke-[3]" />
             <span className="font-black">{isGe ? '+ მანქანის დამატება' : '+ Add Vehicle'}</span>
           </button>
         )}
