@@ -87,3 +87,5 @@ flespiService.start();
 // OBD-WiFi: ნატიურ აპში TCP transport-ის ჩართვა + offline რიგის ავტო-სინქრონი
 initObdTransport();
 obdWifiService.initAutoSync();
+
+

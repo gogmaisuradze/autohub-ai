@@ -59,6 +59,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
   const mapInstanceRef = useRef<any>(null);
   const polygonLayerGroupRef = useRef<any>(null);
   const markerLayerGroupRef = useRef<any>(null);
+  const userLocationMarkerRef = useRef<any>(null); // „შენ აქ ხარ" ლურჯი წერტილი
   const tileLayersRef = useRef<{
     street?: any;
     dark?: any;
@@ -305,6 +306,40 @@ export const ParkingZonesMap: React.FC<Props> = ({
       mapInstanceRef.current = map;
       map.on('moveend', () => setMapRevision(value => value + 1));
       setMapStatus('ready');
+
+      // === რუკა იხსნება მომხმარებლის ლოკაციის მიხედვით ===
+      // ნებართვის შემთხვევაში რუკა გადადის შენს ადგილმდებარეობაზე და დგამს
+      // ლურჯ „შენ აქ ხარ" წერტილს. უარის/შეცდომის დროს ვრჩებით ქალაქის ცენტრზე.
+      if (typeof navigator !== 'undefined' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            // თუ ამ დროისთვის რუკა ხელახლა შეიქმნა ან დაიხურა — არ გავაგრძელოთ
+            if (mapInstanceRef.current !== map) return;
+            const { latitude, longitude } = pos.coords;
+
+            const meIcon = L.divIcon({
+              className: 'carme-user-location',
+              html: '<div style="width:18px;height:18px;border-radius:9999px;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 3px rgba(37,99,235,0.30),0 2px 8px rgba(0,0,0,0.45)"></div>',
+              iconSize: [18, 18],
+              iconAnchor: [9, 9]
+            });
+
+            if (userLocationMarkerRef.current) {
+              try { map.removeLayer(userLocationMarkerRef.current); } catch {}
+            }
+            userLocationMarkerRef.current = L.marker([latitude, longitude], {
+              icon: meIcon,
+              interactive: false,
+              keyboard: false,
+              zIndexOffset: 1000
+            }).addTo(map);
+
+            map.flyTo([latitude, longitude], 16, { duration: 1.2 });
+          },
+          () => { /* ნებართვა არ მიიღო ან შეცდომა — ვრჩებით ქალაქის ცენტრზე */ },
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+        );
+      }
 
       // Set up ResizeObserver to handle tab switching & container size changes
       if (typeof ResizeObserver !== 'undefined') {

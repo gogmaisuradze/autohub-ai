@@ -1,7 +1,7 @@
 // CarMe AI - Production Service Worker
 // Handles Offline App Shell Caching, Web Push Reminders & Notification Interactions
 
-const CACHE_NAME = 'carme-cache-v5';
+const CACHE_NAME = 'carme-cache-v6';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
