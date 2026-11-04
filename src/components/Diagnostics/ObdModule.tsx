@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DtcCode, TelemetryData, VehicleProfile } from '../../types';
 import { ThreeCarScene } from '../ThreeCarScene';
 import { TelemetryGauges } from './TelemetryGauges';
+import { ObdWifiScan } from './ObdWifiScan';
 import { n8nService } from '../../services/n8nService';
 import { sounds } from '../../services/soundEffects';
 import { PromptFieldType } from '../Modals/ContextualFieldPromptModal';
@@ -395,6 +396,9 @@ export const ObdModule: React.FC<Props> = ({
           </div>
         </div>
       )}
+
+      {/* WiFi ELM327 პირდაპირი სკანი (მუშაობს CarMe ნატიურ აპში) */}
+      <ObdWifiScan />
 
       {/* Missing Vehicle Info Notice */}
       {(!vehicle.vin || vehicle.vin.length < 10 || !vehicle.engine) && (
