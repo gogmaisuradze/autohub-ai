@@ -22,6 +22,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CarMe იყენებს თქვენს ადგილმდებარეობას, რომ რუკა და პარკინგის ზონები თქვენს გარშემო გაჩვენოთ.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>CarMe უკავშირდება OBD ადაპტერს მანქანის დიაგნოსტიკისთვის.</string>
 	<key>UILaunchStoryboardName</key>
