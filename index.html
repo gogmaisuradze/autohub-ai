@@ -34,17 +34,25 @@
         } catch (e) {}
       })();
 
-      // 2. Production Service Worker Registration with automatic update check
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').then(function(reg) {
-            reg.update();
-            console.log('CarMe ServiceWorker active & updated:', reg.scope);
-          }).catch(function(err) {
-            console.warn('ServiceWorker registration optional warning:', err);
+      // 2. Service Worker: მხოლოდ ვებ-ვერსიაზე. ნატიურ აპში (Capacitor) SW ქეშავდა
+      //    ძველ კოდს → განახლებები არ ჩანდა; ამიტომ ვშლით SW-ს და ქეშს.
+      (function() {
+        var isNative = location.protocol === 'capacitor:' || location.protocol === 'ionic:' || location.hostname === 'localhost';
+        if (isNative) {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(r) { r.unregister(); });
+            }).catch(function() {});
+          }
+          if (window.caches && caches.keys) {
+            caches.keys().then(function(keys) { keys.forEach(function(k) { caches.delete(k); }); }).catch(function() {});
+          }
+        } else if ('serviceWorker' in navigator) {
+          window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').then(function(reg) { reg.update(); }).catch(function() {});
           });
-        });
-      }
+        }
+      })();
     </script>
     
     <!-- Meta tags for PWA -->
