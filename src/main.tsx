@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { flespiService } from './services/flespiService';
+import { initObdTransport } from './services/obdNativeTransport';
+import { obdWifiService } from './services/obdWifiService';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -81,3 +83,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 // flespi ცოცხალი ტელემეტრიის პოლინგი — გააქტიურდება მხოლოდ real რეჟიმში და flespi ტოკენის არსებობისას
 flespiService.start();
+
+// OBD-WiFi: ნატიურ აპში TCP transport-ის ჩართვა + offline რიგის ავტო-სინქრონი
+initObdTransport();
+obdWifiService.initAutoSync();
