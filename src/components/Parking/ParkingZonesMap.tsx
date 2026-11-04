@@ -255,8 +255,8 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-      // Attribution position
-      map.attributionControl.setPosition('bottomleft');
+      // წარწერა გამორთულია (attributionControl: false) — setPosition აღარ გვჭირდება
+      // (ძველი map.attributionControl.setPosition() undefined-ზე ვარდებოდა iOS-ზე)
 
       // Pre-create and cache all 3 tile layers
       const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
