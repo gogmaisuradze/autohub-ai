@@ -61,9 +61,9 @@ export const ObdWifiScan: React.FC = () => {
       >
         {busy ? <Loader2 className="w-4 h-4 animate-spin text-gold" /> : <Wifi className="w-4 h-4 text-gold" />}
         <span>
-          {status === 'connecting' ? 'დაკავშირება (Zvio 2)...'
+          {status === 'connecting' ? 'დაკავშირება...'
             : status === 'scanning' ? 'სკანირება...'
-            : 'სკანი WiFi-ით (Zvio 2)'}
+            : 'სკანი WiFi-ით'}
         </span>
       </button>
 

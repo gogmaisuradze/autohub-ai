@@ -1,12 +1,31 @@
 import Foundation
 import Capacitor
 import Network
+import UIKit
+
+// Capacitor 6: აპში ჩაშენებული პლაგინი აქ რეგისტრირდება (მაკრო მარტო პოდებს არეგისტრირებს).
+// storyboard-ის მთავარი ViewController ამ კლასზეა მიმართული.
+class MainViewController: CAPBridgeViewController {
+    override open func capacitorDidLoad() {
+        bridge?.registerPluginInstance(CarmeObdTcpPlugin())
+    }
+}
 
 // CarMe — ნატიური TCP პლაგინი OBD-WiFi-სთვის (iOS)
 // ხსნის TCP socket-ს ELM327 ადაპტერთან (მაგ. 192.168.0.10:35000) და
 // აგზავნის/იღებს ELM327 ბრძანებებს '>' prompt-მდე.
 @objc(CarmeObdTcpPlugin)
-public class CarmeObdTcpPlugin: CAPPlugin {
+public class CarmeObdTcpPlugin: CAPPlugin, CAPBridgedPlugin {
+    // Capacitor 6 რეგისტრაცია — ამით აპი ხედავს პლაგინს iOS-ზე
+    public let identifier = "CarmeObdTcpPlugin"
+    public let jsName = "CarmeObdTcp"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "connect", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "send", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "close", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "isConnected", returnType: CAPPluginReturnPromise)
+    ]
+
     private var connection: NWConnection?
     private let netQueue = DispatchQueue(label: "ge.carme.obd.tcp")
     private var connected = false

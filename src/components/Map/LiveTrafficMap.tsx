@@ -764,10 +764,36 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
       zoomControl: false,
       attributionControl: false,
       preferCanvas: true,
-      scrollWheelZoom: 'center',
+      scrollWheelZoom: false, // არ დაბლოკოს გვერდის სქროლი მაუსის ბორბლით
       doubleClickZoom: false,
       closePopupOnClick: false
     });
+
+    // კოოპერატიული ზუმი: Ctrl/Cmd + ბორბალი აზუმებს რუკას, ჩვეულებრივი ბორბალი სქროლავს მთელ გვერდს
+    const domEl = mapContainerRef.current;
+    const onMapWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        map.scrollWheelZoom.enable();
+      } else {
+        map.scrollWheelZoom.disable();
+      }
+    };
+    if (domEl) {
+      domEl.addEventListener('wheel', onMapWheel, { passive: true });
+    }
+
+    // რუკაზე დაკლიკებისას ზუმის ჩართვა, მაუსის გაწევისას გამორთვა გვერდის სუფთა სქროლისთვის
+    map.on('focus', () => {
+      try { map.scrollWheelZoom.enable(); } catch {}
+    });
+    map.on('blur', () => {
+      try { map.scrollWheelZoom.disable(); } catch {}
+    });
+    if (domEl) {
+      domEl.addEventListener('mouseleave', () => {
+        try { map.scrollWheelZoom.disable(); } catch {}
+      });
+    }
 
     let moveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
     map.on('moveend', () => {
@@ -861,6 +887,9 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
     }
 
     return () => {
+      if (domEl) {
+        try { domEl.removeEventListener('wheel', onMapWheel); } catch {}
+      }
       if (moveDebounceTimer) clearTimeout(moveDebounceTimer);
       resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);

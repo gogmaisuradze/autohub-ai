@@ -444,63 +444,19 @@ export const App: React.FC = () => {
     });
   }, []);
 
-  // Animation ID reference for smooth organic scrolling
-  const scrollAnimRef = useRef<number | null>(null);
-
-  const smoothScrollTo = (targetY: number, duration = 1100) => {
-    if (scrollAnimRef.current !== null) {
-      cancelAnimationFrame(scrollAnimRef.current);
-      scrollAnimRef.current = null;
+  // Smooth organic scrolling using native browser engine
+  const smoothScrollTo = (targetY: number, _duration?: number) => {
+    try {
+      window.scrollTo({
+        top: Math.max(0, targetY),
+        behavior: 'smooth'
+      });
+    } catch {
+      window.scrollTo(0, Math.max(0, targetY));
     }
-
-    const startY = window.pageYOffset || document.documentElement.scrollTop;
-    const distance = targetY - startY;
-
-    if (Math.abs(distance) < 6) return;
-
-    let startTime: number | null = null;
-
-    const cancelListeners = () => {
-      window.removeEventListener('wheel', handleInterrupt);
-      window.removeEventListener('touchstart', handleInterrupt);
-    };
-
-    const handleInterrupt = () => {
-      if (scrollAnimRef.current !== null) {
-        cancelAnimationFrame(scrollAnimRef.current);
-        scrollAnimRef.current = null;
-      }
-      cancelListeners();
-    };
-
-    window.addEventListener('wheel', handleInterrupt, { passive: true });
-    window.addEventListener('touchstart', handleInterrupt, { passive: true });
-
-    // Smooth cubic bezier easing for organic, graceful scrolling
-    const easeInOutCubic = (t: number) => {
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    };
-
-    const step = (currentTime: number) => {
-      if (startTime === null) startTime = currentTime;
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const ease = easeInOutCubic(progress);
-
-      window.scrollTo(0, startY + distance * ease);
-
-      if (elapsed < duration) {
-        scrollAnimRef.current = requestAnimationFrame(step);
-      } else {
-        scrollAnimRef.current = null;
-        cancelListeners();
-      }
-    };
-
-    scrollAnimRef.current = requestAnimationFrame(step);
   };
 
-  const scrollToMainContent = (duration = 1100) => {
+  const scrollToMainContent = (_duration?: number) => {
     const mainEl = document.getElementById('main-content');
     if (!mainEl) return;
 
@@ -511,11 +467,11 @@ export const App: React.FC = () => {
     const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
     const targetY = Math.max(0, rect.top + currentScrollY - headerHeight - 12);
 
-    smoothScrollTo(targetY, duration);
+    smoothScrollTo(targetY);
   };
 
   // Dedicated smooth scroll for Diagnostics 3D Studio window
-  const scrollToDiagnosticsStudio = (duration = 1100) => {
+  const scrollToDiagnosticsStudio = (_duration?: number) => {
     let attempts = 0;
     const checkAndScroll = () => {
       const studioEl =
@@ -527,7 +483,7 @@ export const App: React.FC = () => {
         const rect = studioEl.getBoundingClientRect();
         const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
         const targetY = Math.max(0, rect.top + currentScrollY - headerHeight - 12);
-        smoothScrollTo(targetY, duration);
+        smoothScrollTo(targetY);
       } else if (attempts < 25) {
         attempts++;
         setTimeout(checkAndScroll, 40);
@@ -566,6 +522,12 @@ export const App: React.FC = () => {
   }, []);
 
   const handleTabChange = (tab: TabType) => {
+    // Reset any stuck scroll locks on body or html
+    try {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    } catch {}
+
     // lazy tab chunk-ის ჩატვირთვა transition-ად — ძველი ხედი რჩება სანამ ახალი ჩაიტვირთება
     React.startTransition(() => setActiveTab(tab));
     try {
@@ -576,15 +538,20 @@ export const App: React.FC = () => {
     if (tab === 'obd') {
       setObdEntranceTrigger(prev => prev + 1);
       setTimeout(() => {
-        scrollToDiagnosticsStudio(1100);
+        scrollToDiagnosticsStudio();
       }, 50);
+      return;
+    }
+
+    if (tab === 'map') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     // On EVERY tab clicked in the main navigation menu, smoothly scroll past the cover banner
     // so the lower window/content is revealed gracefully
     setTimeout(() => {
-      scrollToMainContent(1100);
+      scrollToMainContent();
     }, 40);
   };
 
