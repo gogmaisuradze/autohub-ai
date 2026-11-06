@@ -19,8 +19,7 @@ import {
   Calendar,
   Navigation as NavigationIcon,
   AlertTriangle,
-  GraduationCap,
-  ChevronRight
+  GraduationCap
 } from 'lucide-react';
 
 interface Props {
@@ -146,112 +145,8 @@ export const HomeHub: React.FC<Props> = ({
     }
   ];
 
-  const healthPercent = dtcCodes.length === 0 ? 100 : Math.max(40, 100 - dtcCodes.length * 15);
-
   return (
-    <>
-      {/* ============================================================ */}
-      {/* 1. MOBILE HOME SCREEN (md:hidden - Wissol-style layout)       */}
-      {/* ============================================================ */}
-      <div className="md:hidden space-y-3.5 max-w-md mx-auto">
-        {/* 1. Hero-ბარათი (navy ფონი, gold აქცენტი): „ჩემი მანქანა" + ჯანმრთელობა % + ხარვეზების რაოდ. + ბოლო სკანი */}
-        <div
-          onClick={() => {
-            sounds.playClick();
-            onSelectDepartment('obd');
-          }}
-          className="bg-[#14213D] text-white rounded-3xl p-5 shadow-lg border border-navy/40 relative overflow-hidden cursor-pointer active:scale-[0.99] transition-all"
-        >
-          {/* Top row */}
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-white/80 tracking-wide">
-              ჩემი მანქანა
-            </span>
-            <Car size={22} className="text-gold" />
-          </div>
-
-          {/* Main metric: Health % */}
-          <div className="flex items-baseline gap-2 mb-3">
-            <span className="text-4xl font-black text-gold font-mono tracking-tight">
-              {healthPercent}%
-            </span>
-            <span className="text-base font-bold text-white/90">
-              ჯანმრთელობა
-            </span>
-          </div>
-
-          {/* Bottom row: Faults + Last scan */}
-          <div className="flex items-center gap-4 text-xs font-mono text-white/75 pt-2 border-t border-white/10">
-            <span>ხარვეზი: <strong className="text-white font-bold">{dtcCodes.length}</strong></span>
-            <span>ბოლო სკანი: <strong className="text-white font-bold">დღეს</strong></span>
-          </div>
-        </div>
-
-        {/* 2. 2 პატარა ბარათი (გვერდიგვერდ): ჯარიმები · სერვისი */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* ჯარიმები */}
-          <div
-            onClick={() => {
-              sounds.playClick();
-              onSelectDepartment('fines');
-            }}
-            className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80 cursor-pointer active:scale-95 transition-all text-left flex flex-col justify-between"
-          >
-            <ShieldAlert size={22} className="text-navy mb-2" />
-            <div>
-              <h4 className="text-xs font-black text-navy leading-tight">ჯარიმები</h4>
-              <p className="text-[11px] text-slate-500 font-medium font-mono mt-0.5">
-                {pendingFines.length} აქტიური
-              </p>
-            </div>
-          </div>
-
-          {/* სერვისი */}
-          <div
-            onClick={() => {
-              sounds.playClick();
-              onSelectDepartment('service');
-            }}
-            className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80 cursor-pointer active:scale-95 transition-all text-left flex flex-col justify-between"
-          >
-            <Wrench size={22} className="text-navy mb-2" />
-            <div>
-              <h4 className="text-xs font-black text-navy leading-tight">სერვისი</h4>
-              <p className="text-[11px] text-slate-500 font-medium font-mono mt-0.5">
-                შემდეგი: {oilService && oilService.remaining_km ? `${oilService.remaining_km}კმ` : '1200კმ'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* 3. სექცია „სწრაფი მოქმედება" + list-row „სკანი WiFi-ით" (ისარით) */}
-        <div className="space-y-1.5 pt-1">
-          <h4 className="text-sm font-black text-navy px-1">
-            სწრაფი მოქმედება
-          </h4>
-
-          <div
-            onClick={() => {
-              sounds.playClick();
-              onSelectDepartment('obd');
-            }}
-            className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80 flex items-center justify-between cursor-pointer active:scale-[0.99] transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <Activity size={20} className="text-gold" strokeWidth={2.4} />
-              <span className="text-sm font-bold text-navy">
-                სკანი WiFi-ით
-              </span>
-            </div>
-            <ChevronRight size={18} className="text-slate-400" />
-          </div>
-        </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* 2. DESKTOP HOME SCREEN (hidden md:block)                      */}
-      {/* ============================================================ */}
-      <div className="hidden md:block space-y-6">
+    <div className="space-y-6">
       {/* 1. Missing Data & AI Clarification Banner (If any core vehicle parameters are unfulfilled) */}
       {missingFields.length > 0 && (
         <div className="p-4 sm:p-5 rounded-3xl neu-card border border-amber-300/80 bg-gradient-to-r from-amber-50/90 via-white to-amber-50/50 flex flex-wrap items-center justify-between gap-3 shadow-xs animate-fade-in">
@@ -403,7 +298,6 @@ export const HomeHub: React.FC<Props> = ({
         })}
       </div>
 
-      </div>
-    </>
+    </div>
   );
 };

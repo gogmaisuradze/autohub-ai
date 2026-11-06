@@ -15,9 +15,7 @@ import {
   Sparkles,
   RefreshCw,
   FileText,
-  Crown,
-  Fuel,
-  Bell
+  Crown
 } from 'lucide-react';
 import { renderDriverAvatar } from './Fines/driverAvatars';
 
@@ -304,97 +302,8 @@ export const Header: React.FC<Props> = ({
 
   return (
     <header className="w-full max-w-full overflow-visible border-b border-slate-300/80 transition-colors relative z-40 bg-[#ECEAE5]">
-      {/* ============================================================ */}
-      {/* 1. MOBILE HEADER (md:hidden - Wissol-style compact layout)    */}
-      {/* ============================================================ */}
-      <div className="md:hidden px-3 py-2.5 flex items-center justify-between gap-2 w-full max-w-md mx-auto">
-        {/* Left: Vehicle Status Pill Button */}
-        <div ref={mobileVehicleTriggerRef} className="relative min-w-0">
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              setDropdownOpen((prev) => !prev);
-            }}
-            className="px-3.5 py-1.5 rounded-full bg-white text-navy text-xs font-black flex items-center gap-2 border border-slate-200/90 shadow-xs active:scale-95 transition-all cursor-pointer"
-            title={isGe ? 'მანქანები / გარაჟი' : 'Vehicles / Garage'}
-          >
-            <span className="w-2.5 h-2.5 rounded-full bg-[#D97706] shrink-0" />
-            <span className="truncate max-w-[130px] font-extrabold text-navy">
-              {vehicle?.model
-                ? `${vehicle.model} · ${vehicle.year || '2024'}`
-                : `${vehicle?.brand || 'CarMe'} · ${vehicle?.year || '2024'}`}
-            </span>
-            <ChevronDown className={`w-3 h-3 text-slate-400 shrink-0 transition-transform ${dropdownOpen ? 'rotate-180 text-gold' : ''}`} />
-          </button>
-          {dropdownOpen && renderGarageDropdown()}
-        </div>
-
-        {/* Right: 4-Icon Rounded White Container (Fuel, Car, Bell+RedDot, Profile) */}
-        <div className="rounded-full bg-white px-3 py-1.5 flex items-center gap-3.5 border border-slate-200/90 shadow-xs text-navy shrink-0">
-          {/* 1. Fuel Pump Icon */}
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              onSelectTab?.('map');
-            }}
-            className="text-navy hover:text-gold transition-colors active:scale-90 flex items-center justify-center"
-            title={isGe ? 'საწვავის ფასები და რადარები' : 'Fuel & Radar Map'}
-          >
-            <Fuel size={17} className="stroke-[2.2]" />
-          </button>
-
-          {/* 2. Car Icon */}
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              if (onOpenVehicleAccountModal) {
-                onOpenVehicleAccountModal();
-              } else {
-                onSelectTab?.('garage');
-              }
-            }}
-            className="text-navy hover:text-gold transition-colors active:scale-90 flex items-center justify-center"
-            title={isGe ? 'ჩემი გარაჟი / ტექ-პასპორტი' : 'My Garage'}
-          >
-            <Car size={17} className="stroke-[2.2]" />
-          </button>
-
-          {/* 3. Bell Icon with Red Dot */}
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              onSelectTab?.('fines');
-            }}
-            className="relative text-navy hover:text-gold transition-colors active:scale-90 flex items-center justify-center"
-            title={isGe ? 'ჯარიმები და შეტყობინებები' : 'Notifications & Fines'}
-          >
-            <Bell size={17} className="stroke-[2.2]" />
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
-          </button>
-
-          {/* 4. Profile Avatar / Person Icon */}
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              onOpenUserAccountModal?.();
-            }}
-            className="text-navy hover:text-gold transition-colors active:scale-90 flex items-center justify-center"
-            title={isGe ? 'ჩემი პროფილი' : 'User Profile'}
-          >
-            <User size={17} className="stroke-[2.2]" />
-          </button>
-        </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* 2. DESKTOP HEADER (hidden md:flex)                           */}
-      {/* ============================================================ */}
-      <div className="hidden md:flex max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-0 sm:h-20 items-center justify-between gap-1.5 sm:gap-4 w-full">
+      {/* ROW 1: Brand & Top Action Controls */}
+      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-0 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-4 w-full">
         
         {/* 1. Left: Brand & Subtitle with CarMe Circular Logo */}
         <div
@@ -620,6 +529,52 @@ export const Header: React.FC<Props> = ({
             )}
           </div>
         </div>
+      </div>
+
+      {/* ROW 2: Mobile Vehicle Selector Bar (Lifts the vehicle pill above navigation on mobile) */}
+      <div className="md:hidden px-2.5 pb-2.5 pt-1 max-w-7xl mx-auto w-full">
+        {hasSelectedVehicle && vehicle ? (
+          <div ref={mobileVehicleTriggerRef} data-tour="header-vehicle-mobile" className="relative w-full">
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setDropdownOpen((prev) => !prev);
+              }}
+              className={`w-full px-3.5 py-2 rounded-2xl bg-white text-slate-900 text-xs font-black flex items-center justify-between shadow-xs border-2 border-slate-300 active:scale-[0.99] transition-all cursor-pointer ${
+                dropdownOpen ? 'ring-2 ring-gold border-amber-400 bg-white' : ''
+              }`}
+              title={isGe ? 'მანქანები / გარაჟი' : 'Vehicles / Garage'}
+              aria-expanded={dropdownOpen}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <Car className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="font-extrabold text-slate-900 truncate">
+                  {vehicle.brand} {vehicle.model}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {vehicle.plate_number && (
+                  <GeorgianLicensePlate plate={vehicle.plate_number} size="xs" variant="white" />
+                )}
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-500 shrink-0 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-amber-500' : ''}`} />
+              </div>
+            </button>
+            {dropdownOpen && renderGarageDropdown()}
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              sounds.playClick();
+              onOpenAddVehicle?.();
+            }}
+            className="w-full py-2 px-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 shadow-sm border border-amber-600"
+            title={isGe ? 'ახალი ავტომობილის დამატება' : 'Add New Vehicle'}
+          >
+            <Plus className="w-4 h-4 text-slate-950 shrink-0 stroke-[3]" />
+            <span className="font-black">{isGe ? '+ მანქანის დამატება' : '+ Add Vehicle'}</span>
+          </button>
+        )}
       </div>
     </header>
   );

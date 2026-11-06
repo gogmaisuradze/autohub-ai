@@ -12,9 +12,7 @@ import {
   Bot,
   MoreHorizontal,
   X,
-  ChevronRight,
-  User,
-  Settings
+  ChevronRight
 } from 'lucide-react';
 
 export type TabType = 'home' | 'obd' | 'fines' | 'parking' | 'ai' | 'service' | 'map' | 'garage' | 'settings' | 'exam';
@@ -24,7 +22,6 @@ interface Props {
   onSelectTab: (tab: TabType) => void;
   dtcCount: number;
   finesCount: number;
-  onOpenUserAccountModal?: () => void;
   lang?: 'ge' | 'en';
 }
 
@@ -33,7 +30,6 @@ export const Navigation: React.FC<Props> = ({
   onSelectTab,
   dtcCount,
   finesCount,
-  onOpenUserAccountModal,
   lang = 'ge'
 }) => {
   const isGe = lang === 'ge';
@@ -246,126 +242,98 @@ export const Navigation: React.FC<Props> = ({
       {/* ----------------------------------------------------------- */}
       <nav
         data-tour="mobile-bottom-nav"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#ECEAE5] border-t border-slate-300 shadow-[0_-6px_24px_rgba(0,0,0,0.08)] pb-[max(0.85rem,env(safe-area-inset-bottom,0px))] pt-1.5 px-3 select-none"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#ECEAE5] border-t border-slate-300 shadow-[0_-6px_24px_rgba(0,0,0,0.08)] pb-[max(0.85rem,env(safe-area-inset-bottom,0px))] pt-1.5 px-1.5 select-none"
         style={{ touchAction: 'manipulation' }}
       >
         <div className="grid grid-cols-5 gap-1 items-center max-w-md mx-auto">
-          {/* 1st Tab: მთავარი */}
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              setIsMoreSheetOpen(false);
-              onSelectTab('home');
-            }}
-            className={`relative flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-150 active:scale-90 ${
-              activeTab === 'home' && !isMoreSheetOpen ? 'text-gold font-black' : 'text-slate-500 hover:text-navy'
-            }`}
-          >
-            {activeTab === 'home' && !isMoreSheetOpen && (
-              <span className="absolute -top-1 w-6 h-1 rounded-full bg-gold shadow-[0_0_8px_rgba(217,119,6,0.6)]" />
-            )}
-            <div className="relative flex items-center justify-center w-7 h-7">
-              <LayoutGrid className={`w-5 h-5 transition-transform ${activeTab === 'home' && !isMoreSheetOpen ? 'text-gold scale-110' : 'text-slate-500'}`} />
-            </div>
-            <span className={`text-[10.5px] tracking-tight mt-0.5 whitespace-nowrap ${activeTab === 'home' && !isMoreSheetOpen ? 'font-black text-navy' : 'font-medium text-slate-500'}`}>
-              {isGe ? 'მთავარი' : 'Home'}
-            </span>
-          </button>
+          {mobilePrimaryTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
 
-          {/* 2nd Tab: გარაჟი */}
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              setIsMoreSheetOpen(false);
-              onSelectTab('garage');
-            }}
-            className={`relative flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-150 active:scale-90 ${
-              activeTab === 'garage' && !isMoreSheetOpen ? 'text-gold font-black' : 'text-slate-500 hover:text-navy'
-            }`}
-          >
-            {activeTab === 'garage' && !isMoreSheetOpen && (
-              <span className="absolute -top-1 w-6 h-1 rounded-full bg-gold shadow-[0_0_8px_rgba(217,119,6,0.6)]" />
-            )}
-            <div className="relative flex items-center justify-center w-7 h-7">
-              <Car className={`w-5 h-5 transition-transform ${activeTab === 'garage' && !isMoreSheetOpen ? 'text-gold scale-110' : 'text-slate-500'}`} />
-            </div>
-            <span className={`text-[10.5px] tracking-tight mt-0.5 whitespace-nowrap ${activeTab === 'garage' && !isMoreSheetOpen ? 'font-black text-navy' : 'font-medium text-slate-500'}`}>
-              {isGe ? 'გარაჟი' : 'Garage'}
-            </span>
-          </button>
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setIsMoreSheetOpen(false);
+                  onSelectTab(tab.id);
+                }}
+                className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-150 active:scale-90 ${
+                  isActive
+                    ? 'text-navy font-black'
+                    : 'text-slate-500 hover:text-navy'
+                }`}
+              >
+                {/* Active Indicator Top Pill */}
+                {isActive && (
+                  <span className="absolute -top-1 w-7 h-1 rounded-full bg-gold shadow-[0_0_8px_rgba(217,119,6,0.6)]" />
+                )}
 
-          {/* 3rd Tab: სკანერი (ცენტრი - ამაღლებული მრგვალი Navy ღილაკი) */}
-          <div className="relative flex flex-col items-center justify-center -mt-6">
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                setIsMoreSheetOpen(false);
-                onSelectTab('obd');
-              }}
-              className={`w-14 h-14 rounded-full bg-[#14213D] border-4 border-[#ECEAE5] shadow-lg flex items-center justify-center active:scale-95 transition-all cursor-pointer ${
-                activeTab === 'obd' && !isMoreSheetOpen ? 'ring-2 ring-gold shadow-[0_0_18px_rgba(245,158,11,0.55)]' : ''
-              }`}
-              title={isGe ? 'OBD სკანერი' : 'OBD Scanner'}
-            >
-              <Activity className="w-6 h-6 text-gold" strokeWidth={2.4} />
-            </button>
-            <span className={`text-[10.5px] tracking-tight mt-1 whitespace-nowrap ${activeTab === 'obd' && !isMoreSheetOpen ? 'font-black text-navy' : 'font-medium text-slate-500'}`}>
-              {isGe ? 'სკანერი' : 'Scanner'}
-            </span>
-          </div>
+                <div className="relative flex items-center justify-center w-8 h-8">
+                  <Icon
+                    className={`w-6 h-6 transition-transform duration-150 ${
+                      isActive ? 'text-gold scale-110' : 'text-slate-500'
+                    }`}
+                  />
 
-          {/* 4th Tab: რუკა */}
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              setIsMoreSheetOpen(false);
-              onSelectTab('map');
-            }}
-            className={`relative flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-150 active:scale-90 ${
-              activeTab === 'map' && !isMoreSheetOpen ? 'text-gold font-black' : 'text-slate-500 hover:text-navy'
-            }`}
-          >
-            {activeTab === 'map' && !isMoreSheetOpen && (
-              <span className="absolute -top-1 w-6 h-1 rounded-full bg-gold shadow-[0_0_8px_rgba(217,119,6,0.6)]" />
-            )}
-            <div className="relative flex items-center justify-center w-7 h-7">
-              <NavigationIcon className={`w-5 h-5 transition-transform ${activeTab === 'map' && !isMoreSheetOpen ? 'text-gold scale-110' : 'text-slate-500'}`} />
-            </div>
-            <span className={`text-[10.5px] tracking-tight mt-0.5 whitespace-nowrap ${activeTab === 'map' && !isMoreSheetOpen ? 'font-black text-navy' : 'font-medium text-slate-500'}`}>
-              {isGe ? 'რუკა' : 'Map'}
-            </span>
-          </button>
+                  {/* Micro Badge for DTC or Fines */}
+                  {tab.badge && (
+                    <span
+                      className={`absolute -top-1 -right-2 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black ${tab.badgeColor} shadow-xs`}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
+                </div>
 
-          {/* 5th Tab: მეტი */}
+                <span
+                  className={`text-[11px] tracking-tight mt-0.5 whitespace-nowrap ${
+                    isActive ? 'font-black text-navy' : 'font-medium text-slate-500'
+                  }`}
+                >
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+
+          {/* 5th Button: More / Menu with Bottom Sheet Drawer */}
           <button
             type="button"
             onClick={() => {
               sounds.playClick();
               setIsMoreSheetOpen((prev) => !prev);
             }}
-            className={`relative flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all duration-150 active:scale-90 ${
-              isMoreSheetOpen || (isMoreActive && activeTab !== 'garage')
-                ? 'text-gold font-black'
+            className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-150 active:scale-90 ${
+              isMoreActive || isMoreSheetOpen
+                ? 'text-navy font-black'
                 : 'text-slate-500 hover:text-navy'
             }`}
           >
-            {(isMoreSheetOpen || (isMoreActive && activeTab !== 'garage')) && (
-              <span className="absolute -top-1 w-6 h-1 rounded-full bg-gold shadow-[0_0_8px_rgba(217,119,6,0.6)]" />
+            {/* Active Indicator for More Tab */}
+            {(isMoreActive || isMoreSheetOpen) && (
+              <span className="absolute -top-1 w-7 h-1 rounded-full bg-gold shadow-[0_0_8px_rgba(217,119,6,0.6)]" />
             )}
-            <div className="relative flex items-center justify-center w-7 h-7">
+
+            <div className="relative flex items-center justify-center w-8 h-8">
               <MoreHorizontal
-                className={`w-5 h-5 transition-transform ${
-                  isMoreSheetOpen || (isMoreActive && activeTab !== 'garage') ? 'text-gold scale-110' : 'text-slate-500'
+                className={`w-6 h-6 transition-transform duration-150 ${
+                  isMoreActive || isMoreSheetOpen ? 'text-gold scale-110' : 'text-slate-500'
                 }`}
               />
+
+              {/* Pulsing indicator if one of more services is active */}
+              {isMoreActive && (
+                <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-gold animate-ping" />
+              )}
             </div>
-            <span className={`text-[10.5px] tracking-tight mt-0.5 whitespace-nowrap ${
-              isMoreSheetOpen || (isMoreActive && activeTab !== 'garage') ? 'font-black text-navy' : 'font-medium text-slate-500'
-            }`}>
+
+            <span
+              className={`text-[11px] tracking-tight mt-0.5 whitespace-nowrap ${
+                isMoreActive || isMoreSheetOpen ? 'font-black text-navy' : 'font-medium text-slate-500'
+              }`}
+            >
               {isGe ? 'მეტი' : 'More'}
             </span>
           </button>
@@ -385,20 +353,20 @@ export const Navigation: React.FC<Props> = ({
 
           {/* Bottom Sheet Modal Container */}
           <div
-            className="relative z-10 w-full bg-[#ECEAE5] rounded-t-3xl border-t border-white/90 shadow-2xl p-4 pb-[max(5.5rem,env(safe-area-inset-bottom,0px))] animate-slide-up max-h-[85dvh] overflow-y-auto"
+            className="relative z-10 w-full bg-[#ECEAE5] rounded-t-3xl border-t border-white/90 shadow-2xl p-4 pb-[max(2rem,env(safe-area-inset-bottom,0px))] animate-slide-up max-h-[85dvh] overflow-y-auto"
             style={{ overscrollBehavior: 'contain' }}
           >
             {/* Native Drag Pill Handle */}
             <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-3" />
 
             {/* Header */}
-            <div className="flex items-start justify-between pb-1 mb-3">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-300/60">
               <div>
-                <h3 className="text-2xl font-black text-navy tracking-tight">
-                  {isGe ? 'მეტი' : 'More'}
+                <h3 className="text-base font-black text-navy tracking-tight">
+                  {isGe ? 'CarMe სერვისები' : 'CarMe Services'}
                 </h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  {isGe ? 'აპლიკაციის ყველა ფუნქცია' : 'All application features'}
+                <p className="text-[11px] text-slate-500 font-medium">
+                  {isGe ? 'დამატებითი ფუნქციები & მართვა' : 'Additional features & tools'}
                 </p>
               </div>
               <button
@@ -413,134 +381,58 @@ export const Navigation: React.FC<Props> = ({
               </button>
             </div>
 
-            {/* 1. 2-Column Grid (6 Cards: Fines, Parking, AI Mechanic, Service, Tickets, Profile) */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              {/* 1. ჯარიმები */}
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setIsMoreSheetOpen(false);
-                  onSelectTab('fines');
-                }}
-                className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col items-start gap-3 active:scale-95 transition-all text-left"
-              >
-                <ShieldAlert size={22} className="text-navy" />
-                <span className="text-xs font-black text-navy">{isGe ? 'ჯარიმები' : 'Fines'}</span>
-              </button>
+            {/* Service Cards List */}
+            <div className="space-y-2">
+              {moreSheetItems.map((item) => {
+                const isActive = activeTab === item.id;
+                const Icon = item.icon;
 
-              {/* 2. პარკინგი */}
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setIsMoreSheetOpen(false);
-                  onSelectTab('parking');
-                }}
-                className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col items-start gap-3 active:scale-95 transition-all text-left"
-              >
-                <ParkingSquare size={22} className="text-navy" />
-                <span className="text-xs font-black text-navy">{isGe ? 'პარკინგი' : 'Parking'}</span>
-              </button>
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      sounds.playSuccess();
+                      setIsMoreSheetOpen(false);
+                      onSelectTab(item.id);
+                    }}
+                    className={`w-full p-3 rounded-2xl transition-all flex items-center justify-between gap-3 text-left active:scale-[0.98] ${
+                      isActive
+                        ? 'bg-white border-2 border-gold shadow-md'
+                        : 'bg-white/80 hover:bg-white border border-slate-200/80 shadow-xs'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}>
+                        <Icon size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-xs font-black truncate ${isActive ? 'text-gold' : 'text-navy'}`}>
+                            {item.title}
+                          </span>
+                          {item.badge && (
+                            <span className="px-1.5 py-0.2 rounded-md text-[9px] font-mono font-black bg-gold/20 text-navy border border-gold/40">
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </div>
 
-              {/* 3. AI მექანიკოსი */}
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setIsMoreSheetOpen(false);
-                  onSelectTab('ai');
-                }}
-                className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col items-start gap-3 active:scale-95 transition-all text-left"
-              >
-                <Bot size={22} className="text-navy" />
-                <span className="text-xs font-black text-navy">{isGe ? 'AI მექანიკოსი' : 'AI Mechanic'}</span>
-              </button>
-
-              {/* 4. სერვისი */}
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setIsMoreSheetOpen(false);
-                  onSelectTab('service');
-                }}
-                className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col items-start gap-3 active:scale-95 transition-all text-left"
-              >
-                <Wrench size={22} className="text-navy" />
-                <span className="text-xs font-black text-navy">{isGe ? 'სერვისი' : 'Service'}</span>
-              </button>
-
-              {/* 5. ბილეთები */}
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setIsMoreSheetOpen(false);
-                  onSelectTab('exam');
-                }}
-                className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col items-start gap-3 active:scale-95 transition-all text-left"
-              >
-                <GraduationCap size={22} className="text-navy" />
-                <span className="text-xs font-black text-navy">{isGe ? 'ბილეთები' : 'Tickets'}</span>
-              </button>
-
-              {/* 6. პროფილი */}
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setIsMoreSheetOpen(false);
-                  if (onOpenUserAccountModal) {
-                    onOpenUserAccountModal();
-                  } else {
-                    onSelectTab('garage');
-                  }
-                }}
-                className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col items-start gap-3 active:scale-95 transition-all text-left"
-              >
-                <User size={22} className="text-navy" />
-                <span className="text-xs font-black text-navy">{isGe ? 'პროფილი' : 'Profile'}</span>
-              </button>
+                    <ChevronRight size={16} className={`shrink-0 ${isActive ? 'text-gold' : 'text-slate-400'}`} />
+                  </button>
+                );
+              })}
             </div>
 
-            {/* 2. Featured Card (Full Width): ჩემი გარაჟი */}
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                setIsMoreSheetOpen(false);
-                onSelectTab('garage');
-              }}
-              className="w-full bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3.5 cursor-pointer active:scale-[0.99] transition-all mb-4 text-left"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-[#14213D] flex items-center justify-center shrink-0">
-                <Car size={24} className="text-gold" />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-sm font-black text-navy">{isGe ? 'ჩემი გარაჟი' : 'My Garage'}</h4>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">{isGe ? 'მანქანები, ტექ-პასპორტი' : 'Vehicles, Registration'}</p>
-              </div>
-            </button>
-
-            {/* 3. Section: პარამეტრები */}
-            <div className="space-y-1.5 mb-2">
-              <h5 className="text-sm font-black text-navy px-1">{isGe ? 'პარამეტრები' : 'Settings'}</h5>
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setIsMoreSheetOpen(false);
-                  onSelectTab('settings');
-                }}
-                className="w-full bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer active:scale-[0.99] transition-all text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <Settings size={20} className="text-navy" />
-                  <span className="text-sm font-bold text-navy">{isGe ? 'აპის პარამეტრები' : 'App Settings'}</span>
-                </div>
-                <ChevronRight size={18} className="text-slate-400" />
-              </button>
+            {/* Quick CarMe Info Footer in Sheet */}
+            <div className="mt-4 pt-3 border-t border-slate-300/50 flex items-center justify-between text-[11px] text-slate-500">
+              <span className="font-mono font-bold text-navy">CarMe v2.5 PRO</span>
+              <span className="text-gold font-bold">carme.ge</span>
             </div>
           </div>
         </div>
