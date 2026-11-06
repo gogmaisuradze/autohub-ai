@@ -1191,6 +1191,7 @@ export const App: React.FC = () => {
           onSelectTab={handleTabChange}
           dtcCount={dtcCodes.length}
           finesCount={fines.filter(f => f.status === 'pending').length}
+          onOpenUserAccountModal={() => setIsUserAccountModalOpen(true)}
           lang={lang}
         />
       </div>
