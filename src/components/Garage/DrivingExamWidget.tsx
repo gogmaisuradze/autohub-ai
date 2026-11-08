@@ -926,101 +926,126 @@ export const DrivingExamWidget: React.FC = () => {
           </div>
 
           {/* Main Content Row */}
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px] items-start gap-5 lg:gap-8 pb-5 border-b border-white/10">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] items-start gap-4 lg:gap-8 pb-4 border-b border-white/10">
 
             {/* Left Side: Icon & Big Titles */}
-            <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-              <div className="relative w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-full bg-white flex items-center justify-center shadow-[0_6px_18px_rgba(0,0,0,0.28)] ring-1 ring-black/5">
-                <GraduationCap3D size={34} className="transform hover:scale-105 transition-transform" />
-              </div>
-
-              <div className="min-w-0 flex-1 space-y-3">
-                {/* Badges Strip */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 rounded-full text-[11px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-gold text-slate-950 shadow-xs flex items-center gap-1.5">
-                    <Sparkles size={12} className="text-navy" />
-                    <span>საგამოცდო ბაზა 2026</span>
-                  </span>
-                  <span className="text-xs font-mono font-bold text-amber-200/90 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
-                    {totalCategoryCount || categoryConfig.count} სასწავლო ბილეთი
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-white/10 text-slate-300 border border-white/10 hidden sm:inline-block">
-                    32 სასწავლო თემა • CarMe
-                  </span>
+            <div className="space-y-3 min-w-0">
+              {/* Header: Icon + Badges + Title */}
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-md backdrop-blur-md">
+                  <GraduationCap3D size={32} className="transform hover:scale-105 transition-transform" />
                 </div>
 
-                {/* Large Title */}
-                <h2 className="text-xl sm:text-2xl xl:text-3xl font-black text-white tracking-tight leading-tight pt-0.5 flex flex-wrap items-center gap-2">
-                  <span>მართვის მოწმობის ბილეთები</span>
-                  <span className="text-xs sm:text-sm font-black px-2.5 py-0.5 rounded-xl bg-gold/20 text-gold border border-gold/40">
-                    ყველა 10 კატეგორია
-                  </span>
-                </h2>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  {/* Badges Strip */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-gold text-slate-950 shadow-xs flex items-center gap-1">
+                      <Sparkles size={11} className="text-navy" />
+                      <span>საგამოცდო ბაზა 2026</span>
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-amber-200/90 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                      {totalCategoryCount || categoryConfig.count} ბილეთი
+                    </span>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/40">
+                      10 კატეგორია
+                    </span>
+                  </div>
 
-                <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-                  საქართველოს შსს მომსახურების სააგენტოს თეორიული გამოცდის სრული სიმულატორი, გამოუცნობი ადაპტური ალგორითმი და აკადემიური მზადების რანგები.
-                </p>
+                  {/* Title */}
+                  <h2 className="text-lg sm:text-2xl xl:text-3xl font-black text-white tracking-tight leading-tight">
+                    მართვის მოწმობის ბილეთები
+                  </h2>
+                </div>
+              </div>
 
-                {/* Dashboard Quick Navigation Buttons (Signs & Leaderboard) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-3 pt-5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setExtrasTab(extrasTab === 'signs' ? 'tickets' : 'signs');
-                    }}
-                    className={`relative overflow-visible w-full min-w-0 h-14 pl-20 pr-3 py-2 rounded-2xl text-xs font-bold transition-colors flex items-center gap-3 border cursor-pointer ${
-                      extrasTab === 'signs'
-                        ? 'bg-gradient-to-r from-amber-400 to-gold text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-gold'
-                        : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-gold/60'
-                    }`}
-                  >
-                    <span className="pointer-events-none absolute -top-2 left-1 flex h-20 w-20 items-center justify-center"><img src={`${import.meta.env.BASE_URL}images/icons/signs-3d.png`} alt="" loading="lazy" decoding="async" className="w-20 h-20 object-contain drop-shadow-[0_5px_4px_rgba(0,0,0,0.22)]" /></span>
-                    <span className="min-w-0 flex-1 text-left leading-relaxed">საგზაო ნიშნების შესწავლა</span>
-                    <span className={`ml-auto shrink-0 whitespace-nowrap text-[9px] font-mono px-1.5 py-0.5 rounded-full ${
-                      extrasTab === 'signs' ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-amber-300'
+              {/* Subtitle */}
+              <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                საქართველოს შსს მომსახურების სააგენტოს თეორიული გამოცდის სრული სიმულატორი, ადაპტური ალგორითმი და აკადემიური მზადების რანგები.
+              </p>
+
+              {/* Dashboard Quick Navigation Buttons (Signs & Leaderboard) - Proportional 2-Column Grid */}
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setExtrasTab(extrasTab === 'signs' ? 'tickets' : 'signs');
+                  }}
+                  className={`p-2.5 sm:p-3 rounded-2xl text-left border transition-all flex items-center gap-2.5 cursor-pointer min-w-0 ${
+                    extrasTab === 'signs'
+                      ? 'bg-gradient-to-r from-amber-400 to-gold text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-gold'
+                      : 'bg-white/10 hover:bg-white/15 text-white border-white/15 hover:border-gold/50'
+                  }`}
+                >
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center">
+                    <img
+                      src={`${import.meta.env.BASE_URL}images/icons/signs-3d.png`}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs sm:text-sm font-black leading-tight truncate">
+                      საგზაო ნიშნები
+                    </div>
+                    <div className={`text-[10px] font-mono mt-0.5 truncate ${
+                      extrasTab === 'signs' ? 'text-slate-900 font-bold' : 'text-amber-300 font-medium'
                     }`}>
                       252 ნიშანი
-                    </span>
-                  </button>
+                    </div>
+                  </div>
+                </button>
 
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setExtrasTab(extrasTab === 'ranking' ? 'tickets' : 'ranking');
+                  }}
+                  className={`p-2.5 sm:p-3 rounded-2xl text-left border transition-all flex items-center gap-2.5 cursor-pointer min-w-0 ${
+                    extrasTab === 'ranking'
+                      ? 'bg-gradient-to-r from-amber-400 to-gold text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-gold'
+                      : 'bg-white/10 hover:bg-white/15 text-white border-white/15 hover:border-gold/50'
+                  }`}
+                >
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center">
+                    <img
+                      src={`${import.meta.env.BASE_URL}images/icons/top20-trophy-v1.png`}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-contain -rotate-6 drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs sm:text-sm font-black leading-tight truncate">
+                      საუკეთესო ოცეული
+                    </div>
+                    <div className={`text-[10px] font-mono mt-0.5 truncate ${
+                      extrasTab === 'ranking' ? 'text-slate-900 font-bold' : 'text-amber-300 font-medium'
+                    }`}>
+                      Top 20 რეიტინგი
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              {extrasTab !== 'tickets' && (
+                <div className="pt-1">
                   <button
                     type="button"
                     onClick={() => {
                       sounds.playClick();
-                      setExtrasTab(extrasTab === 'ranking' ? 'tickets' : 'ranking');
+                      setExtrasTab('tickets');
                     }}
-                    className={`relative overflow-visible w-full min-w-0 h-14 pl-20 pr-3 py-2 rounded-2xl text-xs font-bold transition-colors flex items-center gap-3 border cursor-pointer ${
-                      extrasTab === 'ranking'
-                        ? 'bg-gradient-to-r from-amber-400 to-gold text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-gold'
-                        : 'bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-gold/60'
-                    }`}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-300 hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 transition-all inline-flex items-center gap-1.5 cursor-pointer"
                   >
-                    <span className="pointer-events-none absolute -top-4 -left-2 flex h-20 w-20 items-center justify-center"><img src={`${import.meta.env.BASE_URL}images/icons/top20-trophy-v1.png`} alt="" loading="lazy" decoding="async" className="w-16 h-16 -rotate-12 object-contain drop-shadow-[0_5px_4px_rgba(0,0,0,0.22)]" /></span>
-                    <span className="min-w-0 flex-1 text-left leading-relaxed">საუკეთესო ოცეული</span>
-                    <span className={`ml-auto shrink-0 whitespace-nowrap text-[9px] font-mono px-1.5 py-0.5 rounded-full ${
-                      extrasTab === 'ranking' ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-amber-300'
-                    }`}>
-                      Top 20
-                    </span>
+                    <span>← ბილეთებზე დაბრუნება</span>
                   </button>
-
-
-
-                  {extrasTab !== 'tickets' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sounds.playClick();
-                        setExtrasTab('tickets');
-                      }}
-                      className="px-3 py-2 rounded-2xl text-xs font-bold text-amber-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/15 transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>← ბილეთებზე დაბრუნება</span>
-                    </button>
-                  )}
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Right Side: Interactive Thematic Driver's License Card Visual & Action Button */}
