@@ -1213,7 +1213,15 @@ export const App: React.FC = () => {
           onDeleteVehicle={handleDeleteVehicle}
           isSoundEnabled={isSoundEnabled}
           onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
-          onNavigateHome={() => handleTabChange('home')}
+          onNavigateHome={() => {
+            sounds.playClick();
+            React.startTransition(() => setActiveTab('home'));
+            try {
+              localStorage.setItem('autohub_active_tab', 'home');
+              window.location.hash = 'home';
+            } catch {}
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
           onOpenBookingModal={() => handleOpenBookingModal()}
           onOpenUserAccountModal={() => setIsUserAccountModalOpen(true)}

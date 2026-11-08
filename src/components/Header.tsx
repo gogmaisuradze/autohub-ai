@@ -305,61 +305,60 @@ export const Header: React.FC<Props> = ({
       {/* ROW 1: Brand & Top Action Controls */}
       <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-0 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-4 w-full">
         
-        {/* 1. Left: Brand & Subtitle with CarMe Circular Logo */}
-        <div
-          className="flex items-center gap-2 sm:gap-3 cursor-pointer group min-w-0 shrink-0"
-          onClick={onNavigateHome}
-        >
-          {/* CarMe 3D Emblem Badge */}
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-md border-2 border-amber-400 group-hover:scale-105 transition-transform shrink-0 p-0.5">
-            <img
-              src="/carme-circle-badge.png?v=4"
-              alt="CarMe.ge Logo"
-              className="w-full h-full object-cover rounded-full"
-            />
-          </div>
+        {/* 1. Left: Brand & CarMe Circular Logo */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
+          {/* Logo & Brand: Click takes you to Home & scrolls to top */}
+          <div
+            onClick={onNavigateHome}
+            className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group select-none"
+            title={isGe ? 'მთავარ გვერდზე დაბრუნება' : 'Back to Home'}
+          >
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-md border-2 border-amber-400 group-hover:scale-105 transition-transform shrink-0 p-0.5">
+              <img
+                src="/carme-circle-badge.png?v=4"
+                alt="CarMe.ge Logo"
+                className="w-full h-full object-cover rounded-full"
+              />
+            </div>
 
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900 group-hover:text-amber-600 transition-colors">
                 CarMe
               </h1>
-              {/* Owner / Account Mode Pill directly inside CarMe Logo */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  sounds.playClick();
-                  if (onOpenUserAccountModal) {
-                    onOpenUserAccountModal();
-                  } else if (onToggleAccountMode) {
-                    onToggleAccountMode();
-                  }
-                }}
-                className={`px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-black flex items-center gap-1 border-2 shadow-xs transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0 ${
-                  accountMode === 'owner'
-                    ? 'bg-amber-100 text-amber-950 border-amber-500 hover:bg-amber-200'
-                    : 'bg-blue-100 text-blue-950 border-blue-400 hover:bg-blue-200'
-                }`}
-                title={
-                  isGe
-                    ? 'მომხმარებლის პროფილი • დააჭირეთ სანახავად და შესავსებად'
-                    : 'User Account • Click to view and fill profile'
-                }
-              >
-                <span>{accountMode === 'owner' ? '👑' : '👤'}</span>
-                <span>{accountMode === 'owner' ? 'Owner' : 'Guest'}</span>
-                {!vehicle?.driver_name && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" title={isGe ? 'შეავსეთ პროფილი' : 'Fill Profile'} />
-                )}
-              </button>
+              <p className="text-[11px] sm:text-xs text-slate-600 font-medium hidden min-[600px]:block truncate">
+                {isGe
+                  ? 'AutoHub • OBD-II ტელემეტრია & AI მექანიკოსი'
+                  : 'AutoHub • OBD-II Telemetry & AI Mechanic'}
+              </p>
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-600 font-medium hidden min-[600px]:block truncate">
-              {isGe
-                ? 'AutoHub • OBD-II ტელემეტრია & AI მექანიკოსი'
-                : 'AutoHub • OBD-II Telemetry & AI Mechanic'}
-            </p>
           </div>
+
+          {/* Persona Toggle Button: switches between Owner and Guest */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              sounds.playClick();
+              if (onToggleAccountMode) {
+                onToggleAccountMode();
+              } else if (onOpenUserAccountModal) {
+                onOpenUserAccountModal();
+              }
+            }}
+            className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-black flex items-center gap-1 border-2 shadow-xs transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0 select-none ${
+              accountMode === 'owner'
+                ? 'bg-amber-100 text-amber-950 border-amber-500 hover:bg-amber-200'
+                : 'bg-blue-100 text-blue-950 border-blue-400 hover:bg-blue-200'
+            }`}
+            title={
+              isGe
+                ? `პერსონის შეცვლა • დააჭირეთ გადასართავად (${accountMode === 'owner' ? 'სტუმარზე / Guest' : 'მფლობელზე / Owner'})`
+                : `Switch Persona • Click to toggle (${accountMode === 'owner' ? 'Guest' : 'Owner'})`
+            }
+          >
+            <span>{accountMode === 'owner' ? '👑' : '👤'}</span>
+            <span>{accountMode === 'owner' ? 'Owner' : 'Guest'}</span>
+          </button>
         </div>
 
         {/* 2. Right Controls */}
