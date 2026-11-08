@@ -746,9 +746,12 @@ export const InteractiveSiteTour: React.FC<Props> = ({
     }
   }, [currentStepIndex, isTourActive, cardHeight]);
 
-  // Trigger initial Cloud Bot after 1.5s delay if not dismissed in this session
+  // Trigger initial Cloud Bot after 1.5s delay if not dismissed in this session (disabled on mobile to keep screen clear)
   useEffect(() => {
     try {
+      if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        return;
+      }
       const dismissed = localStorage.getItem('autohub_cloud_guide_dismissed');
       if (!dismissed) {
         const timer = setTimeout(() => {
