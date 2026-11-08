@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TabType } from './Navigation';
 import { DtcCode, FineItem, ServiceItem, VehicleProfile, ServiceBookingItem } from '../types';
 import { PromptFieldType } from './Modals/ContextualFieldPromptModal';
@@ -19,7 +19,9 @@ import {
   Calendar,
   Navigation as NavigationIcon,
   AlertTriangle,
-  GraduationCap
+  GraduationCap,
+  ChevronDown,
+  LayoutGrid
 } from 'lucide-react';
 
 interface Props {
@@ -49,6 +51,7 @@ export const HomeHub: React.FC<Props> = ({
   isTourActive = false,
   orbitSpinTrigger
 }) => {
+  const [isDepartmentsOpen, setIsDepartmentsOpen] = useState(false);
   const pendingFines = fines.filter(f => f.status === 'pending');
   const totalFineDiscounted = pendingFines.reduce((acc, f) => acc + f.discounted_amount_gel, 0);
   const oilService = services.find(s => s.category === 'oil' || s.variant_key === 'engine_oil' || s.title_ge.toLowerCase().includes('ზეთ'));
@@ -71,27 +74,27 @@ export const HomeHub: React.FC<Props> = ({
     missingFields.push({ field: 'tech_passport', label: 'ტექ-პასპორტი' });
   }
 
-  // Horizontal Neumorphic Cards Stack (Matching Image 4)
+  // Dynamic Department Cards based on current active vehicle
   const mainDepartments = [
     {
       id: 'obd' as TabType,
       title: 'დიაგნოსტიკა',
-      subtitle: 'DTC კოდები და ცოცხალი ტელემეტრია',
+      subtitle: `${vehicle.brand} ${vehicle.model} • DTC კოდები & ტელემეტრია`,
       icon: Activity,
       badgeText: dtcCodes.length > 0 ? `${dtcCodes.length}` : 'OK',
-      badgeColor: dtcCodes.length > 0 ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white',
-      badgeSubtext: dtcCodes.length > 0 ? '3 ხარვეზი' : 'სუფთაა',
-      tag: 'CAN 11/500 Live'
+      badgeColor: dtcCodes.length > 0 ? 'bg-rose-500 text-white font-bold' : 'bg-emerald-500 text-white font-bold',
+      badgeSubtext: dtcCodes.length > 0 ? `${dtcCodes.length} ხარვეზი` : 'სისტემა სუფთაა',
+      tag: vehicle.engine || 'CAN 11/500 Live'
     },
     {
       id: 'fines' as TabType,
       title: 'ჯარიმები',
-      subtitle: 'ვიდეოჯარიმები და 20%-იანი ფასდაკლების ვადა',
+      subtitle: `ნომერი: ${vehicle.plate_number || 'GE-000-XX'} • ${vehicle.driver_license_points ?? 100} ქულა`,
       icon: ShieldAlert,
       badgeText: pendingFines.length > 0 ? `${pendingFines.length}` : 'OK',
       badgeColor: pendingFines.length > 0 ? 'bg-gold text-navy font-bold shadow-gold-soft' : 'bg-emerald-500 text-white font-bold shadow-sm',
-      badgeSubtext: pendingFines.length > 0 ? `${totalFineDiscounted} ₾ ვადაში` : 'სისტემა სუფთაა',
-      tag: pendingFines.length > 0 ? 'აქტიური ჯარიმა' : '0 ჯარიმა'
+      badgeSubtext: pendingFines.length > 0 ? `${totalFineDiscounted} ₾ ვადაში` : 'ჯარიმა არ არის',
+      tag: pendingFines.length > 0 ? `${pendingFines.length} აქტიური` : '0 ჯარიმა'
     },
     {
       id: 'exam' as TabType,
@@ -100,13 +103,13 @@ export const HomeHub: React.FC<Props> = ({
       icon: GraduationCap,
       badgeText: '2026',
       badgeColor: 'bg-indigo-600 text-white font-black shadow-sm',
-      badgeSubtext: 'A • B • C • D',
-      tag: 'თეორიული გამოცდა'
+      badgeSubtext: vehicle.driver_name ? vehicle.driver_name.split(' ')[0] : 'თეორია',
+      tag: 'A • B • C • D'
     },
     {
       id: 'parking' as TabType,
       title: 'პარკინგი',
-      subtitle: 'ზონალური ტაიმერი და აბონემენტები',
+      subtitle: `ზონალური ტაიმერი • ${vehicle.plate_number || 'GE-000-XX'} (15 წთ უფასო)`,
       icon: ParkingSquare,
       badgeText: 'P',
       badgeColor: 'bg-blue-600 text-white font-black shadow-sm',
@@ -116,17 +119,17 @@ export const HomeHub: React.FC<Props> = ({
     {
       id: 'service' as TabType,
       title: 'სერვისი',
-      subtitle: 'ზეთი, ხუნდები, ფილტრები, ტექდათვალიერება',
+      subtitle: `გარბენი: ${vehicle.mileage_km.toLocaleString()} კმ • ${oilService ? oilService.title_ge : 'ზეთის შეცვლა'}`,
       icon: Wrench,
-      badgeText: oilService ? `${oilService.health_percentage}%` : 'OK',
+      badgeText: oilService ? `${oilService.health_percentage}%` : '100%',
       badgeColor: 'bg-gold text-navy font-bold',
-      badgeSubtext: oilService ? `დარჩა ${oilService.remaining_km} კმ` : 'სერვისი',
-      tag: 'რესურსის კონტროლი'
+      badgeSubtext: oilService ? `დარჩა ${oilService.remaining_km} კმ` : 'სერვისი OK',
+      tag: `${vehicle.brand} სპეციფიკაცია`
     },
     {
       id: 'map' as TabType,
       title: 'რუკა',
-      subtitle: 'რადარები, საპატრულო და საწვავის ფასები',
+      subtitle: `რადარები, საპატრულო და ${vehicle.fuel_type === 'petrol' ? 'საწვავი' : 'დამტენები'}`,
       icon: NavigationIcon,
       badgeText: 'LIVE',
       badgeColor: 'bg-cyan-500 text-white font-black shadow-sm',
@@ -136,12 +139,12 @@ export const HomeHub: React.FC<Props> = ({
     {
       id: 'ai' as TabType,
       title: 'AI მექანიკოსი',
-      subtitle: 'კონსულტაცია და ფასები ქართულად',
+      subtitle: `ონლაინ კონსულტაცია: ${vehicle.brand} ${vehicle.model}`,
       icon: Bot,
       badgeText: 'AI',
       badgeColor: 'bg-navy text-white',
-      badgeSubtext: 'AI ონლაინ',
-      tag: 'ხედავს ბორტ-მონაცემებს'
+      badgeSubtext: `${vehicle.brand} ასისტენტი`,
+      tag: 'ონლაინ 24/7'
     }
   ];
 
@@ -227,75 +230,116 @@ export const HomeHub: React.FC<Props> = ({
         />
       </div>
 
-      {/* 3. Stacked Neumorphic Department Cards (Strictly Matching Image 4) */}
-      <div data-tour="department-cards" className="scroll-mt-32 space-y-3.5">
-        <div className="flex items-center justify-between px-2">
-          <h3 className="text-sm font-extrabold text-navy uppercase tracking-wider">
-            ყველა განყოფილება (დააკლიკეთ გასახსნელად)
-          </h3>
-          <span className="text-xs font-mono text-slate-400">{mainDepartments.length} განყოფილება</span>
-        </div>
-
-        {mainDepartments.map((dept) => {
-          const Icon = dept.icon;
-          const isAi = dept.id === 'ai';
-          return (
-            <div
-              key={dept.id}
-              onClick={() => {
-                sounds.playClick();
-                onSelectDepartment(dept.id);
-              }}
-              className={`neu-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer hover:shadow-neu-flat transition-all group active:scale-[0.99] relative overflow-hidden ${
-                isAi
-                  ? 'border border-gold/40 shadow-sm hover:border-gold/70'
-                  : ''
-              }`}
-            >
-              {isAi && <div className="ai-lightning-flash" />}
-              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl neu-circle flex items-center justify-center shrink-0 ${
-                  isAi ? 'border border-gold/60' : ''
-                }`}>
-                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-navy group-hover:text-gold transition-colors" />
-                </div>
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm sm:text-base font-bold text-navy group-hover:text-gold transition-colors truncate">
-                      {dept.title}
-                    </h4>
-                    <span className="hidden sm:inline-block text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                      {dept.tag}
-                    </span>
-                  </div>
-                  <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 line-clamp-1">
-                    {dept.subtitle}
-                  </p>
-                </div>
-              </div>
-
-              {/* Neumorphic Right Pill Badge (Matching Image 4) */}
-              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                <div className="text-right hidden sm:block">
-                  <span className="text-xs font-bold text-navy block font-mono">
-                    {dept.badgeSubtext}
-                  </span>
-                </div>
-                
-                <div className={`min-w-8 sm:min-w-10 h-8 sm:h-10 px-2.5 sm:px-3 rounded-full ${dept.badgeColor} flex items-center justify-center font-black text-xs sm:text-sm shadow-md shrink-0 whitespace-nowrap ${
-                  isAi ? 'border-2 border-gold shadow-[0_0_12px_rgba(252,163,17,0.7)]' : ''
-                }`}>
-                  {dept.badgeText}
-                </div>
-
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full neu-circle flex items-center justify-center text-slate-400 group-hover:text-navy group-hover:translate-x-1 transition-all shrink-0">
-                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </div>
-              </div>
+      {/* 3. Collapsible Department Cards Section (აკეცილი ერთიანი ჩამოსაშლელი ველი) */}
+      <div data-tour="department-cards" className="scroll-mt-32 rounded-3xl bg-white/80 backdrop-blur-md border border-slate-200/90 shadow-xs overflow-hidden transition-all">
+        {/* Accordion Header / Trigger Button */}
+        <button
+          type="button"
+          onClick={() => {
+            sounds.playClick();
+            setIsDepartmentsOpen(prev => !prev);
+          }}
+          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-slate-50/80 transition-colors select-none cursor-pointer"
+          aria-expanded={isDepartmentsOpen}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-[#14213D] text-[#F59E0B] flex items-center justify-center shrink-0 shadow-sm">
+              <LayoutGrid size={20} />
             </div>
-          );
-        })}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm sm:text-base font-black text-navy">
+                  ყველა განყოფილება
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-bold bg-amber-100 text-amber-950 border border-amber-300">
+                  {vehicle.brand} {vehicle.model}
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">
+                {isDepartmentsOpen
+                  ? 'დააჭირეთ ასაკეცად • 7 განყოფილება'
+                  : `${dtcCodes.length > 0 ? `${dtcCodes.length} ხარვეზი` : '0 ხარვეზი'} · ${pendingFines.length} ჯარიმა · ${oilService ? `${oilService.health_percentage}% სერვისი` : 'სერვისი OK'}`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="hidden sm:inline text-xs font-bold text-slate-500 font-mono">
+              {isDepartmentsOpen ? 'აკეცვა' : 'ჩამოშლა'}
+            </span>
+            <div className={`w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 transition-transform duration-300 ${
+              isDepartmentsOpen ? 'rotate-180 bg-amber-100 text-amber-900' : ''
+            }`}>
+              <ChevronDown size={18} />
+            </div>
+          </div>
+        </button>
+
+        {/* Collapsible Content Body with the 7 Department Cards */}
+        {isDepartmentsOpen && (
+          <div className="p-3 sm:p-4 pt-1 space-y-3 border-t border-slate-100 animate-fade-in">
+            {mainDepartments.map((dept) => {
+              const Icon = dept.icon;
+              const isAi = dept.id === 'ai';
+              return (
+                <div
+                  key={dept.id}
+                  onClick={() => {
+                    sounds.playClick();
+                    onSelectDepartment(dept.id);
+                  }}
+                  className={`neu-card rounded-2xl sm:rounded-3xl p-3.5 sm:p-4.5 flex items-center justify-between gap-3 sm:gap-4 cursor-pointer hover:shadow-neu-flat transition-all group active:scale-[0.99] relative overflow-hidden bg-white ${
+                    isAi
+                      ? 'border border-gold/40 shadow-sm hover:border-gold/70'
+                      : ''
+                  }`}
+                >
+                  {isAi && <div className="ai-lightning-flash" />}
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl neu-circle flex items-center justify-center shrink-0 ${
+                      isAi ? 'border border-gold/60' : ''
+                    }`}>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-navy group-hover:text-gold transition-colors" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm sm:text-base font-bold text-navy group-hover:text-gold transition-colors truncate">
+                          {dept.title}
+                        </h4>
+                        <span className="hidden sm:inline-block text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                          {dept.tag}
+                        </span>
+                      </div>
+                      <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 line-clamp-1">
+                        {dept.subtitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right Pill Badge */}
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <div className="text-right hidden sm:block">
+                      <span className="text-xs font-bold text-navy block font-mono">
+                        {dept.badgeSubtext}
+                      </span>
+                    </div>
+                    
+                    <div className={`min-w-8 sm:min-w-10 h-8 sm:h-10 px-2.5 sm:px-3 rounded-full ${dept.badgeColor} flex items-center justify-center font-black text-xs sm:text-sm shadow-md shrink-0 whitespace-nowrap ${
+                      isAi ? 'border-2 border-gold shadow-[0_0_12px_rgba(252,163,17,0.7)]' : ''
+                    }`}>
+                      {dept.badgeText}
+                    </div>
+
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full neu-circle flex items-center justify-center text-slate-400 group-hover:text-navy group-hover:translate-x-1 transition-all shrink-0">
+                      <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
     </div>

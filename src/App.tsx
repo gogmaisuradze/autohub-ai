@@ -1180,6 +1180,28 @@ export const App: React.FC = () => {
     setDtcCodes([]);
   };
 
+  const handleSelectVehicle = (newVehicle: VehicleProfile) => {
+    setVehicle(newVehicle);
+    try {
+      localStorage.setItem('autohub_vehicle_profile', JSON.stringify(newVehicle));
+    } catch {}
+
+    // Synchronize services for the newly selected vehicle
+    const vehicleServices = getServicesForVehicle(newVehicle);
+    setServices(vehicleServices);
+
+    // Synchronize DTC codes if saved for this vehicle
+    try {
+      const dtcKey = `autohub_dtc_${newVehicle.vin || newVehicle.id}`;
+      const savedDtc = localStorage.getItem(dtcKey);
+      if (savedDtc) {
+        setDtcCodes(JSON.parse(savedDtc));
+      } else {
+        setDtcCodes(newVehicle.id === 'CAR_01' ? INITIAL_DTC_CODES : []);
+      }
+    } catch {}
+  };
+
   return (
     <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-[#ECEAE5] text-navy antialiased">
       {/* 1 & 2. Unified Sticky Header & Navigation Bar (Always visible on screen, never hidden) */}
@@ -1187,10 +1209,7 @@ export const App: React.FC = () => {
         <Header
           vehicle={vehicle}
           allVehicles={allVehicles}
-          onChangeVehicle={(newVehicle) => {
-            setVehicle(newVehicle);
-            localStorage.setItem('autohub_vehicle_profile', JSON.stringify(newVehicle));
-          }}
+          onChangeVehicle={handleSelectVehicle}
           onDeleteVehicle={handleDeleteVehicle}
           isSoundEnabled={isSoundEnabled}
           onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
@@ -1436,12 +1455,7 @@ export const App: React.FC = () => {
                 <ParkingModule
                   vehicle={vehicle}
                   allVehicles={allVehicles}
-                  onSelectVehicle={(v) => {
-                    setVehicle(v);
-                    try {
-                      localStorage.setItem('autohub_vehicle_profile', JSON.stringify(v));
-                    } catch {}
-                  }}
+                  onSelectVehicle={handleSelectVehicle}
                   onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
                   onOpenFieldPrompt={handleOpenFieldPrompt}
                   onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
@@ -1500,10 +1514,7 @@ export const App: React.FC = () => {
                   onDeleteVehicle={handleDeleteVehicle}
                   onOpenFieldPrompt={handleOpenFieldPrompt}
                   allVehicles={allVehicles}
-                  onSelectVehicle={(v) => {
-                    setVehicle(v);
-                    localStorage.setItem('autohub_vehicle_profile', JSON.stringify(v));
-                  }}
+                  onSelectVehicle={handleSelectVehicle}
                   isSoundEnabled={isSoundEnabled}
                   onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
                   onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
