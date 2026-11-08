@@ -136,11 +136,8 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
       <Bot size={22} className="relative z-10 text-gold group-hover:rotate-12 transition-transform" />
       <Zap size={11} className="absolute -bottom-0.5 -right-0.5 text-gold fill-gold z-20 animate-bounce" />
       
-      {/* Live green dot indicator - completely outside overflow-hidden so it is never clipped */}
-      <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 z-30 pointer-events-none">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-400 ring-2 ring-[#14213D] shadow-xs" />
-      </span>
+      {/* Live green dot indicator - compact, subtle and unclipped */}
+      <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-1.5 ring-[#14213D] z-30 animate-pulse pointer-events-none shadow-xs" />
     </button>
   );
 
@@ -184,10 +181,7 @@ export const FloatingMechanicWidget: React.FC<Props> = ({
                         <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-navy/90 flex items-center justify-center text-gold shadow-sm group-hover:scale-110 transition-transform border border-gold/40">
                           <Bot size={18} className="drop-shadow-xs" />
                         </div>
-                        <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 pointer-events-none">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-400 ring-2 ring-navy" />
-                        </span>
+                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-1.5 ring-navy animate-pulse pointer-events-none" />
                         <Zap size={10} className="absolute -bottom-1 -left-1 text-gold fill-gold animate-bounce" />
                       </div>
 
