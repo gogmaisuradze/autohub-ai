@@ -333,31 +333,19 @@ export const Header: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Persona Toggle Button: switches between Owner and Guest */}
+          {/* Compact Persona Owner Pill (User Icon + Owner) */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               sounds.playClick();
-              if (onToggleAccountMode) {
-                onToggleAccountMode();
-              } else if (onOpenUserAccountModal) {
-                onOpenUserAccountModal();
-              }
+              onOpenUserAccountModal?.();
             }}
-            className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-black flex items-center gap-1 border-2 shadow-xs transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0 select-none ${
-              accountMode === 'owner'
-                ? 'bg-amber-100 text-amber-950 border-amber-500 hover:bg-amber-200'
-                : 'bg-blue-100 text-blue-950 border-blue-400 hover:bg-blue-200'
-            }`}
-            title={
-              isGe
-                ? `პერსონის შეცვლა • დააჭირეთ გადასართავად (${accountMode === 'owner' ? 'სტუმარზე / Guest' : 'მფლობელზე / Owner'})`
-                : `Switch Persona • Click to toggle (${accountMode === 'owner' ? 'Guest' : 'Owner'})`
-            }
+            className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono font-bold flex items-center gap-1 border border-amber-400 bg-amber-50/90 text-amber-950 shadow-2xs transition-all cursor-pointer hover:bg-amber-100 active:scale-95 shrink-0 select-none"
+            title={isGe ? 'მომხმარებლის პროფილი • დააჭირეთ სანახავად' : 'User Profile • Click to view'}
           >
-            <span>{accountMode === 'owner' ? '👑' : '👤'}</span>
-            <span>{accountMode === 'owner' ? 'Owner' : 'Guest'}</span>
+            <User size={11} className="text-amber-700 shrink-0" />
+            <span>Owner</span>
           </button>
         </div>
 
