@@ -573,6 +573,9 @@ export const ParkingZonesMap: React.FC<Props> = ({
             ტარიფი და შეღავათი გადაამოწმეთ ოფიციალურ აპში
           </div>
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
+            <a href="https://waze.com/ul?ll=${zone.geometry.center[0]},${zone.geometry.center[1]}&navigate=yes" target="_blank" rel="noreferrer" class="hidden md:flex flex-1 py-1 px-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-bold text-center items-center justify-center gap-1 transition-colors">
+              <span>Waze მისვლა</span>
+            </a>
             <a href="${googleMapsLink}" target="_blank" rel="noreferrer" class="flex-1 py-1 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold text-center transition-colors">
               Google Maps-ით მისვლა ↗
             </a>

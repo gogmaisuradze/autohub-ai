@@ -1343,16 +1343,17 @@ export const App: React.FC = () => {
         {/* 4. POLICE (პოლიცია: ჯარიმები & მართვის მოწმობის ბილეთები) */}
         {(activeTab === 'police' || activeTab === 'fines' || activeTab === 'exam') && (
           <div className="space-y-4 animate-fade-in">
-            {/* Single Prominent Dynamic Switcher Button between Fines & Exam */}
+            {/* Sub-Navigation between Fines & Exam */}
             <div className="max-w-7xl mx-auto px-2 sm:px-4">
-              <div className="flex items-center justify-center">
+              {/* Mobile View (md:hidden): Single Prominent Dynamic Switcher Button */}
+              <div className="flex md:hidden items-center justify-center">
                 <button
                   type="button"
                   onClick={() => {
                     sounds.playClick();
                     setPoliceSubTab(policeSubTab === 'fines' ? 'exam' : 'fines');
                   }}
-                  className="group relative px-6 py-2.5 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white shadow-lg hover:shadow-xl border-2 border-gold/70 hover:border-gold transition-all flex items-center gap-3 hover:scale-105 active:scale-95"
+                  className="group relative px-6 py-2.5 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white shadow-lg hover:shadow-xl border-2 border-gold/70 hover:border-gold transition-all flex items-center gap-3 active:scale-95"
                   title={
                     policeSubTab === 'fines'
                       ? 'მართვის მოწმობის ბილეთებზე გადასვლა'
@@ -1403,6 +1404,45 @@ export const App: React.FC = () => {
                   )}
                 </button>
               </div>
+
+              {/* Desktop View (hidden md:flex): Two-Tab Segmented Pill Switcher */}
+              <div className="hidden md:flex items-center justify-center p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-xs max-w-sm sm:max-w-md mx-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setPoliceSubTab('fines');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 relative ${
+                    policeSubTab === 'fines'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <ShieldAlert className="w-4 h-4 text-[#F59E0B]" />
+                  <span>ჯარიმები & ქულები</span>
+                  {fines.filter(f => f.status === 'pending').length > 0 && (
+                    <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black bg-rose-500 text-white">
+                      {fines.filter(f => f.status === 'pending').length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setPoliceSubTab('exam');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                    policeSubTab === 'exam'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <GraduationCap className="w-4 h-4 text-[#F59E0B]" />
+                  <span>საგამოცდო ბილეთები</span>
+                </button>
+              </div>
             </div>
 
             {policeSubTab === 'fines' ? (
@@ -1439,16 +1479,17 @@ export const App: React.FC = () => {
         {/* 5. MAP (რუკა & პარკინგი გაერთიანებული) */}
         {(activeTab === 'map' || activeTab === 'parking') && (
           <div className="space-y-4 animate-fade-in">
-            {/* Single Prominent Dynamic Switcher Button between Traffic Map & Parking */}
+            {/* Sub-Navigation between Traffic Map & Parking */}
             <div className="max-w-7xl mx-auto px-2 sm:px-4">
-              <div className="flex items-center justify-center">
+              {/* Mobile View (md:hidden): Single Prominent Dynamic Switcher Button */}
+              <div className="flex md:hidden items-center justify-center">
                 <button
                   type="button"
                   onClick={() => {
                     sounds.playClick();
                     setMapSubTab(mapSubTab === 'traffic' ? 'parking' : 'traffic');
                   }}
-                  className="group relative px-6 py-2.5 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white shadow-lg hover:shadow-xl border-2 border-gold/70 hover:border-gold transition-all flex items-center gap-3 hover:scale-105 active:scale-95"
+                  className="group relative px-6 py-2.5 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white shadow-lg hover:shadow-xl border-2 border-gold/70 hover:border-gold transition-all flex items-center gap-3 active:scale-95"
                   title={
                     mapSubTab === 'traffic'
                       ? 'ჭკვიან პარკინგზე გადასვლა'
@@ -1490,6 +1531,40 @@ export const App: React.FC = () => {
                   )}
                 </button>
               </div>
+
+              {/* Desktop View (hidden md:flex): Two-Tab Segmented Pill Switcher */}
+              <div className="hidden md:flex items-center justify-center p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-xs max-w-sm sm:max-w-md mx-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setMapSubTab('traffic');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                    mapSubTab === 'traffic'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <NavigationIcon className="w-4 h-4 text-[#F59E0B]" />
+                  <span>მოძრაობის რუკა</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setMapSubTab('parking');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                    mapSubTab === 'parking'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <ParkingSquare className="w-4 h-4 text-[#F59E0B]" />
+                  <span>ჭკვიანი პარკინგი</span>
+                </button>
+              </div>
             </div>
 
             {mapSubTab === 'traffic' ? (
@@ -1514,16 +1589,17 @@ export const App: React.FC = () => {
         {/* 6. GARAGE (გარაჟი & სერვისების ჟურნალი გაერთიანებული) */}
         {(activeTab === 'garage' || activeTab === 'service' || activeTab === 'settings') && (
           <div className="space-y-4 animate-fade-in">
-            {/* Single Prominent Dynamic Switcher Button between Garage & Service */}
+            {/* Sub-Navigation between Garage & Service */}
             <div className="max-w-7xl mx-auto px-2 sm:px-4">
-              <div className="flex items-center justify-center">
+              {/* Mobile View (md:hidden): Single Prominent Dynamic Switcher Button */}
+              <div className="flex md:hidden items-center justify-center">
                 <button
                   type="button"
                   onClick={() => {
                     sounds.playClick();
                     setGarageSubTab(garageSubTab === 'vehicles' ? 'service' : 'vehicles');
                   }}
-                  className="group relative px-6 py-2.5 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white shadow-lg hover:shadow-xl border-2 border-gold/70 hover:border-gold transition-all flex items-center gap-3 hover:scale-105 active:scale-95"
+                  className="group relative px-6 py-2.5 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white shadow-lg hover:shadow-xl border-2 border-gold/70 hover:border-gold transition-all flex items-center gap-3 active:scale-95"
                   title={
                     garageSubTab === 'vehicles'
                       ? 'სერვისების ჟურნალზე გადასვლა'
@@ -1563,6 +1639,40 @@ export const App: React.FC = () => {
                       <ArrowRight className="w-4 h-4 text-gold group-hover:translate-x-1 transition-transform ml-1" />
                     </>
                   )}
+                </button>
+              </div>
+
+              {/* Desktop View (hidden md:flex): Two-Tab Segmented Pill Switcher */}
+              <div className="hidden md:flex items-center justify-center p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-xs max-w-sm sm:max-w-md mx-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setGarageSubTab('vehicles');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                    garageSubTab === 'vehicles'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <Car className="w-4 h-4 text-[#F59E0B]" />
+                  <span>ჩემი გარაჟი</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setGarageSubTab('service');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                    garageSubTab === 'service'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <Wrench className="w-4 h-4 text-[#F59E0B]" />
+                  <span>სერვისების ჟურნალი</span>
                 </button>
               </div>
             </div>

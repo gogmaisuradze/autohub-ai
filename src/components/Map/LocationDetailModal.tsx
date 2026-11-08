@@ -442,6 +442,16 @@ export const LocationDetailModal: React.FC<Props> = ({
         <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
           <div className="flex items-center gap-2 flex-1 min-w-[240px]">
             <a
+              href={`https://waze.com/ul?ll=${report.lat},${report.lng}&navigate=yes`}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden md:flex flex-1 py-2.5 px-3.5 rounded-2xl bg-white hover:bg-slate-100 text-[#1A73E8] font-black text-xs items-center justify-center gap-1.5 border border-slate-200 shadow-xs transition-all"
+            >
+              <Navigation size={14} className="text-[#1A73E8]" />
+              <span>Waze ნავიგაცია ↗</span>
+            </a>
+
+            <a
               href={gmapsUrl}
               target="_blank"
               rel="noreferrer"

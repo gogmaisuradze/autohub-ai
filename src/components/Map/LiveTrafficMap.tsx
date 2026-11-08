@@ -562,7 +562,8 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
   const [isLeafletReady, setIsLeafletReady] = useState(false);
   const [activeReportCount, setActiveReportCount] = useState(0);
   const [mapRevision, setMapRevision] = useState(0);
-  useRevealResult(filterType, 'live-traffic-map-canvas');
+  const [activeMapView, setActiveMapView] = useState<'autohub_map' | 'waze_live'>('autohub_map');
+  useRevealResult(`${filterType}:${activeMapView}`, 'live-traffic-map-canvas');
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -1376,8 +1377,11 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
           <!-- Category Specifics (Fuel prices / Speed limit / Parking details) -->
           ${popupBodyHtml}
 
-          <!-- Direction Links (Google Maps) -->
+          <!-- Direction Links (Google Maps & Desktop Waze) -->
           <div class="mt-2.5 pt-2 border-t border-[#E8EAED] flex items-center gap-1.5 text-xs">
+            <a href="https://waze.com/ul?ll=${item.lat},${item.lng}&navigate=yes" target="_blank" rel="noreferrer" class="hidden md:flex flex-1 py-1 px-2 rounded-xl bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#1A73E8] border border-[#DADCE0] font-bold text-center items-center justify-center gap-1 transition-all">
+              <span>Waze ↗</span>
+            </a>
             <a href="${gmapsLink}" target="_blank" rel="noreferrer" class="flex-1 py-1 px-2 rounded-xl bg-[#1A73E8] hover:bg-[#1557B0] text-white font-bold text-center flex items-center justify-center gap-1 transition-all shadow-xs">
               <span>Google Maps ↗</span>
             </a>
@@ -1632,6 +1636,36 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
 
           {/* Action buttons */}
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* View Mode Switcher: Desktop Only (hidden md:flex) */}
+            <div className="hidden md:flex items-center gap-1 p-1 bg-white/90 rounded-2xl border border-slate-200/90 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setActiveMapView('autohub_map');
+                  setTimeout(() => { mapInstanceRef.current?.invalidateSize(); }, 80);
+                }}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeMapView === 'autohub_map'
+                    ? 'bg-navy text-gold shadow-sm font-black'
+                    : 'text-slate-600 hover:text-navy hover:bg-slate-100'
+                }`}
+              >
+                <span>🗺️ საგზაო რუკა</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { sounds.playClick(); setActiveMapView('waze_live'); }}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeMapView === 'waze_live'
+                    ? 'bg-cyan-600 text-white shadow-sm font-black'
+                    : 'text-slate-600 hover:text-navy hover:bg-slate-100'
+                }`}
+              >
+                <span>🚗 Waze Live Map</span>
+              </button>
+            </div>
+
             {/* Refresh */}
             <button
               onClick={() => {
@@ -1951,7 +1985,54 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         </div>
       </div>
 
-      {/* 3. Interactive Map Canvas */}
+      {/* 3. Interactive Map Canvas OR Desktop Waze Live Map View */}
+      {activeMapView === 'waze_live' ? (
+        <div className="space-y-3 animate-fade-in hidden md:block">
+          {/* Waze Info & Deeplink Banner */}
+          <div className="p-4 rounded-3xl bg-cyan-950/90 text-white border border-cyan-500/40 shadow-lg flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                <Navigation size={22} />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
+                  <span>Waze Live Map — ოფიციალური საგზაო მოძრაობა</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
+                    Live Traffic
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  ცოცხალი საცობები, შეფერხებები და მოძრაობის სიჩქარეები თბილისში (Waze Iframe Embed).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href="https://www.waze.com/live-map/directions?to=ll.41.7151%2C44.8271"
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs shadow-sm flex items-center gap-1.5 transition-all"
+              >
+                <span>Waze-ში გახსნა</span>
+                <ExternalLink size={13} />
+              </a>
+            </div>
+          </div>
+
+          {/* Official Waze Iframe Embed */}
+          <div className="relative w-full min-h-[560px] h-[560px] sm:h-[640px] rounded-3xl overflow-hidden border border-slate-700/60 shadow-xl bg-slate-950">
+            <iframe
+              src="https://embed.waze.com/iframe?zoom=13&lat=41.7151&lon=44.7850&ct=livemap"
+              width="100%"
+              height="100%"
+              allowFullScreen
+              title="Waze Live Map თბილისი"
+              className="w-full h-full border-0"
+            />
+          </div>
+        </div>
+      ) : (
       <div id="live-traffic-map-canvas" data-tour="map-canvas" className="relative w-full min-h-[560px] h-[560px] sm:h-[640px] rounded-3xl overflow-hidden border-2 border-slate-300/80 shadow-xl bg-[#F4F3F0]">
         
         {/* Leaflet DOM Node */}
@@ -2388,6 +2469,7 @@ export const LiveTrafficMap: React.FC<Props> = ({ vehicle }) => {
         )}
 
       </div>
+      )}
 
       {/* 3. Bottom Legend & Fuel / Showrooms Quick Grid */}
       <div id="live-map-bottom-section" className="grid grid-cols-1 md:grid-cols-2 gap-4 scroll-mt-24">
