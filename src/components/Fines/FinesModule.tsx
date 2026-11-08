@@ -602,7 +602,7 @@ export const FinesModule: React.FC<Props> = ({
           <div className="lg:col-span-5 space-y-3.5 border-b lg:border-b-0 lg:border-r border-slate-200/80 pb-4 lg:pb-0 lg:pr-5">
 
             {/* Top: Driver Biometric Photo & Personal Name Dual-Script */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            <div className="flex flex-row items-start gap-3 sm:gap-4">
 
               {/* Biometric Photo Frame (Enlarged Portrait Proportion) */}
               <div className="flex flex-col items-center shrink-0">
@@ -612,7 +612,7 @@ export const FinesModule: React.FC<Props> = ({
                       sounds.playClick();
                       setIsAvatarPickerOpen(true);
                     }}
-                    className="w-28 sm:w-32 h-36 sm:h-40 rounded-2xl border-2 border-slate-300 bg-slate-900 overflow-hidden shadow-md flex flex-col items-center justify-center relative cursor-pointer transition-all hover:border-gold hover:shadow-lg"
+                    className="w-24 sm:w-32 h-32 sm:h-40 rounded-2xl border-2 border-slate-300 bg-slate-900 overflow-hidden shadow-md flex flex-col items-center justify-center relative cursor-pointer transition-all hover:border-gold hover:shadow-lg"
                     title="დააჭირეთ ფოტოს / ავატარის შესაცვლელად"
                   >
                     {renderDriverAvatar(vehicle.driver_photo_url, "w-full h-full")}
@@ -647,15 +647,15 @@ export const FinesModule: React.FC<Props> = ({
                     sounds.playClick();
                     setIsAvatarPickerOpen(true);
                   }}
-                  className="mt-2.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white text-navy border border-slate-200 hover:border-gold hover:text-gold shadow-xs hover:shadow transition-all flex items-center justify-center gap-1.5 group"
+                  className="mt-2 w-full px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold bg-white text-navy border border-slate-200 hover:border-gold hover:text-gold shadow-xs hover:shadow transition-all flex items-center justify-center gap-1 group whitespace-nowrap"
                 >
-                  <Camera size={13} className="text-gold group-hover:scale-110 transition-transform" />
+                  <Camera size={12} className="text-gold group-hover:scale-110 transition-transform" />
                   <span>აირჩიე ფოტო</span>
                 </button>
               </div>
 
               {/* Passport Driver Attributes (Dual-Script Georgian & Latin) */}
-              <div className="min-w-0 flex-1 space-y-2 w-full">
+              <div className="min-w-0 flex-1 space-y-1.5 sm:space-y-2 w-full">
                 {/* 1. გვარი / Surname */}
                 <div>
                   <div className="text-[9px] uppercase font-bold text-slate-400 tracking-wider leading-none">
@@ -707,14 +707,14 @@ export const FinesModule: React.FC<Props> = ({
                 </div>
 
                 {/* 4c & 4d: Nationality & Personal ID */}
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-xs">
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-1 border-t border-slate-100 text-xs">
                   <div>
                     <span className="text-[8px] uppercase font-bold text-slate-400 block leading-none">4c. მოქალაქეობა</span>
-                    <span className="font-bold text-navy font-mono">GEO / საქართველო</span>
+                    <span className="font-bold text-navy font-mono text-[11px] sm:text-xs">GEO / საქართველო</span>
                   </div>
                   <div>
                     <span className="text-[8px] uppercase font-bold text-slate-400 block leading-none">4d. პირადი #</span>
-                    <span className="font-mono font-bold text-navy truncate block">
+                    <span className="font-mono font-bold text-navy text-[11px] sm:text-xs truncate block">
                       {driverPersonalNumber || (
                         <button
                           onClick={() => {
@@ -732,9 +732,9 @@ export const FinesModule: React.FC<Props> = ({
                 </div>
 
                 {/* 9. License Categories & Exam Tickets Shortcut */}
-                <div className="pt-1 flex items-center justify-between text-[10px] flex-wrap gap-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-slate-500">
+                <div className="pt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-bold text-slate-500 whitespace-nowrap">
                       კატეგორია: <span className="font-mono text-navy font-black">B, B1</span>
                     </span>
                     <button
@@ -743,14 +743,14 @@ export const FinesModule: React.FC<Props> = ({
                         sounds.playClick();
                         onOpenDrivingExam?.();
                       }}
-                      className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-full border border-amber-300 transition-all cursor-pointer text-[9px] shadow-2xs"
+                      className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-full border border-amber-300 transition-all cursor-pointer text-[9px] shadow-2xs whitespace-nowrap"
                       title="საგამოცდო ბილეთების გახსნა"
                     >
                       <GraduationCap size={11} className="text-amber-700" />
                       <span>921 ბილეთი 2026</span>
                     </button>
                   </div>
-                  <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 whitespace-nowrap">
                     <ShieldCheck size={11} />
                     <span>მართვის უფლება: აქტიური</span>
                   </span>

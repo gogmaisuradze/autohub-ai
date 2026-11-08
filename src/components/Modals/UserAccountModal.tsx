@@ -253,7 +253,7 @@ export const UserAccountModal: React.FC<Props> = ({
         <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-4 max-h-[70vh] overflow-y-auto no-scrollbar">
           
           {/* Top Row: Biometric Avatar & Primary Attributes */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 pb-4 border-b border-slate-100">
+          <div className="flex flex-row items-start gap-3 sm:gap-5 pb-4 border-b border-slate-100">
             
             {/* Avatar & Photo Picker */}
             <div className="flex flex-col items-center shrink-0">
@@ -263,7 +263,7 @@ export const UserAccountModal: React.FC<Props> = ({
                     sounds.playClick();
                     setIsPhotoPickerOpen(!isPhotoPickerOpen);
                   }}
-                  className="w-28 h-36 rounded-2xl border-2 border-slate-300 bg-slate-900 overflow-hidden shadow-md flex items-center justify-center relative cursor-pointer transition-all hover:border-gold hover:shadow-lg"
+                  className="w-24 sm:w-28 h-32 sm:h-36 rounded-2xl border-2 border-slate-300 bg-slate-900 overflow-hidden shadow-md flex items-center justify-center relative cursor-pointer transition-all hover:border-gold hover:shadow-lg"
                   title={isGe ? 'ფოტოს შეცვლა' : 'Change photo'}
                 >
                   {renderDriverAvatar(photoUrl, 'w-full h-full')}
@@ -291,7 +291,7 @@ export const UserAccountModal: React.FC<Props> = ({
                   sounds.playClick();
                   setIsPhotoPickerOpen(!isPhotoPickerOpen);
                 }}
-                className="mt-2 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 text-navy hover:bg-gold/20 hover:text-navy border border-slate-200 transition-all flex items-center gap-1.5"
+                className="mt-2 w-full px-2 sm:px-2.5 py-1 rounded-xl text-[10px] sm:text-[11px] font-bold bg-slate-100 text-navy hover:bg-gold/20 hover:text-navy border border-slate-200 transition-all flex items-center justify-center gap-1 whitespace-nowrap"
               >
                 <Camera size={12} className="text-gold" />
                 <span>{isGe ? 'ფოტოს არჩევა' : 'Select Photo'}</span>
