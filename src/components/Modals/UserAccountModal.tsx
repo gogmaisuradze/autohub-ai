@@ -191,9 +191,12 @@ export const UserAccountModal: React.FC<Props> = ({
               <Camera size={18} />
             </div>
             <div>
-              <div className="text-xs font-black text-gold flex items-center gap-1.5">
+              <div className="text-xs font-black text-gold flex flex-wrap items-center gap-1.5">
                 <span>{isGe ? 'პირადობის / მართვის მოწმობის AI სკანერი' : 'AI ID & License Scanner'}</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-400">OCR LIVE</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/60 whitespace-nowrap shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  OCR LIVE
+                </span>
               </div>
               <p className="text-[11px] text-slate-300">
                 {isGe ? 'გადაუღეთ ფოტო დოკუმენტს და მონაცემები ავტომატურად შეივსება' : 'Take a photo of ID to auto-fill details'}
