@@ -24,7 +24,7 @@ import { n8nService } from './services/n8nService';
 import { sounds } from './services/soundEffects';
 import { generateServicesForVehicle } from './services/vinServiceEngine';
 import { preloadCarModel } from './services/modelPreloader';
-import { ArrowLeft, ShieldAlert, GraduationCap } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, GraduationCap, Car, Wrench, ParkingSquare, Navigation as NavigationIcon } from 'lucide-react';
 import { GraduationCap3D } from './components/Garage/Exam3DIcons';
 
 const DrivingExamPage = React.lazy(() => import('./components/Garage/DrivingExamWidget'));
@@ -416,15 +416,26 @@ const INITIAL_SERVICES: ServiceItem[] = [
 ];
 
 export const App: React.FC = () => {
+  // Sub-tabs for unified modules (Garage & Service, Map & Parking, Police & Exam)
+  const [garageSubTab, setGarageSubTab] = useState<'vehicles' | 'service'>('vehicles');
+  const [mapSubTab, setMapSubTab] = useState<'traffic' | 'parking'>('traffic');
+  const [policeSubTab, setPoliceSubTab] = useState<'fines' | 'exam'>('fines');
+
   // Persist active tab in localStorage and URL hash so browser refreshes stay on the same screen
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     try {
       const hash = window.location.hash.replace('#', '') as TabType;
-      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'garage', 'settings', 'exam'].includes(hash)) {
+      if (['home', 'garage', 'obd', 'map', 'police', 'fines', 'parking', 'ai', 'service', 'settings', 'exam'].includes(hash)) {
+        if (hash === 'parking') return 'map';
+        if (hash === 'service') return 'garage';
+        if (hash === 'fines' || hash === 'exam') return 'police';
         return hash;
       }
       const saved = localStorage.getItem('autohub_active_tab') as TabType;
-      if (saved && ['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'garage', 'settings', 'exam'].includes(saved)) {
+      if (saved && ['home', 'garage', 'obd', 'map', 'police', 'fines', 'parking', 'ai', 'service', 'settings', 'exam'].includes(saved)) {
+        if (saved === 'parking') return 'map';
+        if (saved === 'service') return 'garage';
+        if (saved === 'fines' || saved === 'exam') return 'police';
         return saved;
       }
       return 'home'; // Default to Home landing view where Google walkthrough & Orbit start
@@ -495,14 +506,8 @@ export const App: React.FC = () => {
   useEffect(() => {
     const syncHash = () => {
       const next = window.location.hash.slice(1) as TabType;
-      if (['home', 'obd', 'fines', 'parking', 'ai', 'service', 'map', 'garage', 'settings', 'exam'].includes(next)) {
-        if (next === 'obd') {
-          handleTabChange('obd');
-        } else {
-          React.startTransition(() => setActiveTab(next));
-          try { localStorage.setItem('autohub_active_tab', next); } catch {}
-          setTimeout(() => scrollToMainContent(1100), 40);
-        }
+      if (['home', 'garage', 'obd', 'map', 'police', 'fines', 'parking', 'ai', 'service', 'settings', 'exam'].includes(next)) {
+        handleTabChange(next);
       }
     };
     window.addEventListener('hashchange', syncHash);
@@ -528,14 +533,36 @@ export const App: React.FC = () => {
       document.documentElement.style.overflow = '';
     } catch {}
 
+    let targetTab: TabType = tab;
+
+    if (tab === 'parking') {
+      setMapSubTab('parking');
+      targetTab = 'map';
+    } else if (tab === 'map') {
+      setMapSubTab('traffic');
+      targetTab = 'map';
+    } else if (tab === 'service') {
+      setGarageSubTab('service');
+      targetTab = 'garage';
+    } else if (tab === 'garage') {
+      setGarageSubTab('vehicles');
+      targetTab = 'garage';
+    } else if (tab === 'exam') {
+      setPoliceSubTab('exam');
+      targetTab = 'police';
+    } else if (tab === 'fines' || tab === 'police') {
+      setPoliceSubTab('fines');
+      targetTab = 'police';
+    }
+
     // lazy tab chunk-ის ჩატვირთვა transition-ად — ძველი ხედი რჩება სანამ ახალი ჩაიტვირთება
-    React.startTransition(() => setActiveTab(tab));
+    React.startTransition(() => setActiveTab(targetTab));
     try {
-      localStorage.setItem('autohub_active_tab', tab);
-      window.location.hash = tab;
+      localStorage.setItem('autohub_active_tab', targetTab);
+      window.location.hash = targetTab;
     } catch {}
 
-    if (tab === 'obd') {
+    if (targetTab === 'obd') {
       setObdEntranceTrigger(prev => prev + 1);
       setTimeout(() => {
         scrollToDiagnosticsStudio();
@@ -543,7 +570,7 @@ export const App: React.FC = () => {
       return;
     }
 
-    if (tab === 'map') {
+    if (targetTab === 'map') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -1267,75 +1294,7 @@ export const App: React.FC = () => {
           </React.Suspense>
         )}
 
-        {activeTab === 'exam' && (
-          <div className="max-w-7xl mx-auto space-y-4 animate-fade-in">
-            {/* Top Patrol Sub-Navigation Switcher */}
-            <div className="bg-white/90 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <GraduationCap3D size={44} className="shrink-0" />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 font-mono">ბილეთები</span>
-                    <span className="text-slate-300">/</span>
-                    <h1 className="text-base sm:text-lg font-black text-navy">მართვის მოწმობის ბილეთები</h1>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-amber-100 text-amber-900 border border-amber-300">
-                      2026 ბაზა
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 hidden sm:block">
-                    შსს მომსახურების სააგენტოს ოფიციალური თეორიული საგამოცდო ბილეთები
-                  </p>
-                </div>
-              </div>
-
-            </div>
-
-            <React.Suspense fallback={
-              <div className="p-12 text-center text-sm text-slate-500 font-medium">
-                საგამოცდო ბილეთების ბაზა იტვირთება…
-              </div>
-            }>
-              <DrivingExamPage />
-            </React.Suspense>
-          </div>
-        )}
-
-        {activeTab === 'fines' && (
-          <React.Suspense fallback={<ModuleFallback />}>
-          <FinesModule
-            vehicle={vehicle}
-            fines={fines}
-            onUpdateFines={setFines}
-            onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
-            onOpenDrivingExam={() => handleTabChange('exam')}
-            onNavigateToParking={() => handleTabChange('parking')}
-            onOpenFieldPrompt={handleOpenFieldPrompt}
-            onNavigateToAiClarification={(prompt) => {
-              if (prompt) setAiInitialPrompt(prompt);
-              handleTabChange('ai');
-            }}
-          />
-          </React.Suspense>
-        )}
-
-        {activeTab === 'parking' && (
-          <React.Suspense fallback={<ModuleFallback />}>
-          <ParkingModule
-            vehicle={vehicle}
-            allVehicles={allVehicles}
-            onSelectVehicle={(v) => {
-              setVehicle(v);
-              try {
-                localStorage.setItem('autohub_vehicle_profile', JSON.stringify(v));
-              } catch {}
-            }}
-            onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
-            onOpenFieldPrompt={handleOpenFieldPrompt}
-            onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
-          />
-          </React.Suspense>
-        )}
-
+        {/* 3. AI MECHANIC */}
         {activeTab === 'ai' && (
           <React.Suspense fallback={<ModuleFallback />}>
           <AiMechanicChat
@@ -1354,113 +1313,282 @@ export const App: React.FC = () => {
           </React.Suspense>
         )}
 
-        {activeTab === 'service' && (
-          <React.Suspense fallback={<ModuleFallback />}>
-          <ServiceLogModule
-            vehicle={vehicle}
-            services={services}
-            bookings={bookings}
-            onOpenBookingModal={handleOpenBookingModal}
-            onAddBooking={(newBooking) => {
-              const updated = [newBooking, ...bookings.filter(b => b.id !== newBooking.id)];
-              setBookings(updated);
-              try {
-                localStorage.setItem('autohub_service_bookings', JSON.stringify(updated));
-              } catch {}
-            }}
-            onNavigateToAiClarification={(booking) => {
-              setActiveBookingForAi(booking);
-              handleTabChange('ai');
-            }}
-            onAddService={(newItem) => {
-              const updated = [newItem, ...services];
-              setServices(updated);
-              try {
-                localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(updated));
-                localStorage.setItem('autohub_services', JSON.stringify(updated));
-              } catch {}
-            }}
-            onUpdateService={(updatedItem) => {
-              const updated = services.map(s => s.id === updatedItem.id ? updatedItem : s);
-              setServices(updated);
-              try {
-                localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(updated));
-                localStorage.setItem('autohub_services', JSON.stringify(updated));
-              } catch {}
-            }}
-            onDeleteService={(id) => {
-              const updated = services.filter(s => s.id !== id);
-              setServices(updated);
-              try {
-                localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(updated));
-                localStorage.setItem('autohub_services', JSON.stringify(updated));
-              } catch {}
-            }}
-            onOpenFieldPrompt={handleOpenFieldPrompt}
-            onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
-            onResetToVinSpecs={() => {
-              const fresh = generateServicesForVehicle(vehicle);
-              setServices(fresh);
-              try {
-                localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(fresh));
-                localStorage.setItem('autohub_services', JSON.stringify(fresh));
-              } catch {}
-            }}
-            onAskAiAboutService={(item) => {
-              setAiInitialPrompt(`გამარჯობა AI მექანიკოსო, გთხოვთ დამიზუსტოთ სერვისის '${item.title_ge}' დეტალები: როდის და რა ინტერვალით უნდა შეიცვალოს, რა ბრენდის ნაწილებია OEM რეკომენდებული ჩემს ${vehicle.brand} ${vehicle.model}-ზე და რა ჯდება?`);
-              handleTabChange('ai');
-            }}
-          />
-          </React.Suspense>
-        )}
+        {/* 4. POLICE (პოლიცია: ჯარიმები & მართვის მოწმობის ბილეთები) */}
+        {(activeTab === 'police' || activeTab === 'fines' || activeTab === 'exam') && (
+          <div className="space-y-4 animate-fade-in">
+            {/* Top Sub-Navigation Pill */}
+            <div className="max-w-7xl mx-auto px-2 sm:px-4">
+              <div className="flex items-center justify-center p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-xs max-w-sm sm:max-w-md mx-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setPoliceSubTab('fines');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 relative ${
+                    policeSubTab === 'fines'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <ShieldAlert className="w-4 h-4 text-[#F59E0B]" />
+                  <span>ჯარიმები & ქულები</span>
+                  {fines.filter(f => f.status === 'pending').length > 0 && (
+                    <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black bg-rose-500 text-white">
+                      {fines.filter(f => f.status === 'pending').length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setPoliceSubTab('exam');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                    policeSubTab === 'exam'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <GraduationCap className="w-4 h-4 text-[#F59E0B]" />
+                  <span>საგამოცდო ბილეთები</span>
+                </button>
+              </div>
+            </div>
 
-        {activeTab === 'map' && (
-          <div className="animate-fade-in">
-            <React.Suspense fallback={<ModuleFallback />}>
-              <LiveTrafficMap vehicle={vehicle} />
-            </React.Suspense>
+            {policeSubTab === 'fines' ? (
+              <React.Suspense fallback={<ModuleFallback />}>
+                <FinesModule
+                  vehicle={vehicle}
+                  fines={fines}
+                  onUpdateFines={setFines}
+                  onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
+                  onOpenDrivingExam={() => {
+                    sounds.playClick();
+                    setPoliceSubTab('exam');
+                  }}
+                  onNavigateToParking={() => handleTabChange('parking')}
+                  onOpenFieldPrompt={handleOpenFieldPrompt}
+                  onNavigateToAiClarification={(prompt) => {
+                    if (prompt) setAiInitialPrompt(prompt);
+                    handleTabChange('ai');
+                  }}
+                />
+              </React.Suspense>
+            ) : (
+              <React.Suspense fallback={
+                <div className="p-12 text-center text-sm text-slate-500 font-medium">
+                  საგამოცდო ბილეთების ბაზა იტვირთება…
+                </div>
+              }>
+                <DrivingExamPage />
+              </React.Suspense>
+            )}
           </div>
         )}
 
-        {(activeTab === 'garage' || activeTab === 'settings') && (
-          <React.Suspense fallback={<ModuleFallback />}>
-          <GarageModule
-            vehicle={vehicle}
-            onNavigateTab={handleTabChange}
-            onUpdateVehicle={setVehicle}
-            onOpenAddModal={() => setIsAddVehicleModalOpen(true)}
-            onDeleteVehicle={handleDeleteVehicle}
-            onOpenFieldPrompt={handleOpenFieldPrompt}
-            allVehicles={allVehicles}
-            onSelectVehicle={(v) => {
-              setVehicle(v);
-              localStorage.setItem('autohub_vehicle_profile', JSON.stringify(v));
-            }}
-            isSoundEnabled={isSoundEnabled}
-            onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
-            onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
-            onResetToVinSpecs={() => {
-              const fresh = generateServicesForVehicle(vehicle);
-              setServices(fresh);
-              try {
-                localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(fresh));
-                localStorage.setItem('autohub_services', JSON.stringify(fresh));
-              } catch {}
-            }}
-            services={services}
-            onAddBooking={(newBooking) => {
-              const updated = [newBooking, ...bookings.filter(b => b.id !== newBooking.id)];
-              setBookings(updated);
-              try {
-                localStorage.setItem('autohub_service_bookings', JSON.stringify(updated));
-              } catch {}
-            }}
-            onNavigateToAiClarification={(prompt) => {
-              if (prompt) setAiInitialPrompt(prompt);
-              handleTabChange('ai');
-            }}
-          />
-          </React.Suspense>
+        {/* 5. MAP (რუკა & პარკინგი გაერთიანებული) */}
+        {(activeTab === 'map' || activeTab === 'parking') && (
+          <div className="space-y-4 animate-fade-in">
+            {/* Top Sub-Navigation Pill */}
+            <div className="max-w-7xl mx-auto px-2 sm:px-4">
+              <div className="flex items-center justify-center p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-xs max-w-sm sm:max-w-md mx-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setMapSubTab('traffic');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                    mapSubTab === 'traffic'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <NavigationIcon className="w-4 h-4 text-[#F59E0B]" />
+                  <span>მოძრაობის რუკა</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setMapSubTab('parking');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                    mapSubTab === 'parking'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <ParkingSquare className="w-4 h-4 text-[#F59E0B]" />
+                  <span>ჭკვიანი პარკინგი</span>
+                </button>
+              </div>
+            </div>
+
+            {mapSubTab === 'traffic' ? (
+              <React.Suspense fallback={<ModuleFallback />}>
+                <LiveTrafficMap vehicle={vehicle} />
+              </React.Suspense>
+            ) : (
+              <React.Suspense fallback={<ModuleFallback />}>
+                <ParkingModule
+                  vehicle={vehicle}
+                  allVehicles={allVehicles}
+                  onSelectVehicle={(v) => {
+                    setVehicle(v);
+                    try {
+                      localStorage.setItem('autohub_vehicle_profile', JSON.stringify(v));
+                    } catch {}
+                  }}
+                  onUpdateVehicle={(updated) => setVehicle(v => ({ ...v, ...updated }))}
+                  onOpenFieldPrompt={handleOpenFieldPrompt}
+                  onOpenAddVehicle={() => setIsAddVehicleModalOpen(true)}
+                />
+              </React.Suspense>
+            )}
+          </div>
+        )}
+
+        {/* 6. GARAGE (გარაჟი & სერვისების ჟურნალი გაერთიანებული) */}
+        {(activeTab === 'garage' || activeTab === 'service' || activeTab === 'settings') && (
+          <div className="space-y-4 animate-fade-in">
+            {/* Top Sub-Navigation Pill */}
+            <div className="max-w-7xl mx-auto px-2 sm:px-4">
+              <div className="flex items-center justify-center p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-xs max-w-sm sm:max-w-md mx-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setGarageSubTab('vehicles');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                    garageSubTab === 'vehicles'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <Car className="w-4 h-4 text-[#F59E0B]" />
+                  <span>ჩემი გარაჟი</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setGarageSubTab('service');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                    garageSubTab === 'service'
+                      ? 'bg-[#14213D] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
+                  }`}
+                >
+                  <Wrench className="w-4 h-4 text-[#F59E0B]" />
+                  <span>სერვისების ჟურნალი</span>
+                </button>
+              </div>
+            </div>
+
+            {garageSubTab === 'vehicles' ? (
+              <React.Suspense fallback={<ModuleFallback />}>
+                <GarageModule
+                  vehicle={vehicle}
+                  onNavigateTab={handleTabChange}
+                  onUpdateVehicle={setVehicle}
+                  onOpenAddModal={() => setIsAddVehicleModalOpen(true)}
+                  onDeleteVehicle={handleDeleteVehicle}
+                  onOpenFieldPrompt={handleOpenFieldPrompt}
+                  allVehicles={allVehicles}
+                  onSelectVehicle={(v) => {
+                    setVehicle(v);
+                    localStorage.setItem('autohub_vehicle_profile', JSON.stringify(v));
+                  }}
+                  isSoundEnabled={isSoundEnabled}
+                  onToggleSound={() => setIsSoundEnabled(sounds.toggleSound())}
+                  onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
+                  onResetToVinSpecs={() => {
+                    const fresh = generateServicesForVehicle(vehicle);
+                    setServices(fresh);
+                    try {
+                      localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(fresh));
+                      localStorage.setItem('autohub_services', JSON.stringify(fresh));
+                    } catch {}
+                  }}
+                  services={services}
+                  onAddBooking={(newBooking) => {
+                    const updated = [newBooking, ...bookings.filter(b => b.id !== newBooking.id)];
+                    setBookings(updated);
+                    try {
+                      localStorage.setItem('autohub_service_bookings', JSON.stringify(updated));
+                    } catch {}
+                  }}
+                  onNavigateToAiClarification={(prompt) => {
+                    if (prompt) setAiInitialPrompt(prompt);
+                    handleTabChange('ai');
+                  }}
+                />
+              </React.Suspense>
+            ) : (
+              <React.Suspense fallback={<ModuleFallback />}>
+                <ServiceLogModule
+                  vehicle={vehicle}
+                  services={services}
+                  bookings={bookings}
+                  onOpenBookingModal={handleOpenBookingModal}
+                  onAddBooking={(newBooking) => {
+                    const updated = [newBooking, ...bookings.filter(b => b.id !== newBooking.id)];
+                    setBookings(updated);
+                    try {
+                      localStorage.setItem('autohub_service_bookings', JSON.stringify(updated));
+                    } catch {}
+                  }}
+                  onNavigateToAiClarification={(booking) => {
+                    setActiveBookingForAi(booking);
+                    handleTabChange('ai');
+                  }}
+                  onAddService={(newItem) => {
+                    const updated = [newItem, ...services];
+                    setServices(updated);
+                    try {
+                      localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(updated));
+                      localStorage.setItem('autohub_services', JSON.stringify(updated));
+                    } catch {}
+                  }}
+                  onUpdateService={(updatedItem) => {
+                    const updated = services.map(s => s.id === updatedItem.id ? updatedItem : s);
+                    setServices(updated);
+                    try {
+                      localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(updated));
+                      localStorage.setItem('autohub_services', JSON.stringify(updated));
+                    } catch {}
+                  }}
+                  onDeleteService={(id) => {
+                    const updated = services.filter(s => s.id !== id);
+                    setServices(updated);
+                    try {
+                      localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(updated));
+                      localStorage.setItem('autohub_services', JSON.stringify(updated));
+                    } catch {}
+                  }}
+                  onOpenFieldPrompt={handleOpenFieldPrompt}
+                  onOpenVinHistory={() => setIsVinHistoryModalOpen(true)}
+                  onResetToVinSpecs={() => {
+                    const fresh = generateServicesForVehicle(vehicle);
+                    setServices(fresh);
+                    try {
+                      localStorage.setItem(`autohub_services_${vehicle.vin || vehicle.id}`, JSON.stringify(fresh));
+                      localStorage.setItem('autohub_services', JSON.stringify(fresh));
+                    } catch {}
+                  }}
+                  onAskAiAboutService={(item) => {
+                    setAiInitialPrompt(`გამარჯობა AI მექანიკოსო, გთხოვთ დამიზუსტოთ სერვისის '${item.title_ge}' დეტალები: როდის და რა ინტერვალით უნდა შეიცვალოს, რა ბრენდის ნაწილებია OEM რეკომენდებული ჩემს ${vehicle.brand} ${vehicle.model}-ზე და რა ჯდება?`);
+                    handleTabChange('ai');
+                  }}
+                />
+              </React.Suspense>
+            )}
+          </div>
         )}
       </main>
 

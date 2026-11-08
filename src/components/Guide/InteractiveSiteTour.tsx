@@ -73,6 +73,12 @@ export const TAB_TOUR_METADATA: Record<TabType, TabMeta> = {
     icon: '🛡️',
     summary: 'თქვენ გაეცანით საპატრულო ჯარიმების 20%-იან ფასდაკლებას, 100-ქულიან ციფრულ პასპორტსა და საგამოცდო ბილეთებს.'
   },
+  police: {
+    id: 'police',
+    name_ge: 'პოლიცია (ჯარიმები & ბილეთები)',
+    icon: '🛡️',
+    summary: 'თქვენ გაეცანით საპატრულო ჯარიმების 20%-იან ფასდაკლებას, 100-ქულიან პასპორტსა და მართვის მოწმობის ბილეთებს.'
+  },
   parking: {
     id: 'parking',
     name_ge: 'მუნიციპალური პარკინგი',
@@ -302,6 +308,54 @@ export const PAGE_TOUR_STEPS: Record<TabType, TourStep[]> = {
       description: 'თითოეული ჯარიმის ქვითარი: დარღვევის ფოტო-ვიდეო მასალა, ადგილი, სიჩქარის გადაჭარბება, ქულების ჩამოჭრა და გასაჩივრების ოფცია.',
       icon: FileText,
       requiredTab: 'fines',
+      placement: 'top'
+    }
+  ],
+
+  // POLICE & DRIVER PROFILE TOUR
+  police: [
+    {
+      id: 'police-passport',
+      targetSelector: '[data-tour="fines-passport"]',
+      title: 'მართვის მოწმობის ციფრული პასპორტი',
+      subtitle: 'DRIVER BIOMETRIC PASSPORT',
+      badge: '1 / 4',
+      description: 'ოფიციალური ქართული მართვის მოწმობის ბარათი: მძღოლის ფოტო, პირადი ნომერი, კატეგორიები (B, A, C) და 100-ქულიანი საპატრულო ბალანსის წრიული ინდიკატორი.',
+      icon: ShieldCheck,
+      requiredTab: 'police',
+      placement: 'bottom'
+    },
+    {
+      id: 'police-summary',
+      targetSelector: '[data-tour="fines-summary"]',
+      title: 'ჯარიმების სწრაფი გადახდა & ფასდაკლება',
+      subtitle: 'QUICK PAY & 20% DISCOUNT',
+      badge: '2 / 4',
+      description: 'საპატრულო პოლიციისა და ქალაქის კამერების ჯარიმების გადახდის პანელი. იხილეთ ჯამური თანხა და გამოიყენეთ კანონით გათვალისწინებული 20%-იანი ფასდაკლება.',
+      icon: CreditCard,
+      requiredTab: 'police',
+      placement: 'bottom'
+    },
+    {
+      id: 'police-exam',
+      targetSelector: '[data-tour="fines-exam"]',
+      title: 'მართვის მოწმობის ბილეთები & სიმულატორი',
+      subtitle: 'DRIVING EXAM 2026 PLATFORM',
+      badge: '3 / 4',
+      description: 'შსს მომსახურების სააგენტოს 921 ოფიციალური საგამოცდო ბილეთი, ადაპტური სწავლება, აკადემიური რეგალიები და 30-წუთიანი რეალური საგამოცდო სიმულატორი.',
+      icon: GraduationCap,
+      requiredTab: 'police',
+      placement: 'bottom'
+    },
+    {
+      id: 'police-list',
+      targetSelector: '[data-tour="fines-list"]',
+      title: 'ჯარიმების დეტალური სია & ქვითრები',
+      subtitle: 'ACTIVE FINES & PHOTO EVIDENCE',
+      badge: '4 / 4',
+      description: 'თითოეული ჯარიმის ქვითარი: დარღვევის ფოტო-ვიდეო მასალა, ადგილი, სიჩქარის გადაჭარბება, ქულების ჩამოჭრა და გასაჩივრების ოფცია.',
+      icon: FileText,
+      requiredTab: 'police',
       placement: 'top'
     }
   ],

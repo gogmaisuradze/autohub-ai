@@ -89,11 +89,27 @@ export const ObdWifiScan: React.FC = () => {
               <span className="font-mono text-rose-600"> ({result.dtcs.map(d => d.code).join(', ')})</span>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 font-mono">
+          {(result.pendingDtcs.length > 0 || result.permanentDtcs.length > 0) && (
+            <div className="text-[11px] text-slate-500 space-y-0.5">
+              {result.pendingDtcs.length > 0 && (
+                <div>მოლოდინში: <span className="font-mono text-amber-600">{result.pendingDtcs.map(d => d.code).join(', ')}</span></div>
+              )}
+              {result.permanentDtcs.length > 0 && (
+                <div>მუდმივი: <span className="font-mono text-rose-700">{result.permanentDtcs.map(d => d.code).join(', ')}</span></div>
+              )}
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] text-slate-600 font-mono">
             <span>RPM: {result.live.rpm ?? '—'}</span>
             <span>ტემპ: {result.live.coolantC != null ? `${result.live.coolantC}°C` : '—'}</span>
             <span>სიჩქარე: {result.live.speedKmh != null ? `${result.live.speedKmh} კმ/სთ` : '—'}</span>
             <span>ძაბვა: {result.live.voltage != null ? `${result.live.voltage}V` : '—'}</span>
+            <span>დატვირთვა: {result.live.engineLoadPct != null ? `${result.live.engineLoadPct}%` : '—'}</span>
+            <span>საწვავი: {result.live.fuelLevelPct != null ? `${result.live.fuelLevelPct}%` : '—'}</span>
+            <span>დროსელი: {result.live.throttlePct != null ? `${result.live.throttlePct}%` : '—'}</span>
+            <span>შემშვები: {result.live.intakeTempC != null ? `${result.live.intakeTempC}°C` : '—'}</span>
+            <span>MAF: {result.live.mafGps != null ? `${result.live.mafGps} გ/წმ` : '—'}</span>
+            <span>გარე ტემპ: {result.live.ambientTempC != null ? `${result.live.ambientTempC}°C` : '—'}</span>
           </div>
         </div>
       )}
