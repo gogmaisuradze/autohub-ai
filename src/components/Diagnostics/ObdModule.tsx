@@ -29,6 +29,8 @@ import {
   Fuel,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
+  Share2,
   Bluetooth,
   Settings,
   Bot,
@@ -91,6 +93,8 @@ export const ObdModule: React.FC<Props> = ({
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [lastScanTime, setLastScanTime] = useState<string>('დღეს, 16:42');
   const [hasScanned, setHasScanned] = useState<boolean>(() => dtcCodes.length > 0);
+  const [is3DCarCollapsed, setIs3DCarCollapsed] = useState(false);
+  const [shareSuccessNotice, setShareSuccessNotice] = useState(false);
   const studioSectionRef = useRef<HTMLDivElement>(null);
 
   // Disabled auto-scroll to results so screen stays fixed on the 3D car exploded view without jumping down
@@ -181,6 +185,11 @@ export const ObdModule: React.FC<Props> = ({
   const handleOneTouchScan = async () => {
     if (isScanning || sequenceBusy) return;
     if (!isConnected) {
+      if (onOpenAdapterModal) {
+        sounds.playClick();
+        onOpenAdapterModal();
+        return;
+      }
       setIsConnected(true);
     }
     sounds.playScanSweep();
@@ -188,7 +197,7 @@ export const ObdModule: React.FC<Props> = ({
     setIsScanning(true);
 
     // Immediately bring 3D model into foreground on mobile and desktop
-    if (studioSectionRef.current) {
+    if (studioSectionRef.current && !is3DCarCollapsed) {
       const topOffset = 70;
       const targetTop = window.scrollY + studioSectionRef.current.getBoundingClientRect().top - topOffset;
       window.scrollTo({
@@ -214,6 +223,47 @@ export const ObdModule: React.FC<Props> = ({
       setIsScanning(false);
       setHasScanned(true);
       setLastScanTime(new Date().toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' }));
+    }
+  };
+
+  const handleShareReport = async () => {
+    sounds.playClick();
+    const carName = `${vehicle.brand} ${vehicle.model} (${vehicle.year || 2024})`;
+    const plate = vehicle.plate_number || 'FR-282-EE';
+    const totalCost = dtcCodes.reduce((acc, c) => acc + (c.estimated_cost_gel || 120), 0);
+    
+    let reportText = `🚗 CarMe დიაგნოსტიკის ანგარიში\n`;
+    reportText += `ავტომობილი: ${carName} • ${plate}\n`;
+    reportText += `სტატუსი: ${dtcCodes.length > 0 ? `⚠️ ნაპოვნია ${dtcCodes.length} ხარვეზი` : '✅ სისტემა გამართულია (0 ხარვეზი)'}\n\n`;
+    
+    if (dtcCodes.length > 0) {
+      reportText += `ხარვეზების ჩამონათვალი:\n`;
+      dtcCodes.forEach((d, idx) => {
+        reportText += `${idx + 1}. [${d.code}] ${d.title_ge}\n   რჩევა: ${d.advice}\n   სავარაუდო ხარჯი: ~${d.estimated_cost_gel || 120} ₾\n`;
+      });
+      reportText += `\nსავარაუდო ჯამური ხარჯი: ~${totalCost} ₾\n`;
+    }
+    reportText += `\nშემოწმებულია: https://carme.ge`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `CarMe დიაგნოსტიკა - ${carName}`,
+          text: reportText,
+          url: 'https://carme.ge'
+        });
+        return;
+      } catch {
+        // Fallback to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(reportText);
+      setShareSuccessNotice(true);
+      setTimeout(() => setShareSuccessNotice(false), 3500);
+    } catch {
+      // ignore
     }
   };
 
@@ -284,47 +334,30 @@ export const ObdModule: React.FC<Props> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base sm:text-lg font-black text-navy tracking-tight">
-                    OBD-II ადაპტერთან დაკავშირება
+                    OBD-II დიაგნოსტიკა & სკანერი
                   </h3>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-gold/15 text-navy border border-gold/30">
-                    {isHandshaking ? 'SYNC' : 'SETUP'}
+                    {isHandshaking ? 'SYNC' : 'READY'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {isHandshaking
                     ? 'მიმდინარეობს ECU ბორტ-კომპიუტერთან სინქრონიზაცია...'
-                    : 'დიაგნოსტიკის დასაწყებად დააკავშირეთ OBD-II ადაპტერი'}
+                    : 'დააჭირეთ სკანირების დაწყებას ECU ხარვეზების გამოსავლენად'}
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
+            <div className="w-full sm:w-auto">
               <button
                 type="button"
                 onClick={handleOneTouchScan}
                 disabled={isHandshaking || isScanning || sequenceBusy}
-                className="btn-stitch-navy w-full sm:w-auto py-3 px-6 text-sm font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
+                className="btn-stitch-navy w-full sm:w-auto py-3.5 px-7 text-sm font-black flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-gold" />
                 <span>{isScanning || sequenceBusy ? 'სკანირება...' : 'სკანირების დაწყება'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  if (onOpenAdapterModal) {
-                    onOpenAdapterModal();
-                  } else {
-                    startEcuHandshakeAndDiscovery();
-                  }
-                }}
-                disabled={isHandshaking || isScanning || sequenceBusy}
-                className="px-4 py-3 rounded-2xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 hover:text-navy border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
-                title="OBD-II ადაპტერთან დაკავშირება"
-              >
-                <Zap className="w-4 h-4 text-gold fill-gold" />
-                <span>{isHandshaking ? 'მიერთება...' : 'დაკავშირება'}</span>
+                <ArrowRight className="w-4 h-4 text-gold ml-1" />
               </button>
             </div>
           </div>
@@ -612,34 +645,70 @@ export const ObdModule: React.FC<Props> = ({
         </div>
       )}
 
-      {/* 2. 3D Studio Viewport */}
+      {/* 2. 3D Studio Viewport (Collapsible) */}
       <div ref={studioSectionRef} id="three-car-studio" data-tour="obd-studio" className="scroll-mt-20">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2 px-1">
-          <h2 className="text-xs sm:text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 px-1">
+          <div className="flex items-center gap-2">
             <Cpu className="w-4 h-4 text-gold shrink-0" />
-            <span>3D ინტერაქტიული დიაგნოსტიკის სტუდია</span>
-          </h2>
-          <span className="text-[11px] sm:text-xs text-slate-500 font-mono truncate">
-            {vehicle.brand} {vehicle.model} • {vehicle.engine}
-          </span>
+            <h2 className="text-xs sm:text-sm font-bold text-navy uppercase tracking-wider">
+              3D ინტერაქტიული დიაგნოსტიკის სტუდია
+            </h2>
+            <span className="text-[11px] sm:text-xs text-slate-500 font-mono truncate hidden sm:inline">
+              • {vehicle.brand} {vehicle.model}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              setIs3DCarCollapsed(prev => !prev);
+            }}
+            className="self-end sm:self-auto px-3 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 hover:text-navy border border-slate-200 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+          >
+            {is3DCarCollapsed ? (
+              <>
+                <Car size={13} className="text-gold" />
+                <span>3D მანქანის გამოჩენა</span>
+                <ChevronDown size={13} />
+              </>
+            ) : (
+              <>
+                <Car size={13} className="text-gold" />
+                <span>3D მანქანის ჩაკეცვა</span>
+                <ChevronUp size={13} />
+              </>
+            )}
+          </button>
         </div>
-        <ThreeCarScene
-          onStartScan={handleOneTouchScan}
-          isScanning={isScanning}
-          scanOutcome={scanOutcome}
-          onSequenceBusyChange={setSequenceBusy}
-          selectedComponent={selectedComponent}
-          onSelectComponent={(id) => setSelectedComponent(id)}
-          hasErrors={dtcCodes.length > 0}
-          dtcCodes={dtcCodes}
-          onAskAiAboutCode={onAskAiAboutCode}
-          vehicle={vehicle}
-          entranceTrigger={entranceTrigger}
-        />
+
+        {!is3DCarCollapsed && (
+          <ThreeCarScene
+            onStartScan={handleOneTouchScan}
+            isScanning={isScanning}
+            scanOutcome={scanOutcome}
+            onSequenceBusyChange={setSequenceBusy}
+            selectedComponent={selectedComponent}
+            onSelectComponent={(id) => setSelectedComponent(id)}
+            hasErrors={dtcCodes.length > 0}
+            dtcCodes={dtcCodes}
+            onAskAiAboutCode={onAskAiAboutCode}
+            vehicle={vehicle}
+            entranceTrigger={entranceTrigger}
+          />
+        )}
       </div>
 
-      {/* 2.5. DIAGNOSTIC RESULTS: "რა აანთო Check Engine?" + 2 დიდი ღილაკი */}
-      <div id="diagnostic-results-section" data-tour="obd-results" className="p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border border-white space-y-4 animate-fade-in scroll-mt-24">
+      {/* 2.5. DIAGNOSTIC RESULTS: ხარვეზების გამტანი პრიორიტეტული დაფა */}
+      <div
+        id="diagnostic-results-section"
+        data-tour="obd-results"
+        className={`p-5 sm:p-6 rounded-3xl neu-card shadow-neu-card border space-y-4 animate-fade-in scroll-mt-24 transition-all ${
+          dtcCodes.length > 0
+            ? 'border-2 border-rose-300 ring-2 ring-rose-200/50 bg-gradient-to-b from-white via-white to-rose-50/25'
+            : 'border border-white bg-white'
+        }`}
+      >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
           <div className="flex items-center gap-3.5">
             <div className={`w-12 h-12 rounded-2xl neu-circle flex items-center justify-center shrink-0 ${
@@ -648,7 +717,7 @@ export const ObdModule: React.FC<Props> = ({
               {dtcCodes.length > 0 ? <AlertTriangle className="w-6 h-6 animate-pulse" /> : <CheckCircle2 className="w-6 h-6" />}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base sm:text-lg font-black text-navy">
                   {dtcCodes.length > 0 ? 'დიაგნოსტიკის პასუხები: რა აანთო Check Engine?' : 'დიაგნოსტიკის პასუხები: სისტემა გამართულია'}
                 </h3>
@@ -667,7 +736,16 @@ export const ObdModule: React.FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-slate-400">
+            <button
+              type="button"
+              onClick={handleShareReport}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-navy border border-slate-200 hover:border-gold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
+              title="დიაგნოსტიკის ანგარიშის გაზიარება"
+            >
+              <Share2 size={13} className="text-gold" />
+              <span>გაზიარება</span>
+            </button>
+            <span className="text-xs font-mono text-slate-400 hidden sm:inline">
               {lastScanTime ? `ბოლო სკანირება: ${lastScanTime}` : 'ცოცხალი რეჟიმი'}
             </span>
           </div>
@@ -721,27 +799,11 @@ export const ObdModule: React.FC<Props> = ({
           </div>
         )}
 
-        {/* TWO BIG ACTION BUTTONS: Clear Check Engine & Consult AI Mechanic */}
-        <div data-tour="obd-action-buttons" className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-3">
-          {/* Button 1: გასუფთავება (ჩეკის ჩაქრობა) */}
+        {/* THREE ACTION BUTTONS: Consult AI Mechanic, Share Report, Clear Check Engine */}
+        <div data-tour="obd-action-buttons" className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          {/* Button 1: მექანიკოსთან გაანალიზება */}
           <button
-            onClick={() => {
-              sounds.playClick();
-              onOpenClearModal();
-            }}
-            disabled={dtcCodes.length === 0}
-            className={`py-4 px-6 text-xs sm:text-sm font-black transition-all ${
-              dtcCodes.length > 0
-                ? 'btn-stitch-rose w-full'
-                : 'bg-slate-200 text-slate-400 rounded-full cursor-not-allowed opacity-60 flex items-center justify-center gap-2'
-            }`}
-          >
-            <Trash2 size={18} className="shrink-0" />
-            <span>გასუფთავება (ჩეკის ჩაქრობა)</span>
-          </button>
-
-          {/* Button 2: კონსულტაცია AI მექანიკოსთან */}
-          <button
+            type="button"
             onClick={() => {
               sounds.playSuccess();
               if (onConsultAiMechanic) {
@@ -750,13 +812,48 @@ export const ObdModule: React.FC<Props> = ({
                 onAskAiAboutCode(dtcCodes[0]);
               }
             }}
-            className="btn-stitch-ai w-full py-4 px-6 text-xs sm:text-sm font-black"
+            className="btn-stitch-ai w-full py-3.5 px-4 text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-md cursor-pointer"
           >
             <Bot size={18} className="text-gold shrink-0" />
-            <span>კონსულტაცია AI მექანიკოსთან</span>
-            <Sparkles size={16} className="text-gold shrink-0 animate-pulse" />
+            <span>მექანიკოსთან გაანალიზება</span>
+            <Sparkles size={15} className="text-gold shrink-0 animate-pulse" />
+          </button>
+
+          {/* Button 2: გაზიარება ნებისმიერთან */}
+          <button
+            type="button"
+            onClick={handleShareReport}
+            className="py-3.5 px-4 text-xs sm:text-sm font-black bg-white hover:bg-slate-50 text-navy border-2 border-slate-200 hover:border-gold rounded-full flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-95"
+          >
+            <Share2 size={16} className="text-navy shrink-0" />
+            <span>გაზიარება ნებისმიერთან</span>
+          </button>
+
+          {/* Button 3: გასუფთავება (ჩეკის ჩაქრობა) */}
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playClick();
+              onOpenClearModal();
+            }}
+            disabled={dtcCodes.length === 0}
+            className={`py-3.5 px-4 text-xs sm:text-sm font-black transition-all rounded-full flex items-center justify-center gap-2 ${
+              dtcCodes.length > 0
+                ? 'btn-stitch-rose w-full cursor-pointer'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+            }`}
+          >
+            <Trash2 size={16} className="shrink-0" />
+            <span>ჩეკის ჩაქრობა ({dtcCodes.length})</span>
           </button>
         </div>
+
+        {shareSuccessNotice && (
+          <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-400 text-emerald-950 flex items-center gap-2 text-xs font-bold animate-fade-in shadow-xs">
+            <Check size={16} className="text-emerald-600 shrink-0" />
+            <span>✓ დიაგნოსტიკის სრული ანგარიში დაკოპირდა! შეგიძლიათ გაუგზავნოთ ნებისმიერ მექანიკოსს WhatsApp-ში ან SMS-ით.</span>
+          </div>
+        )}
       </div>
 
       {/* 3. Live Gauges */}
