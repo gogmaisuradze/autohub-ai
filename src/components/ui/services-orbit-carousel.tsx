@@ -29,6 +29,8 @@ interface Props {
   vehicle?: VehicleProfile;
   isTourActive?: boolean;
   triggerSpin?: number;
+  onActiveTabChange?: (tab: TabType) => void;
+  activeTab?: TabType;
 }
 
 export const ServicesOrbitCarousel: React.FC<Props> = ({
@@ -39,7 +41,9 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   lang = 'ge',
   vehicle,
   isTourActive = false,
-  triggerSpin
+  triggerSpin,
+  onActiveTabChange,
+  activeTab
 }) => {
   const isGe = lang === 'ge';
   const pendingFines = fines.filter(f => f.status === 'pending');
@@ -148,6 +152,24 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
+
+  // Sync active orbit tab with parent
+  useEffect(() => {
+    const currentTab = hubServices[activeIndex]?.tab;
+    if (currentTab && onActiveTabChange) {
+      onActiveTabChange(currentTab);
+    }
+  }, [activeIndex, onActiveTabChange]);
+
+  // Allow external control of active orbit tab
+  useEffect(() => {
+    if (activeTab) {
+      const idx = hubServices.findIndex(s => s.tab === activeTab);
+      if (idx !== -1 && idx !== activeIndex) {
+        setActiveIndex(idx);
+      }
+    }
+  }, [activeTab]);
   const [isHovering, setIsHovering] = useState(false);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== 'undefined') {
