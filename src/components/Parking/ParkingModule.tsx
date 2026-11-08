@@ -937,65 +937,88 @@ export const ParkingModule: React.FC<Props> = ({
             <span className="text-[10px] font-mono text-slate-400">თბილისი • ზონალური</span>
           </div>
 
-          {/* 2. Slot Input + Quick Preset Pills in one single, responsive row */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-              {/* Input */}
-              <div className="relative flex-1 sm:w-44 sm:flex-initial">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-black text-[#0056B3] text-lg select-none">#</span>
-                <input
-                  type="text"
-                  value={customSlotInput}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9A-Za-z]/g, '').slice(0, 5).toUpperCase();
-                    setCustomSlotInput(val);
-                    setParkingLocationInput("ზონა #" + val + " — " + (activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'));
-                  }}
-                  placeholder="005"
-                  className="w-full pl-8 pr-3 py-2 text-base sm:text-lg font-mono font-black rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:border-[#0056B3] text-navy shadow-inner focus:outline-none focus:bg-white transition-all uppercase"
-                />
-              </div>
-
-              {/* Quick Preset Pills */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                {['001', '005', '012', '034'].map((code) => (
-                  <button
-                    key={code}
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setCustomSlotInput(code);
-                      setParkingLocationInput("ზონა #" + code + " — " + (activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'));
-                    }}
-                    className={"px-2.5 py-2 rounded-xl text-xs font-mono font-black transition-all cursor-pointer " + (
-                      customSlotInput === code
-                        ? 'bg-[#0056B3] text-white shadow-xs scale-105'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
-                    )}
-                  >
-                    #{code}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Live GPS badge & Zone */}
-            <div className="flex items-center justify-between sm:justify-end gap-2.5 p-2 sm:p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
-                <div className="text-xs">
-                  <span className="font-black text-navy block leading-tight">
-                    {activeParkedLot?.district_ge || 'ვაკე'} • {activeParkedLot?.categoryLabel_ge || 'ზონა A (1.00 ₾/სთ)'}
-                  </span>
-                  <span className="text-[10px] text-slate-500 block font-mono mt-0.5">
-                    {activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზ.'} #{customSlotInput || '005'} • 15 წთ უფასო
-                  </span>
-                </div>
-              </div>
-              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs shrink-0 flex items-center gap-1">
-                <span>📡 GPS Live</span>
+          {/* 1. პირველი და ყველაზე მნიშვნელოვანი: ხელით შეყვანის ხაზი */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+              <span className="flex items-center gap-1.5 text-navy font-black">
+                <Search className="w-3.5 h-3.5 text-[#0056B3]" />
+                საპარკინგე ადგილის / ლოტის ნომერი:
+              </span>
+              <span className="text-[10px] font-mono font-bold text-[#0056B3] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                ხელით შეყვანა
               </span>
             </div>
+
+            <div className="relative flex items-center w-full">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-black text-[#0056B3] text-xl select-none">
+                #
+              </span>
+              <input
+                type="text"
+                value={customSlotInput}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9A-Za-z]/g, '').slice(0, 5).toUpperCase();
+                  setCustomSlotInput(val);
+                  setParkingLocationInput("ზონა #" + val + " — " + (activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'));
+                }}
+                placeholder="ჩაწერეთ ადგილის ნომერი (მაგ: 005)..."
+                className="w-full pl-9 pr-10 py-3 sm:py-3.5 text-base sm:text-lg font-mono font-black rounded-2xl bg-[#F8FAFC] border-2 border-slate-300 focus:border-[#0056B3] text-navy shadow-inner focus:outline-none focus:bg-white transition-all uppercase placeholder:font-sans placeholder:font-normal placeholder:text-xs sm:placeholder:text-sm placeholder:text-slate-400"
+              />
+              {customSlotInput ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomSlotInput('');
+                    setParkingLocationInput("ზონა — " + (activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'));
+                  }}
+                  className="absolute right-3 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+                  title="გასუფთავება"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {/* 2. სწრაფი არჩევის ღილაკები (Quick Preset Pills) */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-500 mr-1 select-none">სწრაფი არჩევა:</span>
+            {['001', '005', '012', '034', '104'].map((code) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setCustomSlotInput(code);
+                  setParkingLocationInput("ზონა #" + code + " — " + (activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'));
+                }}
+                className={"px-3 py-1.5 rounded-xl text-xs font-mono font-black transition-all cursor-pointer " + (
+                  customSlotInput === code
+                    ? 'bg-[#0056B3] text-white shadow-xs scale-105 ring-2 ring-[#0056B3]/30'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                )}
+              >
+                #{code}
+              </button>
+            ))}
+          </div>
+
+          {/* 3. ზონის დეტალები & Live GPS */}
+          <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
+              <div className="text-xs truncate">
+                <span className="font-black text-navy block leading-tight truncate">
+                  {activeParkedLot?.district_ge || 'ვაკე'} • {activeParkedLot?.categoryLabel_ge || 'ზონა A (1.00 ₾/სთ)'}
+                </span>
+                <span className="text-[11px] text-slate-500 block font-mono mt-0.5 truncate">
+                  {activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზ.'} #{customSlotInput || '005'} • 15 წთ უფასო
+                </span>
+              </div>
+            </div>
+            <span className="text-[9px] sm:text-[10px] font-mono font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs shrink-0 flex items-center gap-1">
+              <span>📡 GPS Live</span>
+            </span>
           </div>
 
           {/* 3. Auto-Detection Banner */}
