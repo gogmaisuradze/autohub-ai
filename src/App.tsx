@@ -24,7 +24,7 @@ import { n8nService } from './services/n8nService';
 import { sounds } from './services/soundEffects';
 import { generateServicesForVehicle } from './services/vinServiceEngine';
 import { preloadCarModel } from './services/modelPreloader';
-import { ArrowLeft, ShieldAlert, GraduationCap, Car, Wrench, ParkingSquare, Navigation as NavigationIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ShieldAlert, GraduationCap, Car, Wrench, ParkingSquare, Navigation as NavigationIcon } from 'lucide-react';
 import { GraduationCap3D } from './components/Garage/Exam3DIcons';
 
 const DrivingExamPage = React.lazy(() => import('./components/Garage/DrivingExamWidget'));
@@ -1476,38 +1476,55 @@ export const App: React.FC = () => {
         {/* 6. GARAGE (გარაჟი & სერვისების ჟურნალი გაერთიანებული) */}
         {(activeTab === 'garage' || activeTab === 'service' || activeTab === 'settings') && (
           <div className="space-y-4 animate-fade-in">
-            {/* Top Sub-Navigation Pill */}
+            {/* Single Prominent Dynamic Switcher Button between Garage & Service */}
             <div className="max-w-7xl mx-auto px-2 sm:px-4">
-              <div className="flex items-center justify-center p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-xs max-w-sm sm:max-w-md mx-auto">
+              <div className="flex items-center justify-center">
                 <button
                   type="button"
                   onClick={() => {
                     sounds.playClick();
-                    setGarageSubTab('vehicles');
+                    setGarageSubTab(garageSubTab === 'vehicles' ? 'service' : 'vehicles');
                   }}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                  className="group relative px-6 py-2.5 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white shadow-lg hover:shadow-xl border-2 border-gold/70 hover:border-gold transition-all flex items-center gap-3 hover:scale-105 active:scale-95"
+                  title={
                     garageSubTab === 'vehicles'
-                      ? 'bg-[#14213D] text-white shadow-sm'
-                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
-                  }`}
+                      ? 'სერვისების ჟურნალზე გადასვლა'
+                      : 'ჩემს გარაჟზე დაბრუნება'
+                  }
                 >
-                  <Car className="w-4 h-4 text-[#F59E0B]" />
-                  <span>ჩემი გარაჟი</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setGarageSubTab('service');
-                  }}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
-                    garageSubTab === 'service'
-                      ? 'bg-[#14213D] text-white shadow-sm'
-                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
-                  }`}
-                >
-                  <Wrench className="w-4 h-4 text-[#F59E0B]" />
-                  <span>სერვისების ჟურნალი</span>
+                  {garageSubTab === 'vehicles' ? (
+                    <>
+                      <div className="w-8 h-8 rounded-xl bg-gold text-navy flex items-center justify-center font-bold shadow-sm group-hover:rotate-45 transition-transform">
+                        <Wrench className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[10px] font-mono font-bold text-slate-300 block uppercase tracking-wider">
+                          გადასვლა
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-gold flex items-center gap-1.5">
+                          <span>სერვისების ჟურნალი</span>
+                          <span className="text-white/80 text-[11px] font-mono">({services.length})</span>
+                        </span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gold group-hover:translate-x-1 transition-transform ml-1" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-8 h-8 rounded-xl bg-gold text-navy flex items-center justify-center font-bold shadow-sm group-hover:scale-110 transition-transform">
+                        <Car className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[10px] font-mono font-bold text-slate-300 block uppercase tracking-wider">
+                          გადასვლა
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-gold flex items-center gap-1.5">
+                          <span>ჩემი გარაჟი</span>
+                          <span className="text-white/80 text-[11px] font-mono">({allVehicles.length})</span>
+                        </span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gold group-hover:translate-x-1 transition-transform ml-1" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
