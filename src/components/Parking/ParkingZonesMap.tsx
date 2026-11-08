@@ -551,7 +551,6 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
       const marker = L.marker(center, { icon: customIcon });
 
-      const wazeDeepLink = `https://waze.com/ul?ll=${zone.geometry.center[0]},${zone.geometry.center[1]}&navigate=yes`;
       const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${zone.geometry.center[0]},${zone.geometry.center[1]}`;
 
       const popupHtml = `
@@ -574,11 +573,8 @@ export const ParkingZonesMap: React.FC<Props> = ({
             ტარიფი და შეღავათი გადაამოწმეთ ოფიციალურ აპში
           </div>
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
-            <a href="${wazeDeepLink}" target="_blank" rel="noreferrer" class="flex-1 py-1 px-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-bold text-center flex items-center justify-center gap-1 transition-colors">
-              <span>Waze მისვლა</span>
-            </a>
-            <a href="${googleMapsLink}" target="_blank" rel="noreferrer" class="py-1 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold text-center transition-colors">
-              Maps
+            <a href="${googleMapsLink}" target="_blank" rel="noreferrer" class="flex-1 py-1 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold text-center transition-colors">
+              Google Maps-ით მისვლა ↗
             </a>
           </div>
           <button type="button" id="start-park-${zone.id}" class="w-full mt-2 py-2 px-3 rounded-xl bg-gold hover:bg-amber-400 text-navy font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95">
@@ -942,7 +938,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
                 const targetZone = hoveredZone || cityZones.find(z => z.id === selectedZoneId || z.lotCode === selectedZoneId || z.zoneNumber === selectedZoneId);
                 if (!targetZone) return null;
 
-                const wazeUrl = `https://waze.com/ul?ll=${targetZone.geometry.center[0]},${targetZone.geometry.center[1]}&navigate=yes`;
+                const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${targetZone.geometry.center[0]},${targetZone.geometry.center[1]}`;
 
                 return (
                   <div className="space-y-2">
@@ -969,13 +965,13 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
                     <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-100 gap-2">
                       <a
-                        href={wazeUrl}
+                        href={mapsUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="px-2.5 py-1 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-[10px] flex items-center gap-1 transition-all"
+                        className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[10px] flex items-center gap-1 transition-all"
                       >
                         <Navigation size={11} />
-                        <span>Waze-ით მისვლა</span>
+                        <span>Google Maps ↗</span>
                       </a>
 
                       {onStartParkingWithZone && (
@@ -1020,7 +1016,7 @@ export const ParkingZonesMap: React.FC<Props> = ({
           ) : (
             filteredZones.slice(0, 100).map(zone => {
               const isSelected = selectedZoneId === zone.id || selectedZoneId === zone.lotCode || selectedZoneId === zone.zoneNumber;
-              const wazeUrl = `https://waze.com/ul?ll=${zone.geometry.center[0]},${zone.geometry.center[1]}&navigate=yes`;
+              const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${zone.geometry.center[0]},${zone.geometry.center[1]}`;
 
               return (
                 <div
@@ -1078,12 +1074,12 @@ export const ParkingZonesMap: React.FC<Props> = ({
                     </div>
 
                     <a
-                      href={wazeUrl}
+                      href={mapsUrl}
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="p-2 rounded-xl bg-cyan-600/15 hover:bg-cyan-600 text-cyan-600 hover:text-white border border-cyan-500/30 text-xs font-bold transition-all"
-                      title="Waze-ით მისვლა"
+                      className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition-all"
+                      title="Google Maps-ით მისვლა"
                     >
                       <Navigation size={14} />
                     </a>

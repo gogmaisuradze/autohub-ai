@@ -141,7 +141,7 @@ export const AddReportModal: React.FC<Props> = ({
                 საგზაო შეტყობინების დამატება
               </h3>
               <p className="text-xs text-slate-500 font-mono">
-                Waze-სტილის ცოცხალი გაფრთხილება მძღოლებისთვის
+                საგზაო ცოცხალი გაფრთხილება მძღოლებისთვის
               </p>
             </div>
           </div>

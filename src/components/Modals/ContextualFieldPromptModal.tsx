@@ -50,7 +50,7 @@ const FIELD_CONFIGS: Record<PromptFieldType, { title: string; hint: string; plac
   },
   fuel_type: {
     title: 'საწვავის ტიპის არჩევა',
-    hint: 'განსაზღვრავს ქარხნული ზეთის დაშვებას, გაზომვის პარამეტრებსა და Waze-ის საწვავის ფასებს.',
+    hint: 'განსაზღვრავს ქარხნული ზეთის დაშვებას, გაზომვის პარამეტრებსა და საწვავის ფასებს.',
     placeholder: 'petrol, diesel, hybrid, electric',
     inputType: 'text',
     presets: ['petrol', 'diesel', 'hybrid', 'electric']

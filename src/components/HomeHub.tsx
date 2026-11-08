@@ -134,7 +134,7 @@ export const HomeHub: React.FC<Props> = ({
       icon: NavigationIcon,
       badgeText: 'LIVE',
       badgeColor: 'bg-cyan-500 text-white font-black shadow-sm',
-      badgeSubtext: 'Waze რეჟიმი',
+      badgeSubtext: 'Live რეჟიმი',
       tag: 'საპატრულო რადარი'
     },
     {
