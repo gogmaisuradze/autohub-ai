@@ -324,9 +324,35 @@ export const Header: React.FC<Props> = ({
               <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
                 CarMe
               </h1>
-              <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-black bg-white text-amber-600 border-2 border-amber-500 shadow-xs tracking-wider shrink-0">
-                PRO
-              </span>
+              {/* Owner / Account Mode Pill directly inside CarMe Logo */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  sounds.playClick();
+                  if (onOpenUserAccountModal) {
+                    onOpenUserAccountModal();
+                  } else if (onToggleAccountMode) {
+                    onToggleAccountMode();
+                  }
+                }}
+                className={`px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-black flex items-center gap-1 border-2 shadow-xs transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0 ${
+                  accountMode === 'owner'
+                    ? 'bg-amber-100 text-amber-950 border-amber-500 hover:bg-amber-200'
+                    : 'bg-blue-100 text-blue-950 border-blue-400 hover:bg-blue-200'
+                }`}
+                title={
+                  isGe
+                    ? 'მომხმარებლის პროფილი • დააჭირეთ სანახავად და შესავსებად'
+                    : 'User Account • Click to view and fill profile'
+                }
+              >
+                <span>{accountMode === 'owner' ? '👑' : '👤'}</span>
+                <span>{accountMode === 'owner' ? 'Owner' : 'Guest'}</span>
+                {!vehicle?.driver_name && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" title={isGe ? 'შეავსეთ პროფილი' : 'Fill Profile'} />
+                )}
+              </button>
             </div>
             <p className="text-[11px] sm:text-xs text-slate-600 font-medium hidden min-[600px]:block truncate">
               {isGe
@@ -339,48 +365,6 @@ export const Header: React.FC<Props> = ({
         {/* 2. Right Controls */}
         <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
           
-          {/* 0. Account Profile / Mode Button */}
-          <button
-            onClick={() => {
-              sounds.playClick();
-              if (onOpenUserAccountModal) {
-                onOpenUserAccountModal();
-              } else if (onToggleAccountMode) {
-                onToggleAccountMode();
-              }
-            }}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-xl sm:rounded-2xl text-xs font-black flex items-center gap-1 sm:gap-1.5 border-2 transition-all cursor-pointer shadow-xs ${
-              accountMode === 'owner'
-                ? 'bg-white text-slate-900 border-amber-400 hover:bg-amber-50'
-                : 'bg-white text-slate-900 border-blue-400 hover:bg-blue-50'
-            }`}
-            title={
-              isGe
-                ? 'მომხმარებლის ექაუნთი • დააჭირეთ პროფილის სანახავად და შესავსებად'
-                : 'User Account • Click to view and fill profile'
-            }
-          >
-            <span className="text-xs sm:text-sm">{accountMode === 'owner' ? '👑' : '👤'}</span>
-            <span className="hidden lg:inline truncate max-w-[120px]">
-              {vehicle?.driver_name ? (
-                vehicle.driver_name
-              ) : accountMode === 'owner' ? (
-                'ჩემი ექაუნთი'
-              ) : (
-                'სტუმრის ექაუნთი'
-              )}
-            </span>
-            {!vehicle?.driver_name && (
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" title={isGe ? 'შეავსეთ პროფილი' : 'Fill Profile'} />
-            )}
-            <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded-md font-black ${
-              accountMode === 'owner' ? 'bg-amber-100 text-amber-950' : 'bg-blue-100 text-blue-950'
-            }`}>
-              <span className="sm:hidden">{accountMode === 'owner' ? 'Owner' : 'Guest'}</span>
-              <span className="hidden sm:inline">{accountMode === 'owner' ? 'Owner (2)' : 'Visitor (1)'}</span>
-            </span>
-          </button>
-
           {/* 1. OBD-II Status Indicator */}
           <button
             data-tour="obd-status"
