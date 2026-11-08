@@ -33,6 +33,15 @@ interface Props {
   activeTab?: TabType;
 }
 
+const BlueParkingP: React.FC<{ className?: string; size?: number }> = ({ className = '', size = 20 }) => (
+  <span
+    style={{ width: size, height: size }}
+    className={`inline-flex items-center justify-center rounded-[22%] bg-[#0056B3] text-white font-sans font-black shadow-xs select-none shrink-0 ${className}`}
+  >
+    <span style={{ fontSize: (size || 20) * 0.68, lineHeight: 1 }} className="font-black text-white">P</span>
+  </span>
+);
+
 export const ServicesOrbitCarousel: React.FC<Props> = ({
   dtcCodes,
   fines,
@@ -97,15 +106,15 @@ export const ServicesOrbitCarousel: React.FC<Props> = ({
       id: 3,
       tab: 'parking' as TabType,
       title: isGe ? 'პარკინგი' : 'Parking',
-      name: isGe ? 'საპარკინგე სერვისები' : 'Parking Services',
+      name: isGe ? 'თბილისი პარკინგი' : 'Tbilisi Parking',
       role: isGe ? 'ზონები, ტაიმერი & აბონემენტი' : 'Zones, Timer & Pass',
-      icon: ParkingSquare,
+      icon: BlueParkingP,
       badgeText: 'LIVE',
       badgeColor: 'bg-blue-600 text-white font-black',
       desc: isGe
         ? 'თბილისის ზონალური პარკირების წამზომი (A/B/C), მუნიციპალური ჯარიმები და აბონემენტები.'
         : 'Tbilisi zoned parking stopwatch (A/B/C), municipal fines and passes.',
-      accent: '#2563EB'
+      accent: '#0056B3'
     },
     {
       id: 4,

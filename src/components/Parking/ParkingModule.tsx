@@ -883,13 +883,13 @@ export const ParkingModule: React.FC<Props> = ({
         {/* Header Bar */}
         <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl neu-circle flex items-center justify-center text-navy shadow-sm shrink-0 bg-white border border-white">
-              <ParkingSquare className="w-6 h-6 text-navy" />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-sm shrink-0 bg-[#0056B3] border border-blue-400/40">
+              <span className="text-2xl font-black font-sans leading-none">P</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base sm:text-lg font-black text-navy tracking-tight">
-                  CarMe ჭკვიანი პარკინგი
+                  თბილისი პარკინგი
                 </h3>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
                   activeSession.isActive
@@ -922,92 +922,94 @@ export const ParkingModule: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* საპარკინგე ადგილის ჩასაწერი ნომრის ტაბლო & პარკირების დაწყება (AutoHub 4G OBD & Wi-Fi GPS ავტო-დეტექცია) */}
-        <div className="p-4 sm:p-5 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-            
-            {/* 1. საპარკინგე ადგილის ჩასაწერი ნომრის ტაბლო */}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-navy text-gold flex items-center justify-center font-black text-xl shadow-md shrink-0">
-                <MapPin size={24} className="text-gold" />
+        {/* საპარკინგე ადგილის ჩასაწერი ნომრის ტაბლო & პარკირების დაწყება */}
+        <div className="p-4 sm:p-5 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-3.5">
+          {/* 1. Header of the board with Blue P */}
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-md bg-[#0056B3] text-white flex items-center justify-center font-black text-xs font-sans">
+                P
               </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block font-mono">
-                  საპარკინგე ადგილის ნომრის ტაბლო
-                </span>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3.5 font-mono font-black text-gold text-lg select-none">#</span>
-                    <input
-                      type="text"
-                      value={customSlotInput}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/[^0-9A-Za-z]/g, '').slice(0, 5).toUpperCase();
-                        setCustomSlotInput(val);
-                        setParkingLocationInput("ზონა #" + val + " — " + (activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'));
-                      }}
-                      placeholder="005"
-                      className="pl-8 pr-3 py-2 w-32 sm:w-36 text-lg sm:text-xl font-mono font-black rounded-2xl bg-[#F8FAFC] border-2 border-gold/40 text-navy shadow-inner focus:outline-none focus:ring-2 focus:ring-gold focus:bg-white transition-all uppercase"
-                    />
-                  </div>
+              <span className="text-xs font-black uppercase tracking-wider text-navy font-mono">
+                საპარკინგე ადგილის ნომრის ტაბლო
+              </span>
+            </div>
+            <span className="text-[10px] font-mono text-slate-400">თბილისი • ზონალური</span>
+          </div>
 
-                  {/* Quick Slot Preset Pills */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {['001', '005', '012', '034'].map((code) => (
-                      <button
-                        key={code}
-                        type="button"
-                        onClick={() => {
-                          sounds.playClick();
-                          setCustomSlotInput(code);
-                          setParkingLocationInput("ზონა #" + code + " — " + (activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'));
-                        }}
-                        className={"px-2.5 py-1.5 rounded-xl text-xs font-mono font-black transition-all cursor-pointer " + (
-                          customSlotInput === code
-                            ? 'bg-gold text-navy shadow-xs scale-105'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200'
-                        )}
-                      >
-                        #{code}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          {/* 2. Slot Input + Quick Preset Pills in one single, responsive row */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+              {/* Input */}
+              <div className="relative flex-1 sm:w-44 sm:flex-initial">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-black text-[#0056B3] text-lg select-none">#</span>
+                <input
+                  type="text"
+                  value={customSlotInput}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9A-Za-z]/g, '').slice(0, 5).toUpperCase();
+                    setCustomSlotInput(val);
+                    setParkingLocationInput("ზონა #" + val + " — " + (activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'));
+                  }}
+                  placeholder="005"
+                  className="w-full pl-8 pr-3 py-2 text-base sm:text-lg font-mono font-black rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:border-[#0056B3] text-navy shadow-inner focus:outline-none focus:bg-white transition-all uppercase"
+                />
+              </div>
+
+              {/* Quick Preset Pills */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {['001', '005', '012', '034'].map((code) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setCustomSlotInput(code);
+                      setParkingLocationInput("ზონა #" + code + " — " + (activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზირი'));
+                    }}
+                    className={"px-2.5 py-2 rounded-xl text-xs font-mono font-black transition-all cursor-pointer " + (
+                      customSlotInput === code
+                        ? 'bg-[#0056B3] text-white shadow-xs scale-105'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                    )}
+                  >
+                    #{code}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* 2. ავტომატური სიგნალი OBD & Wi-Fi GPS-იდან */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl bg-[#F8FAFC] border border-slate-200/80">
-              <div className="flex items-center gap-2.5">
+            {/* Live GPS badge & Zone */}
+            <div className="flex items-center justify-between sm:justify-end gap-2.5 p-2 sm:p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+              <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
                 <div className="text-xs">
-                  <span className="font-black text-navy block">
+                  <span className="font-black text-navy block leading-tight">
                     {activeParkedLot?.district_ge || 'ვაკე'} • {activeParkedLot?.categoryLabel_ge || 'ზონა A (1.00 ₾/სთ)'}
                   </span>
-                  <span className="text-[11px] text-slate-500 block font-mono mt-0.5">
+                  <span className="text-[10px] text-slate-500 block font-mono mt-0.5">
                     {activeParkedLot?.street_ge || 'ი. ჭავჭავაძის გამზ.'} #{customSlotInput || '005'} • 15 წთ უფასო
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] font-mono font-black px-2.5 py-1 rounded-xl bg-white border border-slate-200/90 text-navy shadow-2xs shrink-0 flex items-center gap-1">
-                <span>📡 OBD & Wi-Fi GPS</span>
+              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs shrink-0 flex items-center gap-1">
+                <span>📡 GPS Live</span>
               </span>
             </div>
-
           </div>
 
-          {/* 3. გაასრიალეთ / ავტომატური დაწყება რეგისტრაცია გავლილი მანქანით */}
+          {/* 3. Auto-Detection Banner */}
           {!activeSession.isActive ? (
             <div className="pt-1 space-y-2.5">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 via-gold/15 to-emerald-500/10 border border-gold/30">
-                <div className="flex items-center gap-2 text-xs font-bold text-navy">
-                  <Zap className="w-4 h-4 text-gold fill-gold shrink-0" />
-                  <span>
-                    ავტო-პარკინგი: 4G OBD / Wi-Fi GPS სიგნალით საპარკინგე ადგილზე შესვლისას, რეგისტრირებული ავტომობილისთვის (<strong>{parkedPlateNumber}</strong>)
+              <div className="flex items-center justify-between gap-2.5 p-3 rounded-2xl bg-blue-50/80 border border-blue-200/80">
+                <div className="flex items-center gap-2 text-xs font-bold text-navy truncate">
+                  <Zap className="w-4 h-4 text-[#0056B3] fill-[#0056B3] shrink-0" />
+                  <span className="truncate">
+                    ავტო-პარკინგი: OBD & GPS დეტექცია (<strong>{parkedPlateNumber}</strong>)
                   </span>
                 </div>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
-                  ✓ AUTO-DETECTION READY
+                  ✓ READY
                 </span>
               </div>
 
@@ -1021,11 +1023,13 @@ export const ParkingModule: React.FC<Props> = ({
                   ) || DELINEATED_PARKING_ZONES[0];
                   startConfirmedParking(targetLot, 60);
                 }}
-                className="btn-stitch-navy w-full py-4 px-8 text-base font-black flex items-center justify-center gap-2.5 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
+                className="w-full py-3.5 px-6 text-sm sm:text-base font-black flex items-center justify-center gap-2.5 rounded-2xl shadow-md hover:shadow-lg bg-[#0056B3] hover:bg-[#004694] text-white active:scale-[0.99] transition-all cursor-pointer"
               >
-                <Zap className="w-5 h-5 text-gold fill-gold" />
+                <div className="w-5 h-5 rounded-md bg-white text-[#0056B3] flex items-center justify-center font-black text-xs font-sans">
+                  P
+                </div>
                 <span>პარკირების დაწყება (ლოტი #{customSlotInput || '005'} • {parkedPlateNumber})</span>
-                <ArrowRight size={17} className="text-gold" />
+                <ArrowRight size={17} className="text-white ml-1" />
               </button>
             </div>
           ) : (

@@ -1492,22 +1492,21 @@ export const App: React.FC = () => {
                   className="group relative px-6 py-2.5 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white shadow-lg hover:shadow-xl border-2 border-gold/70 hover:border-gold transition-all flex items-center gap-3 active:scale-95"
                   title={
                     mapSubTab === 'traffic'
-                      ? 'ჭკვიან პარკინგზე გადასვლა'
+                      ? 'თბილისი პარკინგზე გადასვლა'
                       : 'მოძრაობის რუკაზე დაბრუნება'
                   }
                 >
                   {mapSubTab === 'traffic' ? (
                     <>
-                      <div className="w-8 h-8 rounded-xl bg-gold text-navy flex items-center justify-center font-bold shadow-sm group-hover:scale-110 transition-transform">
-                        <ParkingSquare className="w-4 h-4" />
+                      <div className="w-8 h-8 rounded-xl bg-[#0056B3] text-white flex items-center justify-center font-black shadow-sm group-hover:scale-110 transition-transform">
+                        <span className="text-sm font-black font-sans leading-none">P</span>
                       </div>
                       <div className="text-left">
                         <span className="text-[10px] font-mono font-bold text-slate-300 block uppercase tracking-wider">
                           გადასვლა
                         </span>
                         <span className="text-xs sm:text-sm font-black text-gold flex items-center gap-1.5">
-                          <span>ჭკვიანი პარკინგი</span>
-                          <span className="text-white/80 text-[11px] font-mono">(თბილისი)</span>
+                          <span>თბილისი პარკინგი</span>
                         </span>
                       </div>
                       <ArrowRight className="w-4 h-4 text-gold group-hover:translate-x-1 transition-transform ml-1" />
@@ -1561,8 +1560,8 @@ export const App: React.FC = () => {
                       : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
                   }`}
                 >
-                  <ParkingSquare className="w-4 h-4 text-[#F59E0B]" />
-                  <span>ჭკვიანი პარკინგი</span>
+                  <div className="w-4 h-4 rounded-xs bg-[#0056B3] text-white flex items-center justify-center font-black text-[9px] font-sans">P</div>
+                  <span>თბილისი პარკინგი</span>
                 </button>
               </div>
             </div>

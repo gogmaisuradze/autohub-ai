@@ -513,14 +513,14 @@ export const ParkingZonesMap: React.FC<Props> = ({
 
       polygonLayerGroupRef.current.addLayer(polygon);
 
-      // Marker Icon - positioned ABOVE the parking stall so the delineated space is 100% visible!
+      // Marker Icon - Standard Blue P Traffic Sign (5.15)
       const badgeHtml = isFarZoom
         ? `
           <div class="relative flex items-center justify-center cursor-pointer group">
-            <div class="w-4 h-4 rounded-full flex items-center justify-center font-mono font-black text-[9px] shadow-md transition-transform hover:scale-125 ${
+            <div class="w-5 h-5 rounded-[4px] flex items-center justify-center font-sans font-black text-[10px] shadow-md transition-transform hover:scale-125 border border-white ${
               isSelected
-                ? 'bg-gold text-navy ring-2 ring-white scale-125'
-                : 'bg-navy text-gold border border-gold/70'
+                ? 'bg-[#0056B3] text-white ring-2 ring-amber-400 scale-125'
+                : 'bg-[#0056B3] text-white'
             }">
               <span>P</span>
             </div>
@@ -528,25 +528,28 @@ export const ParkingZonesMap: React.FC<Props> = ({
         `
         : `
           <div class="relative flex flex-col items-center cursor-pointer group pointer-events-auto">
-            <div class="px-2 py-0.5 rounded-lg font-mono font-black text-[11px] flex items-center gap-1 shadow-md transition-transform group-hover:scale-110 ${
+            <div class="px-2 py-0.5 rounded-lg font-mono font-black text-[11px] flex items-center gap-1.5 shadow-md transition-transform group-hover:scale-110 border ${
               isSelected
-                ? 'bg-gold text-navy ring-2 ring-white scale-105'
-                : 'bg-slate-950/90 text-gold border border-gold/70 backdrop-blur-xs'
+                ? 'bg-[#0056B3] text-white border-white ring-2 ring-amber-400 scale-105'
+                : 'bg-white text-navy border-slate-300'
             }">
-              <span class="w-1.5 h-1.5 rounded-full ${
-                zone.tariffCategory === 'A' ? 'bg-blue-400' : zone.tariffCategory === 'B' ? 'bg-amber-400' : 'bg-emerald-400'
-              }"></span>
+              <div class="w-3.5 h-3.5 rounded-[3px] bg-[#0056B3] text-white flex items-center justify-center text-[8px] font-sans font-black">
+                P
+              </div>
               <span>#${zone.lotCode}</span>
+              <span class="w-2 h-2 rounded-full ${
+                zone.tariffCategory === 'A' ? 'bg-blue-500' : zone.tariffCategory === 'B' ? 'bg-amber-500' : 'bg-emerald-500'
+              }"></span>
             </div>
-            <div class="w-1.5 h-1.5 rotate-45 -mt-1 ${isSelected ? 'bg-gold' : 'bg-slate-950'} border-r border-b border-gold/70"></div>
+            <div class="w-1.5 h-1.5 rotate-45 -mt-1 ${isSelected ? 'bg-[#0056B3]' : 'bg-white'} border-r border-b ${isSelected ? 'border-white' : 'border-slate-300'}"></div>
           </div>
         `;
 
       const customIcon = L.divIcon({
         className: 'custom-parking-zone-badge',
         html: badgeHtml,
-        iconSize: isFarZoom ? [16, 16] : [48, 28],
-        iconAnchor: isFarZoom ? [8, 8] : [24, 28]
+        iconSize: isFarZoom ? [20, 20] : [56, 28],
+        iconAnchor: isFarZoom ? [10, 10] : [28, 28]
       });
 
       const marker = L.marker(center, { icon: customIcon });
