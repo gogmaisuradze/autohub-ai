@@ -1343,43 +1343,64 @@ export const App: React.FC = () => {
         {/* 4. POLICE (პოლიცია: ჯარიმები & მართვის მოწმობის ბილეთები) */}
         {(activeTab === 'police' || activeTab === 'fines' || activeTab === 'exam') && (
           <div className="space-y-4 animate-fade-in">
-            {/* Top Sub-Navigation Pill */}
+            {/* Single Prominent Dynamic Switcher Button between Fines & Exam */}
             <div className="max-w-7xl mx-auto px-2 sm:px-4">
-              <div className="flex items-center justify-center p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-xs max-w-sm sm:max-w-md mx-auto">
+              <div className="flex items-center justify-center">
                 <button
                   type="button"
                   onClick={() => {
                     sounds.playClick();
-                    setPoliceSubTab('fines');
+                    setPoliceSubTab(policeSubTab === 'fines' ? 'exam' : 'fines');
                   }}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 relative ${
+                  className="group relative px-6 py-2.5 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white shadow-lg hover:shadow-xl border-2 border-gold/70 hover:border-gold transition-all flex items-center gap-3 hover:scale-105 active:scale-95"
+                  title={
                     policeSubTab === 'fines'
-                      ? 'bg-[#14213D] text-white shadow-sm'
-                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
-                  }`}
+                      ? 'მართვის მოწმობის ბილეთებზე გადასვლა'
+                      : 'ჯარიმებზე გადასვლა'
+                  }
                 >
-                  <ShieldAlert className="w-4 h-4 text-[#F59E0B]" />
-                  <span>ჯარიმები & ქულები</span>
-                  {fines.filter(f => f.status === 'pending').length > 0 && (
-                    <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black bg-rose-500 text-white">
-                      {fines.filter(f => f.status === 'pending').length}
-                    </span>
+                  {policeSubTab === 'fines' ? (
+                    <>
+                      <div className="w-8 h-8 rounded-xl bg-gold text-navy flex items-center justify-center font-bold shadow-sm group-hover:scale-110 transition-transform">
+                        <GraduationCap className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[10px] font-mono font-bold text-slate-300 block uppercase tracking-wider">
+                          გადასვლა
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-gold flex items-center gap-1.5">
+                          <span>მართვის მოწმობის ბილეთები</span>
+                          <span className="text-white/80 text-[11px] font-mono">(2026)</span>
+                        </span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gold group-hover:translate-x-1 transition-transform ml-1" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-8 h-8 rounded-xl bg-gold text-navy flex items-center justify-center font-bold shadow-sm group-hover:scale-110 transition-transform relative">
+                        <ShieldAlert className="w-4 h-4" />
+                        {fines.filter(f => f.status === 'pending').length > 0 && (
+                          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                        )}
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[10px] font-mono font-bold text-slate-300 block uppercase tracking-wider">
+                          გადასვლა
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-gold flex items-center gap-1.5">
+                          <span>ჯარიმები & ქულები</span>
+                          {fines.filter(f => f.status === 'pending').length > 0 ? (
+                            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black bg-rose-500 text-white">
+                              {fines.filter(f => f.status === 'pending').length}
+                            </span>
+                          ) : (
+                            <span className="text-white/80 text-[11px] font-mono">(OK)</span>
+                          )}
+                        </span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gold group-hover:translate-x-1 transition-transform ml-1" />
+                    </>
                   )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setPoliceSubTab('exam');
-                  }}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
-                    policeSubTab === 'exam'
-                      ? 'bg-[#14213D] text-white shadow-sm'
-                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
-                  }`}
-                >
-                  <GraduationCap className="w-4 h-4 text-[#F59E0B]" />
-                  <span>საგამოცდო ბილეთები</span>
                 </button>
               </div>
             </div>
@@ -1418,38 +1439,55 @@ export const App: React.FC = () => {
         {/* 5. MAP (რუკა & პარკინგი გაერთიანებული) */}
         {(activeTab === 'map' || activeTab === 'parking') && (
           <div className="space-y-4 animate-fade-in">
-            {/* Top Sub-Navigation Pill */}
+            {/* Single Prominent Dynamic Switcher Button between Traffic Map & Parking */}
             <div className="max-w-7xl mx-auto px-2 sm:px-4">
-              <div className="flex items-center justify-center p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-xs max-w-sm sm:max-w-md mx-auto">
+              <div className="flex items-center justify-center">
                 <button
                   type="button"
                   onClick={() => {
                     sounds.playClick();
-                    setMapSubTab('traffic');
+                    setMapSubTab(mapSubTab === 'traffic' ? 'parking' : 'traffic');
                   }}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                  className="group relative px-6 py-2.5 rounded-2xl bg-gradient-to-r from-navy via-slate-900 to-navy text-white shadow-lg hover:shadow-xl border-2 border-gold/70 hover:border-gold transition-all flex items-center gap-3 hover:scale-105 active:scale-95"
+                  title={
                     mapSubTab === 'traffic'
-                      ? 'bg-[#14213D] text-white shadow-sm'
-                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
-                  }`}
+                      ? 'ჭკვიან პარკინგზე გადასვლა'
+                      : 'მოძრაობის რუკაზე დაბრუნება'
+                  }
                 >
-                  <NavigationIcon className="w-4 h-4 text-[#F59E0B]" />
-                  <span>მოძრაობის რუკა</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setMapSubTab('parking');
-                  }}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
-                    mapSubTab === 'parking'
-                      ? 'bg-[#14213D] text-white shadow-sm'
-                      : 'text-slate-600 hover:text-navy hover:bg-slate-100/60'
-                  }`}
-                >
-                  <ParkingSquare className="w-4 h-4 text-[#F59E0B]" />
-                  <span>ჭკვიანი პარკინგი</span>
+                  {mapSubTab === 'traffic' ? (
+                    <>
+                      <div className="w-8 h-8 rounded-xl bg-gold text-navy flex items-center justify-center font-bold shadow-sm group-hover:scale-110 transition-transform">
+                        <ParkingSquare className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[10px] font-mono font-bold text-slate-300 block uppercase tracking-wider">
+                          გადასვლა
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-gold flex items-center gap-1.5">
+                          <span>ჭკვიანი პარკინგი</span>
+                          <span className="text-white/80 text-[11px] font-mono">(თბილისი)</span>
+                        </span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gold group-hover:translate-x-1 transition-transform ml-1" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-8 h-8 rounded-xl bg-gold text-navy flex items-center justify-center font-bold shadow-sm group-hover:scale-110 transition-transform">
+                        <NavigationIcon className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[10px] font-mono font-bold text-slate-300 block uppercase tracking-wider">
+                          გადასვლა
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-gold flex items-center gap-1.5">
+                          <span>მოძრაობის რუკა</span>
+                          <span className="text-emerald-400 text-[11px] font-mono font-bold">● Live</span>
+                        </span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gold group-hover:translate-x-1 transition-transform ml-1" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
