@@ -904,19 +904,6 @@ export const DrivingExamWidget: React.FC = () => {
   return (
     <div id="driving-exam-widget" className="space-y-4">
       <ExamAchievement />
-      {(viewMode === 'subject_picker' || viewMode === 'results') && <ReconstructionSwitch enabled={reconstructionsEnabled} onChange={toggleReconstructions} />}
-      {viewMode === 'subject_picker' && <button type="button" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-navy" onClick={async () => {
-        try {
-          const questions = await loadCategoryQuestions('B');
-          const sample = questions.find(q => q.id === 297);
-          if (!sample) return;
-          setActiveCategory('B');
-          setExtrasTab('tickets');
-          setSessionSubtype('standard');
-          toggleReconstructions(true);
-          startSession([sample], 'practice');
-        } catch { setQuestionLoadError(true); }
-      }}>რეკონსტრუქციის ნიმუში · ბილეთი #297 →</button>}
 
       {(viewMode === 'subject_picker' || viewMode === 'results') && (
         <div
@@ -2399,6 +2386,35 @@ export const DrivingExamWidget: React.FC = () => {
             </button>
           </div>
 
+        </div>
+      )}
+
+      {/* CarMe Educational Reconstructions Footer Box (Placed cleanly at bottom) */}
+      {(viewMode === 'subject_picker' || viewMode === 'results') && (
+        <div className="pt-2 space-y-3">
+          <ReconstructionSwitch enabled={reconstructionsEnabled} onChange={toggleReconstructions} />
+          {viewMode === 'subject_picker' && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-bold text-navy transition-all shadow-xs"
+                onClick={async () => {
+                  try {
+                    const questions = await loadCategoryQuestions('B');
+                    const sample = questions.find(q => q.id === 297);
+                    if (!sample) return;
+                    setActiveCategory('B');
+                    setExtrasTab('tickets');
+                    setSessionSubtype('standard');
+                    toggleReconstructions(true);
+                    startSession([sample], 'practice');
+                  } catch { setQuestionLoadError(true); }
+                }}
+              >
+                რეკონსტრუქციის ნიმუში · ბილეთი #297 →
+              </button>
+            </div>
+          )}
         </div>
       )}
 
