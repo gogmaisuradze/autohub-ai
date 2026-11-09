@@ -343,7 +343,7 @@ export const ObdModule: React.FC<Props> = ({
                 <p className="text-xs text-slate-500 mt-0.5">
                   {isHandshaking
                     ? 'მიმდინარეობს ECU ბორტ-კომპიუტერთან სინქრონიზაცია...'
-                    : 'დააჭირეთ სკანირების დაწყებას ECU ხარვეზების გამოსავლენად'}
+                    : 'დააჭირეთ დიაგნოსტიკას ECU ხარვეზების გამოსავლენად'}
                 </p>
               </div>
             </div>
@@ -356,7 +356,7 @@ export const ObdModule: React.FC<Props> = ({
                 className="btn-stitch-navy w-full sm:w-auto py-3.5 px-7 text-sm font-black flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-gold" />
-                <span>{isScanning || sequenceBusy ? 'სკანირება...' : 'სკანირების დაწყება'}</span>
+                <span>{isScanning || sequenceBusy ? 'დიაგნოსტიკა...' : 'დიაგნოსტიკა'}</span>
                 <ArrowRight className="w-4 h-4 text-gold ml-1" />
               </button>
             </div>
@@ -395,10 +395,10 @@ export const ObdModule: React.FC<Props> = ({
                 <Sparkles className="w-4 h-4 text-gold" />
                 <span>
                   {isScanning || sequenceBusy
-                    ? 'სკანირება...'
+                    ? 'დიაგნოსტიკა...'
                     : hasScanned
-                    ? 'ხელახალი სკანირება'
-                    : 'სკანირების დაწყება'}
+                    ? 'ხელახალი დიაგნოსტიკა'
+                    : 'დიაგნოსტიკა'}
                 </span>
               </button>
 

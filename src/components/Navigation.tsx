@@ -204,7 +204,7 @@ export const Navigation: React.FC<Props> = ({
             </span>
           </button>
 
-          {/* 3. ობდ სკანი (OBD Scan - ცენტრში, ამაღლებული მრგვალი ღილაკი) */}
+          {/* 3. დიაგნოსტიკა (OBD Scan / Diagnostics - ცენტრში, ამაღლებული მრგვალი ღილაკი) */}
           <button
             type="button"
             onClick={() => {
@@ -212,7 +212,7 @@ export const Navigation: React.FC<Props> = ({
               onSelectTab('obd');
             }}
             className="relative -mt-6 flex flex-col items-center justify-center group focus:outline-none"
-            aria-label="OBD სკანი"
+            aria-label="დიაგნოსტიკა"
           >
             <div
               className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl border-4 border-[#ECEAE5] transition-all duration-150 active:scale-95 ${
@@ -228,7 +228,7 @@ export const Navigation: React.FC<Props> = ({
                 activeTab === 'obd' ? 'text-[#14213D]' : 'text-slate-600'
               }`}
             >
-              {isGe ? 'ობდ სკანი' : 'OBD Scan'}
+              {isGe ? 'დიაგნოსტიკა' : 'Diagnostics'}
             </span>
             {dtcCount > 0 && (
               <span className="absolute -top-1 right-1 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-rose-500 text-white animate-pulse shadow-xs">
@@ -270,7 +270,7 @@ export const Navigation: React.FC<Props> = ({
             </span>
           </button>
 
-          {/* 5. პოლისი (Police: Fines & Exam Tickets) */}
+          {/* 5. პოლიცია (Police: Fines & Exam Tickets) */}
           <button
             type="button"
             onClick={() => {
@@ -301,7 +301,7 @@ export const Navigation: React.FC<Props> = ({
                 isPoliceActive ? 'font-black text-navy' : 'font-medium text-slate-500'
               }`}
             >
-              {isGe ? 'პოლისი' : 'Police'}
+              {isGe ? 'პოლიცია' : 'Police'}
             </span>
           </button>
 

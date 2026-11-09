@@ -2315,7 +2315,7 @@ export const ThreeCarScene: React.FC<Props> = ({
       {scanVisualActive && (
         <div className="absolute bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/90 text-cyan-300 border border-cyan-400/60 backdrop-blur-md shadow-[0_0_25px_rgba(34,211,238,0.4)] animate-pulse text-xs font-black">
           <Zap size={14} className="text-cyan-400 animate-bounce" />
-          <span>სკანირება</span>
+          <span>დიაგნოსტიკა</span>
         </div>
       )}
       <div className="absolute bottom-2 left-3 z-20 max-w-[65%] text-[11px] text-slate-400 hover:text-slate-200 pointer-events-auto">
@@ -2381,7 +2381,7 @@ export const ThreeCarScene: React.FC<Props> = ({
                 }`}
               />
               <span className="tracking-wide">
-                {scanVisualActive ? 'მიმდინარეობს სკანირება...' : 'სკანირება'}
+                {scanVisualActive ? 'მიმდინარეობს დიაგნოსტიკა...' : 'დიაგნოსტიკა'}
               </span>
             </button>
           </div>

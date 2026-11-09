@@ -167,9 +167,10 @@ class ObdWifiService {
       const idx = bytes.indexOf(marker);
       const payload = idx >= 0 ? bytes.slice(idx + 1) : bytes;
       const dtcs: ObdDtc[] = [];
+      const seen = new Set<string>();
       for (let i = 0; i + 1 < payload.length; i += 2) {
         const code = parseDtc(payload[i], payload[i + 1]);
-        if (code) dtcs.push({ code });
+        if (code && !seen.has(code)) { seen.add(code); dtcs.push({ code }); } // დუბლიკატის გარეშე
       }
       return dtcs;
     } catch {
@@ -263,6 +264,8 @@ class ObdWifiService {
             scannedAt: r.scannedAt,
             vin: r.vin,
             dtcs: r.dtcs.map(d => d.code),
+            // raw_data — n8n ანალიზატორი ამ ველს კითხულობს (თორემ AI ცარიელ input-ს იღებდა)
+            raw_data: [...r.dtcs, ...(r.pendingDtcs || []), ...(r.permanentDtcs || [])].map(d => d.code).join(',') || 'NO_CODES',
             pendingDtcs: (r.pendingDtcs || []).map(d => d.code),
             permanentDtcs: (r.permanentDtcs || []).map(d => d.code),
             live: r.live
